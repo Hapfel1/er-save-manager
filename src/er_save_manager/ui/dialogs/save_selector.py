@@ -7,6 +7,11 @@ import customtkinter as ctk
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.utils import center_window, style_window_frame
 
+# Rows built before the dialog shows (about the list's visible height), then
+# per later event loop turn
+_FIRST_ROWS = 8
+_BATCH_ROWS = 4
+
 
 class SaveSelectorDialog:
     """Dialog for selecting from multiple save files using customtkinter."""
@@ -73,11 +78,24 @@ class SaveSelectorDialog:
             for val, row in row_widgets:
                 ds.select_card_row(row, val == value)
 
+        build_job: dict[str, str | None] = {"id": None}
+
         def build_rows() -> None:
+            if build_job["id"] is not None:
+                dialog.after_cancel(build_job["id"])
+                build_job["id"] = None
             for _value, row in row_widgets:
                 row.destroy()
             row_widgets.clear()
-            for save in saves:
+            add_rows(0, _FIRST_ROWS)
+
+        def add_rows(start: int, count: int) -> None:
+            """Rows start..start+count, then the next batch on a later event
+            loop turn: the rows in view show at once, the rest fill in."""
+            build_job["id"] = None
+            if not dialog.winfo_exists():
+                return
+            for save in saves[start : start + count]:
                 # File name as the title, so its extension stays visible when
                 # a long folder path is cut off at the right edge
                 path = Path(save)
@@ -89,8 +107,15 @@ class SaveSelectorDialog:
                     font=ds.FONT,
                 )
                 row_widgets.append((str(save), row))
-            if selection_var.get():
-                apply_selection(selection_var.get())
+                ds.select_card_row(row, str(save) == selection_var.get())
+            if start + count < len(saves):
+                # Tk runs due timers before the idle callbacks that repaint
+                # the window, so the timer is armed from an idle callback:
+                # the dialog is drawn before each batch
+                build_job["id"] = dialog.after_idle(arm, start + count, _BATCH_ROWS)
+
+        def arm(start: int, count: int) -> None:
+            build_job["id"] = dialog.after(1, add_rows, start, count)
 
         build_rows()
 
