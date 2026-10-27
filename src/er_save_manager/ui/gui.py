@@ -1557,6 +1557,7 @@ class SaveManagerGUI:
                 self.appearance_tab.eye_changes,
                 self.appearance_tab.prepare_eyes,
                 self.appearance_tab.discard_eyes,
+                details=self.appearance_tab.eye_details,
             )
         )
 
@@ -1593,6 +1594,7 @@ class SaveManagerGUI:
                 self.world_tab.marker_changes,
                 self.world_tab.prepare_markers,
                 self.world_tab.discard_markers,
+                details=self.world_tab.marker_details,
             )
         )
 
@@ -1612,6 +1614,7 @@ class SaveManagerGUI:
                 self.event_flags_tab.flag_changes,
                 self.event_flags_tab.prepare_flags,
                 self.event_flags_tab.discard_flags,
+                details=self.event_flags_tab.flag_details,
             )
         )
 
@@ -1632,6 +1635,7 @@ class SaveManagerGUI:
                 self.gestures_tab.gesture_changes,
                 self.gestures_tab.prepare_gestures,
                 self.gestures_tab.discard_gestures,
+                details=self.gestures_tab.gesture_details,
             )
         )
         register(
@@ -1640,6 +1644,7 @@ class SaveManagerGUI:
                 self.gestures_tab.wheel_changes,
                 self.gestures_tab.prepare_wheel,
                 self.gestures_tab.discard_wheel,
+                details=self.gestures_tab.wheel_details,
             )
         )
         self.notebook.add("SteamID Patcher")
@@ -2351,6 +2356,7 @@ class SaveManagerGUI:
                     editor.prepare,
                     reload,
                     lambda n=name: editor_tabs.set(n),
+                    getattr(editor, "details", editor.tracker.details),
                 )
             )
 

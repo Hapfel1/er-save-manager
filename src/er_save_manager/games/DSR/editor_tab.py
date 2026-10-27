@@ -104,7 +104,9 @@ class DSREditorTab:
         # False when the loaded stats sit below their own class's base
         # (modded or edited character); class minimums are then not enforced.
         self._enforce_class_min = True
-        self._stats_tracker = FieldTracker(self._stats_state)
+        # Stat key -> label, filled while the Stats page is built
+        self._stat_labels: dict[str, str] = {}
+        self._stats_tracker = FieldTracker(self._stats_state, self._stat_labels)
         self._identity_tracker = FieldTracker(
             var_state(
                 {
@@ -113,9 +115,13 @@ class DSREditorTab:
                     "covenant": self._covenant_var,
                     "ng": self._ng_var,
                 }
-            )
+            ),
+            {"ng": "NG+"},
         )
-        self._covenant_tracker = FieldTracker(var_state(self._offering_vars))
+        self._covenant_tracker = FieldTracker(
+            var_state(self._offering_vars),
+            {c: f"{_COVENANTS[int(c)]} offerings" for c in COVENANT_OFFERING_ORDER},
+        )
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -199,6 +205,7 @@ class DSREditorTab:
                 ("Resistance", "res"),
             ]
         ):
+            self._stat_labels[key] = label
             ctk.CTkLabel(ag, text=f"{label}:").grid(
                 row=i, column=0, sticky="w", padx=5, pady=5
             )
@@ -223,6 +230,7 @@ class DSREditorTab:
                 ("Humanity", "humanity"),
             ]
         ):
+            self._stat_labels[key] = label
             ctk.CTkLabel(rg, text=f"{label}:").grid(
                 row=i, column=0, sticky="w", padx=5, pady=5
             )
@@ -508,6 +516,7 @@ class DSREditorTab:
                     prepare,
                     lambda f=fill: self._refill(f),
                     lambda n=name: self._tabs.set(n),
+                    tracker.details,
                 )
             )
         self._register_pending(
@@ -517,6 +526,7 @@ class DSREditorTab:
                 self._prepare_equipment,
                 self._load_equipment,
                 lambda: self._tabs.set("Equipment"),
+                self._equipment_details,
             )
         )
 
@@ -555,6 +565,12 @@ class DSREditorTab:
         if panel is None or panel.adapter is None:
             return 0
         return len(panel.staged) + (1 if self._attunement.changed() else 0)
+
+    def _equipment_details(self):
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None or panel.adapter is None:
+            return []
+        return panel.details() + self._attunement.details()
 
     def _prepare_equipment(self):
         adapter = self._equip_panel.adapter

@@ -26,7 +26,13 @@ from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
-from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    PendingPage,
+    StageError,
+    show_value,
+    var_state,
+)
 from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -82,9 +88,13 @@ class DS3EditorTab:
         self._loaded_level = 0
         self._loaded_sum = 0
         self.inventory = None
-        self._stats_tracker = FieldTracker(self._stats_state)
+        # Stat key -> label, filled while the Stats page is built
+        self._stat_labels: dict[str, str] = {}
+        self._stats_tracker = FieldTracker(
+            self._stats_state, self._stat_labels, self._show_stat
+        )
         self._identity_tracker = FieldTracker(
-            var_state({"name": self._name_var, "ng": self._ng_var})
+            var_state({"name": self._name_var, "ng": self._ng_var}), {"ng": "NG+"}
         )
 
     def setup_ui(self) -> None:
@@ -206,6 +216,7 @@ class DS3EditorTab:
                 ("Luck", "lck"),
             ]
         ):
+            self._stat_labels[key] = label
             ctk.CTkLabel(ag, text=f"{label}:").grid(
                 row=i, column=0, sticky="w", padx=5, pady=5
             )
@@ -232,6 +243,7 @@ class DS3EditorTab:
                 ("Weapon level", "weapon_level"),
             ]
         ):
+            self._stat_labels[key] = label
             ctk.CTkLabel(rg, text=f"{label}:").grid(
                 row=i, column=0, sticky="w", padx=5, pady=5
             )
@@ -435,6 +447,12 @@ class DS3EditorTab:
             return 0
         return len(panel.staged) + (1 if self._attunement.changed() else 0)
 
+    def _equipment_details(self):
+        panel = getattr(self, "_equip_panel", None)
+        if panel is None or panel.adapter is None:
+            return []
+        return panel.details() + self._attunement.details()
+
     def _prepare_equipment(self):
         adapter = self._equip_panel.adapter
         staged = self._equip_panel.staged
@@ -554,9 +572,9 @@ class DS3EditorTab:
         if self._register_pending is None:
             return
 
-        def page(name, changes, prepare, discard):
+        def page(name, changes, prepare, discard, details):
             return PendingPage(
-                name, changes, prepare, discard, lambda: self._tabs.set(name)
+                name, changes, prepare, discard, lambda: self._tabs.set(name), details
             )
 
         self._register_pending(
@@ -565,6 +583,7 @@ class DS3EditorTab:
                 self._stats_tracker.changes,
                 self._prepare_stats,
                 lambda: self._refill(self._fill_stats),
+                self._stats_tracker.details,
             )
         )
         self._register_pending(
@@ -573,6 +592,7 @@ class DS3EditorTab:
                 self._identity_tracker.changes,
                 self._prepare_identity,
                 lambda: self._refill(self._fill_identity),
+                self._identity_tracker.details,
             )
         )
         self._register_pending(
@@ -581,8 +601,16 @@ class DS3EditorTab:
                 self._equipment_changes,
                 self._prepare_equipment,
                 self._load_equipment,
+                self._equipment_details,
             )
         )
+
+    def _show_stat(self, key, value) -> str:
+        """Display text of a Stats value; the class is tracked by index."""
+        if key == "class" and value is not None:
+            classes = self._classes()
+            return classes[value].name if value < len(classes) else str(value)
+        return show_value(value)
 
     def _refill(self, fill) -> None:
         char = self._loaded_char()

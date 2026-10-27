@@ -18,6 +18,13 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 
 _POLL_MS = 400
+# Change rows listed in a confirmation before "and N more"
+_PROMPT_ROWS = 12
+# Longest field name in the bar; event flag names run to 80 characters
+_NAME_CHARS = 36
+
+# (field, old value, new value) as shown to the user
+Change = tuple[str, str, str]
 
 
 class StageError(Exception):
@@ -39,6 +46,8 @@ class PendingPage:
         save.
     discard: reloads the page from the save.
     show: brings the page to the front (top-level tab and sub-tab).
+    details: the changed fields with old and new values; without it the
+        page is listed as its name and change count.
     """
 
     name: str
@@ -46,14 +55,35 @@ class PendingPage:
     prepare: Callable[[], Callable[[], list[str] | None]]
     discard: Callable[[], None]
     show: Callable[[], None] | None = None
+    details: Callable[[], list[Change]] | None = None
+
+
+def show_value(value) -> str:
+    """Display text of a tracked value; tk booleans read as On / Off."""
+    if value is None:
+        return ""
+    text = str(value)
+    return {"True": "On", "False": "Off"}.get(text, text)
 
 
 class FieldTracker:
-    """Counts fields that differ from the state recorded by mark_clean()."""
+    """Counts fields that differ from the state recorded by mark_clean().
 
-    def __init__(self, get_state: Callable[[], dict]) -> None:
+    labels maps state keys to field names for details(); other keys are
+    shown capitalized with underscores as spaces. show turns a (key, value)
+    pair into display text.
+    """
+
+    def __init__(
+        self,
+        get_state: Callable[[], dict],
+        labels: dict | None = None,
+        show: Callable[[object, object], str] | None = None,
+    ) -> None:
         self._get_state = get_state
         self._clean: dict | None = None
+        self._labels = labels if labels is not None else {}
+        self._show = show or (lambda _key, value: show_value(value))
 
     def mark_clean(self) -> None:
         self._clean = self._safe_state()
@@ -68,6 +98,26 @@ class FieldTracker:
         now = self._safe_state()
         keys = self._clean.keys() | now.keys()
         return sum(1 for k in keys if self._clean.get(k) != now.get(k))
+
+    def details(self) -> list[Change]:
+        if self._clean is None:
+            return []
+        now = self._safe_state()
+        keys = list(now) + [k for k in self._clean if k not in now]
+        return [
+            (
+                self._label(key),
+                self._show(key, self._clean.get(key)),
+                self._show(key, now.get(key)),
+            )
+            for key in keys
+            if self._clean.get(key) != now.get(key)
+        ]
+
+    def _label(self, key) -> str:
+        if key in self._labels:
+            return self._labels[key]
+        return str(key).replace("_", " ").capitalize()
 
     def _safe_state(self) -> dict:
         try:
@@ -209,8 +259,8 @@ class CharacterBar(ctk.CTkFrame):
 class PendingBar(ctk.CTkFrame):
     """Lists pages with unapplied edits; Apply All writes them in one save.
 
-    backup(slot, changes) backs up the save file on disk; changes lists the
-    pages being applied, as shown in the bar. write() writes the in-memory
+    backup(slot, changes) backs up the save file on disk; changes names the
+    changed fields, as shown in the bar. write() writes the in-memory
     save to it.
     blocks_write() returns True (after telling the user) when the game runs.
     after_apply() reloads the character into every tab.
@@ -242,8 +292,7 @@ class PendingBar(ctk.CTkFrame):
         self._on_visibility = on_visibility
         self._shown = False
         self._busy = False
-        self._label = ctk.CTkLabel(self, text="", font=ds.BOLD, anchor="w")
-        self._label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=14, pady=8)
+        # Buttons first: pack gives them their width before the label.
         ctk.CTkButton(self, text="Apply All", width=120, command=self.apply_all).pack(
             side=tk.RIGHT, padx=(6, 12), pady=8
         )
@@ -255,6 +304,18 @@ class PendingBar(ctk.CTkFrame):
             text_color=("gray10", "gray90"),
             command=self._discard_clicked,
         ).pack(side=tk.RIGHT, pady=8)
+        ctk.CTkButton(
+            self,
+            text="Review",
+            width=90,
+            font=ds.BOLD,
+            fg_color="transparent",
+            hover_color=palette.PURPLE_SELECT,
+            text_color=ds.INFO,
+            command=self._open_review,
+        ).pack(side=tk.RIGHT, padx=(0, 6), pady=8)
+        self._label = ctk.CTkLabel(self, text="", font=ds.BOLD, anchor="w")
+        self._label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=14, pady=8)
         self._poll_job = self.after(_POLL_MS, self._poll)
 
     def register(self, page: PendingPage) -> None:
@@ -283,11 +344,68 @@ class PendingBar(ctk.CTkFrame):
                 out.append((page, n))
         return out
 
-    def summary(self, dirty: list[tuple[PendingPage, int]] | None = None) -> str:
-        """Page names with their changed field counts."""
+    def rows(
+        self, dirty: list[tuple[PendingPage, int]] | None = None
+    ) -> list[tuple[PendingPage, Change]]:
+        """One row per changed field; a page without details gives one row
+        with an empty field and its change count as the new value."""
         if dirty is None:
             dirty = self.dirty()
-        return ", ".join(f"{p.name} ({n})" for p, n in dirty)
+        out = []
+        for page, n in dirty:
+            details = []
+            if page.details is not None:
+                try:
+                    details = page.details()
+                except Exception:
+                    details = []
+            if not details:
+                details = [("", "", f"{n} change{'s' if n != 1 else ''}")]
+            out += [(page, change) for change in details]
+        return out
+
+    @staticmethod
+    def _count(
+        dirty: list[tuple[PendingPage, int]], rows: list[tuple[PendingPage, Change]]
+    ) -> int:
+        """Changed fields; a page without details counts its change count."""
+        total = 0
+        for page, n in dirty:
+            fields = [change[0] for p, change in rows if p is page]
+            total += len(fields) if fields and fields[0] else n
+        return total
+
+    def summary(self, dirty: list[tuple[PendingPage, int]] | None = None) -> str:
+        """Changed field names, the first few, then "and N more"."""
+        return self._names(self.rows(dirty))
+
+    @staticmethod
+    def _names(rows: list[tuple[PendingPage, Change]]) -> str:
+        names = []
+        for page, (field, _old, new) in rows:
+            name = field or f"{page.name} ({new})"
+            if len(name) > _NAME_CHARS:
+                name = name[: _NAME_CHARS - 3] + "..."
+            if name not in names:
+                names.append(name)
+        if len(names) <= 3:
+            return ", ".join(names)
+        return ", ".join(names[:3]) + f" and {len(names) - 3} more"
+
+    def _change_lines(self) -> str:
+        """Changes as "Page: field old -> new" lines for a confirmation."""
+        lines = []
+        for page, (field, old, new) in self.rows():
+            if not field:
+                lines.append(f"{page.name}: {new}")
+            elif old:
+                lines.append(f"{page.name}: {field}  {old} \u2192 {new}")
+            else:
+                lines.append(f"{page.name}: {field}  {new}".rstrip())
+        if len(lines) > _PROMPT_ROWS:
+            more = len(lines) - _PROMPT_ROWS + 1
+            lines = lines[: _PROMPT_ROWS - 1] + [f"and {more} more"]
+        return "\n".join(lines)
 
     def _poll(self) -> None:
         self._poll_job = None
@@ -296,9 +414,14 @@ class PendingBar(ctk.CTkFrame):
         self._poll_job = self.after(_POLL_MS, self._poll)
 
     def _update(self) -> None:
-        text = self.summary()
+        dirty = self.dirty()
+        rows = self.rows(dirty) if dirty else []
+        text = self._names(rows)
         if text:
-            self._label.configure(text=f"Unapplied changes:  {text}")
+            n = self._count(dirty, rows)
+            self._label.configure(
+                text=f"{n} unapplied change{'s' if n != 1 else ''}:  {text}"
+            )
         if bool(text) != self._shown:
             self._shown = bool(text)
             self._on_visibility(self._shown)
@@ -381,7 +504,7 @@ class PendingBar(ctk.CTkFrame):
 
         if CTkMessageBox.askyesno(
             "Discard Changes",
-            f"Discard the unapplied changes?\n\n{self.summary()}",
+            f"Discard these unapplied changes?\n\n{self._change_lines()}",
             parent=self,
         ):
             self.discard_all()
@@ -399,8 +522,8 @@ class PendingBar(ctk.CTkFrame):
         choice = CTkMessageBox._create_dialog(
             self.winfo_toplevel(),
             "Unapplied Changes",
-            f"Slot {self._get_slot() + 1} has unapplied changes:\n"
-            f"{self.summary()}\n\nApply them before you {action}?",
+            f"Slot {self._get_slot() + 1} has unapplied changes:\n\n"
+            f"{self._change_lines()}\n\nApply them before you {action}?",
             icon_type="question",
             buttons=[("Apply", "apply"), ("Discard", "discard"), ("Cancel", None)],
         )
@@ -410,3 +533,90 @@ class PendingBar(ctk.CTkFrame):
             self.discard_all()
             return True
         return False
+
+    def _open_review(self) -> None:
+        """Every unapplied change with old and new value, a Show link per
+        row that brings its page to the front."""
+        rows = self.rows()
+        if not rows:
+            return
+        parent = self.winfo_toplevel()
+        dialog = ds.create(parent, "Unapplied Changes")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+
+        def close_then(action: Callable[[], object] | None) -> Callable[[], None]:
+            def run() -> None:
+                dialog.destroy()
+                if action is not None:
+                    action()
+
+            return run
+
+        ds.button_row(
+            main,
+            [
+                {"text": "Close", "command": dialog.destroy, "primary": False},
+                {"text": "Apply All", "command": close_then(self.apply_all)},
+            ],
+        )
+        ctk.CTkLabel(
+            main, text="Unapplied Changes", font=ds.TITLE_LARGE, anchor="w"
+        ).pack(fill=tk.X)
+        ctk.CTkLabel(
+            main,
+            text=f"Slot {self._get_slot() + 1}. Apply All writes these "
+            "changes in one save.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(2, 10))
+
+        def build(frame) -> None:
+            grid = ctk.CTkFrame(frame, fg_color=ds.BOX, corner_radius=8)
+            grid.pack(fill=tk.X)
+            for r, (page, (field, old, new)) in enumerate(rows):
+                pad = (8 if r == 0 else 2, 8 if r == len(rows) - 1 else 2)
+                ctk.CTkLabel(
+                    grid, text=page.name, font=ds.SMALL, text_color=ds.MUTED
+                ).grid(row=r, column=0, sticky="w", padx=(14, 14), pady=pad)
+                ctk.CTkLabel(grid, text=field, font=ds.BOLD, anchor="w").grid(
+                    row=r, column=1, sticky="w", padx=(0, 14), pady=pad
+                )
+                ctk.CTkLabel(
+                    grid,
+                    text=old,
+                    font=ds.FONT,
+                    text_color=ds.MUTED,
+                    anchor="w",
+                    wraplength=260,
+                    justify=tk.LEFT,
+                ).grid(row=r, column=2, sticky="w", pady=pad)
+                if old:
+                    ctk.CTkLabel(grid, text="\u2192", font=ds.FONT).grid(
+                        row=r, column=3, padx=8, pady=pad
+                    )
+                ctk.CTkLabel(
+                    grid,
+                    text=new,
+                    font=ds.BOLD,
+                    text_color=ds.INFO,
+                    anchor="w",
+                    wraplength=260,
+                    justify=tk.LEFT,
+                ).grid(row=r, column=4, sticky="w", pady=pad)
+                if page.show is not None:
+                    ctk.CTkButton(
+                        grid,
+                        text="Show",
+                        width=0,
+                        height=22,
+                        font=ds.SMALL,
+                        fg_color="transparent",
+                        hover_color=palette.PURPLE_TINT,
+                        text_color=ds.INFO,
+                        command=close_then(page.show),
+                    ).grid(row=r, column=5, padx=(14, 10), pady=pad)
+
+        ds.content(main, build, max_height=420)
+        ds.finish(dialog, parent, min_width=460)

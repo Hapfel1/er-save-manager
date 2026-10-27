@@ -276,6 +276,11 @@ class DS2EquipmentPanel:
             return 0
         return len(self.panel.staged) + (1 if self.attunement.changed() else 0)
 
+    def details(self):
+        if self.panel is None or self.panel.adapter is None:
+            return []
+        return self.panel.details() + self.attunement.details()
+
     def prepare(self):
         adapter = self._adapter()
         staged = self.panel.staged if self.panel is not None else {}

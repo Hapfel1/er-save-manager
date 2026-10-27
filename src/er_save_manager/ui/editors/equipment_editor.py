@@ -1074,7 +1074,11 @@ class EquipmentEditor:
         # For talisman/quickitem/pouch: direct handle (0xA0/0xB0 | base_id).
         # For spell/physick: unused (0), those fields store the raw id only.
         self._handles: dict[str, int] = {}
-        self.tracker = FieldTracker(self._collect_tracked)
+        # Slot key -> label, filled while the sections are built
+        self._slot_labels: dict[str, str] = {}
+        self.tracker = FieldTracker(
+            self._collect_tracked, self._slot_labels, self._tracked_name
+        )
         # Main window's Apply All, for the Visual Equipment Picker window
         self.apply_all = None
 
@@ -1283,6 +1287,7 @@ class EquipmentEditor:
 
             var = ctk.StringVar(value="0")
             self.equipment_vars[key] = var
+            self._slot_labels[key] = label
             self._handles.setdefault(key, 0)
 
             # Read-only display showing the resolved item name; click to pick
@@ -1464,6 +1469,15 @@ class EquipmentEditor:
             key: (self._get_raw(key), self._handles.get(key, 0))
             for key in self.equipment_vars
         }
+
+    def _tracked_name(self, key: str, value: tuple[int, int] | None) -> str:
+        """Item name of a tracked (raw id, handle) pair."""
+        raw = value[0] if value else 0
+        try:
+            name = _resolve_name(key, raw, self._is_cnv_save())
+        except Exception:
+            name = ""
+        return name or "(empty)"
 
     def _apply_spell_lock(self, slot):
         """Disable pick buttons for empty spell slots beyond the estimated cap.

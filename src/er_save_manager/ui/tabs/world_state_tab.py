@@ -15,7 +15,7 @@ from er_save_manager.data.locations import (
     get_all_locations,
     get_grace_locations,
 )
-from er_save_manager.data.world_map import location_map_point
+from er_save_manager.data.world_map import MAP_NAMES, location_map_point
 from er_save_manager.editors.map_markers import (
     BEACON,
     MARKER,
@@ -791,6 +791,31 @@ class WorldStateTab:
             return 0
         now = {self._marker_key(x) for x in m.markers}
         return max(1, len(now ^ self._marker_snapshot))
+
+    def marker_details(self):
+        """One row per marker or beacon added, removed, moved or given
+        another icon. Keys are _marker_key tuples."""
+        m = self.marker_editor
+        if m is None or not m.dirty:
+            return []
+        before = {key[1]: key for key in self._marker_snapshot}
+        after = {x.id: self._marker_key(x) for x in m.markers}
+        rows = []
+        for marker_id in sorted(before.keys() | after.keys()):
+            old, new = before.get(marker_id), after.get(marker_id)
+            if old == new:
+                continue
+            kind, _id, _x, _y, map_id, icon, _flags = new or old
+            field = f"{kind.capitalize()} ({MAP_NAMES.get(map_id, f'Map {map_id}')})"
+            if old is None:
+                rows.append((field, "", "Added"))
+            elif new is None:
+                rows.append((field, "", "Removed"))
+            elif old[5] != icon:
+                rows.append((field, f"Icon {old[5]}", f"Icon {icon}"))
+            else:
+                rows.append((field, "", "Moved"))
+        return rows
 
     def discard_markers(self) -> None:
         if self.marker_editor is not None:

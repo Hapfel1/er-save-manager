@@ -71,7 +71,11 @@ class AppearanceTab:
                     "mark": self._mark_var,
                     "eye_alterations": self._eye_alterations_var,
                 }
-            )
+            ),
+            {
+                "mark": "Frenzied Flame mark",
+                "eye_alterations": "Eye alterations shown",
+            },
         )
 
     def setup_ui(self):
@@ -327,6 +331,9 @@ class AppearanceTab:
 
     def eye_changes(self) -> int:
         return self._eye_tracker.changes()
+
+    def eye_details(self):
+        return self._eye_tracker.details()
 
     def discard_eyes(self) -> None:
         if self.current_slot is not None:

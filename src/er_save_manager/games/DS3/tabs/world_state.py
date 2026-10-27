@@ -93,6 +93,7 @@ class DS3WorldStateTab:
                     self._ng_tracker.changes,
                     self._prepare_ng,
                     self._discard_ng,
+                    details=self._ng_tracker.details,
                 )
             )
 
@@ -109,7 +110,7 @@ class DS3WorldStateTab:
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
-        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}))
+        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}), {"ng": "NG+"})
         ctk.CTkComboBox(
             row, variable=self._ng_var, values=_NG_CHOICES, state="readonly", width=80
         ).pack(side="left", padx=(0, 10))

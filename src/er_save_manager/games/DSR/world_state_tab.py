@@ -154,7 +154,7 @@ class DSRWorldStateTab:
         ).pack(side="left", padx=(0, 20))
         ctk.CTkLabel(ng_row, text="Set to:").pack(side="left", padx=(0, 6))
         self._ng_var = ctk.StringVar(value="0")
-        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}))
+        self._ng_tracker = FieldTracker(var_state({"ng": self._ng_var}), {"ng": "NG+"})
         ctk.CTkComboBox(
             ng_row,
             variable=self._ng_var,
@@ -169,6 +169,7 @@ class DSRWorldStateTab:
                     self._ng_tracker.changes,
                     self._prepare_ng,
                     lambda: self.load_slot(self._current_slot),
+                    details=self._ng_tracker.details,
                 )
             )
 
