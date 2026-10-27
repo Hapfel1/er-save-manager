@@ -670,8 +670,15 @@ class NRCharacterManagementTab:
         if to_slot is None:
             return
 
-        if target_save.slots[to_slot].is_empty() and not self._confirm_empty_target(
-            to_slot
+        target_slot = target_save.slots[to_slot]
+        if target_slot.is_empty():
+            if not self._confirm_empty_target(to_slot):
+                return
+        elif not CTkMessageBox.askyesno(
+            "Overwrite?",
+            f"Slot {to_slot + 1} of {Path(target_path).name} contains "
+            f"'{target_slot.player_name}'.\n\nOverwrite?",
+            parent=self.parent,
         ):
             return
 
