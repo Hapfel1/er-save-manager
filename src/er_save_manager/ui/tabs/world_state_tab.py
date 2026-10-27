@@ -10,10 +10,12 @@ from typing import TYPE_CHECKING
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
+from er_save_manager.data.floor_points import known_map, nearest_floor, warp_point
 from er_save_manager.data.locations import (
     MapLocation,
     get_all_locations,
     get_grace_locations,
+    get_name_for_map_id,
 )
 from er_save_manager.data.world_map import MAP_NAMES, location_map_point
 from er_save_manager.editors.map_markers import (
@@ -23,7 +25,7 @@ from er_save_manager.editors.map_markers import (
     copy_markers,
 )
 from er_save_manager.editors.map_unlock import unlock
-from er_save_manager.editors.world_state import WorldStateEditor
+from er_save_manager.editors.world_state import WorldStateEditor, _map_id_to_str
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags, FixFlags
 from er_save_manager.ui import dialog_style as ds
@@ -53,6 +55,38 @@ if TYPE_CHECKING:
 
 # Interval at which the UI thread checks for the decoded map thumbnail.
 _THUMB_POLL_MS = 50
+
+
+# A custom position counts as on the floor within this distance of a floor
+# point; a snap target is searched within SNAP_RADIUS.
+FLOOR_TOLERANCE = 4.0
+SNAP_RADIUS = 32.0
+
+
+def parse_custom_map_id(raw: str) -> MapId:
+    """MapId from "m60_42_36_00", "60 42 36 00" or 8 hex digits of the
+    stored bytes. Raises ValueError on a malformed value."""
+    raw = raw.strip()
+    if not raw:
+        raise ValueError("Map ID cannot be empty")
+    if raw.startswith("m"):
+        parts = raw[1:].split("_")
+        if len(parts) != 4:
+            raise ValueError("Format must be m##_##_##_##")
+        vals = [int(p) for p in parts]
+        map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
+    elif " " in raw:
+        parts = raw.split()
+        if len(parts) != 4:
+            raise ValueError("Space format must be ## ## ## ##")
+        vals = [int(p) for p in parts]
+        map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
+    else:
+        clean = raw.replace("-", "").replace("_", "")
+        if len(clean) != 8:
+            raise ValueError("Hex format must be 8 digits")
+        map_bytes = bytes.fromhex(clean)
+    return MapId(map_bytes)
 
 
 class WorldStateTab:
@@ -1175,6 +1209,14 @@ class WorldStateTab:
             font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(side=tk.LEFT)
+        self.custom_map_name_var = tk.StringVar(value="")
+        ctk.CTkLabel(
+            map_frame,
+            textvariable=self.custom_map_name_var,
+            font=("Inter", 10),
+            text_color=("gray40", "gray70"),
+        ).pack(anchor="w", padx=10, pady=(0, 10))
+        self.map_id_var.trace_add("write", lambda *_: self._show_custom_map_name())
 
         coords_frame = ctk.CTkFrame(self.content_frame, corner_radius=12)
         coords_frame.pack(fill=tk.X, pady=(0, 15))
@@ -1183,7 +1225,7 @@ class WorldStateTab:
         ).pack(anchor="w", padx=10, pady=(10, 5))
         ctk.CTkLabel(
             coords_frame,
-            text="Leave 0.0 to use current coordinates",
+            text="Leave 0.0 for the map's warp point (current position on the same map)",
             font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(padx=10, pady=(0, 10))
@@ -1221,47 +1263,30 @@ class WorldStateTab:
             notify(self.parent, "Load a character first.", "warning")
             return
 
+        raw = self.map_id_var.get().strip()
         try:
-            raw = self.map_id_var.get().strip()
-            if not raw:
-                raise ValueError("Map ID cannot be empty")
-
-            if raw.startswith("m"):
-                parts = raw[1:].split("_")
-                if len(parts) != 4:
-                    raise ValueError("Format must be m##_##_##_##")
-                vals = [int(p) for p in parts]
-                map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
-            elif " " in raw:
-                parts = raw.split()
-                if len(parts) != 4:
-                    raise ValueError("Space format must be ## ## ## ##")
-                vals = [int(p) for p in parts]
-                map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
-            else:
-                clean = raw.replace("-", "").replace("_", "")
-                if len(clean) != 8:
-                    raise ValueError("Hex format must be 8 digits")
-                map_bytes = bytes.fromhex(clean)
-
-            map_id = MapId(map_bytes)
+            map_id = parse_custom_map_id(raw)
         except ValueError as e:
             CTkMessageBox.showerror(
                 "Invalid Map ID",
-                f"{e}\n\nValid formats:\n  m60_42_36_00\n  60 42 36 00\n  00362A3C (hex)",
+                f"{e}\n\nValid formats:\n  m60_42_36_00\n  60 42 36 00\n  00242A3C (hex)",
                 parent=self.parent,
             )
+            return
+        map_str = _map_id_to_str(map_id)
+
+        if not known_map(map_str, self._convergence) and not CTkMessageBox.askyesno(
+            "Unknown Map ID",
+            f"{map_str} is not a known map. The game may load forever or "
+            "crash on this save.\n\nTeleport anyway?",
+            parent=self.parent,
+        ):
             return
 
         try:
             x = float(self.custom_x_var.get() or "0")
             y = float(self.custom_y_var.get() or "0")
             z = float(self.custom_z_var.get() or "0")
-            if x == 0.0 and y == 0.0 and z == 0.0:
-                info = self.editor.get_current_location()
-                coords = info["coordinates"] or FloatVector3(0.0, 0.0, 0.0)
-            else:
-                coords = FloatVector3(x, y, z)
         except ValueError:
             CTkMessageBox.showerror(
                 "Invalid Coordinates",
@@ -1270,10 +1295,25 @@ class WorldStateTab:
             )
             return
 
+        if x == 0.0 and y == 0.0 and z == 0.0:
+            info = self.editor.get_current_location()
+            if info.get("map_id_str") == map_str:
+                coords = info["coordinates"]
+            else:
+                warp = warp_point(map_str, self._convergence)
+                coords = FloatVector3(*warp) if warp else None
+        else:
+            coords = self._check_custom_floor(map_str, x, y, z)
+            if coords is False:
+                return
+            if isinstance(coords, tuple):
+                map_str, coords = coords
+                map_id = parse_custom_map_id(map_str)
+
         if (
             map_id.is_dlc()
             and not self._has_dlc()
-            and not confirm_dlc_teleport(self.parent, f"Map {raw}")
+            and not confirm_dlc_teleport(self.parent, f"Map {map_str}")
         ):
             return
 
@@ -1282,9 +1322,12 @@ class WorldStateTab:
         ) and not confirm_ashen_teleport(self.parent):
             return
 
-        if not confirm_custom_teleport(
-            self.parent, f"X={coords.x}, Y={coords.y}, Z={coords.z}"
-        ):
+        coord_text = (
+            f"X={coords.x}, Y={coords.y}, Z={coords.z}"
+            if coords is not None
+            else "the game's default spawn"
+        )
+        if not confirm_custom_teleport(self.parent, f"{coord_text} on {map_str}"):
             return
 
         save_path = self.get_save_path()
@@ -1306,6 +1349,63 @@ class WorldStateTab:
             self.show_toast(message, duration=2500)
         else:
             CTkMessageBox.showerror("Teleport Failed", message, parent=self.parent)
+
+    def _show_custom_map_name(self):
+        raw = self.map_id_var.get().strip()
+        if not raw:
+            self.custom_map_name_var.set("")
+            return
+        try:
+            map_str = _map_id_to_str(parse_custom_map_id(raw))
+        except ValueError:
+            self.custom_map_name_var.set("Incomplete or invalid map ID")
+            return
+        if not known_map(map_str, self._convergence):
+            self.custom_map_name_var.set(f"{map_str}: unknown map")
+            return
+        name = get_name_for_map_id(map_str)
+        self.custom_map_name_var.set(
+            f"{map_str}: {name}"
+            if name != map_str
+            else f"{map_str}: known map, no name"
+        )
+
+    def _check_custom_floor(self, map_str: str, x: float, y: float, z: float):
+        """Coordinates to teleport to after the floor check: FloatVector3 to
+        keep the map, (map id, FloatVector3) for a snap into a neighbouring
+        tile, or False when the user cancels."""
+        coords = FloatVector3(x, y, z)
+        hit = nearest_floor(map_str, x, y, z, self._convergence, FLOOR_TOLERANCE)
+        if hit is not None and hit[0] <= FLOOR_TOLERANCE:
+            return coords
+        snap = nearest_floor(map_str, x, y, z, self._convergence, SNAP_RADIUS)
+        if snap is None:
+            if CTkMessageBox.askyesno(
+                "No Floor Near Coordinates",
+                f"There is no walkable floor within {SNAP_RADIUS:.0f} units of "
+                f"X={x}, Y={y}, Z={z} on {map_str}. The character may fall "
+                "or spawn inside geometry.\n\nTeleport anyway?",
+                parent=self.parent,
+            ):
+                return coords
+            return False
+        dist, snap_map, sx, sy, sz = snap
+        where = f" on {snap_map}" if snap_map != map_str else ""
+        answer = CTkMessageBox.askyesnocancel(
+            "No Floor Near Coordinates",
+            f"There is no walkable floor within {FLOOR_TOLERANCE:.0f} units of "
+            f"X={x}, Y={y}, Z={z} on {map_str}.\n\n"
+            f"The nearest floor is X={sx:.1f}, Y={sy:.2f}, Z={sz:.1f}{where} "
+            f"({dist:.0f} units away). Move the teleport point there?\n\n"
+            "Yes moves it, No keeps the coordinates as entered.",
+            parent=self.parent,
+        )
+        if answer is None:
+            return False
+        if not answer:
+            return coords
+        snapped = FloatVector3(sx, sy, sz)
+        return (snap_map, snapped) if snap_map != map_str else snapped
 
     def _refresh_marker_summary(self):
         if not hasattr(self, "markers_var"):
