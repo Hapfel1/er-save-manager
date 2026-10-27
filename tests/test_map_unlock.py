@@ -5,7 +5,7 @@ import struct
 from er_save_manager.data.grace_data import grace_region_ids
 from er_save_manager.data.locations import get_grace_locations
 from er_save_manager.data.map_pieces import MAP_PIECES
-from er_save_manager.editors.map_unlock import add_regions, unlock
+from er_save_manager.editors.map_unlock import add_regions, set_regions, unlock
 from er_save_manager.parser import Save
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.parser.inventory_ops import SLOT_DATA_SIZE
@@ -39,6 +39,34 @@ def test_add_regions_keeps_slot_size_and_other_slots(sanitized_save):
     assert regions.count == count + 2
     assert regions.region_ids[-2:] == new
     assert add_regions(sanitized_save, idx, new) == 0
+
+
+def test_set_regions_moves_only_the_list(sanitized_save):
+    idx = _first_slot(sanitized_save)
+    slot = sanitized_save.character_slots[idx]
+    start = slot.data_start
+    ids = list(slot.unlocked_regions.region_ids)
+    list_start = slot.horse_offset - 4 * len(ids) - 4
+    before = bytes(sanitized_save._raw_data)
+    after_list = before[slot.horse_offset : start + SLOT_DATA_SIZE]
+
+    kept = ids[1:]
+    set_regions(sanitized_save, idx, kept)
+    after = bytes(sanitized_save._raw_data)
+    assert len(after) == len(before)
+    assert after[:list_start] == before[:list_start]
+    assert after[start + SLOT_DATA_SIZE :] == before[start + SLOT_DATA_SIZE :]
+    moved = slot.horse_offset - 4
+    assert after[moved : moved + len(after_list)] == after_list
+    assert after[start + SLOT_DATA_SIZE - 4 : start + SLOT_DATA_SIZE] == bytes(4)
+    regions = sanitized_save.character_slots[idx].unlocked_regions
+    assert regions.region_ids == kept and regions.count == len(kept)
+
+    set_regions(sanitized_save, idx, ids)
+    assert (
+        bytes(sanitized_save._raw_data)[: start + SLOT_DATA_SIZE - 4]
+        == (before[: start + SLOT_DATA_SIZE - 4])
+    )
 
 
 def test_unlock_round_trip(sanitized_save, sanitized_save_copy):

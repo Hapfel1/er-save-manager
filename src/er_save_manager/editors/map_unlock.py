@@ -6,10 +6,11 @@ rectangles) and a fog of war grid; the art of a revealed piece is drawn only
 on cleared fog cells. Unlocking pieces updates both (map_menu_bounds,
 FOG_* below). A grace's play regions
 (data/grace_regions.json) go into the slot's Regions list, a u32 count plus
-that many u32 ids right before the horse data. Adding ids grows the list, so
-every later section moves; the slot keeps its size by dropping as many bytes
-from the end of slot.rest, the stale buffer after PlayerGameDataHash. The slot
-is parsed again afterwards so later writes use the moved offsets.
+that many u32 ids right before the horse data. Resizing the list moves every
+later section; the slot keeps its size by dropping bytes from the end of
+slot.rest, the stale buffer after PlayerGameDataHash, or by zero-filling it
+when the list shrinks. The slot is parsed again afterwards so later writes use
+the moved offsets.
 """
 
 from __future__ import annotations
@@ -150,32 +151,32 @@ def update_map_menu(save: Save, slot_idx: int, piece_flags: Iterable[int]) -> in
     return cleared
 
 
-def add_regions(save: Save, slot_idx: int, region_ids: Iterable[int]) -> int:
-    """Append the ids the slot's Regions list lacks. Returns how many were added.
+def set_regions(save: Save, slot_idx: int, region_ids: list[int]) -> None:
+    """Replace the slot's Regions list with region_ids, in that order.
 
+    Only the list bytes change; every other section is moved as is.
     Raises ValueError when the parsed list does not match the bytes or the
     slot has no stale tail left to absorb the growth.
     """
     slot = save.character_slots[slot_idx]
     regions = slot.unlocked_regions
-    have = set(regions.region_ids)
-    new = [rid for rid in dict.fromkeys(region_ids) if rid not in have]
-    if not new:
-        return 0
-
     start = slot.data_start
     list_end = slot.horse_offset
     count_off = list_end - 4 - 4 * regions.count
     if struct.unpack_from("<I", save._raw_data, count_off)[0] != regions.count:
         raise ValueError("the Regions list is not where the parse put it")
-    grow = 4 * len(new)
+    grow = 4 * (len(region_ids) - regions.count)
     if len(slot.rest) < grow:
         raise ValueError("the slot has no room left for more regions")
 
     work = save._raw_data[start : start + SLOT_DATA_SIZE]
-    struct.pack_into("<I", work, count_off - start, regions.count + len(new))
-    work[list_end - start : list_end - start] = struct.pack(f"<{len(new)}I", *new)
-    del work[SLOT_DATA_SIZE:]
+    work[count_off - start : list_end - start] = struct.pack(
+        f"<I{len(region_ids)}I", len(region_ids), *region_ids
+    )
+    if len(work) > SLOT_DATA_SIZE:
+        del work[SLOT_DATA_SIZE:]
+    else:
+        work.extend(bytes(SLOT_DATA_SIZE - len(work)))
     save._raw_data[start : start + SLOT_DATA_SIZE] = work
 
     stream = BytesIO(save._raw_data)
@@ -183,6 +184,17 @@ def add_regions(save: Save, slot_idx: int, region_ids: Iterable[int]) -> int:
     save.character_slots[slot_idx] = UserDataX.read(
         stream, save.is_ps, start, SLOT_DATA_SIZE
     )
+
+
+def add_regions(save: Save, slot_idx: int, region_ids: Iterable[int]) -> int:
+    """Append the ids the slot's Regions list lacks. Returns how many were added.
+
+    Raises ValueError as set_regions does.
+    """
+    have = save.character_slots[slot_idx].unlocked_regions.region_ids
+    new = [rid for rid in dict.fromkeys(region_ids) if rid not in set(have)]
+    if new:
+        set_regions(save, slot_idx, have + new)
     return len(new)
 
 
