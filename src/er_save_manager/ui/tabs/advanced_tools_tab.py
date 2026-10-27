@@ -9,6 +9,7 @@ import customtkinter as ctk
 from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify
 
@@ -146,8 +147,11 @@ class AdvancedToolsTab:
 
             save_path = self.get_save_path()
             if save_path:
-                size_mb = Path(save_path).stat().st_size / (1024 * 1024)
-                info.append(f"File Size: {size_mb:.2f} MB")
+                try:
+                    size_mb = Path(save_path).stat().st_size / (1024 * 1024)
+                    info.append(f"File Size: {size_mb:.2f} MB")
+                except OSError:
+                    info.append("File Size: file not found on disk")
 
             self.save_info_text.configure(state="normal")
             self.save_info_text.delete("1.0", tk.END)
@@ -174,18 +178,21 @@ class AdvancedToolsTab:
             try:
                 _ = save_file.magic  # ensure attribute exists
             except Exception:
-                issues.append("⚠ Missing/invalid file header (magic bytes)")
+                issues.append("- Missing/invalid file header (magic bytes)")
 
             active_slots = save_file.get_active_slots()
             if len(active_slots) == 0:
-                issues.append("⚠ No active character slots found")
+                issues.append("- No active character slots found")
 
             # Check file size against in-memory data length instead of a fixed constant
             save_path = self.get_save_path()
+            size = None
             if save_path:
-                from pathlib import Path
-
-                size = Path(save_path).stat().st_size
+                try:
+                    size = Path(save_path).stat().st_size
+                except OSError:
+                    issues.append(f"- The save file is no longer on disk: {save_path}")
+            if size is not None:
                 try:
                     expected_size = len(save_file._raw_data)
                 except Exception:
@@ -193,7 +200,7 @@ class AdvancedToolsTab:
 
                 if expected_size is not None and size != expected_size:
                     issues.append(
-                        f"⚠ File size {size} bytes (expected {expected_size})"
+                        f"- File size {size} bytes (expected {expected_size})"
                     )
 
             # PS saves have no per-slot checksums
@@ -207,7 +214,7 @@ class AdvancedToolsTab:
                         valid, stored, computed = check_slot_checksum(save_file, i)
                         if not valid:
                             issues.append(
-                                f"⚠ Slot {i + 1}: Invalid checksum (stored {stored[:8]}... computed {computed[:8]}...)"
+                                f"- Slot {i + 1}: Invalid checksum (stored {stored[:8]}... computed {computed[:8]}...)"
                             )
                 except Exception:
                     pass
@@ -224,13 +231,13 @@ class AdvancedToolsTab:
                 with contextlib.suppress(Exception):
                     name = slot.get_character_name()
                 if not name:
-                    issues.append(f"⚠ Slot {i + 1}: Character has no name")
+                    issues.append(f"- Slot {i + 1}: Character has no name")
 
                 level = None
                 with contextlib.suppress(Exception):
                     level = slot.get_level()
                 if level is None or level <= 0:
-                    issues.append(f"⚠ Slot {i + 1}: Character level is 0")
+                    issues.append(f"- Slot {i + 1}: Character level is 0")
 
             if not issues:
                 notify(
@@ -262,32 +269,35 @@ class AdvancedToolsTab:
             notify(self.parent, "PlayStation saves do not use slot checksums.", "info")
             return
 
+        save_path = self.get_save_path()
+        if not save_path:
+            CTkMessageBox.showerror(
+                "No Save File", "Save path not available", parent=self.parent
+            )
+            return
+        if not save_writable():
+            return
+
         try:
-            # Always create a backup first (no confirmation requested)
-            save_path = self.get_save_path()
-            if save_path:
-                manager = BackupManager(Path(save_path))
-                manager.create_backup(
-                    description="before_checksum_recalc",
-                    operation="advanced_recalculate_checksums",
-                    save=save_file,
-                )
-
-            save_file.recalculate_checksums()
-
-            if save_path:
-                save_file.to_file(save_path)
-                self.reload_save()
-                self.update_save_info()
-                self.show_toast("Checksums recalculated successfully", duration=2500)
-            else:
-                CTkMessageBox.showerror(
-                    "No Save File", "Save path not available", parent=self.parent
-                )
-
+            BackupManager(Path(save_path)).create_backup(
+                description="before_checksum_recalc",
+                operation="advanced_recalculate_checksums",
+                save=save_file,
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Recalculation Error",
-                f"Failed to recalculate checksums:\n{e}",
+                f"Could not back up the save, nothing was changed:\n{e}",
                 parent=self.parent,
             )
+            return
+
+        save_file.recalculate_checksums()
+        try:
+            save_file.to_file(save_path)
+        except OSError as exc:
+            write_failed(exc, self.parent)
+            return
+        self.reload_save()
+        self.update_save_info()
+        self.show_toast("Checksums recalculated successfully", duration=2500)

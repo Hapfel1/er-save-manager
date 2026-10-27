@@ -152,21 +152,26 @@ class HexEditorTab:
             notify(self.parent, "Load a save file first.", "warning")
             return
 
-        offset_str = self.hex_offset_var.get().strip()
+        offset_str = self.hex_offset_var.get().strip().lower()
         try:
-            if offset_str.startswith("0x"):
+            if offset_str.lstrip("-").startswith("0x"):
                 offset = int(offset_str, 16)
             else:
                 offset = int(offset_str)
-
-            self.hex_display_at_offset(offset)
-
         except ValueError:
             CTkMessageBox.showerror(
                 "Invalid Offset",
-                "Enter a valid hex offset (e.g., 0x1000).",
+                "Offset must be a hex number with 0x (e.g. 0x1000) or a "
+                "decimal number.",
                 parent=self.parent,
             )
+            return
+        if offset < 0:
+            CTkMessageBox.showerror(
+                "Invalid Offset", "Offset cannot be negative.", parent=self.parent
+            )
+            return
+        self.hex_display_at_offset(offset)
 
     def hex_display_at_offset(self, offset=0, length=512):
         """Display hex data at offset."""
@@ -180,7 +185,8 @@ class HexEditorTab:
         if offset >= max_offset:
             CTkMessageBox.showerror(
                 "Invalid Offset",
-                f"Offset {offset} exceeds file size {max_offset}",
+                f"Offset 0x{offset:X} is past the end of the save "
+                f"(size 0x{max_offset:X}).",
                 parent=self.parent,
             )
             return
