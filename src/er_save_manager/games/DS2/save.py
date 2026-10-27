@@ -110,6 +110,10 @@ APPEARANCE_SIZE = 0xA4
 NAME_MAX_CHARS = 14
 NAME_MAX_CHARS_SEAMLESS = NAME_SIZE // 2 - 1
 SOULS_OFFSET = 60
+# Largest value the u32 souls field holds; the game's own cap is unknown.
+SOULS_MAX = 0xFFFFFFFF
+# Attributes and level are u16.
+_STAT_FIELD_MAX = 0xFFFF
 HP_OFFSET = 72
 # Stored 1-based: 1 is the first playthrough, 2 is NG+1, and so on.
 # Character.new_game_plus exposes the 0-based cycle.
@@ -1426,8 +1430,17 @@ class Character:
 
     @name.setter
     def name(self, value: str) -> None:
-        encoded = value.encode("utf-16-le")[: NAME_SIZE - 2].ljust(NAME_SIZE, b"\x00")
-        self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE] = encoded
+        """Raises ValueError for a name longer than NAME_MAX_CHARS_SEAMLESS
+        UTF-16 code units, which would leave no terminator."""
+        encoded = value.encode("utf-16-le")
+        if len(encoded) > NAME_SIZE - 2:
+            raise ValueError(
+                f"Name is {len(encoded) // 2} UTF-16 code units, the field holds "
+                f"{NAME_MAX_CHARS_SEAMLESS}."
+            )
+        self._data[NAME_OFFSET : NAME_OFFSET + NAME_SIZE] = encoded.ljust(
+            NAME_SIZE, b"\x00"
+        )
 
     @property
     def souls(self) -> int:
@@ -1435,9 +1448,11 @@ class Character:
 
     @souls.setter
     def souls(self, value: int) -> None:
-        struct.pack_into(
-            "<I", self._data, SOULS_OFFSET, max(0, min(int(value), 0xFFFFFFFF))
-        )
+        """Raises ValueError outside 0..SOULS_MAX."""
+        value = int(value)
+        if not 0 <= value <= SOULS_MAX:
+            raise ValueError(f"Souls must be 0-{SOULS_MAX:,}, got {value:,}.")
+        struct.pack_into("<I", self._data, SOULS_OFFSET, value)
 
     @property
     def soul_memory(self) -> int:
@@ -1571,8 +1586,11 @@ class Character:
         return struct.unpack_from("<H", self._data, off)[0]
 
     def set_stat(self, stat_name: str, value: int) -> None:
-        off = STAT_OFFSETS[stat_name]
-        struct.pack_into("<H", self._data, off, max(0, min(int(value), 0xFFFF)))
+        """Raises ValueError for a value the u16 field cannot hold."""
+        value = int(value)
+        if not 0 <= value <= _STAT_FIELD_MAX:
+            raise ValueError(f"{stat_name} must be 0-{_STAT_FIELD_MAX}, got {value}.")
+        struct.pack_into("<H", self._data, STAT_OFFSETS[stat_name], value)
 
     def inventory(self) -> list[InventoryItem]:
         return parse_inventory(self._data, INVENTORY_START, INVENTORY_END)
