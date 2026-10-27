@@ -22,6 +22,12 @@ def _map_id_to_str(map_id: MapId) -> str:
     return f"m{d[3]:02d}_{d[2]:02d}_{d[1]:02d}_{d[0]:02d}"
 
 
+def _pack_coords(coords) -> bytes:
+    """Coordinates as three little-endian f32; raises struct.error for a
+    value outside the f32 range."""
+    return struct.pack("<fff", coords.x, coords.y, coords.z)
+
+
 class WorldStateEditor:
     """Read and write player world state from a parsed save slot."""
 
@@ -139,6 +145,10 @@ class WorldStateEditor:
     def teleport_to_custom(self, map_id: MapId, coords=None) -> tuple[bool, str]:
         """Teleport to a custom MapId with optional coordinates."""
         try:
+            # Packed first: a value out of f32 range fails before the map id
+            # changes.
+            if coords is not None:
+                _pack_coords(coords)
             self._write_map_id_raw(map_id, zero_coords=(coords is None))
             if coords is not None:
                 self._write_coordinates(coords)
@@ -191,10 +201,7 @@ class WorldStateEditor:
             raise RuntimeError("coordinates_offset not available")
 
         offset = slot.coordinates_offset
-        raw = self._save._raw_data
-        raw[offset : offset + 4] = struct.pack("<f", coords.x)
-        raw[offset + 4 : offset + 8] = struct.pack("<f", coords.y)
-        raw[offset + 8 : offset + 12] = struct.pack("<f", coords.z)
+        self._save._raw_data[offset : offset + 12] = _pack_coords(coords)
 
         try:
             slot.player_coordinates.coordinates.x = coords.x

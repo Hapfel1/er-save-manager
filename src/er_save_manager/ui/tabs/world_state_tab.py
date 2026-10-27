@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import math
+import string
+import struct
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -45,7 +48,7 @@ from er_save_manager.ui.map_view import (
     open_map_window,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import StageError
+from er_save_manager.ui.pending import StageError, save_writable, write_failed
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
@@ -57,8 +60,8 @@ if TYPE_CHECKING:
 _THUMB_POLL_MS = 50
 
 
-# A custom position counts as on the floor within this distance of a floor
-# point; a snap target is searched within SNAP_RADIUS.
+# A custom position counts as on the floor within this 3D distance of a
+# floor point; a snap target is searched within SNAP_RADIUS horizontally.
 FLOOR_TOLERANCE = 4.0
 SNAP_RADIUS = 32.0
 
@@ -68,25 +71,45 @@ def parse_custom_map_id(raw: str) -> MapId:
     stored bytes. Raises ValueError on a malformed value."""
     raw = raw.strip()
     if not raw:
-        raise ValueError("Map ID cannot be empty")
+        raise ValueError("Map ID cannot be empty.")
     if raw.startswith("m"):
         parts = raw[1:].split("_")
         if len(parts) != 4:
-            raise ValueError("Format must be m##_##_##_##")
-        vals = [int(p) for p in parts]
-        map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
+            raise ValueError("Map ID must have four parts: m##_##_##_##.")
     elif " " in raw:
         parts = raw.split()
         if len(parts) != 4:
-            raise ValueError("Space format must be ## ## ## ##")
-        vals = [int(p) for p in parts]
-        map_bytes = bytes([vals[3], vals[2], vals[1], vals[0]])
+            raise ValueError("Map ID must have four parts: ## ## ## ##.")
     else:
         clean = raw.replace("-", "").replace("_", "")
-        if len(clean) != 8:
-            raise ValueError("Hex format must be 8 digits")
-        map_bytes = bytes.fromhex(clean)
-    return MapId(map_bytes)
+        if len(clean) != 8 or any(c not in string.hexdigits for c in clean):
+            raise ValueError("A hex map ID must be 8 hex digits (0-9, A-F).")
+        return MapId(bytes.fromhex(clean))
+    if not all(p.isascii() and p.isdigit() and int(p) <= 255 for p in parts):
+        raise ValueError("Each part of the map ID must be a number from 0 to 255.")
+    vals = [int(p) for p in parts]
+    return MapId(bytes([vals[3], vals[2], vals[1], vals[0]]))
+
+
+# Largest finite f32; coordinates are stored as f32.
+_F32_MAX = struct.unpack("<f", b"\xff\xff\x7f\x7f")[0]
+
+
+def parse_coordinate(axis: str, raw: str) -> float:
+    """Coordinate entry as a float that fits an f32; empty is 0. Raises
+    ValueError with a message naming the axis."""
+    try:
+        value = float(raw.strip() or "0")
+    except ValueError:
+        raise ValueError(f"{axis} must be a number.") from None
+    if not math.isfinite(value):
+        raise ValueError("Coordinates must be finite numbers.")
+    if abs(value) > _F32_MAX:
+        raise ValueError(
+            f"{axis} is out of range. Coordinates must be between "
+            f"-{_F32_MAX:.4g} and {_F32_MAX:.4g}."
+        )
+    return value
 
 
 class WorldStateTab:
@@ -486,6 +509,8 @@ class WorldStateTab:
             parent=self._dialog_parent(),
         ):
             return
+        if not save_writable():
+            return
 
         save_path = self.get_save_path()
         if save_path:
@@ -498,8 +523,8 @@ class WorldStateTab:
         success, message = self.editor.sync_bloodstain_to_player()
         if success:
             if save_path:
-                self.get_save_file().recalculate_checksums()
-                self.get_save_file().to_file(save_path)
+                if not self._write_save(save_path):
+                    return
                 self.reload_save()
                 self._reload_editor()
                 self.refresh()
@@ -605,7 +630,7 @@ class WorldStateTab:
             self._grace_state,
             self._dialog_parent(),
         )
-        if grace_flags is None:
+        if grace_flags is None or not save_writable():
             return
         try:
             result = unlock(
@@ -642,7 +667,7 @@ class WorldStateTab:
     def _set_graces(self, flag_ids: list[int], state: bool):
         """Lock or unlock graces: write their event flags and save the file."""
         save = self.get_save_file()
-        if save is None or self.editor is None:
+        if save is None or self.editor is None or not save_writable():
             return
         slot = save.character_slots[self.slot_var.get() - 1]
         flags = bytearray(slot.event_flags)
@@ -667,7 +692,7 @@ class WorldStateTab:
         """Mark a world item pickup collected, or clear its flag so the item
         is placed again, and save the file."""
         save = self.get_save_file()
-        if save is None or self.editor is None:
+        if save is None or self.editor is None or not save_writable():
             return
         slot = save.character_slots[self.slot_var.get() - 1]
         flags = bytearray(slot.event_flags)
@@ -702,6 +727,8 @@ class WorldStateTab:
         to_roundtable also teleports the character to Roundtable Hold."""
         save = self.get_save_file()
         if save is None or self.editor is None:
+            return
+        if not save_writable():
             return
         index = self.slot_var.get() - 1
         slot = save.character_slots[index]
@@ -777,12 +804,24 @@ class WorldStateTab:
         BackupManager(Path(save_path)).create_backup(
             description=description, operation=operation, save=save
         )
-        save.recalculate_checksums()
-        save.to_file(save_path)
+        if not self._write_save(save_path):
+            return False
         if reload:
             self.reload_save()
             self._reload_editor()
         self.refresh()
+        return True
+
+    def _write_save(self, save_path) -> bool:
+        """Write the edited save; on failure report it and reload from disk,
+        which drops the in-memory change."""
+        save = self.get_save_file()
+        save.recalculate_checksums()
+        try:
+            save.to_file(save_path)
+        except OSError as exc:
+            write_failed(exc, self._dialog_parent())
+            return False
         return True
 
     def _apply_markers(self, editor: MapMarkerEditor) -> MapMarkerEditor | None:
@@ -1001,7 +1040,7 @@ class WorldStateTab:
             f"Replace the markers and beacons of slot {target + 1}, or append "
             "to the ones it has?",
         )
-        if replace is None:
+        if replace is None or not save_writable():
             return
         added, skipped = copy_markers(save, markers, target, replace)
         if not self._persist("before_copy_map_markers", "world_state_copy_markers"):
@@ -1160,6 +1199,8 @@ class WorldStateTab:
             loc, self._convergence, self._grace_state, self._dialog_parent()
         ):
             return
+        if not save_writable():
+            return
 
         save_path = self.get_save_path()
         if save_path:
@@ -1172,8 +1213,8 @@ class WorldStateTab:
         success, message = self.editor.teleport_to_location(loc)
         if success:
             if save_path:
-                self.get_save_file().recalculate_checksums()
-                self.get_save_file().to_file(save_path)
+                if not self._write_save(save_path):
+                    return
                 self.reload_save()
                 self._reload_editor()
                 self.refresh()
@@ -1276,6 +1317,13 @@ class WorldStateTab:
             )
             return
         map_str = _map_id_to_str(map_id)
+        try:
+            x = parse_coordinate("X", self.custom_x_var.get())
+            y = parse_coordinate("Y", self.custom_y_var.get())
+            z = parse_coordinate("Z", self.custom_z_var.get())
+        except ValueError as e:
+            CTkMessageBox.showerror("Invalid Coordinates", str(e), parent=self.parent)
+            return
 
         if not known_map(map_str, self._convergence) and not CTkMessageBox.askyesno(
             "Unknown Map ID",
@@ -1283,18 +1331,6 @@ class WorldStateTab:
             "crash on this save.\n\nTeleport anyway?",
             parent=self.parent,
         ):
-            return
-
-        try:
-            x = float(self.custom_x_var.get() or "0")
-            y = float(self.custom_y_var.get() or "0")
-            z = float(self.custom_z_var.get() or "0")
-        except ValueError:
-            CTkMessageBox.showerror(
-                "Invalid Coordinates",
-                "Coordinates must be numeric.",
-                parent=self.parent,
-            )
             return
 
         if x == 0.0 and y == 0.0 and z == 0.0:
@@ -1331,6 +1367,8 @@ class WorldStateTab:
         )
         if not confirm_custom_teleport(self.parent, f"{coord_text} on {map_str}"):
             return
+        if not save_writable():
+            return
 
         save_path = self.get_save_path()
         if save_path:
@@ -1343,8 +1381,8 @@ class WorldStateTab:
         success, message = self.editor.teleport_to_custom(map_id, coords)
         if success:
             if save_path:
-                self.get_save_file().recalculate_checksums()
-                self.get_save_file().to_file(save_path)
+                if not self._write_save(save_path):
+                    return
                 self.reload_save()
                 self._reload_editor()
                 self.refresh()
@@ -1384,21 +1422,29 @@ class WorldStateTab:
         if snap is None:
             if CTkMessageBox.askyesno(
                 "No Floor Near Coordinates",
-                f"There is no walkable floor within {SNAP_RADIUS:.0f} units of "
-                f"X={x}, Y={y}, Z={z} on {map_str}. The character may fall "
-                "or spawn inside geometry.\n\nTeleport anyway?",
+                f"There is no walkable floor within {SNAP_RADIUS:.0f} units "
+                f"horizontally of X={x}, Y={y}, Z={z} on {map_str}. The "
+                "character may fall or spawn inside geometry.\n\n"
+                "Teleport anyway?",
                 parent=self.parent,
             ):
                 return coords
             return False
         dist, snap_map, sx, sy, sz = snap
         where = f" on {snap_map}" if snap_map != map_str else ""
+        # The snap point can be in a neighbouring tile's frame; the height
+        # frame is shared, so the horizontal part follows from the 3D distance.
+        rise = sy - y
+        across = math.sqrt(max(dist * dist - rise * rise, 0.0))
+        side = "above" if rise > 0 else "below"
         answer = CTkMessageBox.askyesnocancel(
             "No Floor Near Coordinates",
             f"There is no walkable floor within {FLOOR_TOLERANCE:.0f} units of "
             f"X={x}, Y={y}, Z={z} on {map_str}.\n\n"
-            f"The nearest floor is X={sx:.1f}, Y={sy:.2f}, Z={sz:.1f}{where} "
-            f"({dist:.0f} units away). Move the teleport point there?\n\n"
+            f"The nearest floor within {SNAP_RADIUS:.0f} units horizontally is "
+            f"X={sx:.1f}, Y={sy:.2f}, Z={sz:.1f}{where}: {across:.0f} units "
+            f"across and {abs(rise):.0f} units {side}. Move the teleport point "
+            "there?\n\n"
             "Yes moves it, No keeps the coordinates as entered.",
             parent=self.parent,
         )
