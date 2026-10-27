@@ -42,6 +42,8 @@ for f in $(find src/er_save_manager -type f ! -name '*.py' ! -name '*.pyc' ! -pa
     data_flags="$data_flags --add-data $f:$dest"
 done
 
+# The excluded stdlib packages (unittest, pydoc, asyncio, ...) are reachable
+# only through optional imports in dependencies; nothing imports them at runtime.
 echo "Building GUI with PyInstaller..."
 # shellcheck disable=SC2086
 pyinstaller --clean --noconfirm \
@@ -61,6 +63,15 @@ pyinstaller --clean --noconfirm \
     --collect-submodules er_save_manager \
     --exclude-module tests \
     --exclude-module PIL._avif \
+    --exclude-module unittest \
+    --exclude-module pydoc \
+    --exclude-module doctest \
+    --exclude-module pdb \
+    --exclude-module setuptools \
+    --exclude-module pkg_resources \
+    --exclude-module multiprocessing \
+    --exclude-module asyncio \
+    --exclude-module xmlrpc \
     $data_flags \
     $readline_flag \
     --optimize 2 \
