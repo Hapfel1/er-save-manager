@@ -21,26 +21,44 @@ from er_save_manager.ui.utils import bind_mousewheel
 _STEAM64_MIN = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
 
-# SteamID2 (STEAM_0:1:123), SteamID3 ([U:1:123]) and bare Steam32 account ids
-_OTHER_STEAMID_FORMAT = re.compile(
-    r"^(STEAM_\d:\d:\d+|\[?U:\d:\d+\]?|\d{1,10})$", re.IGNORECASE
-)
+# Every SteamID format encodes the same 32-bit account number: SteamID64 is
+# _STEAM64_MIN + account, SteamID3 [U:1:W] and Steam32 hold W directly,
+# SteamID2 STEAM_X:Y:Z holds W = 2 * Z + Y.
+_STEAMID2 = re.compile(r"^STEAM_[0-5]:([01]):(\d+)$", re.IGNORECASE)
+_STEAMID3 = re.compile(r"^\[?U:1:(\d+)\]?$", re.IGNORECASE)
+_STEAM32 = re.compile(r"^\d{1,10}$")
 
-_UNSUPPORTED_FORMAT_MSG = (
-    "{field}: only SteamID64 (17 digits, e.g. 76561198012345678) or a Steam "
-    "profile URL is supported. SteamID2 (STEAM_0:...), SteamID3 ([U:1:...]) "
-    "and Steam32 account IDs are not converted."
-)
+
+def to_steamid64(text: str, field: str) -> tuple[str | None, str | None]:
+    """(SteamID64 string, None) for SteamID64, SteamID2, SteamID3 or Steam32
+    input; (None, message naming `field`) when it is none of them."""
+    text = text.strip()
+    if not text:
+        return None, f"{field}: enter a SteamID."
+    account = None
+    if m := _STEAMID2.match(text):
+        account = int(m.group(2)) * 2 + int(m.group(1))
+    elif m := _STEAMID3.match(text):
+        account = int(m.group(1))
+    elif _STEAM32.match(text):
+        account = int(text)
+    if account is not None:
+        if not 0 < account <= 0xFFFFFFFF:
+            return None, f"{field}: {text} is not a valid Steam account ID."
+        return str(_STEAM64_MIN + account), None
+    error = steamid64_input_error(text, field)
+    return (None, error) if error else (text, None)
 
 
 def steamid64_input_error(text: str, field: str) -> str | None:
     """Return a message naming `field` if `text` is not a valid SteamID64."""
     if not text:
         return f"{field}: enter a SteamID64."
-    if _OTHER_STEAMID_FORMAT.match(text):
-        return _UNSUPPORTED_FORMAT_MSG.format(field=field)
     if not text.isdigit() or len(text) != 17:
-        return f"{field}: a SteamID64 is exactly 17 digits."
+        return (
+            f"{field}: enter a SteamID64 (17 digits), SteamID3 ([U:1:...]), "
+            "SteamID2 (STEAM_0:...) or a Steam32 account ID."
+        )
     if not _STEAM64_MIN <= int(text) <= _STEAM64_MAX:
         return (
             f"{field}: {text} is not a valid SteamID64. "
@@ -373,11 +391,13 @@ class SteamIDPatcherTab:
             )
             return
 
-        new_steamid_str = self.new_steamid_var.get().strip()
-        error = steamid64_input_error(new_steamid_str, "New SteamID")
+        new_steamid_str, error = to_steamid64(
+            self.new_steamid_var.get(), "New SteamID"
+        )
         if error:
             CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
             return
+        self.new_steamid_var.set(new_steamid_str)
 
         new_steamid = int(new_steamid_str)
 
@@ -693,14 +713,14 @@ class SteamIDPatcherTab:
             return
 
         field = "Steam profile URL"
-        if url.isdigit() or _OTHER_STEAMID_FORMAT.match(url):
-            error = steamid64_input_error(url, field)
+        if "/" not in url:
+            steamid, error = to_steamid64(url, field)
             if error:
                 CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
                 return
-            self.new_steamid_var.set(url)
+            self.new_steamid_var.set(steamid)
             self.steam_url_var.set("")
-            self.show_toast(f"SteamID: {url}", duration=2000)
+            self.show_toast(f"SteamID: {steamid}", duration=2000)
             return
 
         match = re.search(r"/profiles/([^/?#]*)", url)
