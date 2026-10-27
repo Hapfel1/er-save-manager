@@ -52,6 +52,15 @@ class DS2CharacterOperations:
             )
 
     @staticmethod
+    def _check_readable(save: DS2Save, *slots: int) -> None:
+        """Refuse to read a damaged slot: copying it would give its data a
+        valid checksum in the new place."""
+        for slot in slots:
+            reason = save.slot_lock_reason(slot)
+            if reason:
+                raise ValueError(reason)
+
+    @staticmethod
     def slot_warning(save: DS2Save, slot_index: int) -> str | None:
         """Return a warning message if slot_index has never been through
         character creation in-game, or None if it is safe to write into."""
@@ -73,6 +82,7 @@ class DS2CharacterOperations:
             raise ValueError("Source and destination slots cannot be the same")
         DS2CharacterOperations._check_slot_index(from_slot)
         DS2CharacterOperations._check_slot_index(to_slot)
+        DS2CharacterOperations._check_readable(save, from_slot)
 
         if not force:
             warning = DS2CharacterOperations.slot_warning(save, to_slot)
@@ -106,6 +116,7 @@ class DS2CharacterOperations:
         """
         DS2CharacterOperations._check_slot_index(from_slot)
         DS2CharacterOperations._check_slot_index(to_slot)
+        DS2CharacterOperations._check_readable(source_save, from_slot)
 
         if not force:
             warning = DS2CharacterOperations.slot_warning(target_save, to_slot)
@@ -149,6 +160,7 @@ class DS2CharacterOperations:
             raise ValueError("Cannot swap a slot with itself")
         DS2CharacterOperations._check_slot_index(slot_a)
         DS2CharacterOperations._check_slot_index(slot_b)
+        DS2CharacterOperations._check_readable(save, slot_a, slot_b)
 
         if not force:
             for slot in (slot_a, slot_b):
@@ -180,6 +192,7 @@ class DS2CharacterOperations:
           Checksum: MD5 of everything above (16 bytes)
         """
         DS2CharacterOperations._check_slot_index(slot_index)
+        DS2CharacterOperations._check_readable(save, slot_index)
 
         character = save.characters[slot_index]
         if not character.name:

@@ -13,12 +13,21 @@ from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_INTENSITY, DS2Save, SlotState
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
 
 def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
+
+
+def _slot_locked(parent, save: DS2Save, slot: int) -> bool:
+    """Show why the slot cannot be edited and return True, if it cannot."""
+    reason = save.slot_lock_reason(slot)
+    if reason:
+        CTkMessageBox.showerror("Slot Locked", reason, parent=parent)
+    return reason is not None
 
 
 def _lit_text(lit: bool, last_rested: bool) -> str:
@@ -185,8 +194,10 @@ class DS2BonfirePanel:
         self._summary_label.configure(text=f"{lit_count} of {len(self._lit)} lit")
 
         # A slot with no character yet has nothing to travel from.
+        slot = self.get_slot_index()
         self._has_character = (
-            save.slot_state(self.get_slot_index()) is SlotState.CHARACTER
+            save.slot_state(slot) is SlotState.CHARACTER
+            and save.slot_lock_reason(slot) is None
         )
         self._update_buttons()
 
@@ -256,21 +267,25 @@ class DS2BonfirePanel:
         if save is None:
             self.show_toast("No save file loaded", duration=2000)
             return
+        if _slot_locked(self.parent, save, self.get_slot_index()):
+            return
         bonfires = save.bonfires(self.get_slot_index())
         if bonfires is None:
             self.show_toast("No bonfire data in this slot", duration=2000)
             return
         if not CTkMessageBox.askyesno(title, message, parent=self.parent):
             return
+        if not save_writable():
+            return
 
         changed = mutate(bonfires)
         save_path = self.get_save_path()
         if save_path:
-            self._backup(save_path, f"before_{operation}", operation)
             try:
+                self._backup(save_path, f"before_{operation}", operation)
                 save.save_to_file(save_path)
-            except Exception as e:
-                self.show_toast(f"Failed to write save: {e}", duration=3000)
+            except Exception as exc:
+                write_failed(exc, self.parent)
                 return
         self.refresh()
         self.show_toast(f"Changed {changed} bonfires", duration=2500)
@@ -331,11 +346,12 @@ class DS2BonfirePanel:
         )
 
     def _backup(self, save_path, description: str, operation: str) -> None:
-        try:
-            from er_save_manager.backup.manager import BackupManager
+        """Raises when the backup fails, so the write does not go ahead."""
+        from er_save_manager.backup.manager import BackupManager
 
+        try:
             BackupManager(Path(save_path)).create_backup(
                 description=description, operation=operation
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(f"Backup failed: {exc}") from exc

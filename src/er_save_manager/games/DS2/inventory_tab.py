@@ -33,16 +33,30 @@ from er_save_manager.games.DS2.save import (
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
+from er_save_manager.validation.numbers import parse_whole
 
 
 def _game_blocks_write(parent) -> bool:
     return game_blocks_write(parent, "darksoulsii.exe", "Dark Souls II")
 
 
+def _slot_locked(parent, save: DS2Save, slot: int) -> bool:
+    """Show why the slot cannot be edited and return True, if it cannot."""
+    reason = save.slot_lock_reason(slot)
+    if reason:
+        CTkMessageBox.showerror("Slot Locked", reason, parent=parent)
+    return reason is not None
+
+
 STACKABLE_CATEGORIES = ("goods", "bolts", "spells", "upgrade")
+
+# Adding more copies of one weapon than this asks first: the game's limit for
+# copies of one item is unknown.
+_COPIES_WARN_ABOVE = 99
 
 # The game stores Estus Flask count and flask level packed into one value, so
 # a plain quantity write would corrupt it.
@@ -120,6 +134,16 @@ class _Greyable:
         if self._fill is not None:
             options["fg_color"] = self._fill if enabled else _DISABLED_FILL
         self.widget.configure(**options)
+
+
+def _held_quantity(character, item_id: int, in_box: bool) -> int:
+    """Total quantity of an item in the inventory, or in the item box with
+    in_box (key items count as carried)."""
+    return sum(
+        item.quantity
+        for item in character.inventory() + character.key_items()
+        if item.item_id == item_id and item.in_box == in_box
+    )
 
 
 class DS2InventoryPanel:
@@ -698,12 +722,8 @@ class DS2InventoryPanel:
         )
 
     def _on_add(self) -> None:
-        if _game_blocks_write(self.parent):
-            return
-
-        save: DS2Save | None = self.get_save()
+        save = self._writable_save()
         if save is None:
-            self.show_toast("No save file loaded", duration=2000)
             return
 
         selection = self._results_tree.selection()
@@ -745,11 +765,9 @@ class DS2InventoryPanel:
         if category in UNIQUE_CATEGORIES and character.owns(item_id, include_box=True):
             self.show_toast(f"{item_name} is already owned", duration=2000)
             return
-        if category in STACKABLE_CATEGORIES and category != "spells":
-            stack_limit = character.max_stack(item_id)
-            if quantity > stack_limit:
-                quantity = stack_limit
-                self.show_toast(f"Quantity capped at {stack_limit}", duration=2000)
+        stacks = category in STACKABLE_CATEGORIES and category != "spells"
+        stack_limit = character.max_stack(item_id) if stacks else 0
+        quantity = min(quantity, stack_limit) if stacks else quantity
         capped = False
         if category in UPGRADABLE_CATEGORIES and upgrade > 0:
             if self._load_regulation(save) is None:
@@ -772,6 +790,11 @@ class DS2InventoryPanel:
 
         in_box = self._add_to_box()
         copies = quantity if category in MULTI_COPY_CATEGORIES else 1
+        if copies > _COPIES_WARN_ABOVE and not self._confirm_copies(
+            character, item_name, category, copies
+        ):
+            return
+        held_before = _held_quantity(character, item_id, in_box) if stacks else 0
         if category in MULTI_COPY_CATEGORIES:
             written = character.add_copies(
                 item_id,
@@ -788,10 +811,23 @@ class DS2InventoryPanel:
                 )
             )
         if not written:
-            self.show_toast("No empty inventory slot available", duration=2500)
+            self.show_toast(
+                "No empty inventory slot available", duration=2500, type="error"
+            )
             return
+        if stacks:
+            held = _held_quantity(character, item_id, in_box)
+            written = held - held_before
+            if not written:
+                self.show_toast(
+                    f"{item_name} is already at the max of {stack_limit}",
+                    duration=2500,
+                    type="warning",
+                )
+                return
 
-        self._write_and_refresh(save, operation="add_item")
+        if not self._write_and_refresh(save, operation="add_item"):
+            return
         self._reset_inputs()
         label = f"{written}x {item_name}" if written > 1 else item_name
         if upgrade:
@@ -803,7 +839,26 @@ class DS2InventoryPanel:
             suffix += " to the item box"
         if written < copies:
             suffix += f", only {written} of {copies} fit"
+        if stacks and held >= stack_limit:
+            suffix += f", now at the max of {stack_limit}"
         self.show_toast(f"Added {label}{suffix}", duration=3000)
+
+    def _confirm_copies(
+        self, character, item_name: str, category: str, copies: int
+    ) -> bool:
+        free = character.free_slots(category)
+        fit = (
+            f"{free} inventory slots are free, so at most {free} are added."
+            if copies > free
+            else f"{free} inventory slots are free."
+        )
+        return CTkMessageBox.askyesno(
+            "Many Copies",
+            f"Add {copies:,} copies of {item_name}?\n\nEach copy takes its own "
+            f"inventory slot. {fit} How many copies of one item the game "
+            "accepts is unknown.",
+            parent=self.parent,
+        )
 
     def _on_add_all(self) -> None:
         save = self._writable_save()
@@ -823,27 +878,35 @@ class DS2InventoryPanel:
         )
 
     def _writable_save(self) -> DS2Save | None:
+        """The loaded save when the selected slot can be changed now, after
+        the game-running, slot lock and file checks; else None."""
         if _game_blocks_write(self.parent):
             return None
         save: DS2Save | None = self.get_save()
         if save is None:
             self.show_toast("No save file loaded", duration=2000)
+            return None
+        if _slot_locked(self.parent, save, self.get_slot_index()):
+            return None
+        if not save_writable():
+            return None
         return save
 
     def _read_add_inputs(self) -> tuple[int, int, int] | None:
         """Parse the add fields as (quantity, upgrade, infusion index). Shows a
         toast and returns None when the quantity or upgrade is invalid."""
         try:
-            quantity = int(self.add_qty_var.get())
-            upgrade = int(self.add_upgrade_var.get())
+            quantity = parse_whole(self.add_qty_var.get())
+            upgrade = parse_whole(self.add_upgrade_var.get())
         except ValueError:
-            self.show_toast("Quantity and upgrade must be numbers", duration=2000)
+            self.show_toast(
+                "Quantity and upgrade must be whole numbers (digits 0-9)",
+                duration=2500,
+                type="error",
+            )
             return None
         if quantity < 1:
-            self.show_toast("Quantity must be at least 1", duration=2000)
-            return None
-        if upgrade < 0:
-            self.show_toast("Upgrade cannot be negative", duration=2000)
+            self.show_toast("Quantity must be at least 1", duration=2000, type="error")
             return None
         return quantity, upgrade, INFUSION_NAMES.index(self.add_infusion_var.get())
 
@@ -864,7 +927,9 @@ class DS2InventoryPanel:
             return save.regulation
         except ValueError as e:
             if not quiet:
-                self.show_toast(f"Cannot read upgrade caps: {e}", duration=3500)
+                self.show_toast(
+                    f"Cannot read upgrade caps: {e}", duration=3500, type="error"
+                )
             return None
 
     def _add_many(
@@ -921,6 +986,11 @@ class DS2InventoryPanel:
                 f"{quantity} of each. Copies already owned with the same "
                 "upgrade and infusion count toward it."
             )
+            if quantity > _COPIES_WARN_ABOVE:
+                lines.append(
+                    "Each copy takes its own inventory slot. How many copies "
+                    "of one item the game accepts is unknown."
+                )
         else:
             lines.append("Items already owned are skipped.")
         if category in UPGRADABLE_CATEGORIES and upgrade > 0:
@@ -959,6 +1029,7 @@ class DS2InventoryPanel:
                 "added",
                 "updated",
                 "skipped_owned",
+                "at_max",
                 "clamped",
                 "infusion_fallback",
                 "no_space",
@@ -971,6 +1042,7 @@ class DS2InventoryPanel:
                 (totals["added"], "added"),
                 (totals["updated"], "updated"),
                 (totals["skipped_owned"], "already owned"),
+                (totals["at_max"], "already at max"),
                 (totals["clamped"], "capped at max upgrade"),
                 (totals["infusion_fallback"], "added plain, infusion not allowed"),
                 (totals["no_space"], "no space"),
@@ -979,7 +1051,8 @@ class DS2InventoryPanel:
             if count
         )
         if totals["added"] or totals["updated"]:
-            self._write_and_refresh(save, operation="add_items_bulk")
+            if not self._write_and_refresh(save, operation="add_items_bulk"):
+                return
             self._reset_inputs()
         self.show_toast(summary or "Nothing changed", duration=4000)
 
@@ -1266,7 +1339,8 @@ class DS2InventoryPanel:
             )
             return
 
-        self._write_and_refresh(save, operation="remove_item")
+        if not self._write_and_refresh(save, operation="remove_item"):
+            return
         self.show_toast(
             (
                 f"Removed {removed[0]}"
@@ -1310,10 +1384,10 @@ class DS2InventoryPanel:
             else:
                 moved.append(name)
 
-        if moved:
-            self._write_and_refresh(
-                save, operation="move_to_box" if to_box else "move_to_inventory"
-            )
+        if moved and not self._write_and_refresh(
+            save, operation="move_to_box" if to_box else "move_to_inventory"
+        ):
+            return
         where = "item box" if to_box else "inventory"
         if moved:
             text = (
@@ -1352,12 +1426,16 @@ class DS2InventoryPanel:
             return
 
         try:
-            quantity = int(self.set_qty_var.get())
+            quantity = parse_whole(self.set_qty_var.get())
         except ValueError:
-            self.show_toast("Quantity must be a number", duration=2000)
+            self.show_toast(
+                "Quantity must be a whole number (digits 0-9)",
+                duration=2500,
+                type="error",
+            )
             return
         if quantity < 1:
-            self.show_toast("Quantity must be at least 1", duration=2000)
+            self.show_toast("Quantity must be at least 1", duration=2000, type="error")
             return
 
         character = save.characters[self.get_slot_index()]
@@ -1386,7 +1464,8 @@ class DS2InventoryPanel:
             self.show_toast("Already set", duration=2000)
             return
 
-        self._write_and_refresh(save, operation="set_item_quantity")
+        if not self._write_and_refresh(save, operation="set_item_quantity"):
+            return
         self._reset_inputs()
         self.show_toast(
             self._edit_toast(f"x{quantity}", changed, capped, len(rows) - len(targets)),
@@ -1404,12 +1483,13 @@ class DS2InventoryPanel:
             return
 
         try:
-            level = int(self.set_upgrade_var.get())
+            level = parse_whole(self.set_upgrade_var.get())
         except ValueError:
-            self.show_toast("Upgrade must be a number", duration=2000)
-            return
-        if level < 0:
-            self.show_toast("Upgrade cannot be negative", duration=2000)
+            self.show_toast(
+                "Upgrade must be a whole number (digits 0-9)",
+                duration=2500,
+                type="error",
+            )
             return
 
         if self._load_regulation(save) is None:
@@ -1439,7 +1519,8 @@ class DS2InventoryPanel:
             self.show_toast("Already set", duration=2000)
             return
 
-        self._write_and_refresh(save, operation="set_item_upgrade")
+        if not self._write_and_refresh(save, operation="set_item_upgrade"):
+            return
         self._reset_inputs()
         self.show_toast(
             self._edit_toast(f"+{level}", changed, capped, len(rows) - len(targets)),
@@ -1483,7 +1564,8 @@ class DS2InventoryPanel:
             self.show_toast("Already set", duration=2000)
             return
 
-        self._write_and_refresh(save, operation="set_item_infusion")
+        if not self._write_and_refresh(save, operation="set_item_infusion"):
+            return
         self._reset_inputs()
         self.show_toast(
             self._edit_toast(
@@ -1494,24 +1576,27 @@ class DS2InventoryPanel:
 
     def _write_and_refresh(
         self, save: DS2Save, operation: str = "inventory_edit"
-    ) -> None:
+    ) -> bool:
+        """Back up and write the save. False when either failed: the save is
+        then reloaded from disk, which drops the change."""
         save_path = self.get_save_path()
         if save_path:
-            self._backup(save_path, f"before_{operation}", operation)
             try:
+                self._backup(save_path, f"before_{operation}", operation)
                 save.save_to_file(save_path)
-            except Exception as e:
-                self.show_toast(f"Failed to write save: {e}", duration=3000)
+            except Exception as exc:
+                write_failed(exc, self.parent)
+                return False
         self.refresh()
+        return True
 
     def _backup(self, save_path, description: str, operation: str) -> None:
-        if not save_path:
-            return
-        try:
-            from er_save_manager.backup.manager import BackupManager
+        """Raises when the backup fails, so the write does not go ahead."""
+        from er_save_manager.backup.manager import BackupManager
 
+        try:
             BackupManager(Path(save_path)).create_backup(
                 description=description, operation=operation
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(f"Backup failed: {exc}") from exc
