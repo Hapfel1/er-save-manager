@@ -25,83 +25,132 @@ _ALPHA = 0.96
 # Time left after the pointer leaves a paused toast, at least.
 _MIN_RESUME_MS = 1000
 _SUPERSAMPLE = 4
+# The window under a toast can change while it shows (tab switch, list fill).
+_BACKDROP_REFRESH_MS = 250
 
 _active_toasts: list["_Toast"] = []
 
 
-class _XShape:
-    """Cuts an X11 window to a 1-bit mask through libXext (XWayland included)."""
+class _XImage(ctypes.Structure):
+    # Leading fields of Xlib's XImage, up to the color masks.
+    _fields_ = [
+        ("width", ctypes.c_int),
+        ("height", ctypes.c_int),
+        ("xoffset", ctypes.c_int),
+        ("format", ctypes.c_int),
+        ("data", ctypes.c_void_p),
+        ("byte_order", ctypes.c_int),
+        ("bitmap_unit", ctypes.c_int),
+        ("bitmap_bit_order", ctypes.c_int),
+        ("bitmap_pad", ctypes.c_int),
+        ("depth", ctypes.c_int),
+        ("bytes_per_line", ctypes.c_int),
+        ("bits_per_pixel", ctypes.c_int),
+        ("red_mask", ctypes.c_ulong),
+        ("green_mask", ctypes.c_ulong),
+        ("blue_mask", ctypes.c_ulong),
+    ]
+
+
+_ZPIXMAP = 2
+_LSB_FIRST = 0
+_ALL_PLANES = 0xFFFFFFFF
+
+_XErrorHandler = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+
+
+class _XBackdrop:
+    """Reads pixels of the app's own X window on a second connection.
+
+    Compositors that ignore the X SHAPE extension (KWin on XWayland) draw
+    cut-away corners black, and Tk paints 32-bit ARGB windows fully
+    transparent, so a toast gets its round corners by compositing its body
+    over the pixels of the window it covers."""
 
     def __init__(self):
-        self.x11 = ctypes.CDLL("libX11.so.6")
-        self.xext = ctypes.CDLL("libXext.so.6")
-        x11, xext = self.x11, self.xext
+        x11 = ctypes.CDLL("libX11.so.6")
+        self.x11 = x11
         x11.XOpenDisplay.restype = ctypes.c_void_p
         x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
-        x11.XCreateBitmapFromData.restype = ctypes.c_ulong
-        x11.XCreateBitmapFromData.argtypes = [
+        x11.XGetImage.restype = ctypes.POINTER(_XImage)
+        x11.XGetImage.argtypes = [
             ctypes.c_void_p,
             ctypes.c_ulong,
-            ctypes.c_char_p,
+            ctypes.c_int,
+            ctypes.c_int,
             ctypes.c_uint,
             ctypes.c_uint,
-        ]
-        x11.XFreePixmap.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
-        x11.XFlush.argtypes = [ctypes.c_void_p]
-        xext.XShapeQueryExtension.argtypes = [
-            ctypes.c_void_p,
-            ctypes.POINTER(ctypes.c_int),
-            ctypes.POINTER(ctypes.c_int),
-        ]
-        xext.XShapeCombineMask.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_ulong,
-            ctypes.c_int,
-            ctypes.c_int,
-            ctypes.c_int,
             ctypes.c_ulong,
             ctypes.c_int,
         ]
+        x11.XDestroyImage.argtypes = [ctypes.POINTER(_XImage)]
+        x11.XSetErrorHandler.restype = ctypes.c_void_p
+        x11.XSetErrorHandler.argtypes = [ctypes.c_void_p]
         self.display = x11.XOpenDisplay(None)
         if not self.display:
             raise OSError("no X display")
-        event_base, error_base = ctypes.c_int(), ctypes.c_int()
-        if not xext.XShapeQueryExtension(
-            self.display, ctypes.byref(event_base), ctypes.byref(error_base)
-        ):
-            raise OSError("no SHAPE extension")
 
-    def apply(self, window_id: int, mask: Image.Image):
-        w, h = mask.size
-        # XBM layout: least significant bit first, rows padded to whole bytes.
-        data = mask.tobytes("raw", "1;R")
-        bitmap = self.x11.XCreateBitmapFromData(self.display, window_id, data, w, h)
-        # ShapeBounding, ShapeSet
-        self.xext.XShapeCombineMask(self.display, window_id, 0, 0, 0, bitmap, 0)
-        self.x11.XFreePixmap(self.display, bitmap)
-        self.x11.XFlush(self.display)
+        # The default handler exits the process. Errors on this connection
+        # (window gone or unmapped mid-read) only make the read return NULL;
+        # errors on Tk's connection go to the handler Tk installed.
+        previous = ctypes.c_void_p()
 
+        def handler(display, event):
+            if display == self.display:
+                return 0
+            if previous.value:
+                return _XErrorHandler(previous.value)(display, event)
+            return 0
 
-_xshape: _XShape | None = None
-_xshape_failed = False
+        self._handler = _XErrorHandler(handler)
+        previous.value = x11.XSetErrorHandler(
+            ctypes.cast(self._handler, ctypes.c_void_p)
+        )
 
-
-def _get_xshape() -> _XShape | None:
-    global _xshape, _xshape_failed
-    if _xshape is None and not _xshape_failed:
+    def grab(self, window_id: int, x: int, y: int, w: int, h: int):
+        """RGB image of the rectangle, or None when it cannot be read."""
+        ptr = self.x11.XGetImage(
+            self.display, window_id, x, y, w, h, _ALL_PLANES, _ZPIXMAP
+        )
+        if not ptr:
+            return None
         try:
-            _xshape = _XShape()
+            img = ptr.contents
+            if (
+                img.bits_per_pixel != 32
+                or img.byte_order != _LSB_FIRST
+                or img.red_mask != 0xFF0000
+                or img.blue_mask != 0xFF
+            ):
+                return None
+            data = ctypes.string_at(img.data, img.bytes_per_line * img.height)
+            return Image.frombuffer(
+                "RGB",
+                (img.width, img.height),
+                data,
+                "raw",
+                "BGRX",
+                img.bytes_per_line,
+                1,
+            ).copy()
+        finally:
+            self.x11.XDestroyImage(ptr)
+
+
+_backdrop: _XBackdrop | None = None
+_backdrop_failed = False
+
+
+def _get_backdrop() -> _XBackdrop | None:
+    global _backdrop, _backdrop_failed
+    if sys.platform in ("win32", "darwin"):
+        return None
+    if _backdrop is None and not _backdrop_failed:
+        try:
+            _backdrop = _XBackdrop()
         except (OSError, AttributeError):
-            _xshape_failed = True
-    return _xshape
-
-
-def _can_round() -> bool:
-    if sys.platform == "win32":
-        return True
-    if sys.platform == "darwin":
-        return False
-    return _get_xshape() is not None
+            _backdrop_failed = True
+    return _backdrop
 
 
 def _hex(widget, color) -> str:
@@ -110,36 +159,24 @@ def _hex(widget, color) -> str:
 
 
 def _under_color(root) -> str:
-    """Fill of the header card the toast covers. The rounded edge is blended
-    into it, and on Windows it is the transparent key."""
+    """Fill of the header card the toast covers: the corner color when the
+    window behind cannot be read, and the transparent key on Windows."""
     fill = ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
     if isinstance(fill, (list, tuple)):
         fill = fill[1] if ctk.get_appearance_mode() == "Dark" else fill[0]
     return _hex(root, fill)
 
 
-def _body_image(w: int, h: int, radius: int, fill: str, under: str) -> Image.Image:
-    """Rounded body drawn at a larger size and box-filtered down: grayscale
-    anti-aliasing. CTk corner_radius draws corners with a font glyph, which
-    gets colored subpixel fringes on Linux."""
+def _body_image(w: int, h: int, radius: int, fill: str) -> Image.Image:
+    """Rounded body on a transparent background, drawn at a larger size and
+    box-filtered down: grayscale anti-aliasing. CTk corner_radius draws
+    corners with a font glyph, which gets colored subpixel fringes on Linux."""
     s = _SUPERSAMPLE
-    big = Image.new("RGB", (w * s, h * s), under)
+    big = Image.new("RGBA", (w * s, h * s), (0, 0, 0, 0))
     ImageDraw.Draw(big).rounded_rectangle(
         (0, 0, w * s - 1, h * s - 1), radius * s, fill=fill
     )
     return big.resize((w, h), Image.BOX)
-
-
-def _outline_mask(w: int, h: int, radius: int) -> Image.Image:
-    """Window shape; keeps every pixel the body touches so its anti-aliased
-    edge stays visible."""
-    s = _SUPERSAMPLE
-    big = Image.new("L", (w * s, h * s), 0)
-    ImageDraw.Draw(big).rounded_rectangle(
-        (0, 0, w * s - 1, h * s - 1), radius * s, fill=255
-    )
-    small = big.resize((w, h), Image.BOX)
-    return small.point(lambda v: 255 if v else 0).convert("1")
 
 
 class _Toast:
@@ -156,14 +193,19 @@ class _Toast:
         self._deadline = 0.0
         self._remaining = duration
         self._anim = 0
-        self._image = None
-        self._shaped = None
+        self._anim_done = True
+        self._body = None
+        self._photo = None
+        self._backdrop_key = None
 
         scale = ctk.ScalingTracker.get_widget_scaling(root)
         self.scale = scale
-        self.radius = round(_RADIUS * scale) if _can_round() else 0
+        self.radius = round(_RADIUS * scale)
         self.fill = palette.TOAST_COLORS.get(type, palette.TOAST_COLORS["success"])
         self.under = _under_color(root)
+        self.font = tkfont.Font(
+            root=root, family="Inter", size=-round(12 * scale), weight="bold"
+        )
 
         # Keep the window invisible until fully positioned to avoid white flash.
         self.win = tk.Toplevel(root)
@@ -171,17 +213,14 @@ class _Toast:
         self.win.overrideredirect(True)
         self.win.attributes("-alpha", 0)
         self.win.attributes("-topmost", True)
-        if sys.platform == "win32" and self.radius:
+        if sys.platform == "win32":
             self.win.attributes("-transparentcolor", self.under)
 
-        self.font = tkfont.Font(
-            root=root, family="Inter", size=-round(12 * scale), weight="bold"
-        )
         self.canvas = tk.Canvas(
             self.win, highlightthickness=0, bd=0, bg=self.under, cursor="hand2"
         )
         self.canvas.pack()
-        self._body = self.canvas.create_image(0, 0, anchor="nw")
+        self._image_item = self.canvas.create_image(0, 0, anchor="nw")
         self._text = self.canvas.create_text(
             0,
             0,
@@ -193,11 +232,10 @@ class _Toast:
         self.canvas.bind("<Button-1>", lambda e: self.dismiss())
         self.canvas.bind("<Enter>", lambda e: self._pause())
         self.canvas.bind("<Leave>", lambda e: self._resume())
-        self.win.bind("<Configure>", self._on_configure)
         self._render()
 
     def _render(self):
-        """Lay out the text and redraw the body for the current count."""
+        """Lay out the text and draw the body for the current count."""
         text = self.message if self.count == 1 else f"{self.message} (x{self.count})"
         self.canvas.itemconfigure(self._text, text=text)
         x0, y0, x1, y1 = self.canvas.bbox(self._text)
@@ -206,57 +244,95 @@ class _Toast:
         self.h = (y1 - y0) + 2 * pad_y
         self.canvas.coords(self._text, pad_x, pad_y)
         self.canvas.configure(width=self.w, height=self.h)
-        radius = min(self.radius, self.h // 2)
-        if radius:
-            body = _body_image(self.w, self.h, radius, self.fill, self.under)
+        self._body = _body_image(
+            self.w, self.h, min(self.radius, self.h // 2), self.fill
+        )
+        self._photo = None
+        self._backdrop_key = None
+
+    def _read_behind(self, x: int, y: int):
+        """Pixels of the window under the toast at screen position (x, y);
+        parts outside that window stay the under color."""
+        backdrop = _get_backdrop()
+        if backdrop is None:
+            return None
+        try:
+            if not self.root.winfo_viewable():
+                return None
+            rx, ry = self.root.winfo_rootx(), self.root.winfo_rooty()
+            rw, rh = self.root.winfo_width(), self.root.winfo_height()
+            window_id = self.root.winfo_id()
+        except tk.TclError:
+            return None
+        left, top = max(x, rx), max(y, ry)
+        right, bottom = min(x + self.w, rx + rw), min(y + self.h, ry + rh)
+        if right <= left or bottom <= top:
+            return None
+        part = backdrop.grab(window_id, left - rx, top - ry, right - left, bottom - top)
+        if part is None:
+            return None
+        if part.size == (self.w, self.h):
+            return part
+        img = Image.new("RGB", (self.w, self.h), self.under)
+        img.paste(part, (left - x, top - y))
+        return img
+
+    def _paint(self, x: int, y: int, reread: bool = False):
+        """Composite the body over what is behind (x, y) into the canvas."""
+        if not self.win.winfo_exists():
+            return
+        key = (x, y, self.w, self.h)
+        if key == self._backdrop_key and not reread and self._photo is not None:
+            return
+        behind = None if sys.platform == "win32" else self._read_behind(x, y)
+        if behind is None:
+            behind = Image.new("RGB", (self.w, self.h), self.under)
+        behind.paste(self._body, (0, 0), self._body)
+        if self._photo is not None and (
+            self._photo.width(),
+            self._photo.height(),
+        ) == (self.w, self.h):
+            self._photo.paste(behind)
         else:
-            body = Image.new("RGB", (self.w, self.h), self.fill)
-        self._image = ImageTk.PhotoImage(body)
-        self.canvas.itemconfigure(self._body, image=self._image)
+            self._photo = ImageTk.PhotoImage(behind)
+            self.canvas.itemconfigure(self._image_item, image=self._photo)
+        self._backdrop_key = key
 
-    def _needs_shape(self) -> bool:
-        return bool(self.radius) and sys.platform != "win32"
+    def _place(self, x: int, y: int):
+        self._paint(x, y)
+        self.win.geometry(f"{self.w}x{self.h}+{x}+{y}")
 
-    def _on_configure(self, event):
-        """Cut the window once it has its new size: a shape set before the
-        resize is clipped to the old size by the compositor (KWin), which
-        leaves square corners on the grown side."""
-        if event.widget is not self.win or (event.width, event.height) != (
-            self.w,
-            self.h,
-        ):
+    def _refresh_loop(self):
+        if self.dismissing or not self.win.winfo_exists():
             return
-        if not self._needs_shape() or self._shaped == (self.w, self.h):
-            return
-        xshape = _get_xshape()
-        frame = self.win.wm_frame()
-        if xshape and frame:
-            radius = min(self.radius, self.h // 2)
-            xshape.apply(int(frame, 16), _outline_mask(self.w, self.h, radius))
-        if self._shaped is None and not self.dismissing:
-            # Hidden until the first cut so no square frame shows.
-            self.win.attributes("-alpha", _ALPHA)
-        self._shaped = (self.w, self.h)
+        if self._anim_done:
+            self._paint(self.x, self.y, reread=True)
+        self.root.after(_BACKDROP_REFRESH_MS, self._refresh_loop)
 
     def show(self, x: int, y: int):
         self.x, self.y = x, y
         start_y = y if _USE_FADE else y - 30
         # Position then show - one geometry call before deiconify to prevent flash.
-        self.win.geometry(f"{self.w}x{self.h}+{x}+{start_y}")
+        self._place(x, start_y)
         self.win.deiconify()
+        self._anim_done = True
         if _USE_FADE:
             self._fade_in()
         else:
-            if not self._needs_shape():
-                self.win.attributes("-alpha", _ALPHA)
+            self.win.attributes("-alpha", _ALPHA)
             self._move(x, start_y, x, y, steps=15, ease=3)
         self._start_timer(self.duration)
+        self.root.after(_BACKDROP_REFRESH_MS, self._refresh_loop)
 
     def bump(self):
         """Same message again: count it and restart the timer."""
         self.count += 1
+        old_w = self.w
         self._render()
-        self.win.geometry(f"{self.w}x{self.h}+{self.x}+{self.y}")
+        self.x -= (self.w - old_w) // 2
+        self._anim += 1
+        self._anim_done = True
+        self._place(self.x, self.y)
         if self._timer is not None:
             self._start_timer(self.duration)
         else:
@@ -299,24 +375,25 @@ class _Toast:
         if _USE_FADE:
             # Skip repositioning animation on Windows; just snap.
             self._anim += 1
-            self.win.geometry(f"{self.w}x{self.h}+{x}+{y}")
+            self._place(x, y)
         else:
             self._move(sx, sy, x, y, steps=10, ease=2)
 
     def _move(self, sx, sy, ex, ey, steps, ease):
         """Animate to (ex, ey); a newer move cancels this one."""
         self._anim += 1
+        self._anim_done = False
         token = self._anim
 
         def step(i=0):
             if token != self._anim or not self.win.winfo_exists():
                 return
             p = 1 - pow(1 - (i + 1) / steps, ease)
-            nx = round(sx + (ex - sx) * p)
-            ny = round(sy + (ey - sy) * p)
-            self.win.geometry(f"{self.w}x{self.h}+{nx}+{ny}")
+            self._place(round(sx + (ex - sx) * p), round(sy + (ey - sy) * p))
             if i + 1 < steps:
                 self.root.after(16, lambda: step(i + 1))
+            else:
+                self._anim_done = True
 
         step()
 
