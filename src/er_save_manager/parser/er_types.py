@@ -51,18 +51,19 @@ class Util:
             max_chars: Maximum number of characters (not bytes)
 
         Returns:
-            Decoded string with trailing nulls stripped
+            Text up to the first null. Bytes after it can hold leftover
+            characters of an earlier, longer string.
         """
         bytes_to_read = max_chars * 2
         data = f.read(bytes_to_read)
         try:
             decoded = data.decode("utf-16le", errors="ignore")
-            return decoded.rstrip("\x00")
+            return decoded.split("\x00", 1)[0]
         except Exception:
             return ""
 
     @staticmethod
-    def write_wstring(f: BytesIO, s: str, max_chars: int):
+    def write_wstring(f: BytesIO, s: str, max_chars: int, original: bytes = b""):
         """
         Write UTF-16LE string with padding to max_chars.
 
@@ -70,7 +71,15 @@ class Util:
             f: BytesIO stream to write to
             s: String to write
             max_chars: Maximum number of characters (not bytes)
+            original: Field bytes as read. Written back unchanged when they
+                still decode to s, which keeps bytes after the null intact.
         """
+        if (
+            len(original) == max_chars * 2
+            and Util.read_wstring(BytesIO(original), max_chars) == s
+        ):
+            f.write(original)
+            return
         encoded = s.encode("utf-16le")
         bytes_to_write = max_chars * 2
         if len(encoded) > bytes_to_write:
