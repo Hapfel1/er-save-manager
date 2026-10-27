@@ -17,6 +17,9 @@ PlayStation exports are matched by magic (ER), exact length (NR, same
 rule as the NR parser) or userdataNNNN name plus size (DS3).
 Anything else returns None, so callers only reject a file that positively
 matches a different game.
+
+incomplete_reason() tells a cut-off or empty file from a whole one by the
+container layout alone, before any game parser runs.
 """
 
 from __future__ import annotations
@@ -37,14 +40,76 @@ _BND4_SIGNATURES: dict[tuple[int, int], str] = {
 _ER_PS_MAGIC = bytes.fromhex("cb019c2c")
 _NR_PS_SIZE = 0x12A00A0
 
-# BND4 header: u32 entry count at 0xC, entry table at 0x40, entry size u64 at +0x8.
+# BND4 header: u32 entry count at 0xC, entry table at 0x40 with 0x20-byte
+# records: entry size u64 at +0x8, data offset u32 at +0x10.
 _ENTRY_COUNT_OFFSET = 0xC
-_FIRST_ENTRY_SIZE_OFFSET = 0x40 + 0x8
+_ENTRY_TABLE = 0x40
+_ENTRY_STRIDE = 0x20
+_ENTRY_SIZE_FIELD = 0x8
+_ENTRY_DATA_OFFSET_FIELD = 0x10
+_FIRST_ENTRY_SIZE_OFFSET = _ENTRY_TABLE + _ENTRY_SIZE_FIELD
+# Larger than any supported game's entry count; a count above it is not a save.
+_MAX_ENTRIES = 64
+
+# ER PS export: 0x70-byte header, 10 slots of 0x280000, USER_DATA_10
+# (0x60000) and USER_DATA_11 (0x240010), no checksums.
+ER_PS_SIZE = 0x70 + 10 * 0x280000 + 0x60000 + 0x240010
 
 
 # Games whose own saves are always recognized; checks against any other game
 # (unknown signature) cannot tell a mismatch from its own file.
 KNOWN_GAMES = frozenset(_BND4_SIGNATURES.values())
+
+
+def bnd4_game(head: bytes) -> str | None:
+    """Game key for a BND4 header (at least 0x48 bytes), None if unknown."""
+    if head[:4] != b"BND4" or len(head) < _FIRST_ENTRY_SIZE_OFFSET + 8:
+        return None
+    count = struct.unpack_from("<I", head, _ENTRY_COUNT_OFFSET)[0]
+    first = struct.unpack_from("<Q", head, _FIRST_ENTRY_SIZE_OFFSET)[0]
+    return _BND4_SIGNATURES.get((count, first))
+
+
+def bnd4_problem(data: bytes, size: int) -> str | None:
+    """Why a BND4 file of the given size is cut off, None when every entry
+    lies inside it. data holds at least the header and entry table."""
+    if len(data) < _ENTRY_TABLE:
+        return f"BND4 header cut off at {size:#x} bytes"
+    count = struct.unpack_from("<I", data, _ENTRY_COUNT_OFFSET)[0]
+    if not 0 < count <= _MAX_ENTRIES:
+        return f"BND4 entry count {count}"
+    table_end = _ENTRY_TABLE + count * _ENTRY_STRIDE
+    if len(data) < table_end:
+        return f"BND4 entry table ends at {table_end:#x}, file is {size:#x} bytes"
+    for i in range(count):
+        rec = _ENTRY_TABLE + i * _ENTRY_STRIDE
+        entry_size = struct.unpack_from("<Q", data, rec + _ENTRY_SIZE_FIELD)[0]
+        offset = struct.unpack_from("<I", data, rec + _ENTRY_DATA_OFFSET_FIELD)[0]
+        if offset + entry_size > size:
+            return (
+                f"BND4 entry {i} ends at {offset + entry_size:#x}, "
+                f"file is {size:#x} bytes"
+            )
+    return None
+
+
+def incomplete_reason(path: str | Path) -> str | None:
+    """Why the file is empty or cut off, None when it looks whole or its
+    format is unknown (left to the game parser)."""
+    path = Path(path)
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            head = f.read(_ENTRY_TABLE + _MAX_ENTRIES * _ENTRY_STRIDE)
+    except OSError as exc:
+        return f"cannot read: {exc}"
+    if size == 0:
+        return "empty file"
+    if head[:4] == b"BND4":
+        return bnd4_problem(head, size)
+    if head[:4] == _ER_PS_MAGIC and size < ER_PS_SIZE:
+        return f"PS save is {size:#x} bytes, needs {ER_PS_SIZE:#x}"
+    return None
 
 
 def identify_game(path: str | Path) -> str | None:
@@ -61,9 +126,7 @@ def identify_game(path: str | Path) -> str | None:
 
     magic = head[:4]
     if magic == b"BND4" and len(head) >= _FIRST_ENTRY_SIZE_OFFSET + 8:
-        count = struct.unpack_from("<I", head, _ENTRY_COUNT_OFFSET)[0]
-        first = struct.unpack_from("<Q", head, _FIRST_ENTRY_SIZE_OFFSET)[0]
-        return _BND4_SIGNATURES.get((count, first))
+        return bnd4_game(head)
     if magic == _ER_PS_MAGIC:
         return "elden_ring"
     if size == _NR_PS_SIZE:

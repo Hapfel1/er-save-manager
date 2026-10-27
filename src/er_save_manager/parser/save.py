@@ -19,6 +19,30 @@ from er_save_manager.parser.user_data_x import UserDataX
 logger = logging.getLogger(__name__)
 
 
+def _check_complete(data: bytes, magic: bytes) -> None:
+    """Raise ValueError for a cut-off file or a BND4 of another game; the
+    slot loop would otherwise read the gaps as empty slots."""
+    from er_save_manager.games.save_identify import (
+        ER_PS_SIZE,
+        bnd4_game,
+        bnd4_problem,
+    )
+
+    if magic == b"BND4":
+        problem = bnd4_problem(data, len(data))
+        if problem:
+            raise ValueError(f"Not a complete save file: {problem}")
+        if bnd4_game(data) != "elden_ring":
+            raise ValueError(
+                f"Not an Elden Ring save file: BND4 of {bnd4_game(data) or 'unknown'}"
+            )
+    elif magic != b"SL2\x00" and len(data) < ER_PS_SIZE:
+        raise ValueError(
+            f"Not a complete save file: PS save is {len(data):#x} bytes, "
+            f"needs {ER_PS_SIZE:#x}"
+        )
+
+
 @dataclass
 class Save:
     """
@@ -139,6 +163,8 @@ class Save:
             obj.is_ps = True
         else:
             raise ValueError(f"Invalid save file magic: {obj.magic.hex()}")
+
+        _check_complete(data, obj.magic)
 
         header_size = 0x6C if obj.is_ps else 0x2FC
 
