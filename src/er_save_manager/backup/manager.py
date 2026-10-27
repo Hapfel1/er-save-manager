@@ -340,6 +340,7 @@ class BackupManager:
         operation: str = "",
         save: Save | None = None,
         compress: bool | None = None,
+        keep: tuple[str, ...] = (),
     ) -> tuple[Path, list[BackupMetadata]]:
         from er_save_manager.ui.settings import (
             get_settings,  # lazy to avoid circular import
@@ -353,10 +354,19 @@ class BackupManager:
             operation: Operation being performed (e.g., "fix_torrent")
             save: Optional Save object to extract character info from
             compress: Whether to compress the backup (None = use settings)
+            keep: Backup file names pruning leaves in place
+
+        Pruning past the max_backups setting, and its warning dialog, run
+        on the Tk main loop once the current event handler returns, so a
+        caller that writes the save right after this call finishes the
+        write first. Without a Tk root it prunes before returning.
 
         Returns:
             Tuple of (Path to created backup, List of BackupMetadata that will be pruned)
         """
+        sources = self._save_files()
+        if not any(p.exists() for p in sources):
+            raise FileNotFoundError(f"Save file not found: {self.save_path}")
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
         if self._ps_folder:
@@ -379,7 +389,7 @@ class BackupManager:
                 with zipfile.ZipFile(
                     tmp_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
                 ) as zipf:
-                    for file in self._save_files():
+                    for file in sources:
                         zipf.write(file, arcname=file.name)
             else:
                 shutil.copy2(self.save_path, tmp_path)
@@ -407,29 +417,60 @@ class BackupManager:
 
         pruned_backups = []
         try:
-            settings = get_settings()
-            max_backups = settings.get("max_backups", 50)
+            max_backups = get_settings().get("max_backups", 50)
             if max_backups and max_backups > 0:
-                pruned_backups = self.get_backups_to_prune(keep_count=max_backups)
-                if pruned_backups:
-                    should_prune = True
-                    if settings.get("show_backup_pruning_warning", True):
-                        result = self._show_pruning_warning(max_backups, pruned_backups)
-                        # User raised the limit - re-read setting and skip prune
-                        if result == "raised":
-                            new_max = get_settings().get("max_backups", max_backups)
-                            pruned_backups = self.get_backups_to_prune(
-                                keep_count=new_max
-                            )
-                            should_prune = bool(pruned_backups)
-                    if should_prune:
-                        self.prune_backups(
-                            keep_count=get_settings().get("max_backups", max_backups)
-                        )
+                pruned_backups = self.get_backups_to_prune(
+                    keep_count=max_backups, keep=keep
+                )
         except Exception as e:
-            print(f"Backup pruning failed: {e}")
+            _log_problem(e, f"Backup pruning of {self.backup_folder}")
+        if pruned_backups:
+            self._schedule_prune(keep)
 
         return backup_path, pruned_backups
+
+    def _schedule_prune(self, keep: tuple[str, ...]) -> None:
+        """Run _prune_to_limit on the Tk main loop, or now without a root."""
+        import tkinter as _tk
+
+        root = _tk._default_root
+        try:
+            alive = root is not None and root.winfo_exists()
+        except Exception:
+            alive = False
+        if not alive:
+            self._prune_to_limit(keep)
+            return
+        if threading.current_thread() is threading.main_thread():
+            root.after_idle(self._prune_to_limit, keep)
+        else:
+            root.after(0, self._prune_to_limit, keep)
+
+    def _prune_to_limit(self, keep: tuple[str, ...]) -> None:
+        """Prune past max_backups, asking first when the warning is on."""
+        from er_save_manager.ui.settings import get_settings
+
+        try:
+            # Re-read: other BackupManager instances may have added backups
+            # since this one loaded the list.
+            self._history = None
+            settings = get_settings()
+            max_backups = settings.get("max_backups", 50)
+            if not max_backups or max_backups <= 0:
+                return
+            pruned_backups = self.get_backups_to_prune(
+                keep_count=max_backups, keep=keep
+            )
+            if not pruned_backups:
+                return
+            if settings.get("show_backup_pruning_warning", True):
+                result = self._show_pruning_warning(max_backups, pruned_backups)
+                # User raised the limit - re-read setting and skip prune
+                if result == "raised":
+                    max_backups = get_settings().get("max_backups", max_backups)
+            self.prune_backups(keep_count=max_backups, keep=keep)
+        except Exception as e:
+            _log_problem(e, f"Backup pruning of {self.backup_folder}")
 
     def _show_pruning_warning(
         self, max_backups: int, pruned_backups: list[BackupMetadata]
@@ -500,11 +541,14 @@ class BackupManager:
         if not backup_path.exists():
             raise FileNotFoundError(f"Backup not found: {backup_name}")
 
-        # Create backup of current state before restoring
-        self.create_backup(
-            description="before_restore",
-            operation=f"restore_{backup_name}",
-        )
+        # Back up the current state before restoring, unless the save is
+        # gone. The backup being restored is kept out of pruning.
+        if any(p.exists() for p in self._save_files()):
+            self.create_backup(
+                description="before_restore",
+                operation=f"restore_{backup_name}",
+                keep=(backup_name,),
+            )
 
         is_zip = backup_name.endswith(".zip")
         is_gzip = backup_name.endswith(".gz")
@@ -580,7 +624,9 @@ class BackupManager:
         self._save_history()
         return True
 
-    def get_backups_to_prune(self, keep_count: int = 10) -> list[BackupMetadata]:
+    def get_backups_to_prune(
+        self, keep_count: int = 10, keep: tuple[str, ...] = ()
+    ) -> list[BackupMetadata]:
         """
         Get list of backups that would be deleted by pruning.
 
@@ -590,17 +636,20 @@ class BackupManager:
 
         Args:
             keep_count: Number of non-favorite backups to keep
+            keep: Backup file names treated like favorites
 
         Returns:
             List of BackupMetadata that would be deleted
         """
-        prunable = [b for b in self.history.backups if not b.favorite]
+        prunable = [
+            b for b in self.history.backups if not b.favorite and b.filename not in keep
+        ]
         if len(prunable) <= keep_count:
             return []
 
         return prunable[keep_count:]
 
-    def prune_backups(self, keep_count: int = 10) -> int:
+    def prune_backups(self, keep_count: int = 10, keep: tuple[str, ...] = ()) -> int:
         """
         Delete old backups, keeping only the most recent ones.
 
@@ -608,11 +657,12 @@ class BackupManager:
 
         Args:
             keep_count: Number of non-favorite backups to keep
+            keep: Backup file names treated like favorites
 
         Returns:
             Number of backups deleted
         """
-        to_delete = self.get_backups_to_prune(keep_count=keep_count)
+        to_delete = self.get_backups_to_prune(keep_count=keep_count, keep=keep)
         if not to_delete:
             return 0
 
