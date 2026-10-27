@@ -29,7 +29,7 @@ from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
-from er_save_manager.ui import palette, popups
+from er_save_manager.ui import error_report, palette, popups
 from er_save_manager.ui.character_pages import CharacterPagesTab
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
@@ -121,6 +121,7 @@ class SaveManagerGUI:
 
     def __init__(self, root):
         self.root = root
+        error_report.install(root)
         self.root.title("Elden Ring Save Manager")
         self.root.geometry("1200x1000")
 
