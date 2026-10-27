@@ -14,7 +14,12 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.editors import face_overrides
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, StageError, var_state
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    StageError,
+    guard_before_write,
+    var_state,
+)
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
@@ -479,6 +484,8 @@ class AppearanceTab:
                 value_labels[idx].configure(text="0")
 
         def do_confirm():
+            if not guard_before_write("change the preset"):
+                return
             try:
                 new_unk = list(preset.unk0x6c)
                 for idx, var in slider_vars.items():
@@ -1307,6 +1314,8 @@ class AppearanceTab:
             preset_combo, slot_combo = combos
 
             def do_import():
+                if not guard_before_write("import the preset"):
+                    return
                 try:
                     from er_save_manager.backup.manager import BackupManager
 
@@ -1351,6 +1360,8 @@ class AppearanceTab:
                     traceback.print_exc()
 
             def do_import_all():
+                if not guard_before_write("import the presets"):
+                    return
                 try:
                     from er_save_manager.backup.manager import BackupManager
 
@@ -1490,6 +1501,8 @@ class AppearanceTab:
         patch_combo_scroll(slot_combo)
 
         def do_copy():
+            if not guard_before_write("copy the preset"):
+                return
             dest_path = dest_path_var.get()
             if not dest_path or not Path(dest_path).exists():
                 notify(self.parent, "Select a valid destination save file", "warning")
@@ -1552,6 +1565,8 @@ class AppearanceTab:
 
     def delete_preset(self):
         """Delete selected preset"""
+        if not guard_before_write("delete the preset"):
+            return
         if self.selected_slot is None:
             notify(self.parent, "Select a preset to delete", "warning")
             return

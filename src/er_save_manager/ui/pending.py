@@ -37,11 +37,27 @@ def register_save_hooks(
     *,
     write_failed: Callable[[BaseException, object], None],
     file_writable: Callable[[], bool],
+    guard: Callable[[str], bool],
 ) -> None:
-    """Install the main window's handlers behind write_failed and
-    save_writable."""
+    """Install the main window's handlers behind write_failed, save_writable
+    and guard_before_write."""
     _hooks["write_failed"] = write_failed
     _hooks["file_writable"] = file_writable
+    _hooks["guard"] = guard
+
+
+def guard_before_write(action: str) -> bool:
+    """Ask about unapplied edits before an operation that writes or copies
+    the save file outside Apply All (character management, presets,
+    regions, extension copy).
+
+    Such operations read or write the file on disk; without the guard they
+    skip the edits, and Apply All later writes them onto whatever the
+    operation left in their slot. Returns False when the user cancelled or
+    applying failed; action completes "Apply them before you ...".
+    """
+    handler = _hooks.get("guard")
+    return True if handler is None else bool(handler(action))
 
 
 def write_failed(exc: BaseException, parent=None) -> None:
@@ -547,7 +563,9 @@ class PendingBar(ctk.CTkFrame):
         ):
             self.discard_all()
 
-    def guard(self, action: str, *, apply: bool = True, discard: str = "Discard") -> bool:
+    def guard(
+        self, action: str, *, apply: bool = True, discard: str = "Discard"
+    ) -> bool:
         """Ask before an action that would drop unapplied edits.
 
         Returns True when the action may go ahead (applied, discarded or

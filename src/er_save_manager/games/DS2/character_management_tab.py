@@ -16,6 +16,7 @@ from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -381,6 +382,8 @@ class DS2CharacterManagementTab:
     # ------------------------------------------------------------------
 
     def _copy_character(self) -> None:
+        if not guard_before_write("copy the character"):
+            return
         if not self._check_game_not_running():
             return
         save = self._require_save()
@@ -432,6 +435,8 @@ class DS2CharacterManagementTab:
         )
 
     def _swap_characters(self) -> None:
+        if not guard_before_write("swap the characters"):
+            return
         if not self._check_game_not_running():
             return
         save = self._require_save()
@@ -466,6 +471,8 @@ class DS2CharacterManagementTab:
         self._write_and_reload(save, f"Swapped Slot {slot_a} and Slot {slot_b}.")
 
     def _export_character(self) -> None:
+        if not guard_before_write("export the character"):
+            return
         save = self._require_save()
         if save is None:
             return
@@ -504,6 +511,8 @@ class DS2CharacterManagementTab:
         )
 
     def _import_character(self) -> None:
+        if not guard_before_write("import a character"):
+            return
         if not self._check_game_not_running():
             return
         save = self._require_save()
@@ -547,6 +556,8 @@ class DS2CharacterManagementTab:
         self._write_and_reload(save, f"Character '{name}' imported to Slot {to_slot}.")
 
     def _delete_character(self) -> None:
+        if not guard_before_write("delete the character"):
+            return
         if not self._check_game_not_running():
             return
         save = self._require_save()
@@ -632,6 +643,8 @@ class DS2CharacterManagementTab:
         )
 
     def _transfer_character(self) -> None:
+        if not guard_before_write("transfer the character"):
+            return
         if not self._check_game_not_running():
             return
         save = self._require_save()

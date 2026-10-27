@@ -15,6 +15,7 @@ import customtkinter as ctk
 from er_save_manager.games import extension_copy as ec
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import patch_combo_scroll
 
@@ -449,6 +450,8 @@ def open_extension_copy(
     is_game_running: Callable[[], bool] | None = None,
 ) -> None:
     """Entry point for the header button and the Character Management tabs."""
+    if not guard_before_write("copy the save to another extension"):
+        return
     if not save_path:
         notify(parent, "Load a save file first.", "warning")
         return

@@ -17,7 +17,7 @@ from er_save_manager.data.gestures import (
 )
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, StageError
+from er_save_manager.ui.pending import FieldTracker, StageError, guard_before_write
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
@@ -449,6 +449,8 @@ class GesturesRegionsTab:
             ).pack(anchor="w", padx=8, pady=2)
 
         def apply_regions():
+            if not guard_before_write("change unlocked regions"):
+                return
             selected = sorted(rid for rid, var in region_vars.items() if var.get())
 
             save_path = self.get_save_path()

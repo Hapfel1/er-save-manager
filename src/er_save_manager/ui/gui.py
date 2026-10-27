@@ -21,12 +21,11 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from er_save_manager import VersionChecker, __version__
+from er_save_manager import VersionChecker, __version__, own_writes
 from er_save_manager.games.extension_copy import (
     SUPPORTED_GAMES as SUPPORTED_EXTENSION_GAMES,
 )
 from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
-from er_save_manager import own_writes
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
@@ -984,6 +983,7 @@ class SaveManagerGUI:
         register_save_hooks(
             write_failed=self._write_failed,
             file_writable=self._pending_file_writable,
+            guard=lambda action: (self._guard_bypass or self.pending_bar.guard(action)),
         )
         self.pending_bar = PendingBar(
             self.root,
@@ -1400,9 +1400,7 @@ class SaveManagerGUI:
     def _write_failed(self, exc: BaseException, parent=None) -> None:
         """Handler of pending.write_failed: the in-memory save holds a
         change the file does not, so it is re-read from disk."""
-        dropped = (
-            " Unapplied changes are dropped." if self.pending_bar.dirty() else ""
-        )
+        dropped = " Unapplied changes are dropped." if self.pending_bar.dirty() else ""
         CTkMessageBox.showerror(
             "Save Not Written",
             f"The change was not written:\n{exc}\n\n"

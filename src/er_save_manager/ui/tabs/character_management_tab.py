@@ -12,6 +12,7 @@ import customtkinter as ctk
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -518,6 +519,8 @@ class CharacterManagementTab:
 
     def copy_character(self):
         """Copy character from one slot to another"""
+        if not guard_before_write("copy the character"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
@@ -614,6 +617,8 @@ class CharacterManagementTab:
 
     def transfer_character(self):
         """Transfer character to another save file"""
+        if not guard_before_write("transfer the character"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
@@ -758,6 +763,8 @@ class CharacterManagementTab:
 
     def swap_characters(self):
         """Swap two character slots"""
+        if not guard_before_write("swap the characters"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
@@ -817,6 +824,8 @@ class CharacterManagementTab:
 
     def export_character(self):
         """Export character to .erc file"""
+        if not guard_before_write("export the character"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
@@ -872,6 +881,8 @@ class CharacterManagementTab:
 
     def import_character(self):
         """Import character from .erc file"""
+        if not guard_before_write("import a character"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
@@ -964,6 +975,8 @@ class CharacterManagementTab:
 
     def delete_character(self):
         """Delete character from slot"""
+        if not guard_before_write("delete the character"):
+            return
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
                 "Elden Ring Is Running",
