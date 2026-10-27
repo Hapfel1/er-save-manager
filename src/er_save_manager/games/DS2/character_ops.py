@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from pathlib import Path
 from typing import TYPE_CHECKING
+
+from er_save_manager.own_writes import atomic_write
 
 if TYPE_CHECKING:
     from er_save_manager.games.DS2.save import DS2Save
@@ -183,10 +184,7 @@ class DS2CharacterOperations:
         buffer += big_data
         buffer += hashlib.md5(buffer).digest()
 
-        target = Path(output_path)
-        tmp_path = target.with_suffix(target.suffix + ".tmp")
-        tmp_path.write_bytes(bytes(buffer))
-        tmp_path.replace(target)
+        atomic_write(output_path, buffer)
 
     @staticmethod
     def import_character(

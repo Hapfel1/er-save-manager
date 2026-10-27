@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 # AES-128-CBC key for Nightreign save files (credit: TKGP / EonaCat)
 _NR_KEY = bytes(
@@ -178,10 +178,7 @@ def patch_steamid_nr(
         re_enc = _encrypt_entry(entry.iv, entry.decrypted)
         raw[entry.data_offset : entry.data_offset + entry.size] = re_enc
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(bytes(raw))
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, raw)
     return (
         True,
         f"Patched entry 10 + {total_replacements} occurrence(s) in character slots. Old: {old_steamid}  New: {new_steamid}",

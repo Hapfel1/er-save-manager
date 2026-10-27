@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import gzip
 import json
-import os
 import re
 import shutil
 import threading
@@ -14,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
@@ -24,17 +23,7 @@ def _atomic_write_bytes(path: Path, data: bytes) -> None:
     """
     Write bytes to path via a temp file + atomic replace.
     """
-    tmp_path = path.with_name(f"{path.name}.tmp{os.getpid()}")
-    try:
-        with open(tmp_path, "wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-    except BaseException:
-        tmp_path.unlink(missing_ok=True)
-        raise
-    record_write(path)
+    atomic_write(path, data)
 
 
 @dataclass

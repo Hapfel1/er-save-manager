@@ -47,7 +47,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
 
@@ -159,11 +159,7 @@ class DS3Parser:
                     f"original {entry.size}. Plaintext must not change in length."
                 )
             out[entry.offset : entry.offset + entry.size] = blob
-        target = Path(path)
-        tmp_path = target.with_suffix(target.suffix + ".tmp")
-        tmp_path.write_bytes(out)
-        tmp_path.replace(target)
-        record_write(target)
+        atomic_write(path, out)
 
     def get_slot_plaintext_size(self, index: int) -> int:
         return len(self._entries[index].plaintext)
@@ -290,11 +286,7 @@ class DS3PSParser:
                     f"{self._names[i]}: entry size changed. Plaintext must not "
                     "change in length."
                 )
-            target = folder / self._names[i]
-            tmp_path = target.with_name(target.name + ".tmp")
-            tmp_path.write_bytes(entry[4:])
-            tmp_path.replace(target)
-            record_write(target)
+            atomic_write(folder / self._names[i], entry[4:])
             self._written[i] = bytes(entry)
 
 

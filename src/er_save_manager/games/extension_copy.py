@@ -19,14 +19,13 @@ goes into a free slot or replaces one character, and the rest stay.
 
 from __future__ import annotations
 
-import os
 import re
-import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY
 from er_save_manager.games.save_identify import KNOWN_GAMES, identify_game
+from er_save_manager.own_writes import atomic_write
 
 CHARACTER_SLOTS = 10
 
@@ -659,12 +658,7 @@ def _backup_target(plan: Plan) -> None:
 
 
 def _copy_bytes(source: Path, target: Path) -> None:
-    tmp = target.with_name(target.name + ".tmp")
-    try:
-        shutil.copyfile(source, tmp)
-        os.replace(tmp, target)
-    finally:
-        tmp.unlink(missing_ok=True)
+    atomic_write(target, source.read_bytes())
 
 
 def write_copy(plan: Plan, slots: list[int]) -> None:
