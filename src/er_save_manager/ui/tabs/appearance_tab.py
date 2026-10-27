@@ -15,6 +15,7 @@ from er_save_manager.editors import face_overrides
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError, var_state
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _EYE_CARD_WIDTH = 270
@@ -395,16 +396,12 @@ class AppearanceTab:
         from er_save_manager.ui.messagebox import CTkMessageBox
 
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a preset first.", parent=self.parent
-            )
+            notify(self.parent, "Select a preset first.", "warning")
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         try:
@@ -412,9 +409,7 @@ class AppearanceTab:
             preset = presets.presets[self.selected_slot]
 
             if preset.is_empty():
-                CTkMessageBox.showwarning(
-                    "Empty Slot", "Selected preset slot is empty.", parent=self.parent
-                )
+                notify(self.parent, "Selected preset slot is empty.", "warning")
                 return
         except Exception as e:
             CTkMessageBox.showerror(
@@ -608,19 +603,11 @@ class AppearanceTab:
         """View detailed preset information"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save",
-                "Load a save file first.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection",
-                "Select a preset to view.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Select a preset to view.", "warning")
             return
 
         preset_idx = self.selected_slot
@@ -638,11 +625,7 @@ class AppearanceTab:
             preset = presets.presets[preset_idx]
 
             if preset.is_empty():
-                CTkMessageBox.showinfo(
-                    "Empty Preset",
-                    f"Preset {preset_idx + 1} is empty",
-                    parent=self.parent,
-                )
+                notify(self.parent, f"Preset {preset_idx + 1} is empty", "info")
                 return
 
             body_type_value = preset.get_body_type()
@@ -968,9 +951,7 @@ class AppearanceTab:
             for idx, label in available_presets
             if "Empty" not in label and "Error" not in label
         ):
-            CTkMessageBox.showwarning(
-                "No Presets", "No presets available to export", parent=self.parent
-            )
+            notify(self.parent, "No presets available to export", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds
@@ -994,11 +975,7 @@ class AppearanceTab:
             selected_indices = [idx for var, idx, label in checkbox_data if var.get()]
 
             if not selected_indices:
-                CTkMessageBox.showwarning(
-                    "No Selection",
-                    "Select at least one preset to export",
-                    parent=dialog,
-                )
+                notify(dialog, "Select at least one preset to export", "warning")
                 return
 
             on_export(selected_indices, dialog)
@@ -1078,9 +1055,7 @@ class AppearanceTab:
         """Export selected presets to JSON"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         try:
@@ -1110,10 +1085,10 @@ class AppearanceTab:
                     with open(output_path, "w") as f:
                         json.dump(export_data, f, indent=2)
 
-                    CTkMessageBox.showinfo(
-                        "Presets Exported",
+                    notify(
+                        dialog,
                         f"Exported {len(selected_indices)} preset(s) to:\n{os.path.basename(output_path)}",
-                        parent=dialog,
+                        "success",
                     )
                     dialog.destroy()
                 except Exception as e:
@@ -1146,9 +1121,7 @@ class AppearanceTab:
         """Export selected presets to a shareable code via Supabase."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         try:
@@ -1201,9 +1174,7 @@ class AppearanceTab:
         """Import preset from external JSON file"""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         json_path = pick_file(
@@ -1234,9 +1205,7 @@ class AppearanceTab:
         """Import preset(s) from a share code."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         code = self._ask_code("Import from Code", "Enter share code:")
@@ -1260,9 +1229,7 @@ class AppearanceTab:
         """Parse preset data (from JSON file or share code) and show the import dialog."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         try:
@@ -1347,11 +1314,7 @@ class AppearanceTab:
                     target_slot = int(slot_combo.get()) - 1
 
                     if source_idx < 0 or target_slot < 0:
-                        CTkMessageBox.showwarning(
-                            "Invalid",
-                            "Select valid source and target",
-                            parent=self.parent,
-                        )
+                        notify(self.parent, "Select valid source and target", "warning")
                         return
 
                     save_path = self.get_save_path()
@@ -1454,16 +1417,12 @@ class AppearanceTab:
     def copy_preset_to_save(self):
         """Copy selected preset to another save file"""
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a preset to copy", parent=self.parent
-            )
+            notify(self.parent, "Select a preset to copy", "warning")
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first", "warning")
             return
 
         presets_data = save_file.get_character_presets()
@@ -1475,9 +1434,7 @@ class AppearanceTab:
 
         source_preset = presets_data.presets[self.selected_slot]
         if not source_preset or source_preset.is_empty():
-            CTkMessageBox.showwarning(
-                "Empty Slot", "Selected slot is empty", parent=self.parent
-            )
+            notify(self.parent, "Selected slot is empty", "warning")
             return
         # Capture the slot before the dialog can change selected_slot
         source_slot = self.selected_slot
@@ -1535,11 +1492,7 @@ class AppearanceTab:
         def do_copy():
             dest_path = dest_path_var.get()
             if not dest_path or not Path(dest_path).exists():
-                CTkMessageBox.showerror(
-                    "No Save File",
-                    "Select a valid destination save file",
-                    parent=self.parent,
-                )
+                notify(self.parent, "Select a valid destination save file", "warning")
                 return
 
             try:
@@ -1576,10 +1529,10 @@ class AppearanceTab:
                 dest_save.recalculate_checksums()
                 dest_save.to_file(dest_path)
 
-                CTkMessageBox.showinfo(
-                    "Preset Copied",
+                notify(
+                    self.parent,
                     f"Preset copied to {Path(dest_path).name}, Slot {dest_slot}.",
-                    parent=self.parent,
+                    "success",
                 )
                 dialog.destroy()
 
@@ -1600,16 +1553,12 @@ class AppearanceTab:
     def delete_preset(self):
         """Delete selected preset"""
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a preset to delete", parent=self.parent
-            )
+            notify(self.parent, "Select a preset to delete", "warning")
             return
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first", "warning")
             return
 
         if not CTkMessageBox.askyesno(

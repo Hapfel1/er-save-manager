@@ -13,8 +13,10 @@ import customtkinter as ctk
 
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY
 from er_save_manager.platform import PlatformUtils
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 from . import character_ops
@@ -337,17 +339,19 @@ class DSRCharacterManagementTab:
         correct and the manager will show it, but the in-game load screen
         stays blank for that slot.
         """
-        return CTkMessageBox.askyesno(
+        return confirm_warning(
+            self.parent,
+            "show_empty_slot_warning",
             "Empty Slot",
-            f"Slot {to_slot + 1} is currently empty.\n\n"
-            "Dark Souls Remastered will not show a character written "
-            "directly into a slot that has never been created in-game, "
-            "even though the save file and this manager will look correct.\n\n"
-            f"If Slot {to_slot + 1} has never had a character created in it "
-            "before, go create a quick throwaway character there first (any "
-            "name, skip the intro, save and quit), then run this again.\n\n"
-            "Already created a character in this slot? Continue.",
-            parent=self.parent,
+            f"Slot {to_slot + 1} is empty",
+            [
+                "Dark Souls Remastered does not show a character written directly into a "
+                "slot that has never been created in game, even though the "
+                "save file and this manager look correct.",
+                f"If Slot {to_slot + 1} never had a character, create a "
+                "throwaway character there first (any name, skip the intro, "
+                "save and quit), then run this again.",
+            ],
         )
 
     def _check_game_not_running(self) -> bool:
@@ -366,9 +370,7 @@ class DSRCharacterManagementTab:
 
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         from_slot = self._slot_index(self._copy_from_var.get())
@@ -383,9 +385,7 @@ class DSRCharacterManagementTab:
 
         from_char = save.characters[from_slot]
         if from_char is None:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         to_char = save.characters[to_slot]
@@ -433,9 +433,7 @@ class DSRCharacterManagementTab:
 
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_a = self._slot_index(self._swap_a_var.get())
@@ -484,19 +482,13 @@ class DSRCharacterManagementTab:
 
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot = self._slot_index(self._delete_slot_var.get())
         char = save.characters[slot]
         if char is None:
-            CTkMessageBox.showinfo(
-                "Slot Already Empty",
-                f"Slot {slot + 1} is already empty.",
-                parent=self.parent,
-            )
+            notify(self.parent, f"Slot {slot + 1} is already empty.", "info")
             return
 
         name = char.name
@@ -532,17 +524,13 @@ class DSRCharacterManagementTab:
     def _export_character(self) -> None:
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot = self._slot_index(self._export_slot_var.get())
         char = save.characters[slot]
         if char is None:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {slot + 1} is empty.", "warning")
             return
 
         default_name = f"{char.name or f'Character_{slot + 1}'}.dsrc"
@@ -558,10 +546,10 @@ class DSRCharacterManagementTab:
 
         try:
             character_ops.export_character(save, slot, Path(output_path))
-            CTkMessageBox.showinfo(
-                "Character Exported",
+            notify(
+                self.parent,
                 f"Character '{char.name}' exported to:\n{output_path}",
-                parent=self.parent,
+                "success",
             )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -574,9 +562,7 @@ class DSRCharacterManagementTab:
 
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         import_path = pick_file(
@@ -629,17 +615,13 @@ class DSRCharacterManagementTab:
 
         save = self._get_save()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         from_slot = self._slot_index(self._transfer_from_var.get())
         from_char = save.characters[from_slot]
         if from_char is None:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         current_path = self._get_save_path()
@@ -647,10 +629,10 @@ class DSRCharacterManagementTab:
         if not target_path:
             return
         if current_path and Path(target_path).resolve() == Path(current_path).resolve():
-            CTkMessageBox.showerror(
-                "Same Save File",
+            notify(
+                self.parent,
                 "Select a different target save file for transfer.",
-                parent=self.parent,
+                "warning",
             )
             return
 

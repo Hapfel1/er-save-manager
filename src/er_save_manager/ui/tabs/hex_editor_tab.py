@@ -6,6 +6,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 
 class HexEditorTab:
@@ -148,9 +149,7 @@ class HexEditorTab:
         """Jump to specific offset in hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         offset_str = self.hex_offset_var.get().strip()
@@ -216,9 +215,7 @@ class HexEditorTab:
         """Refresh hex view."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         self.hex_display_at_offset(0)

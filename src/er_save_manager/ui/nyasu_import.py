@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import pick_file
 
 _CLASS_MAP = {
@@ -317,7 +318,7 @@ def import_nyasu(
             )
 
     if not queue and not apply_stats:
-        CTkMessageBox.showinfo("Import", "No items found in JSON.", parent=parent)
+        notify(parent, "No items found in JSON.", "info")
         return
 
     try:

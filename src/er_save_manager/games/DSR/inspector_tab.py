@@ -15,7 +15,7 @@ from er_save_manager.ui.character_list import (
     format_playtime,
     slot_issues,
 )
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 if TYPE_CHECKING:
     pass
@@ -109,17 +109,13 @@ class DSRInspectorTab:
 
     def _view_issues(self) -> None:
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a character first.", parent=self.parent
-            )
+            notify(self.parent, "Select a character first.", "warning")
             return
         self._check_save(self.selected_slot)
 
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a character first.", parent=self.parent
-            )
+            notify(self.parent, "Select a character first.", "warning")
             return
         if self._on_slot_selected:
             self._on_slot_selected(self.selected_slot)

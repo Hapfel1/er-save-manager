@@ -19,6 +19,7 @@ import customtkinter as ctk
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -243,9 +244,7 @@ class DSRWorldStateTab:
 
     def _set_bonfires(self, rows: list[int], lit: bool) -> None:
         if not rows:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more bonfires first.", parent=self.parent
-            )
+            notify(self.parent, "Select one or more bonfires first.", "warning")
             return
         if _game_blocks_write(self.parent):
             return
@@ -257,9 +256,7 @@ class DSRWorldStateTab:
             else None
         )
         if char is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No character loaded.", parent=self.parent
-            )
+            notify(self.parent, "No character loaded.", "warning")
             return
         changed = [
             i

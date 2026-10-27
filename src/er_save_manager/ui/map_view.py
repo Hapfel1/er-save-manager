@@ -64,6 +64,7 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import gate_status
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.quest_progress_dialog import steps_up_to
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import Tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -3130,10 +3131,8 @@ class MapWindow:
         categories, and whether finished entries are listed too."""
         comp = self._completion()
         if not comp:
-            CTkMessageBox.showinfo(
-                "No Character",
-                "Load a character in the World State tab first.",
-                parent=self._win,
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
             )
             return
         dlg = ctk.CTkToplevel(self._win)
@@ -3217,11 +3216,7 @@ class MapWindow:
             chosen = [r for r in regions if region_vars[r].get()]
             cats = [c for c in categories if category_vars[c].get()]
             if not chosen or not cats:
-                CTkMessageBox.showinfo(
-                    "Nothing to Export",
-                    "Pick at least one region and one category.",
-                    parent=dlg,
-                )
+                notify(dlg, "Pick at least one region and one category.", "warning")
                 return
             character = self._char_combo.get() or "Character"
             what = chosen[0] if len(chosen) == 1 else "progress"
@@ -3765,10 +3760,10 @@ class MapWindow:
                 if self._detail_rows[int(iid)].limited
             ]
         if not items:
-            CTkMessageBox.showinfo(
-                "Nothing to Change",
+            notify(
+                self._win,
                 "Select limited items in the list; unlimited items have no stock.",
-                parent=self._win,
+                "info",
             )
             return
         sold_out = action == "sold_out"
@@ -4137,10 +4132,8 @@ class MapWindow:
 
     def _move_bloodstain(self):
         if self._on_move_bloodstain is None:
-            CTkMessageBox.showinfo(
-                "Bloodstain",
-                "Load a character in the World State tab first.",
-                parent=self._win,
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
             )
             return
         self._on_move_bloodstain()
@@ -4206,10 +4199,8 @@ class MapWindow:
         of the given ones when no piece or every piece is chosen.
         """
         if self._grace_state is None or self._on_unlock is None:
-            CTkMessageBox.showinfo(
-                "No Character Loaded",
-                "Load a character in the World State tab first.",
-                parent=self._win,
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
             )
             return
         fragments = [p for p in pieces if p.fragment]
@@ -4477,10 +4468,10 @@ class MapWindow:
         marker = self._editor.add(mx, my, self._map_no, self._icon, kind)
         if marker is None:
             what = "10 beacon" if kind == BEACON else "100 marker"
-            CTkMessageBox.showwarning(
-                "Map Markers",
+            notify(
+                self._win,
                 f"All {what} records are in use. Delete one first.",
-                parent=self._win,
+                "warning",
             )
             return
         self._selected_marker = marker

@@ -25,6 +25,7 @@ from er_save_manager.ui.dialogs.community_dialogs import (
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     open_url,
@@ -493,9 +494,7 @@ class EnhancedPresetBrowser:
         try:
             save_file = self.appearance_tab.get_save_file()
             if not save_file:
-                CTkMessageBox.showerror(
-                    "No Save Loaded", "No save file loaded", parent=self.dialog
-                )
+                notify(self.dialog, "No save file loaded", "warning")
                 return
 
             if slot_index >= self.NUM_SLOTS:
@@ -955,9 +954,7 @@ class EnhancedPresetBrowser:
             save_path = self.appearance_tab.get_save_path()
 
             if not save_file or not save_path:
-                CTkMessageBox.showerror(
-                    "No Save Loaded", "No save file loaded", parent=self.dialog
-                )
+                notify(self.dialog, "No save file loaded", "warning")
                 return
 
             if target_slot >= self.NUM_SLOTS:
@@ -987,10 +984,10 @@ class EnhancedPresetBrowser:
                     self.preset_metrics_cache.update(updated_metrics)
                 self.preview_preset(self.current_preset)
 
-            CTkMessageBox.showinfo(
-                "Preset Applied",
+            notify(
+                self.dialog,
                 f"Applied '{self.current_preset.get('name', 'preset')}' to Preset Slot {target_slot + 1}.",
-                parent=self.dialog,
+                "success",
             )
 
             # Keep browser open - don't close the dialog

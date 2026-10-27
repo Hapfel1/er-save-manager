@@ -19,6 +19,7 @@ from er_save_manager.data.locations import get_name_for_map_id
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
@@ -266,24 +267,22 @@ class ItemPickupsDialog:
         def _respawn(iids, scope: str):
             selected = [pickups_by_iid[iid] for iid in iids]
             if not selected:
-                CTkMessageBox.showinfo(
-                    "Nothing to Respawn", f"No item pickups {scope}.", parent=dialog
-                )
+                notify(dialog, f"No item pickups {scope}.", "info")
                 return
             targets = [
                 p for p in selected if p.source == "pickup" and state_by_flag[p.flag_id]
             ]
             skipped = sum(1 for p in selected if p.source != "pickup")
             if not targets:
-                CTkMessageBox.showinfo(
-                    "Nothing to Respawn",
+                notify(
+                    dialog,
                     f"None of the {scope} entries is a collected world pickup."
                     + (
                         f"\n\n{skipped} reward(s) or drop(s) cannot be respawned."
                         if skipped
                         else ""
                     ),
-                    parent=dialog,
+                    "info",
                 )
                 return
 

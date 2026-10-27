@@ -17,7 +17,7 @@ from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.popups import reopenable
-from er_save_manager.ui.toast import show_toast
+from er_save_manager.ui.toast import notify, show_toast
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
@@ -1252,9 +1252,7 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
@@ -1337,11 +1335,7 @@ class InventoryEditor:
                 type="success",
             )
         else:
-            CTkMessageBox.showwarning(
-                "Nothing to Add",
-                "No inventory items are currently visible.",
-                parent=self.parent,
-            )
+            notify(self.parent, "No inventory items are currently visible.", "warning")
 
     # ---- search browser helpers ---------------------------------------------
 
@@ -1965,18 +1959,14 @@ class InventoryEditor:
             self._affinity_combo.configure(values=self._affinity_names())
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
         try:
             slot = save_file.characters[slot_idx]
             if not slot or slot.is_empty():
-                CTkMessageBox.showwarning(
-                    "Empty Slot", f"Slot {slot_idx + 1} is empty.", parent=self.parent
-                )
+                notify(self.parent, f"Slot {slot_idx + 1} is empty.", "warning")
                 return
 
             gaitem_map = {}
@@ -2403,9 +2393,7 @@ class InventoryEditor:
 
     def add_to_loadout(self):
         if not self.selected_item:
-            CTkMessageBox.showwarning(
-                "No Item", "Select an item from the browser first.", parent=self.parent
-            )
+            notify(self.parent, "Select an item from the browser first.", "warning")
             return
 
         item_info = self._get_current_item_info()
@@ -2481,9 +2469,7 @@ class InventoryEditor:
 
     def add_item(self):
         if not self.selected_item:
-            CTkMessageBox.showwarning(
-                "No Item", "Select an item from the browser first.", parent=self.parent
-            )
+            notify(self.parent, "Select an item from the browser first.", "warning")
             return
 
         if self.loadout_mode_var.get():
@@ -2492,9 +2478,7 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
@@ -2612,9 +2596,7 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=parent_window
-            )
+            notify(parent_window, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
@@ -2704,9 +2686,7 @@ class InventoryEditor:
     def remove_item(self):
         result = self._get_forced_or_listbox()
         if result is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select an item to remove.", parent=self.parent
-            )
+            notify(self.parent, "Select an item to remove.", "warning")
             return
         full_id, location, gaitem_handle = result
         item_label = f"0x{full_id:08X}"
@@ -2762,9 +2742,7 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=parent_window
-            )
+            notify(parent_window, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
@@ -2773,9 +2751,7 @@ class InventoryEditor:
         except Exception:
             return
         if slot.is_empty():
-            CTkMessageBox.showwarning(
-                "Empty Slot", "This character slot is empty.", parent=parent_window
-            )
+            notify(parent_window, "This character slot is empty.", "warning")
             return
 
         from er_save_manager.data.item_database import get_item_database
@@ -2798,10 +2774,10 @@ class InventoryEditor:
         ]
 
         if not matches:
-            CTkMessageBox.showinfo(
-                "Batch Remove",
+            notify(
+                parent_window,
                 f"No items found in {location} inventory for '{cat}'.",
-                parent=parent_window,
+                "info",
             )
             return
 
@@ -2870,9 +2846,7 @@ class InventoryEditor:
     def open_auto_refill(self):
         save_file = self.get_save_file()
         if save_file is None:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
         slot_idx = self.get_char_slot()
         from er_save_manager.editors.auto_refill import read_entries, write_entries
@@ -2880,10 +2854,10 @@ class InventoryEditor:
 
         entries = read_entries(save_file, slot_idx)
         if not entries:
-            CTkMessageBox.showinfo(
-                "Auto-refill",
+            notify(
+                self.parent,
                 "This character has no items with an Auto-refill setting yet.",
-                parent=self.parent,
+                "info",
             )
             return
 
@@ -2910,9 +2884,7 @@ class InventoryEditor:
     def set_quantity(self):
         result = self._get_forced_or_listbox()
         if result is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select an item first.", parent=self.parent
-            )
+            notify(self.parent, "Select an item first.", "warning")
             return
         full_id, location, gaitem_handle = result
         cat = full_id & 0xF0000000
@@ -2936,10 +2908,10 @@ class InventoryEditor:
         is_ammo = is_weapon and max_qty is not None and max_qty > 1
 
         if (is_weapon and not is_ammo) or is_armor or is_gem:
-            CTkMessageBox.showinfo(
-                "Not Stackable",
+            notify(
+                self.parent,
                 "Quantity editing does not apply to this item type.",
-                parent=self.parent,
+                "info",
             )
             return
 
@@ -3022,30 +2994,20 @@ class InventoryEditor:
         if self._forced_selection is not None:
             full_id, location, gaitem_handle = self._forced_selection
             if (full_id & 0xF0000000) != 0x00000000:
-                CTkMessageBox.showinfo(
-                    "Not a Weapon",
-                    "This operation only applies to weapons.",
-                    parent=self.parent,
-                )
+                notify(self.parent, "This operation only applies to weapons.", "info")
                 return None
             return full_id, location, gaitem_handle
 
         sel = self.inventory_tree.selection()
         if not sel:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select an item first.", parent=self.parent
-            )
+            notify(self.parent, "Select an item first.", "warning")
             return None
         idx = int(sel[0])
         if idx >= len(self._item_data) or self._item_data[idx] is None:
             return None
         full_id, location, gaitem_handle = self._item_data[idx]
         if (full_id & 0xF0000000) != 0x00000000:
-            CTkMessageBox.showinfo(
-                "Not a Weapon",
-                "This operation only applies to weapons.",
-                parent=self.parent,
-            )
+            notify(self.parent, "This operation only applies to weapons.", "info")
             return None
         return full_id, location, gaitem_handle
 
@@ -3074,9 +3036,7 @@ class InventoryEditor:
         is_convergence_save = ".cnv" in save_path
 
         if reinforcement == "none":
-            CTkMessageBox.showinfo(
-                "Not Upgradable", "This weapon cannot be upgraded.", parent=self.parent
-            )
+            notify(self.parent, "This weapon cannot be upgraded.", "info")
             return
 
         if explicit_cap >= 0:
@@ -3151,9 +3111,7 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=parent_window
-            )
+            notify(parent_window, "Load a save file first.", "warning")
             return
 
         from er_save_manager.data.item_database import get_item_database
@@ -3176,10 +3134,10 @@ class InventoryEditor:
             and (cat == "All" or _row_category(row[1]) == cat)
         ]
         if not weapon_rows:
-            CTkMessageBox.showinfo(
-                "Batch Upgrade",
+            notify(
+                parent_window,
                 f"No weapons found in {location} inventory for '{cat}'.",
-                parent=parent_window,
+                "info",
             )
             return
 
@@ -3255,11 +3213,7 @@ class InventoryEditor:
 
         def _fill_max() -> None:
             if highest_mm == 0:
-                CTkMessageBox.showinfo(
-                    "Batch Upgrade",
-                    "No upgraded weapons found in the inventory.",
-                    parent=dialog,
-                )
+                notify(dialog, "No upgraded weapons found in the inventory.", "info")
                 return
             std_var.set(True)
             std_level_var.set(str(max_std_level))
@@ -3283,11 +3237,7 @@ class InventoryEditor:
             apply_std = std_var.get()
             apply_somber = somber_var.get()
             if not apply_std and not apply_somber:
-                CTkMessageBox.showwarning(
-                    "Batch Upgrade",
-                    "Select at least one weapon type.",
-                    parent=dialog,
-                )
+                notify(dialog, "Select at least one weapon type.", "warning")
                 return
 
             std_level = somber_level = 0
@@ -3409,10 +3359,8 @@ class InventoryEditor:
                 updated += 1
 
             if updated == 0:
-                CTkMessageBox.showinfo(
-                    "Batch Upgrade",
-                    "No weapons matched the selected type(s).",
-                    parent=parent_window,
+                notify(
+                    parent_window, "No weapons matched the selected type(s).", "info"
                 )
                 return
 
@@ -3494,9 +3442,7 @@ class InventoryEditor:
 
         item = self._lookup_weapon_item(full_id, is_convergence_save)
         if item and not getattr(item, "aow_allowed", True):
-            CTkMessageBox.showinfo(
-                "Not Infusable", "This weapon cannot be infused.", parent=self.parent
-            )
+            notify(self.parent, "This weapon cannot be infused.", "info")
             return
 
         base_list = self._affinity_names()
@@ -3600,11 +3546,7 @@ class InventoryEditor:
 
         item = self._lookup_weapon_item(full_id, self._is_cnv_save())
         if item and not getattr(item, "aow_allowed", True):
-            CTkMessageBox.showinfo(
-                "AoW Not Supported",
-                "This weapon does not accept an Ash of War.",
-                parent=self.parent,
-            )
+            notify(self.parent, "This weapon does not accept an Ash of War.", "info")
             return
 
         wep_col = getattr(item, "wep_type_col", "") if item else ""
@@ -3772,18 +3714,14 @@ class InventoryEditor:
     def _import_nyasu(self) -> None:
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_idx = self.get_char_slot()
         try:
             slot = save_file.characters[slot_idx]
             if not slot or slot.is_empty():
-                CTkMessageBox.showwarning(
-                    "Empty Slot", "Select a character first.", parent=self.parent
-                )
+                notify(self.parent, "Select a character first.", "warning")
                 return
         except Exception as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
@@ -4048,10 +3986,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         if not name:
             return None
         if name in read_loadouts():
-            CTkMessageBox.showwarning(
-                "Name Exists",
+            notify(
+                self,
                 f"A loadout named '{name}' already exists. Choose another name.",
-                parent=self,
+                "warning",
             )
             return None
         return name
@@ -4094,10 +4032,10 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         if not name or name == old:
             return
         if name in read_loadouts():
-            CTkMessageBox.showwarning(
-                "Name Exists",
+            notify(
+                self,
                 f"A loadout named '{name}' already exists. Choose another name.",
-                parent=self,
+                "warning",
             )
             return
         # Rebuilt in order so the renamed entry keeps its place in the file.
@@ -4212,7 +4150,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
 
     def export_code(self):
         if not self.editor.loadout:
-            CTkMessageBox.showwarning("Empty", "This loadout is empty.", parent=self)
+            notify(self, "This loadout is empty.", "warning")
             return
 
         from er_save_manager.data.inventory_loadout_sharing import share_loadout
@@ -4270,12 +4208,12 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
     def apply_loadout(self):
         editor = self.editor
         if not editor.loadout:
-            CTkMessageBox.showwarning("Empty", "This loadout is empty.", parent=self)
+            notify(self, "This loadout is empty.", "warning")
             return
 
         save_file = editor.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "Load a save file first.", parent=self)
+            notify(self, "Load a save file first.", "warning")
             return
 
         slot_idx = editor.get_char_slot()
@@ -4283,9 +4221,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             slot = save_file.characters[slot_idx]
             character = slot.get_character_name() or "this character"
         except Exception:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self
-            )
+            notify(self, "Load a character first.", "warning")
             return
         count = len(editor.loadout)
         if not CTkMessageBox.askyesno(

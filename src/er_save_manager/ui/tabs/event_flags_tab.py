@@ -31,6 +31,7 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import StageError
 from er_save_manager.ui.popups import reopenable
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import (
     bind_mousewheel,
@@ -432,9 +433,7 @@ class EventFlagsTab:
     def on_category_changed(self, choice=None):
         """Handle category selection"""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         category = self.category_var.get()
@@ -631,9 +630,7 @@ class EventFlagsTab:
     def unlock_all_in_category(self):
         """Unlock all flags in current category"""
         if not self.flag_rows:
-            CTkMessageBox.showwarning(
-                "No Flags", "No flags are currently displayed.", parent=self.parent
-            )
+            notify(self.parent, "No flags are currently displayed.", "warning")
             return
 
         result = CTkMessageBox.askyesno(
@@ -647,10 +644,10 @@ class EventFlagsTab:
             for flag_id in self.flag_rows:
                 self._set_flag_state(flag_id, True)
 
-            CTkMessageBox.showinfo(
-                "Flags Enabled",
+            notify(
+                self.parent,
                 f"Enabled all {len(self.flag_rows)} displayed flags.\n\nClick Apply All to save.",
-                parent=self.parent,
+                "success",
             )
 
     def flag_changes(self) -> int:
@@ -709,9 +706,7 @@ class EventFlagsTab:
     def export_flags(self):
         """Export all set event flags to a JSON file."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         import json
@@ -788,9 +783,7 @@ class EventFlagsTab:
         """Apply flags from a JSON file. Entries with "state": false are cleared; others are set.
         Backward compatible: entries without a "state" field default to true."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         import json
@@ -836,8 +829,8 @@ class EventFlagsTab:
         missing = sum(1 for flag_id, _ in flag_ops if not EventFlags.has_flag(flag_id))
         flag_ops = [op for op in flag_ops if EventFlags.has_flag(op[0])]
         if not flag_ops:
-            CTkMessageBox.showinfo(
-                "Nothing to Import",
+            notify(
+                self.parent,
                 "No valid flag IDs found in file."
                 + (
                     f"\n\n{missing} flag(s) are in blocks that do not exist in "
@@ -845,7 +838,7 @@ class EventFlagsTab:
                     if missing
                     else ""
                 ),
-                parent=self.parent,
+                "info",
             )
             return
 
@@ -911,9 +904,7 @@ class EventFlagsTab:
     def open_advanced_editor(self):
         """Open advanced flag editor dialog"""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds
@@ -1023,10 +1014,10 @@ class EventFlagsTab:
                     return
                 state = self.current_event_flags.get_flag(flag_id)
                 flag_name = get_flag_name(flag_id)
-                CTkMessageBox.showinfo(
-                    "Flag Status",
+                notify(
+                    dialog,
                     f"Flag {flag_id}: {flag_name}\n\nState: {'ON' if state else 'OFF'}",
-                    parent=dialog,
+                    "info",
                 )
             except ValueError:
                 CTkMessageBox.showerror(
@@ -1067,9 +1058,7 @@ class EventFlagsTab:
     def open_boss_status(self):
         """Boss status dialog - defeated/alive for all tracked bosses."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds
@@ -1196,9 +1185,7 @@ class EventFlagsTab:
     def open_boss_respawn(self):
         """Open boss respawn dialog"""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds
@@ -1294,10 +1281,10 @@ class EventFlagsTab:
                         count += 1
 
             if count == 0:
-                CTkMessageBox.showinfo(
-                    "No Selection",
+                notify(
+                    dialog,
                     "No valid selections. Select defeated bosses to respawn.",
-                    parent=dialog,
+                    "warning",
                 )
                 return
 
@@ -1468,10 +1455,10 @@ class EventFlagsTab:
                         count += 1
 
             if count == 0:
-                CTkMessageBox.showinfo(
-                    "No Selection",
+                notify(
+                    dialog,
                     "No valid selections. Select alive bosses to kill.",
-                    parent=dialog,
+                    "warning",
                 )
                 return
 
@@ -1644,9 +1631,7 @@ class EventFlagsTab:
     def open_npc_revival(self):
         """Open NPC revival dialog"""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.data.npc_data import (
@@ -1735,11 +1720,7 @@ class EventFlagsTab:
                     count += 1
 
             if count == 0:
-                CTkMessageBox.showinfo(
-                    "No Selection",
-                    "No NPCs selected for revival.",
-                    parent=dialog,
-                )
+                notify(dialog, "No NPCs selected for revival.", "warning")
                 return
 
             save_file = self.get_save_file()
@@ -1783,9 +1764,7 @@ class EventFlagsTab:
     @reopenable
     def open_quest_progress(self):
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui.quest_progress_dialog import QuestProgressDialog
@@ -1804,9 +1783,7 @@ class EventFlagsTab:
     def open_grace_dialog(self):
         """Open the sites of grace unlock/lock dialog."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui.grace_dialog import GraceDialog
@@ -1825,9 +1802,7 @@ class EventFlagsTab:
     def open_item_pickups(self):
         """Open the collected/missed item pickup checklist."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui.item_pickups_dialog import ItemPickupsDialog
@@ -1846,9 +1821,7 @@ class EventFlagsTab:
     def open_merchant_restock(self):
         """Open the limited merchant stock restock dialog."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui.merchant_restock_dialog import MerchantRestockDialog
@@ -1867,9 +1840,7 @@ class EventFlagsTab:
     def open_summoning_pools(self):
         """Open the summoning pool enable/disable dialog."""
         if self.current_event_flags is None:
-            CTkMessageBox.showwarning(
-                "Not Loaded", "Load event flags for a character first."
-            )
+            notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds
@@ -1947,9 +1918,7 @@ class EventFlagsTab:
         def _apply(state: bool) -> None:
             selected = [int(iid) for iid in tree.selection() if iid not in groups]
             if not selected:
-                CTkMessageBox.showinfo(
-                    "No Selection", "No pools selected.", parent=dialog
-                )
+                notify(dialog, "No pools selected.", "warning")
                 return
 
             action = "Enable" if state else "Disable"

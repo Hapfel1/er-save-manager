@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 
 class NRSteamIDTab:
@@ -85,9 +86,7 @@ class NRSteamIDTab:
     def _apply(self) -> None:
         save_path = self._get_save_path()
         if not save_path:
-            CTkMessageBox.showerror(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
         raw = self._new_id_var.get().strip()
         if not raw:

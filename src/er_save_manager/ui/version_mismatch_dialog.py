@@ -10,6 +10,7 @@ from er_save_manager.fixes.version_mismatch import (
 )
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 RECOMMENDED_VERSION = 252
 RECOMMENDED_GAME_LABEL = "1.16.2"
@@ -261,10 +262,10 @@ class VersionMismatchDialog(ctk.CTkToplevel):
 
             parent = self.master
             self.destroy()
-            CTkMessageBox.showinfo(
-                "Version Fixed",
+            notify(
+                parent,
                 f"{result.description}\n\nThe save file has been updated.",
-                parent=parent,
+                "success",
             )
         except Exception as e:
             CTkMessageBox.showerror(

@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -145,11 +146,7 @@ class DS3BossesTab:
         if selected:
             bosses = [self._bosses[int(i)] for i in self._tree.selection()]
             if not bosses:
-                CTkMessageBox.showwarning(
-                    "No Selection",
-                    "Select one or more bosses first.",
-                    parent=self.parent,
-                )
+                notify(self.parent, "Select one or more bosses first.", "warning")
                 return
         else:
             bosses = self._bosses
@@ -190,15 +187,11 @@ class DS3BossesTab:
         save = self._get_save()
         save_path = self._get_save_path()
         if save is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DS3 save loaded.", parent=self.parent
-            )
+            notify(self.parent, "No DS3 save loaded.", "warning")
             return None, None, None
         char = save.characters[self._current_slot] if self._current_slot >= 0 else None
         if char is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", "No character in this slot.", parent=self.parent
-            )
+            notify(self.parent, "No character in this slot.", "warning")
             return None, None, None
         if char.flags_error:
             CTkMessageBox.showerror(

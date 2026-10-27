@@ -13,6 +13,7 @@ import customtkinter as ctk
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel
 
 
@@ -330,15 +331,15 @@ class SteamIDPatcherTab:
     def patch_steamid(self):
         profile = self._selected_profile()
         if profile is None:
-            CTkMessageBox.showwarning("No Game", "Select a game.", parent=self.parent)
+            notify(self.parent, "Select a game.", "warning")
             return
 
         if not profile.supports_steamid_patch:
-            CTkMessageBox.showwarning(
-                "Not Supported",
+            notify(
+                self.parent,
                 profile.steamid_patch_note
                 or "SteamID patching is not supported for this game.",
-                parent=self.parent,
+                "warning",
             )
             return
 
@@ -387,11 +388,7 @@ class SteamIDPatcherTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save",
-                "Load an Elden Ring save file first.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Load an Elden Ring save file first.", "warning")
             return
 
         if not CTkMessageBox.askyesno(
@@ -475,10 +472,10 @@ class SteamIDPatcherTab:
         if not selected or not Path(selected).exists():
             self.parent.after(
                 0,
-                lambda: CTkMessageBox.showwarning(
-                    "No Save File",
+                lambda: notify(
+                    self.parent,
                     "Select a save file first using Browse or Auto-Find.",
-                    parent=self.parent,
+                    "warning",
                 ),
             )
             return
@@ -606,9 +603,7 @@ class SteamIDPatcherTab:
     def parse_steam_url(self):
         url = self.steam_url_var.get().strip()
         if not url:
-            CTkMessageBox.showwarning(
-                "Empty URL", "Enter a Steam profile URL", parent=self.parent
-            )
+            notify(self.parent, "Enter a Steam profile URL", "warning")
             return
 
         import re

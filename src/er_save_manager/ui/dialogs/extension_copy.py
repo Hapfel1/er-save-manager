@@ -15,6 +15,7 @@ import customtkinter as ctk
 from er_save_manager.games import extension_copy as ec
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import patch_combo_scroll
 
 _WRAP = 520
@@ -449,9 +450,7 @@ def open_extension_copy(
 ) -> None:
     """Entry point for the header button and the Character Management tabs."""
     if not save_path:
-        CTkMessageBox.showwarning(
-            "No Save Loaded", "Load a save file first.", parent=parent
-        )
+        notify(parent, "Load a save file first.", "warning")
         return
     if is_game_running and is_game_running():
         CTkMessageBox.showerror(

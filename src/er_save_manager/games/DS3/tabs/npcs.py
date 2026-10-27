@@ -30,6 +30,7 @@ import customtkinter as ctk
 from er_save_manager.games.DS3.slot import LayoutError
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -177,9 +178,7 @@ class DS3NpcsTab:
             else None
         )
         if char is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
         if char.flags_error:
             CTkMessageBox.showerror(
@@ -213,9 +212,7 @@ class DS3NpcsTab:
     def _apply(self, revive: bool) -> None:
         npcs = [self._npcs[int(i)] for i in self._tree.selection()]
         if not npcs:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more NPCs first.", parent=self.parent
-            )
+            notify(self.parent, "Select one or more NPCs first.", "warning")
             return
         if _game_blocks_write(self.parent):
             return
@@ -227,9 +224,7 @@ class DS3NpcsTab:
             else None
         )
         if char is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
         if char.flags_error:
             CTkMessageBox.showerror(

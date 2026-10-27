@@ -24,6 +24,7 @@ from er_save_manager.ui.dialogs.community_dialogs import (
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.progress_dialog import ProgressDialog
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     open_url,
@@ -528,10 +529,8 @@ class CharacterBrowser:
             return
 
         if not self.save_file:
-            CTkMessageBox.showerror(
-                "No Save File",
-                "No save file loaded. Load a save file first.",
-                parent=self.dialog,
+            notify(
+                self.dialog, "No save file loaded. Load a save file first.", "warning"
             )
             return
 
@@ -539,10 +538,10 @@ class CharacterBrowser:
 
         char = self.save_file.character_slots[slot_index]
         if char.is_empty():
-            CTkMessageBox.showerror(
-                "Empty Slot",
+            notify(
+                self.dialog,
                 f"Slot {slot_index + 1} is empty. Select a slot with a character.",
-                parent=self.dialog,
+                "warning",
             )
             return
 
@@ -1211,18 +1210,12 @@ class CharacterBrowser:
     def import_to_slot(self):
         """Import selected character to chosen slot."""
         if not self.current_character:
-            CTkMessageBox.showwarning(
-                "No Character Selected",
-                "Select a character to import",
-                parent=self.dialog,
-            )
+            notify(self.dialog, "Select a character to import", "warning")
             return
 
         if not self.save_file:
-            CTkMessageBox.showerror(
-                "No Save File",
-                "No save file loaded. Load a save file first.",
-                parent=self.dialog,
+            notify(
+                self.dialog, "No save file loaded. Load a save file first.", "warning"
             )
             return
 
@@ -1385,10 +1378,10 @@ class CharacterBrowser:
                     self.dialog.update_idletasks()
                     slot_str = f"Slot {target_slot + 1}"
                     self.refresh_slot_names()
-                    CTkMessageBox.showinfo(
-                        "Import Successful",
+                    notify(
+                        self.dialog,
                         f"'{imported_name}' has been imported to {slot_str}.",
-                        parent=self.dialog,
+                        "success",
                     )
 
                 self.dialog.after(0, show_success)

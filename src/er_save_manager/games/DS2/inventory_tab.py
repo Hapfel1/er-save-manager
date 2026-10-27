@@ -31,6 +31,7 @@ from er_save_manager.games.DS2.save import (
     DS2Save,
 )
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
@@ -727,12 +728,17 @@ class DS2InventoryPanel:
         quantity, upgrade, infusion = inputs
 
         item_id = _hex_id_to_int(hex_id)
-        if item_id in UNSAFE_IDS and not CTkMessageBox.askyesno(
+        if item_id in UNSAFE_IDS and not confirm_warning(
+            self.parent,
+            "show_unsafe_item_warning",
             "Unsafe Item",
-            f"{item_name} is flagged unsafe.\n\n"
-            "Adding it can get an account soft-banned online.\n\n"
-            "Add it anyway? (Safe on SeamlessCoop saves)",
-            parent=self.parent,
+            "Online ban risk",
+            [
+                f"{item_name} is flagged unsafe. Adding it can get an account "
+                "soft-banned online.",
+                "Safe on Seamless Co-op saves.",
+            ],
+            confirm_text="Add",
         ):
             return
         character = save.characters[self.get_slot_index()]

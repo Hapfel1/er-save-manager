@@ -14,7 +14,7 @@ from er_save_manager.ui.character_list import (
     format_playtime,
     slot_issues,
 )
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 
 class DS2InspectorTab:
@@ -108,9 +108,7 @@ class DS2InspectorTab:
 
     def _view_issues(self) -> None:
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a character first.", parent=self.parent
-            )
+            notify(self.parent, "Select a character first.", "warning")
             return
         self._check_save(self.selected_slot)
 

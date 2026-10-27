@@ -20,6 +20,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import (
     FieldTracker,
@@ -28,6 +29,7 @@ from er_save_manager.ui.pending import (
     StageError,
     var_state,
 )
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -1325,9 +1327,7 @@ class NREditorTab:
             return
 
         if self._selected_relic_ga is None:
-            CTkMessageBox.showinfo(
-                "No Selection", "Select a relic row first.", parent=self.parent
-            )
+            notify(self.parent, "Select a relic row first.", "warning")
             return
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
@@ -1365,12 +1365,16 @@ class NREditorTab:
             return
         # Unknown effects (mod data) and issues the relic already had, which
         # an older game version may have rolled, only warn.
-        if warnings and not CTkMessageBox.askyesno(
+        if warnings and not confirm_warning(
+            self.parent,
+            "show_relic_validation_warning",
             "Validation Warning",
-            "\n".join(i.message for i in warnings)
-            + "\n\nThe relic may come from mod data or an older game version. "
-            "Apply anyway?",
-            parent=self.parent,
+            "Unknown relic effects",
+            [
+                "\n".join(i.message for i in warnings),
+                "The relic may come from mod data or an older game version.",
+            ],
+            confirm_text="Apply",
         ):
             return
 
@@ -1398,9 +1402,7 @@ class NREditorTab:
             return
 
         if self._selected_relic_ga is None:
-            CTkMessageBox.showinfo(
-                "No Selection", "Select a relic row first.", parent=self.parent
-            )
+            notify(self.parent, "Select a relic row first.", "warning")
             return
         if not CTkMessageBox.askyesno(
             "Confirm Remove", "Remove this relic permanently?", parent=self.parent
@@ -1437,13 +1439,11 @@ class NREditorTab:
 
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
-            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            notify(self.parent, "Load a slot first.", "warning")
             return
         rid = self._spawn_relic_id.get()
         if rid < 0:
-            CTkMessageBox.showinfo(
-                "No Relic", "Select a relic type first.", parent=self.parent
-            )
+            notify(self.parent, "Select a relic type first.", "warning")
             return
         try:
             effects = [int(v.get()) for v in self._spawn_effect_vars]
@@ -1482,9 +1482,7 @@ class NREditorTab:
         from er_save_manager.games.NR.item_db import relic_name
 
         if self._selected_relic_ga is None:
-            CTkMessageBox.showinfo(
-                "No Selection", "Select a relic row first.", parent=self.parent
-            )
+            notify(self.parent, "Select a relic row first.", "warning")
             return
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
@@ -1510,7 +1508,7 @@ class NREditorTab:
 
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
-            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            notify(self.parent, "Load a slot first.", "warning")
             return
         # Export what the grid currently shows, so a search or filter narrows
         # the export
@@ -1546,7 +1544,7 @@ class NREditorTab:
             return
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
-            CTkMessageBox.showinfo("No Slot", "Load a slot first.", parent=self.parent)
+            notify(self.parent, "Load a slot first.", "warning")
             return
         path = pick_file("Import Relics", filetypes=[("JSON", "*.json")])
         if not path:
@@ -2136,11 +2134,7 @@ class NREditorTab:
         if _game_blocks_write(self.parent):
             return
         if self._lo_target is None:
-            CTkMessageBox.showinfo(
-                "No Selection",
-                "Select a chalice or preset first.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Select a chalice or preset first.", "warning")
             return
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
@@ -2159,10 +2153,10 @@ class NREditorTab:
             else self._selected_hero_type()
         )
         if hero_type == 0:
-            CTkMessageBox.showinfo(
-                "No Hero",
+            notify(
+                self.parent,
                 "Modded chalices have no known hero, so no preset can be made from them.",
-                parent=self.parent,
+                "warning",
             )
             return
         try:
@@ -2184,9 +2178,7 @@ class NREditorTab:
         if _game_blocks_write(self.parent):
             return
         if self._lo_kind != "preset" or self._lo_target is None:
-            CTkMessageBox.showinfo(
-                "No Selection", "Select a preset first.", parent=self.parent
-            )
+            notify(self.parent, "Select a preset first.", "warning")
             return
         name = self._lo_target.name or "(unnamed)"
         if not CTkMessageBox.askyesno(
