@@ -3853,9 +3853,22 @@ class SaveManagerGUI:
 
         try:
             current_mtime = self.save_path.stat().st_mtime
+        except FileNotFoundError:
+            # Shown once per disappearance; reset when the file is back.
+            if getattr(self, "_save_gone_path", None) != self.save_path:
+                self._save_gone_path = self.save_path
+                self.show_toast(
+                    f"{self.save_path.name} was deleted or moved. Changes cannot "
+                    "be saved until it is back; Backup Manager can restore it.",
+                    duration=10000,
+                    type="warning",
+                )
+            self.root.after(3000, self._poll_file_change)
+            return
         except OSError:
             self.root.after(3000, self._poll_file_change)
             return
+        self._save_gone_path = None
 
         if self._watched_mtime is not None and current_mtime != self._watched_mtime:
             self._watched_mtime = current_mtime
