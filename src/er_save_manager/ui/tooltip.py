@@ -6,6 +6,8 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui.utils import get_work_area
+
 _DELAY_MS = 500
 _BG = ("gray90", "gray22")
 _BORDER = ("gray70", "gray35")
@@ -66,6 +68,16 @@ class Tooltip:
             pady=4,
             wraplength=360,
         ).pack()
+        # Flip to the pointer's left (and above) when the tip would leave the
+        # screen's usable area
+        tip.update_idletasks()
+        ax, ay, aw, ah = get_work_area(self.widget, (x, y))
+        w, h = tip.winfo_reqwidth(), tip.winfo_reqheight()
+        if x + w > ax + aw:
+            x = max(ax, x - w - 28)
+        if y + h > ay + ah:
+            y = max(ay, y - h - 36)
+        tip.wm_geometry(f"+{x}+{y}")
         self._tip = tip
 
     def show_text(self, text: str) -> None:

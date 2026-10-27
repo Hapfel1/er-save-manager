@@ -16,7 +16,7 @@ from io import BytesIO
 
 def read_wstring(f: BytesIO, max_chars: int) -> str:
     data = f.read(max_chars * 2)
-    return data.decode("utf-16le", errors="replace").rstrip("\x00")
+    return data.decode("utf-16le", errors="replace").split("\x00", 1)[0]
 
 
 @dataclass

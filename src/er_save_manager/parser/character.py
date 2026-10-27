@@ -74,6 +74,8 @@ class PlayerGameData:
     # Character name (0x94-0xB3) - UTF-16LE, 16 chars max
     character_name: str = ""
     terminator: int = 0
+    # Name and password field bytes as read, keyed by attribute name
+    wstring_raw: dict[str, bytes] = field(default_factory=dict)
 
     # Character creation (0xB4-0xBF)
     gender: int = 0
@@ -122,6 +124,11 @@ class PlayerGameData:
 
     # Padding (0x17C-0x1AF)
     unk0x17c: bytes = field(default_factory=lambda: b"\x00" * 0x34)
+
+    def _read_wstring(self, f: BytesIO, attr: str, max_chars: int) -> str:
+        raw = f.read(max_chars * 2)
+        self.wstring_raw[attr] = raw
+        return Util.read_wstring(BytesIO(raw), max_chars)
 
     @classmethod
     def read(cls, f: BytesIO) -> PlayerGameData:
@@ -178,7 +185,7 @@ class PlayerGameData:
         obj.unk0x90 = struct.unpack("<I", f.read(4))[0]
 
         # Character name (UTF-16LE, 16 chars)
-        obj.character_name = Util.read_wstring(f, 16)
+        obj.character_name = obj._read_wstring(f, "character_name", 16)
         obj.terminator = struct.unpack("<H", f.read(2))[0]
 
         # Character creation
@@ -215,17 +222,17 @@ class PlayerGameData:
         obj.unk0xfb = f.read(0x15)
 
         # Passwords (UTF-16LE, 8 chars each)
-        obj.password = Util.read_wstring(f, 8)
+        obj.password = obj._read_wstring(f, "password", 8)
         obj.password_terminator = struct.unpack("<H", f.read(2))[0]
-        obj.group_password1 = Util.read_wstring(f, 8)
+        obj.group_password1 = obj._read_wstring(f, "group_password1", 8)
         obj.group_password1_terminator = struct.unpack("<H", f.read(2))[0]
-        obj.group_password2 = Util.read_wstring(f, 8)
+        obj.group_password2 = obj._read_wstring(f, "group_password2", 8)
         obj.group_password2_terminator = struct.unpack("<H", f.read(2))[0]
-        obj.group_password3 = Util.read_wstring(f, 8)
+        obj.group_password3 = obj._read_wstring(f, "group_password3", 8)
         obj.group_password3_terminator = struct.unpack("<H", f.read(2))[0]
-        obj.group_password4 = Util.read_wstring(f, 8)
+        obj.group_password4 = obj._read_wstring(f, "group_password4", 8)
         obj.group_password4_terminator = struct.unpack("<H", f.read(2))[0]
-        obj.group_password5 = Util.read_wstring(f, 8)
+        obj.group_password5 = obj._read_wstring(f, "group_password5", 8)
         obj.group_password5_terminator = struct.unpack("<H", f.read(2))[0]
 
         # Padding
@@ -281,7 +288,9 @@ class PlayerGameData:
         f.write(struct.pack("<I", self.unk0x90))
 
         # Character name
-        Util.write_wstring(f, self.character_name, 16)
+        Util.write_wstring(
+            f, self.character_name, 16, self.wstring_raw.get("character_name", b"")
+        )
         f.write(struct.pack("<H", self.terminator))
 
         # Character creation
@@ -322,17 +331,27 @@ class PlayerGameData:
         f.write(self.unk0xfb)
 
         # Passwords
-        Util.write_wstring(f, self.password, 8)
+        Util.write_wstring(f, self.password, 8, self.wstring_raw.get("password", b""))
         f.write(struct.pack("<H", self.password_terminator))
-        Util.write_wstring(f, self.group_password1, 8)
+        Util.write_wstring(
+            f, self.group_password1, 8, self.wstring_raw.get("group_password1", b"")
+        )
         f.write(struct.pack("<H", self.group_password1_terminator))
-        Util.write_wstring(f, self.group_password2, 8)
+        Util.write_wstring(
+            f, self.group_password2, 8, self.wstring_raw.get("group_password2", b"")
+        )
         f.write(struct.pack("<H", self.group_password2_terminator))
-        Util.write_wstring(f, self.group_password3, 8)
+        Util.write_wstring(
+            f, self.group_password3, 8, self.wstring_raw.get("group_password3", b"")
+        )
         f.write(struct.pack("<H", self.group_password3_terminator))
-        Util.write_wstring(f, self.group_password4, 8)
+        Util.write_wstring(
+            f, self.group_password4, 8, self.wstring_raw.get("group_password4", b"")
+        )
         f.write(struct.pack("<H", self.group_password4_terminator))
-        Util.write_wstring(f, self.group_password5, 8)
+        Util.write_wstring(
+            f, self.group_password5, 8, self.wstring_raw.get("group_password5", b"")
+        )
         f.write(struct.pack("<H", self.group_password5_terminator))
 
         # Padding

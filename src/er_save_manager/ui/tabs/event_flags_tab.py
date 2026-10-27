@@ -660,6 +660,19 @@ class EventFlagsTab:
             if self.current_event_flags.get_flag(flag_id) != state
         )
 
+    def flag_details(self):
+        if self.current_event_flags is None:
+            return []
+        rows = []
+        for flag_id, state in self.flag_states.items():
+            saved = self.current_event_flags.get_flag(flag_id)
+            if saved != state:
+                name = get_flag_name(flag_id)
+                if name != f"Flag {flag_id}":
+                    name = f"{name} ({flag_id})"
+                rows.append((name, "On" if saved else "Off", "On" if state else "Off"))
+        return rows
+
     def discard_flags(self) -> None:
         if self.current_event_flags is None:
             return

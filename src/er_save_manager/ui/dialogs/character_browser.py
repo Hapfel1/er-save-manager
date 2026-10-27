@@ -111,6 +111,9 @@ class CharacterBrowser:
                 profiles = self.save_file.user_data_10_parsed.profile_summary.profiles
         except Exception:
             pass
+        # Deleted characters keep their slot data until the slot is reused;
+        # the profile summary active flag tells them apart.
+        active = set(self.save_file.get_active_slots())
 
         for i in range(10):
             slot_num = i + 1
@@ -127,6 +130,8 @@ class CharacterBrowser:
                 except Exception:
                     pass
 
+            if i not in active:
+                char_name += " (deleted)"
             slot_names.append(f"{slot_num} - {char_name}")
 
         return slot_names

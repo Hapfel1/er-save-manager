@@ -30,6 +30,9 @@ files the mod replaces). Columns:
                 include the upgrade level, e.g. 3070008 = base 3070000 +8)
     names       game item names in the same order, for reading the file;
                 used only when the item database lacks an id
+    x, y, z     MSB position in map (local coordinates of the treasure
+                asset, the enemy, or the entity the award event names),
+                empty when the lot has no placed part
 """
 
 from __future__ import annotations
@@ -127,6 +130,7 @@ class Pickup:
     items: tuple[tuple[int, int, str], ...]  # (full item id, quantity, name)
     is_dlc: bool
     item_type: str
+    position: tuple[float, float, float] | None = None
 
     @property
     def item_label(self) -> str:
@@ -196,6 +200,9 @@ def get_pickups(is_convergence: bool = False) -> tuple[Pickup, ...]:
                     item_type=_item_type(
                         [full_id for full_id, _, _ in items], is_convergence
                     ),
+                    position=(float(row["x"]), float(row["y"]), float(row["z"]))
+                    if row["x"]
+                    else None,
                 )
             )
     return tuple(pickups)

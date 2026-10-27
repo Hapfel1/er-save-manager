@@ -65,7 +65,8 @@ class GesturesRegionsTab:
         self._wheel_combos: list[ctk.CTkComboBox] = []
         self._wheel_names: dict[str, int] = {}
         self._wheel_tracker = FieldTracker(
-            lambda: {i: var.get() for i, var in enumerate(self._wheel_vars)}
+            lambda: {i: var.get() for i, var in enumerate(self._wheel_vars)},
+            {i: f"Wheel slot {i + 1}" for i in range(6)},
         )
 
     def setup_ui(self):
@@ -236,6 +237,20 @@ class GesturesRegionsTab:
     def gesture_changes(self) -> int:
         selected = {gid for gid, var in self.gesture_states.items() if var.get()}
         return len(selected ^ self._initial_unlocked)
+
+    def gesture_details(self):
+        selected = {gid for gid, var in self.gesture_states.items() if var.get()}
+        return [
+            (
+                get_gesture_name(gid),
+                "Unlocked" if gid in self._initial_unlocked else "Locked",
+                "Unlocked" if gid in selected else "Locked",
+            )
+            for gid in sorted(selected ^ self._initial_unlocked)
+        ]
+
+    def wheel_details(self):
+        return self._wheel_tracker.details()
 
     def discard_gestures(self) -> None:
         for gesture_id, var in self.gesture_states.items():

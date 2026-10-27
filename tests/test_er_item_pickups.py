@@ -11,6 +11,7 @@ import pytest
 
 from er_save_manager.data.grace_data import get_graces
 from er_save_manager.data.item_pickups import ITEM_TYPES, SOURCE_LABELS, get_pickups
+from er_save_manager.data.world_map import location_map_point
 from er_save_manager.parser.event_flags import EventFlags
 
 DATASETS = pytest.mark.parametrize(
@@ -53,3 +54,17 @@ def test_progression_counts():
     assert names.count("Golden Seed") >= 30
     assert names.count("Sacred Tear") == 12
     assert names.count("Memory Stone") == 7
+
+
+@DATASETS
+def test_positions_on_world_map(is_convergence):
+    """Positioned pickups land on a world map; only the Chapel of
+    Anticipation has no world map placement."""
+    off_map = {
+        p.map_id
+        for p in get_pickups(is_convergence)
+        if p.position is not None
+        and location_map_point(p.map_id, p.position[0], p.position[2], is_convergence)
+        is None
+    }
+    assert off_map <= {"m10_01_00_00"}

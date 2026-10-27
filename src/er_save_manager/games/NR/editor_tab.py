@@ -485,6 +485,7 @@ class NREditorTab:
                     self._prepare_overview,
                     lambda: self._refill_overview(),
                     None,
+                    self._overview_tracker.details,
                 )
             )
 
@@ -503,6 +504,7 @@ class NREditorTab:
                     self._prepare_loadout,
                     self._discard_loadout,
                     None,
+                    self._loadout_details,
                 )
             )
 
@@ -584,7 +586,8 @@ class NREditorTab:
         self._overview_tracker = FieldTracker(
             var_state(
                 {"name": self._name_var, "murk": self._murk_var, "mon": self._mon_var}
-            )
+            ),
+            {"name": "Player name", "mon": "Sovereign Sigils"},
         )
 
     def _populate_overview(self, slot) -> None:
@@ -2037,6 +2040,40 @@ class NREditorTab:
         if self._lo_kind == "preset":
             changed += int(self._lo_name_var.get().strip() != self._lo_target.name)
         return changed
+
+    def _loadout_details(self):
+        from er_save_manager.games.NR.item_db import relic_name
+
+        if self._lo_target is None:
+            return []
+        slot = self._current_nr_slot()
+        vid = self._target_vessel_id()
+
+        def name(ga) -> str:
+            if not ga:
+                return "Empty"
+            rs = slot.relic_states.get(ga) if slot is not None else None
+            return relic_name(rs.real_item_id) if rs else f"Missing relic 0x{ga:08X}"
+
+        # "Slot 2 (Burning)": the bar joins field names with commas
+        rows = [
+            (_slot_title(vid, i).replace(", ", " (", 1) + ")", name(old), name(new))
+            for i, (new, old) in enumerate(
+                zip(self._lo_relics, self._lo_target.relics, strict=False)
+            )
+            if new != old
+        ]
+        if self._lo_kind == "preset":
+            new_name = self._lo_name_var.get().strip()
+            if new_name != self._lo_target.name:
+                rows.append(
+                    (
+                        "Preset name",
+                        self._lo_target.name or "(unnamed)",
+                        new_name or "(unnamed)",
+                    )
+                )
+        return rows
 
     def _discard_loadout(self) -> None:
         if self._lo_target is None:
