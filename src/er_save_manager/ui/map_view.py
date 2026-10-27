@@ -157,6 +157,18 @@ _PICKUP_MAX = 10
 # thousands of alpha images make every pan frame slow. Hit tests use a grid
 # of cells this many map units wide.
 _PICKUP_CELL = 256.0
+# While a marker is selected every other marker and pickup is drawn at this
+# percent opacity; the selected pickup's glow grows by this many pixels.
+_FADE_PERCENT = 30
+_SELECTED_GLOW_GROW = 4
+# Name tag above the selected marker
+_SELECT_TAG_FONT = ("Inter", 10, "bold")
+_SELECT_TAG_TEXT = "#f0e8d2"
+_SELECT_TAG_BG = "#18161a"
+_SELECT_TAG_GAP = 12
+_SELECT_TAG_MAX = 48
+# Corner radius of the name tags, route labels and hover tooltip
+_TAG_RADIUS = 5
 # Red tint of the NPC sprite for hostile NPCs
 _HOSTILE_TINT = (255, 120, 110)
 _GOLD_RING = ((120, 96, 52), (226, 196, 120))
@@ -427,6 +439,28 @@ def _place_bosses(convergence: bool) -> list[_Pin]:
         if point is not None:
             pins.append(_Pin(point[0], (point[1], point[2]), boss=b))
     return pins
+
+
+def _rounded_box(
+    canvas: tk.Canvas,
+    x0: float,
+    y0: float,
+    x1: float,
+    y1: float,
+    radius: float = _TAG_RADIUS,
+    **options,
+) -> int:
+    """Rectangle with rounded corners: a smoothed polygon whose corner
+    points are doubled, so the sides stay straight and only the corners
+    curve."""
+    r = min(radius, (x1 - x0) / 2, (y1 - y0) / 2)
+    points = [
+        x0 + r, y0, x0 + r, y0, x1 - r, y0, x1 - r, y0,
+        x1, y0, x1, y0 + r, x1, y0 + r, x1, y1 - r, x1, y1 - r,
+        x1, y1, x1 - r, y1, x1 - r, y1, x0 + r, y1, x0 + r, y1,
+        x0, y1, x0, y1 - r, x0, y1 - r, x0, y0 + r, x0, y0 + r, x0, y0,
+    ]  # fmt: skip
+    return canvas.create_polygon(points, smooth=True, **options)
 
 
 def _place_pickups(convergence: bool) -> list[_Pin]:
@@ -858,26 +892,52 @@ class _MapIcons:
     @staticmethod
     def glow_image(size: int, dim: bool = False) -> Image.Image:
         """Golden glow like an item on the ground in game: a soft halo
-        around a bright core, gray when dim."""
-        n = round(size * 2.4)
-        img = Image.new("RGBA", (n, n))
+        around a bright core, gray when dim. Only the alpha is blurred, on a
+        canvas wide enough for the blur's tail: blurring RGBA darkens the
+        halo's edge toward the transparent black around it, and a tight
+        canvas cuts the tail off into a visible square on bright map art."""
+        n = round(size * 3)
         c = n / 2
-        halo = size * 0.85
-        ImageDraw.Draw(img).ellipse(
-            (c - halo, c - halo, c + halo, c + halo), fill=(255, 200, 90, 170)
+        halo = size * 0.65
+        alpha = Image.new("L", (n, n))
+        ImageDraw.Draw(alpha).ellipse(
+            (c - halo, c - halo, c + halo, c + halo), fill=180
         )
-        img = img.filter(ImageFilter.GaussianBlur(size * 0.4))
+        img = Image.new("RGBA", (n, n), (255, 200, 90, 0))
+        img.putalpha(alpha.filter(ImageFilter.GaussianBlur(size * 0.28)))
         core = size * 0.32
         ImageDraw.Draw(img).ellipse(
             (c - core, c - core, c + core, c + core), fill=(255, 236, 170, 255)
         )
         return _MapIcons._dimmed(img) if dim else img
 
-    def glow_cached(self, size: int, dim: bool = False) -> Image.Image:
-        key = ("L", size, dim)
+    @staticmethod
+    def _faded(img: Image.Image) -> Image.Image:
+        faded = img.copy()
+        faded.putalpha(img.getchannel("A").point(lambda a: a * _FADE_PERCENT // 100))
+        return faded
+
+    def glow_cached(
+        self, size: int, dim: bool = False, faded: bool = False
+    ) -> Image.Image:
+        key = ("L", size, dim, faded)
         if key not in self._images:
-            self._images[key] = self.glow_image(size, dim)
+            img = self.glow_image(size, dim)
+            self._images[key] = self._faded(img) if faded else img
         return self._images[key]
+
+    def faded(self, name: str) -> ImageTk.PhotoImage | str:
+        """Copy at _FADE_PERCENT opacity of the icon whose Tk image name is
+        name (what Canvas.itemcget returns); name itself for an image this
+        class did not make."""
+        key = ("f", name)
+        if key not in self._photos:
+            photo = next((p for p in self._photos.values() if str(p) == name), None)
+            if photo is None:
+                return name
+            img = ImageTk.getimage(photo)
+            self._photos[key] = ImageTk.PhotoImage(self._faded(img))
+        return self._photos[key]
 
     def glow(self, size: int, dim: bool = False) -> ImageTk.PhotoImage:
         key = ("l", size, dim)
@@ -995,6 +1055,8 @@ class MapWindow:
         self._items: dict[int, tuple[str, object]] = {}
         self._selected_loc: _Placed | None = None
         self._selected_marker: MapMarker | None = None
+        # Selected item on screen: (x, icon top, icon bottom), set while drawing
+        self._selected_at: tuple[float, float, float] | None = None
         # Floors under the last map click, nearest first; _pin_var indexes it.
         self._pins: list[FloorPoint] = []
         self._pin_var = tk.IntVar(value=0)
@@ -1193,7 +1255,19 @@ class MapWindow:
             self._show_pickups.get(),
             self._pickup_version,
             frozenset(self._pickup_types),
+            self._pickup_fade(),
         )
+
+    def _pickup_fade(self) -> tuple | None:
+        """None while nothing is selected or the selection is hidden, else
+        the selected pickup (map, point, flag) whose glow the canvas draws,
+        or () when the selection is not a pickup."""
+        if not self._selection_shown():
+            return None
+        pin = self._selected_pin
+        if pin is not None and pin.pickup is not None:
+            return (pin.map_no, pin.point, pin.pickup.flag_id)
+        return ()
 
     def set_flag_callback(
         self, on_set_flags: Callable[[dict[int, bool], str, str, bool], None] | None
@@ -2133,11 +2207,19 @@ class MapWindow:
         c = self._canvas
         c.delete("overlay")
         self._items.clear()
+        self._selected_at = None
         self._draw_locations()
         self._draw_pin()
         self._draw_pins()
         self._draw_player()
         self._draw_markers()
+        if self._selection_shown():
+            self._fade_unselected()
+            at = self._selected_at
+            w, h = self._canvas_size()
+            # Not for a selection drawn in the margin just outside the view
+            if at is not None and 0 <= at[0] <= w and at[2] >= 0 and at[1] <= h:
+                self._draw_selection_tag(*at)
         c.addtag_all("overlay")
         c.dtag("maptile", "overlay")
         # The ring's center is opaque: keep it under every icon.
@@ -2212,11 +2294,16 @@ class MapWindow:
         pad = half / zoom
         w, h = out.size
         x1, y1 = vx + w / zoom, vy + h / zoom
+        fade = self._pickup_fade()
         for pin in self._pins_near(
             self._map_no, vx - pad, vy - pad, x1 + pad, y1 + pad
         ):
+            if fade and fade == (pin.map_no, pin.point, pin.pickup.flag_id):
+                continue
             glow = self._icons.glow_cached(
-                size, bool(self._pickup_states.get(pin.pickup.flag_id))
+                size,
+                bool(self._pickup_states.get(pin.pickup.flag_id)),
+                fade is not None,
             )
             px = round((pin.point[0] - vx) * zoom - half)
             py = round((pin.point[1] - vy) * zoom - half)
@@ -2266,6 +2353,7 @@ class MapWindow:
             sx0, sy0 = self._to_screen(sel.rect[0], sel.rect[1])
             sx1, sy1 = self._to_screen(sel.rect[2], sel.rect[3])
             c.create_rectangle(sx0, sy0, sx1, sy1, outline=_SELECT_COLOR, width=3)
+            self._selected_at = ((sx0 + sx1) / 2, sy0, sy1)
         for p in self._placed:
             if p.map_no != self._map_no or p.point is None:
                 continue
@@ -2276,14 +2364,11 @@ class MapWindow:
             if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
                 continue
             if p is sel:
+                size = _GRACE_SIZE if grace else _DUNGEON_SIZE
                 c.create_image(
-                    sx,
-                    sy,
-                    image=self._icons.select_ring(
-                        _GRACE_SIZE if grace else _DUNGEON_SIZE
-                    ),
-                    tags="select_ring",
+                    sx, sy, image=self._icons.select_ring(size), tags="select_ring"
                 )
+                self._selected_at = (sx, sy - size / 2, sy + size / 2)
             image = (
                 self._icons.grace(_GRACE_SIZE, self._grace_locked(p))
                 if grace
@@ -2358,6 +2443,7 @@ class MapWindow:
                 c.create_image(
                     sx, sy, image=self._icons.select_ring(size), tags="select_ring"
                 )
+                self._selected_at = (sx, sy - size / 2, sy + size / 2)
 
         dots = self._plain_dots.get()
 
@@ -2374,9 +2460,18 @@ class MapWindow:
             self._items[item] = ("pin", pin)
 
         if self._show_pickups.get() and sel is not None and sel.pickup is not None:
+            # The tiles leave the selected pickup out; it is drawn larger here
             at = visible(sel)
             if at is not None:
-                ring(sel, *at, self._pickup_size())
+                size = self._pickup_size() + _SELECTED_GLOW_GROW
+                ring(sel, *at, size)
+                item = c.create_image(
+                    *at,
+                    image=self._icons.glow(
+                        size, bool(self._pickup_collected(sel.pickup))
+                    ),
+                )
+                self._items[item] = ("pin", sel)
         if self._show_bosses.get():
             for pin in self._boss_pins:
                 major = _major_boss(pin.boss)
@@ -2510,8 +2605,8 @@ class MapWindow:
             c.delete(label)
             return
         drawn.append((x0 - 4, y0 - 1, x1 + 4, y1 + 1))
-        box = c.create_rectangle(
-            x0 - 4, y0 - 1, x1 + 4, y1 + 1, fill="#16161c", outline=""
+        box = _rounded_box(
+            c, x0 - 4, y0 - 1, x1 + 4, y1 + 1, fill="#16161c", outline=""
         )
         c.tag_lower(box, label)
         self._items[label] = ("pin", pin)
@@ -2586,8 +2681,8 @@ class MapWindow:
                     font=_TAG_FONT,
                 )
                 x0, y0, x1, y1 = c.bbox(label)
-                box = c.create_rectangle(
-                    x0 - 3, y0 - 1, x1 + 3, y1 + 1, fill="#16161c", outline=""
+                box = _rounded_box(
+                    c, x0 - 3, y0 - 1, x1 + 3, y1 + 1, fill="#16161c", outline=""
                 )
                 c.tag_lower(box, label)
                 self._items[label] = ("step", (pin, step))
@@ -2771,7 +2866,8 @@ class MapWindow:
             dy = min(0, h - y1 - 4)
             c.move(label, dx, dy)
             c.move("hover_icon", dx, dy)
-            box = c.create_rectangle(
+            box = _rounded_box(
+                c,
                 x0 - 6 + dx,
                 y0 - 4 + dy,
                 x1 + 6 + dx,
@@ -3325,6 +3421,137 @@ class MapWindow:
             return f"Appears after: {gate.boss or f'event flag {gate.flag_id}'}"
         return f"Appears after: {gate_status(gate, self._grace_state)}"
 
+    def _pin_shown(self, pin: _Pin) -> bool:
+        """Whether the pin's layer is on."""
+        if pin.obj is not None:
+            return (
+                self._pools_shown() if pin.obj.kind == POOL else self._show_seals.get()
+            )
+        if pin.painting is not None:
+            return self._show_paintings.get()
+        if pin.boss is not None:
+            return self._show_bosses.get() and (
+                not self._major_only.get() or _major_boss(pin.boss)
+            )
+        if pin.merchant is not None:
+            return self._show_merchants.get()
+        if pin.npcs is not None:
+            return self._show_npcs.get()
+        return self._show_pickups.get()
+
+    def _selection_shown(self) -> bool:
+        """A marker, pin or location is selected on the shown map and its
+        layer is on."""
+        pin = self._selected_pin
+        if pin is not None:
+            return pin.map_no == self._map_no and self._pin_shown(pin)
+        loc = self._selected_loc
+        if loc is not None:
+            if loc.map_no != self._map_no:
+                return False
+            if loc.point is None:
+                return True
+            grace = loc.loc.tile_type == "grace"
+            return (self._show_graces if grace else self._show_dungeons).get()
+        marker = self._selected_marker
+        return (
+            marker is not None
+            and self._editor is not None
+            and self._show_markers.get()
+            and marker.map == self._map_no
+        )
+
+    def _fade_unselected(self):
+        """Every hit-tested canvas item except the selection's at
+        _FADE_PERCENT opacity; texts (NPC name tags) turn gray."""
+        c = self._canvas
+        pin, loc, marker = (
+            self._selected_pin,
+            self._selected_loc,
+            self._selected_marker,
+        )
+        for item, (kind, obj) in self._items.items():
+            if (
+                (kind == "pin" and pin is not None and obj == pin)
+                or (kind == "step" and pin is not None and obj[0] == pin)
+                or (kind == "loc" and obj is loc)
+                or (kind == "marker" and obj is marker)
+            ):
+                continue
+            item_type = c.type(item)
+            if item_type == "image":
+                c.itemconfigure(
+                    item, image=self._icons.faded(c.itemcget(item, "image"))
+                )
+            elif item_type == "text":
+                c.itemconfigure(item, fill="#6a6a6a")
+
+    def _selection_label(self) -> tuple[str, ImageTk.PhotoImage | None]:
+        """Name of the selected pin, location or marker, and the item icon
+        for a pickup (every other marker already shows its own icon)."""
+        pin = self._selected_pin
+        if pin is not None:
+            text = self._pin_text(pin).split("\n")[0]
+            if pin.pickup is not None:
+                return text, self._item_photo(pin.pickup.items[0][2], _LIST_ICON)
+            return text, None
+        loc = self._selected_loc
+        if loc is not None:
+            return loc.loc.name, None
+        marker = self._selected_marker
+        return ("Beacon" if marker.kind == BEACON else "Map marker"), None
+
+    def _draw_selection_tag(self, sx: float, top: float, bottom: float):
+        """Tag with the selection's icon and name, joined to it by a line;
+        above the selection, below it when there is no room above."""
+        c = self._canvas
+        text, photo = self._selection_label()
+        if len(text) > _SELECT_TAG_MAX:
+            text = text[: _SELECT_TAG_MAX - 3].rstrip() + "..."
+        label = c.create_text(
+            0,
+            0,
+            text=text,
+            anchor=tk.W,
+            fill=_SELECT_TAG_TEXT,
+            font=_SELECT_TAG_FONT,
+            tags="select_tag",
+        )
+        x0, y0, x1, y1 = c.bbox(label)
+        pad = 6
+        icon_w = photo.width() + pad if photo else 0
+        bw = x1 - x0 + icon_w + 2 * pad
+        bh = max(y1 - y0, photo.height() if photo else 0) + 8
+        w, _h = self._canvas_size()
+        bx = min(max(sx - bw / 2, 4), w - bw - 4)
+        by = top - _SELECT_TAG_GAP - bh
+        if by >= 4:
+            c.create_line(
+                sx, top - 2, sx, by + bh, fill=_SELECT_COLOR, width=2, tags="select_tag"
+            )
+        else:
+            by = bottom + _SELECT_TAG_GAP
+            c.create_line(
+                sx, bottom + 2, sx, by, fill=_SELECT_COLOR, width=2, tags="select_tag"
+            )
+        _rounded_box(
+            c,
+            bx,
+            by,
+            bx + bw,
+            by + bh,
+            fill=_SELECT_TAG_BG,
+            outline=_SELECT_COLOR,
+            tags="select_tag",
+        )
+        if photo:
+            c.create_image(
+                bx + pad, by + bh / 2, image=photo, anchor=tk.W, tags="select_tag"
+            )
+        c.coords(label, bx + pad + icon_w, by + bh / 2)
+        c.tag_raise("select_tag")
+        c.tag_raise(label)
+
     def _draw_player(self):
         blood = self._bloodstain
         if blood is not None and blood[0] == self._map_no:
@@ -3373,6 +3600,7 @@ class MapWindow:
                         image=self._icons.select_ring(_BEACON_HEIGHT),
                         tags=(tag, "select_ring"),
                     )
+                    self._selected_at = (sx, sy - _BEACON_HEIGHT, sy)
                 item = c.create_image(
                     sx,
                     sy,
@@ -3387,6 +3615,11 @@ class MapWindow:
                         sy,
                         image=self._icons.select_ring(_MARKER_SIZE),
                         tags=(tag, "select_ring"),
+                    )
+                    self._selected_at = (
+                        sx,
+                        sy - _MARKER_SIZE / 2,
+                        sy + _MARKER_SIZE / 2,
                     )
                 item = c.create_image(
                     sx, sy, image=self._icons.marker(m.icon, _MARKER_SIZE), tags=tag
