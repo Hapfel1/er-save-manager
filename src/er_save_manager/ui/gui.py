@@ -202,6 +202,8 @@ class SaveManagerGUI:
         self.save_path = None
         # Vanilla saves already confirmed in the ban warning this session
         self._vanilla_warned_paths: set[str] = set()
+        self._backup_warned_paths: set[str] = set()
+        self._short_warned_paths: set[str] = set()
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
 
@@ -1211,12 +1213,17 @@ class SaveManagerGUI:
         puts the loaded save's path back into the path field."""
         if self._guard_bypass or self.pending_bar.guard(action):
             return True
+        self._restore_path_entry()
+        return False
+
+    def _restore_path_entry(self) -> None:
+        """Put the loaded save's path back into the path field after a load
+        that did not happen, so Reload reads the loaded save again."""
         loaded = str(self.save_path) if self.save_path else ""
         if self.file_path_var.get() != loaded:
             self._suppress_path_load = True
             self.file_path_var.set(loaded)
             self._suppress_path_load = False
-        return False
 
     def _slot_entries(self) -> list[tuple[int, str, bool]]:
         """(slot index, label, holds a character) for the character bar."""
@@ -1449,15 +1456,15 @@ class SaveManagerGUI:
         self._guard_bypass = True
         try:
             if self.active_game == "elden_ring":
-                self.load_save(silent=True)
+                self.load_save(silent=True, path=path)
             elif self.active_game == "dark_souls_3":
-                self._load_ds3_save(path)
+                self._load_ds3_save(path, silent=True)
             elif self.active_game == "dark_souls_remastered":
-                self._load_dsr_save(path)
+                self._load_dsr_save(path, silent=True)
             elif self.active_game == "dark_souls_2":
-                self._load_ds2_save(path)
+                self._load_ds2_save(path, silent=True)
             elif self.active_game == "nightreign":
-                self._load_nr_save(path)
+                self._load_nr_save(path, silent=True)
         finally:
             self._guard_bypass = False
 
@@ -1582,7 +1589,7 @@ class SaveManagerGUI:
             tab_inspector,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_character_details,
             self.on_slot_selected,
         )
@@ -1617,7 +1624,7 @@ class SaveManagerGUI:
             tab_appearance,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_toast,
         )
         self._build_tab("Appearance", self.appearance_tab.setup_ui)
@@ -1637,7 +1644,7 @@ class SaveManagerGUI:
             tab_world,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             lambda: self.selected_slot_index,
             self.show_toast,
         )
@@ -1674,7 +1681,7 @@ class SaveManagerGUI:
             tab_event_flags,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_toast,
         )
         self._build_tab("Event Flags", self.event_flags_tab.setup_ui)
@@ -1694,7 +1701,7 @@ class SaveManagerGUI:
             tab_gestures,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_toast,
         )
         self._build_tab(
@@ -1725,7 +1732,7 @@ class SaveManagerGUI:
             tab_steamid,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_toast,
         )
         self._build_tab("SteamID Patcher", self.steamid_tab.setup_ui)
@@ -1750,7 +1757,7 @@ class SaveManagerGUI:
             tab_advanced,
             lambda: self.save_file,
             lambda: self.save_path,
-            self.load_save,
+            self.reload_save,
             self.show_toast,
         )
         self._build_tab("Advanced Tools", self.advanced_tab.setup_ui)
@@ -1802,7 +1809,7 @@ class SaveManagerGUI:
                 self.notebook.tab("Character Management"),
                 get_save=lambda: self.ds3_save,
                 get_save_path=lambda: self.save_path,
-                reload_callback=self.load_save,
+                reload_callback=self.reload_save,
                 show_toast=self.show_toast,
                 is_game_running=lambda: (
                     not self.settings.get("skip_game_running_check", False)
@@ -1898,7 +1905,7 @@ class SaveManagerGUI:
                 self.notebook.tab("SteamID Patcher"),
                 lambda: self.save_file,
                 lambda: self.save_path,
-                self.load_save,
+                self.reload_save,
                 self.show_toast,
             )
             steamid_tab = self.steamid_tab
@@ -1941,7 +1948,9 @@ class SaveManagerGUI:
                 self.notebook.tab("Character Management"),
                 get_save=lambda: self.ds2_save,
                 get_save_path=lambda: self.save_path,
-                reload_save=lambda: self._load_ds2_save(str(self.save_path)),
+                reload_save=lambda: self._load_ds2_save(
+                    str(self.save_path), silent=True
+                ),
                 show_toast=self.show_toast,
                 is_game_running=lambda: (
                     not self.settings.get("skip_game_running_check", False)
@@ -2064,7 +2073,7 @@ class SaveManagerGUI:
                 self.notebook.tab("SteamID Patcher"),
                 lambda: self.save_file,
                 lambda: self.save_path,
-                self.load_save,
+                self.reload_save,
                 self.show_toast,
             )
             steamid_tab = self.steamid_tab
@@ -2098,7 +2107,7 @@ class SaveManagerGUI:
                 tab_steamid,
                 lambda: self.save_file,
                 lambda: self.save_path,
-                self.load_save,
+                self.reload_save,
                 self.show_toast,
             )
             steamid_tab = self.steamid_tab
@@ -2134,7 +2143,7 @@ class SaveManagerGUI:
                 self.notebook.tab("Character Management"),
                 get_dsr_save=lambda: self.dsr_save,
                 get_save_path=lambda: self.save_path,
-                reload_callback=self.load_save,
+                reload_callback=self.reload_save,
                 show_toast=self.show_toast,
                 is_game_running=lambda: (
                     not self.settings.get("skip_game_running_check", False)
@@ -2502,13 +2511,63 @@ class SaveManagerGUI:
         active_name = active_profile.name if active_profile else self.active_game
         CTkMessageBox.showerror(
             "Wrong Game",
-            f"{os.path.basename(save_path)} is a {owner_name} save, "
-            f"not a {active_name} save.\n\n"
+            f"{os.path.basename(save_path)} is {_article(owner_name)} {owner_name} "
+            f"save, not {_article(active_name)} {active_name} save.\n\n"
             f"Switch to {owner_name} to load it.",
             parent=self.root,
         )
         self.status_var.set("Load cancelled - save belongs to another game")
+        self._restore_path_entry()
         return True
+
+    def _load_failed(self, save_path: str, message: str, exc=None) -> None:
+        """Show a plain load error; parser details go to the error log only."""
+        if exc is not None:
+            error_report.log_exception(
+                type(exc), exc, exc.__traceback__, f"Load failed: {save_path}"
+            )
+        CTkMessageBox.showerror("Load Failed", message, parent=self.root)
+        self.status_var.set("Load failed")
+        self._restore_path_entry()
+
+    def _reject_unreadable(self, save_path: str) -> bool:
+        """Show an error and return True for a zip archive or a cut-off or
+        empty file, before any parser runs or warning shows."""
+        from er_save_manager.games.save_identify import incomplete_reason
+
+        name = os.path.basename(save_path)
+        try:
+            with open(save_path, "rb") as f:
+                magic = f.read(4)
+        except OSError as e:
+            self._load_failed(save_path, f"{name} could not be opened.", e)
+            return True
+        if magic == b"PK\x03\x04":
+            self._load_failed(
+                save_path,
+                f"{name} is a zip archive, not a save file.\n\n"
+                "If it is a backup, restore it in Backup Manager.",
+            )
+            return True
+        reason = incomplete_reason(save_path)
+        if reason:
+            self._load_failed(
+                save_path,
+                f"{name} is not a complete save file. It is empty or cut off.",
+                ValueError(reason),
+            )
+            return True
+        return False
+
+    def _parse_failed(self, save_path: str, exc: Exception) -> None:
+        profile = self._active_profile()
+        game = profile.name if profile else "Elden Ring"
+        self._load_failed(
+            save_path,
+            f"{os.path.basename(save_path)} is not {_article(game)} {game} "
+            "save file, or it is damaged.",
+            exc,
+        )
 
     # File operations
     def show_console_save_info(self):
@@ -3043,20 +3102,32 @@ class SaveManagerGUI:
         else:
             self._load_non_er_save(save_path)
 
-    def _load_non_er_save(self, save_path: str):
+    def _load_non_er_save(self, save_path: str, silent: bool = False):
         """Store the selected save path for non-ER games and refresh the SteamID display."""
         self._flush_pending_tabs()
         if not self._guard_pending("load another save file"):
             return
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
+        from er_save_manager.games.save_identify import KNOWN_GAMES, identify_game
+
         profile = self._active_profile()
+        if self.active_game in KNOWN_GAMES and identify_game(save_path) is None:
+            game = profile.name if profile else self.active_game
+            self._load_failed(
+                save_path,
+                f"{os.path.basename(save_path)} is not {_article(game)} {game} "
+                "save file.",
+            )
+            return
         if (
             not self.settings.get("skip_game_running_check", False)
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
         ) and not self._handle_game_running_dialog(profile):
+            return
+        if not self._confirm_backup_file(save_path):
             return
 
         self.save_path = Path(save_path)
@@ -3065,9 +3136,10 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
-        self.show_toast(
-            f"Save file loaded: {os.path.basename(save_path)}", duration=2500
-        )
+        if not silent:
+            self.show_toast(
+                f"Save file loaded: {os.path.basename(save_path)}", duration=2500
+            )
         if hasattr(self, "steamid_tab") and self.steamid_tab:
             import threading
 
@@ -3080,23 +3152,31 @@ class SaveManagerGUI:
         self._flush_pending_tabs()
         self.selected_slot_index = slot_index
 
-    def load_save(self, silent=False, toast_message="Save file loaded successfully."):
+    def load_save(
+        self, silent=False, toast_message="Save file loaded successfully.", path=None
+    ):
         """Load save file in background thread to prevent UI freezing
 
         Args:
             silent: If True, suppress the success message (used for reloads after operations)
             toast_message: Success toast shown once loading finishes
+            path: File to load; the path field when None
         """
         self._flush_pending_tabs()
-        save_path = self.file_path_var.get()
+        save_path = path or self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
             notify(self.root, "Select a valid save file first.", "warning")
             return
+        if not self._has_save_parser():
+            # SteamID-only games keep the path; parsing would treat the file
+            # as an Elden Ring save.
+            self._load_non_er_save(save_path, silent=silent)
+            return
         if not self._guard_pending("load the save file"):
             return
 
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
 
         # The game must be closed before writing
@@ -3113,23 +3193,18 @@ class SaveManagerGUI:
         ):
             return
 
-        if self.active_game == "elden_ring" and not self._confirm_vanilla_save(
-            save_path
-        ):
-            return
-
         # Route non-ER games to their own loaders so the Load button works too
         if self.active_game == "dark_souls_remastered":
-            self._load_dsr_save(save_path)
+            self._load_dsr_save(save_path, silent=silent)
             return
         if self.active_game == "dark_souls_3":
-            self._load_ds3_save(save_path, running_checked=True)
+            self._load_ds3_save(save_path, running_checked=True, silent=silent)
             return
         if self.active_game == "dark_souls_2":
-            self._load_ds2_save(save_path)
+            self._load_ds2_save(save_path, silent=silent)
             return
-        if self.active_game == "nightreign" and _NR_AVAILABLE:
-            self._load_nr_save(save_path)
+        if self.active_game == "nightreign":
+            self._load_nr_save(save_path, silent=silent)
             return
 
         self.status_var.set("Loading save file...")
@@ -3165,19 +3240,83 @@ class SaveManagerGUI:
                 signature,
             )
         except Exception as e:
-            error_msg = str(e)
             if self.settings.get("verbose_logging", False):
-                self._verbose_log(f"Load failed: {save_path}: {error_msg}")
+                self._verbose_log(f"Load failed: {save_path}: {e}")
+            self.root.after(0, self._parse_failed, save_path, e)
 
-            self.root.after(
-                0,
-                lambda: CTkMessageBox.showerror(
-                    "Load Failed",
-                    f"Failed to load save file:\n{error_msg}",
-                    parent=self.root,
-                ),
-            )
-            self.root.after(0, lambda: self.status_var.set("Load failed"))
+    def _has_save_parser(self) -> bool:
+        """The active game has a save parser (not SteamID-only)."""
+        return self.active_game in (
+            "elden_ring",
+            "dark_souls_remastered",
+            "dark_souls_3",
+            "dark_souls_2",
+        ) or (self.active_game == "nightreign" and _NR_AVAILABLE)
+
+    def _confirm_backup_file(self, save_path: str) -> bool:
+        """Warn once per path per session before opening an editor backup
+        (.bak or a file in a .backups folder). Returns False when cancelled."""
+        path = Path(save_path)
+        if not (
+            path.name.lower().endswith(".bak")
+            or path.parent.name.lower().endswith(".backups")
+        ):
+            return True
+        key = os.path.normcase(os.path.abspath(save_path))
+        if key in self._backup_warned_paths:
+            return True
+        if not CTkMessageBox.askyesno(
+            "Backup File",
+            f"{path.name} is a backup. Edits are written into the backup, "
+            "not into the save the game uses.\n\n"
+            "To go back to this backup, restore it in Backup Manager.\n\n"
+            "Open the backup anyway?",
+            parent=self.root,
+        ):
+            self.status_var.set("Load cancelled")
+            self._restore_path_entry()
+            return False
+        self._backup_warned_paths.add(key)
+        return True
+
+    def _confirm_open(self, save_path: str) -> bool:
+        """Short file, backup and online ban warnings, asked after the file
+        parsed."""
+        return (
+            self._confirm_short_save(save_path)
+            and self._confirm_backup_file(save_path)
+            and self._confirm_vanilla_save(save_path)
+        )
+
+    def _confirm_short_save(self, save_path: str) -> bool:
+        """Warn once per path per session about an Elden Ring save whose
+        regulation data is cut off; the characters load. Returns False when
+        cancelled."""
+        from er_save_manager.games.save_identify import tail_cut_reason
+
+        reason = tail_cut_reason(save_path)
+        if not reason:
+            return True
+        key = os.path.normcase(os.path.abspath(save_path))
+        if key in self._short_warned_paths:
+            return True
+        name = os.path.basename(save_path)
+        _log.warning("%s is shorter than a complete save: %s", save_path, reason)
+        if not CTkMessageBox.askyesno(
+            "Incomplete Save File",
+            f"{name} is shorter than a complete save, so it may be damaged. "
+            "The characters are complete; the regulation data at the end "
+            "of the file is cut off.\n\n"
+            "The game may refuse to load it. Edits are written, but the file "
+            "stays short. Keep a copy of the original.\n\n"
+            "Open the file anyway?",
+            parent=self.root,
+        ):
+            self.status_var.set("Load cancelled")
+            self._restore_path_entry()
+            return False
+        self._short_warned_paths.add(key)
+        return True
 
     def _confirm_vanilla_save(self, save_path: str) -> bool:
         """Show the per-game online ban warning for a vanilla save.
@@ -3210,6 +3349,7 @@ class SaveManagerGUI:
             self.status_var.set(
                 "Load cancelled - click 'Continue' in the warning to load a vanilla save"
             )
+            self._restore_path_entry()
             return False
         if dialog.dont_show_again:
             self.settings.set("show_eac_warning", False)
@@ -3250,14 +3390,14 @@ class SaveManagerGUI:
             path,
             slot_idx,
             name or f"Character {slot_idx + 1}",
-            lambda: loader(str(path)),
+            lambda: loader(str(path), silent=True),
         )
 
-    def _load_dsr_save(self, save_path: str) -> None:
+    def _load_dsr_save(self, save_path: str, silent: bool = False) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
         if not self._guard_pending("load the save file"):
             return
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DSR.save import DSRSave
 
@@ -3270,17 +3410,15 @@ class SaveManagerGUI:
         ) and not self._handle_game_running_dialog(profile):
             return
 
-        if not self._confirm_vanilla_save(save_path):
-            return
-
         signature = own_writes.file_signature(save_path)
         try:
-            self.dsr_save = DSRSave.from_file(save_path)
+            parsed = DSRSave.from_file(save_path)
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Load Failed", f"Failed to load DSR save:\n{e}", parent=self.root
-            )
+            self._parse_failed(save_path, e)
             return
+        if not self._confirm_open(save_path):
+            return
+        self.dsr_save = parsed
         own_writes.record_load(save_path, signature)
         self._repair_dsr_item_levels(Path(save_path))
 
@@ -3300,9 +3438,10 @@ class SaveManagerGUI:
         self._refresh_character_bar()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        self.show_toast(
-            f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
-        )
+        if not silent:
+            self.show_toast(
+                f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
+            )
 
     def _repair_dsr_item_levels(self, save_path: Path) -> None:
         """Reset catalysts and talismans that an earlier editor version gave
@@ -3340,7 +3479,9 @@ class SaveManagerGUI:
         """
         self._open_in_editor(slot_idx)
 
-    def _load_ds3_save(self, save_path: str, running_checked: bool = False) -> None:
+    def _load_ds3_save(
+        self, save_path: str, running_checked: bool = False, silent: bool = False
+    ) -> None:
         """Parse a DS3 save file and refresh all DS3 tabs.
 
         running_checked skips the game-running check when the caller has
@@ -3348,7 +3489,7 @@ class SaveManagerGUI:
         """
         if not self._guard_pending("load the save file"):
             return
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DS3.save import DS3Save
 
@@ -3362,17 +3503,15 @@ class SaveManagerGUI:
         ) and not self._handle_game_running_dialog(profile):
             return
 
-        if not self._confirm_vanilla_save(save_path):
-            return
-
         signature = own_writes.file_signature(save_path)
         try:
-            self.ds3_save = DS3Save.from_file(save_path)
+            parsed = DS3Save.from_file(save_path)
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Load Failed", f"Failed to load DS3 save:\n{e}", parent=self.root
-            )
+            self._parse_failed(save_path, e)
             return
+        if not self._confirm_open(save_path):
+            return
+        self.ds3_save = parsed
         own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
@@ -3402,15 +3541,16 @@ class SaveManagerGUI:
             )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        self.show_toast(
-            f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
-        )
+        if not silent:
+            self.show_toast(
+                f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
+            )
 
-    def _load_ds2_save(self, save_path: str) -> None:
+    def _load_ds2_save(self, save_path: str, silent: bool = False) -> None:
         """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
         if not self._guard_pending("load the save file"):
             return
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
         from er_save_manager.games.DS2.save import DS2Save
 
@@ -3423,17 +3563,15 @@ class SaveManagerGUI:
         ) and not self._handle_game_running_dialog(profile):
             return
 
-        if not self._confirm_vanilla_save(save_path):
-            return
-
         signature = own_writes.file_signature(save_path)
         try:
-            self.ds2_save = DS2Save.from_file(save_path)
+            parsed = DS2Save.from_file(save_path)
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Load Failed", f"Failed to load DS2 save:\n{e}", parent=self.root
-            )
+            self._parse_failed(save_path, e)
             return
+        if not self._confirm_open(save_path):
+            return
+        self.ds2_save = parsed
         own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
@@ -3463,16 +3601,17 @@ class SaveManagerGUI:
             )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        self.show_toast(
-            f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
-        )
+        if not silent:
+            self.show_toast(
+                f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
+            )
 
-    def _load_nr_save(self, save_path: str) -> None:
+    def _load_nr_save(self, save_path: str, silent: bool = False) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""
         self._flush_pending_tabs()
         if not self._guard_pending("load the save file"):
             return
-        if self._reject_wrong_game(save_path):
+        if self._reject_unreadable(save_path) or self._reject_wrong_game(save_path):
             return
         profile = self._active_profile()
         if (
@@ -3483,17 +3622,15 @@ class SaveManagerGUI:
         ) and not self._handle_game_running_dialog(profile):
             return
 
-        if not self._confirm_vanilla_save(save_path):
-            return
-
         signature = own_writes.file_signature(save_path)
         try:
-            self._nr_save = NightreignSave.from_file(save_path)
+            parsed = NightreignSave.from_file(save_path)
         except Exception as e:
-            CTkMessageBox.showerror(
-                "Load Failed", f"Failed to load Nightreign save:\n{e}", parent=self.root
-            )
+            self._parse_failed(save_path, e)
             return
+        if not self._confirm_open(save_path):
+            return
+        self._nr_save = parsed
         own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
@@ -3522,13 +3659,18 @@ class SaveManagerGUI:
                 )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
-        self.show_toast(
-            f"Nightreign save loaded: {os.path.basename(save_path)}", duration=2500
-        )
+        if not silent:
+            self.show_toast(
+                f"Nightreign save loaded: {os.path.basename(save_path)}", duration=2500
+            )
 
-    def reload_save(self):
-        """Reload the current save file without showing success message"""
-        self.load_save(silent=True)
+    def reload_save(self, toast_message=None):
+        """Reload the loaded save file; a toast only when toast_message is given."""
+        self.load_save(
+            silent=toast_message is None,
+            toast_message=toast_message or "Save file loaded successfully.",
+            path=str(self.save_path) if self.save_path else None,
+        )
 
     def _on_ds3_slot_edit(self, slot_idx: int) -> None:
         """Navigate to Character Editor and load the selected slot.
@@ -3552,6 +3694,8 @@ class SaveManagerGUI:
         signature=None,
     ):
         """Finalize save loading on main thread"""
+        if not self._confirm_open(save_path):
+            return
         self._flush_pending_tabs()
         self.save_file = save_file
         self.save_path = Path(save_path)
@@ -3646,7 +3790,7 @@ class SaveManagerGUI:
             self.save_file,
             slot_idx,
             self.save_path,
-            self.load_save,
+            self.reload_save,
             open_backup_settings=self.open_auto_backup_settings,
         )
 
@@ -3671,7 +3815,7 @@ class SaveManagerGUI:
                     self.root,
                     lambda: self.save_file,
                     lambda: self.save_path,
-                    self.load_save,
+                    self.reload_save,
                     self.show_toast,
                 )
 
@@ -3711,9 +3855,22 @@ class SaveManagerGUI:
 
         try:
             current_mtime = self.save_path.stat().st_mtime
+        except FileNotFoundError:
+            # Shown once per disappearance; reset when the file is back.
+            if getattr(self, "_save_gone_path", None) != self.save_path:
+                self._save_gone_path = self.save_path
+                self.show_toast(
+                    f"{self.save_path.name} was deleted or moved. Changes cannot "
+                    "be saved until it is back; Backup Manager can restore it.",
+                    duration=10000,
+                    type="warning",
+                )
+            self.root.after(3000, self._poll_file_change)
+            return
         except OSError:
             self.root.after(3000, self._poll_file_change)
             return
+        self._save_gone_path = None
 
         if self._watched_mtime is not None and current_mtime != self._watched_mtime:
             self._watched_mtime = current_mtime
@@ -3811,17 +3968,7 @@ class SaveManagerGUI:
         self._reopen_popups_after_reload(popups.open_popups(self.root))
         self._guard_bypass = True
         try:
-            if self.active_game in (
-                "elden_ring",
-                "dark_souls_remastered",
-                "dark_souls_3",
-                "dark_souls_2",
-            ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
-                self.load_save(toast_message="Save file reloaded")
-            else:
-                # SteamID-only games have no parser; load_save would treat
-                # the file as an Elden Ring save.
-                self._load_non_er_save(str(self.save_path))
+            self.load_save(toast_message="Save file reloaded", path=str(self.save_path))
         finally:
             self._guard_bypass = False
 
@@ -3852,6 +3999,11 @@ class SaveManagerGUI:
                 f.write(f"[{timestamp}] {message}\n")
         except OSError:
             pass
+
+
+def _article(name: str) -> str:
+    """Indefinite article for a game name ("an Elden Ring", "a Sekiro")."""
+    return "an" if name[:1].lower() in "aeiou" else "a"
 
 
 def _windows_dpi_ignored() -> bool:

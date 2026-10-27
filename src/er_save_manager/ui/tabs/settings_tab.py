@@ -23,6 +23,10 @@ from er_save_manager.ui.utils import (
 class SettingsTab:
     """UI tab for application settings."""
 
+    # Backup interval range: 1 minute to 24 hours
+    MIN_INTERVAL_MINUTES = 1
+    MAX_INTERVAL_MINUTES = 1440
+
     def __init__(
         self,
         parent,
@@ -365,11 +369,23 @@ class SettingsTab:
             # (e.g. "1" while changing 50 to 100) never gets saved and
             # triggers pruning down to that intermediate value.
             old_value = self.settings.get("max_backups", 50)
+            raw = self.max_backups_var.get().strip()
             try:
-                value = int(self.max_backups_var.get())
+                value = int(raw)
             except ValueError:
-                value = old_value
-            value = max(value, MIN_MAX_BACKUPS)
+                value = None
+            if value is None or value < MIN_MAX_BACKUPS:
+                # Reset before the message: its focus change fires FocusOut,
+                # which must see a valid value
+                self.max_backups_var.set(str(old_value))
+                CTkMessageBox.showerror(
+                    "Invalid Backup Limit",
+                    f"Maximum backups to keep must be a whole number of "
+                    f'{MIN_MAX_BACKUPS} or more, not "{raw}".\n\n'
+                    f"The limit stays at {old_value}.",
+                    parent=self.root,
+                )
+                return
 
             if value < old_value:
                 existing_count = self._count_existing_backups()
@@ -645,39 +661,47 @@ class SettingsTab:
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
         game_cfg = dict(auto_backup_cfg.get(game_key, {}))
         game_cfg["interval_enabled"] = interval_enabled
-        game_cfg.setdefault("interval_minutes", self._parse_interval_minutes(game_key))
+        game_cfg.setdefault(
+            "interval_minutes", self._parse_interval_minutes(game_key) or 30
+        )
         auto_backup_cfg[game_key] = game_cfg
         self.settings.set("auto_backup_games", auto_backup_cfg)
 
     def _on_game_auto_backup_interval_minutes_changed(self, game_key: str):
+        var = self._auto_backup_interval_minutes_vars[game_key]
         minutes = self._parse_interval_minutes(game_key)
-        self._auto_backup_interval_minutes_vars[game_key].set(str(minutes))
         auto_backup_cfg: dict = dict(self.settings.get("auto_backup_games", {}))
         game_cfg = dict(auto_backup_cfg.get(game_key, {}))
+        if minutes is None:
+            raw = var.get().strip()
+            old_value = game_cfg.get("interval_minutes", 30)
+            # Reset before the message: its focus change fires FocusOut,
+            # which must see a valid value
+            var.set(str(old_value))
+            CTkMessageBox.showerror(
+                "Invalid Backup Interval",
+                f"The backup interval must be a whole number of minutes from "
+                f"{self.MIN_INTERVAL_MINUTES} to {self.MAX_INTERVAL_MINUTES}, "
+                f'not "{raw}".\n\nThe interval stays at {old_value} minutes.',
+                parent=self.parent,
+            )
+            return
+        var.set(str(minutes))
         game_cfg["interval_minutes"] = minutes
         auto_backup_cfg[game_key] = game_cfg
         self.settings.set("auto_backup_games", auto_backup_cfg)
 
-    def _parse_interval_minutes(self, game_key: str) -> int:
-        """Parse the interval entry, falling back to the last saved value.
-
-        Clamped to MIN_INTERVAL_MINUTES..MAX_INTERVAL_MINUTES (1 minute to
-        24 hours) so a stray or malicious value can never produce a zero,
-        negative, or absurdly small backup interval.
-        """
-        MIN_INTERVAL_MINUTES = 1
-        MAX_INTERVAL_MINUTES = 1440
-
-        auto_backup_cfg: dict = self.settings.get("auto_backup_games", {})
-        old_value = auto_backup_cfg.get(game_key, {}).get("interval_minutes", 30)
-
+    def _parse_interval_minutes(self, game_key: str) -> int | None:
+        """The interval entry as minutes, or None when it is not a whole
+        number in MIN_INTERVAL_MINUTES..MAX_INTERVAL_MINUTES."""
         raw = self._auto_backup_interval_minutes_vars[game_key].get().strip()
         try:
             minutes = int(raw)
         except ValueError:
-            minutes = old_value
-
-        return min(max(minutes, MIN_INTERVAL_MINUTES), MAX_INTERVAL_MINUTES)
+            return None
+        if not self.MIN_INTERVAL_MINUTES <= minutes <= self.MAX_INTERVAL_MINUTES:
+            return None
+        return minutes
 
     def _choose_game_auto_backup_save(self, game_key: str, profile):
         from er_save_manager.platform.utils import PlatformUtils

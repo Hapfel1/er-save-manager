@@ -1253,18 +1253,21 @@ class EquipmentEditor:
 
         loadout_btns2 = ctk.CTkFrame(loadout_frame, fg_color="transparent")
         loadout_btns2.pack(fill="x", padx=6, pady=(0, 8))
-        ctk.CTkButton(
+        share_btn = ctk.CTkButton(
             loadout_btns2,
             text="Share via Code...",
             command=self.share_loadout_code,
             width=150,
-        ).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(
+        )
+        share_btn.pack(side="left", padx=(0, 6))
+        import_btn = ctk.CTkButton(
             loadout_btns2,
             text="Import via Code...",
             command=self.import_loadout_code,
             width=150,
-        ).pack(side="left")
+        )
+        import_btn.pack(side="left")
+        self._share_code_buttons = (share_btn, import_btn)
 
     def _build_section(
         self, parent, title: str, side: str, slots: list[tuple[str, str]]
@@ -1912,6 +1915,40 @@ class EquipmentEditor:
         code = ds.ask_string(self.parent, title, text, font=ds.TITLE_LARGE)
         return code.strip() if code is not None else None
 
+    def _run_share_request(self, message: str, work, on_done) -> bool:
+        """Run work() on a worker thread and pass its result to on_done on the
+        Tk thread. The share code buttons are disabled meanwhile. False when a
+        request is already running."""
+        import threading
+        import tkinter as tk
+
+        if getattr(self, "_share_busy", False):
+            notify(self.parent, "A share code request is still running.", "warning")
+            return False
+        self._share_busy = True
+        buttons = getattr(self, "_share_code_buttons", ())
+        for button in buttons:
+            button.configure(state="disabled")
+        notify(self.parent, message, "info")
+
+        def finish(result):
+            self._share_busy = False
+            for button in buttons:
+                if button.winfo_exists():
+                    button.configure(state="normal")
+            on_done(result)
+
+        def run():
+            result = work()
+            try:
+                self.parent.after(0, lambda: finish(result))
+            except (RuntimeError, tk.TclError):
+                # Window closed while the request ran
+                pass
+
+        threading.Thread(target=run, daemon=True).start()
+        return True
+
     def share_loadout_code(self):
         save_file = self.get_save_file()
         if not save_file:
@@ -1925,16 +1962,23 @@ class EquipmentEditor:
             if self._is_cnv_save()
             else ("co2" if self._is_co2_save() else "vanilla")
         )
-        code = share_loadout(self._collect_state(), save_type=save_type)
-        if not code:
-            CTkMessageBox.showerror(
-                "Share Failed",
-                "Failed to share loadout. Check your internet connection.",
-                parent=self.parent,
-            )
-            return
+        state = self._collect_state()
 
-        self._show_share_code(code, "equipment loadout")
+        def done(code):
+            if not code:
+                CTkMessageBox.showerror(
+                    "Share Failed",
+                    "Failed to share loadout. Check your internet connection.",
+                    parent=self.parent,
+                )
+                return
+            self._show_share_code(code, "equipment loadout")
+
+        self._run_share_request(
+            "Uploading loadout...",
+            lambda: share_loadout(state, save_type=save_type),
+            done,
+        )
 
     def import_loadout_code(self):
         save_file = self.get_save_file()
@@ -1948,13 +1992,26 @@ class EquipmentEditor:
 
         from er_save_manager.data.equipment_sharing import fetch_loadout
 
-        slots = fetch_loadout(code)
-        if slots is None:
-            CTkMessageBox.showerror(
-                "Not Found",
-                "No loadout found for that code, or the connection failed.",
-                parent=self.parent,
-            )
-            return
+        slot = self.get_char_slot()
 
-        self._apply_loadout_data(slots)
+        def done(slots):
+            if slots is None:
+                CTkMessageBox.showerror(
+                    "Not Found",
+                    "No loadout found for that code, or the connection failed.",
+                    parent=self.parent,
+                )
+                return
+            if self.get_save_file() is not save_file or self.get_char_slot() != slot:
+                CTkMessageBox.showerror(
+                    "Import Cancelled",
+                    "The loaded save or character changed while the loadout "
+                    "was downloading. Import the code again.",
+                    parent=self.parent,
+                )
+                return
+            self._apply_loadout_data(slots)
+
+        self._run_share_request(
+            "Downloading loadout...", lambda: fetch_loadout(code), done
+        )

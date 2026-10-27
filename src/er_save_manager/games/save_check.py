@@ -17,9 +17,12 @@ Checked per game:
 from __future__ import annotations
 
 import hashlib
+import logging
 import struct
 from dataclasses import dataclass
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -314,8 +317,9 @@ def check(game_key: str, path: str | Path) -> list[Issue]:
     reported as one unfixable issue."""
     try:
         return _GAMES[game_key][0](Path(path))
-    except Exception as exc:
-        return [Issue(f"The save could not be read: {exc}", False)]
+    except Exception:
+        logger.exception("Save check could not read %s", path)
+        return [Issue("The save could not be read. It is cut off or damaged.", False)]
 
 
 def repair(game_key: str, path: str | Path) -> None:

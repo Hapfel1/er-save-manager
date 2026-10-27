@@ -208,6 +208,21 @@ class BackupManagerTab:
             self._game_note_var.set("")
         self.update_backup_stats()
 
+    def _loaded_save_path(self) -> Path | None:
+        """The loaded save's path while it, or its backup folder, exists; a
+        deleted save can still be restored from its backups."""
+        selected = self.get_save_path()
+        if not selected:
+            return None
+        path = Path(selected)
+        if path.exists():
+            return path
+        from er_save_manager.backup.manager import BackupManager
+
+        if BackupManager(path).backup_folder.is_dir():
+            return path
+        return None
+
     def _resolve_save_path_for_profile(self) -> Path | None:
         """
         Get the relevant save path for backup stats.
@@ -217,9 +232,9 @@ class BackupManagerTab:
         if profile is None:
             return None
 
-        selected = self.get_save_path()
-        if selected and Path(selected).exists():
-            return Path(selected)
+        loaded = self._loaded_save_path()
+        if loaded:
+            return loaded
 
         if profile.key == "elden_ring":
             return None
@@ -295,10 +310,7 @@ class BackupManagerTab:
         """
         from er_save_manager.platform.utils import PlatformUtils
 
-        save_path = None
-        selected = self.get_save_path()
-        if selected and Path(selected).exists():
-            save_path = Path(selected)
+        save_path = self._loaded_save_path()
 
         if not save_path and profile.key != "elden_ring":
             paths = PlatformUtils.find_all_save_files(profile)
@@ -660,9 +672,21 @@ class BackupManagerTab:
                 return
             is_loaded_here = str(self.get_save_path()) == str(save_path)
 
+            from er_save_manager.ui.utils import game_blocks_write
+
+            if profile.process_name and game_blocks_write(
+                dialog, profile.process_name, profile.name
+            ):
+                return
+
+            note = (
+                "Current save will be backed up first."
+                if save_path.exists()
+                else f"{save_path.name} is missing; the backup will recreate it."
+            )
             if not CTkMessageBox.askyesno(
                 "Confirm Restore",
-                f"Restore backup '{fname}'?\n\nCurrent save will be backed up first.",
+                f"Restore backup '{fname}'?\n\n{note}",
                 parent=dialog,
             ):
                 return
