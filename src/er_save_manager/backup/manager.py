@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import gzip
 import json
+import os
 import re
 import shutil
 import threading
@@ -72,6 +74,56 @@ class BackupHistory:
         )
 
 
+# Suffixes of backup files, checked in order (".bak.zip" before ".zip").
+_BACKUP_EXTENSIONS = (".bak.zip", ".bak.gz", ".bak", ".zip", ".gz")
+# "<stem>_<YYYY-mm-dd_HH-MM-SS>[_<operation and description>]"
+_NAME_STAMP = re.compile(r"_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})(?:_(.*))?$")
+
+
+def _metadata_from_entry(entry) -> BackupMetadata | None:
+    """BackupMetadata from one metadata.json entry, None when a required
+    field is missing or a known field has the wrong type."""
+    if not isinstance(entry, dict):
+        return None
+    try:
+        meta = BackupMetadata.from_dict(entry)
+    except TypeError:
+        return None
+    for f in fields(BackupMetadata):
+        value = getattr(meta, f.name)
+        expected = _FIELD_TYPES[f.name]
+        if not isinstance(value, expected) or (
+            expected is int and isinstance(value, bool)
+        ):
+            return None
+    if not meta.filename or Path(meta.filename).name != meta.filename:
+        return None
+    return meta
+
+
+_FIELD_TYPES = {
+    "filename": str,
+    "original_file": str,
+    "timestamp": str,
+    "description": str,
+    "operation": str,
+    "character_summary": list,
+    "file_size": int,
+    "compressed": bool,
+    "favorite": bool,
+}
+
+
+def _log_problem(exc: BaseException, where: str) -> None:
+    """Append exc to errors.log without showing a dialog."""
+    try:
+        from er_save_manager.ui.error_report import log_exception
+
+        log_exception(type(exc), exc, exc.__traceback__, where)
+    except Exception:
+        pass
+
+
 class BackupManager:
     """
     Manages backups for Elden Ring save files.
@@ -133,23 +185,95 @@ class BackupManager:
         return self._history
 
     def _load_history(self) -> BackupHistory:
-        """Load backup history from metadata file."""
+        """Load backup history from metadata file.
+
+        An unreadable metadata.json is replaced by a list built from the
+        backup files on disk, and entries with missing or mistyped fields
+        are dropped; backup files no entry names are added from disk. Both
+        cases are logged to errors.log.
+        """
+        history = BackupHistory(save_file=str(self.save_path))
         metadata_path = self.backup_folder / self.METADATA_FILE
-        if metadata_path.exists():
+        if not metadata_path.exists():
+            return history
+        try:
+            with open(metadata_path, encoding="utf-8") as f:
+                data = json.load(f)
+            entries = data["backups"] if isinstance(data, dict) else None
+            if not isinstance(entries, list):
+                raise ValueError("metadata.json has no backup list")
+        except (OSError, ValueError, KeyError) as e:
+            _log_problem(
+                e, f"Backup list {metadata_path} unreadable, rebuilt from files"
+            )
+            history.backups = self._backups_from_disk(set())
+            return history
+
+        skipped = []
+        for entry in entries:
+            meta = _metadata_from_entry(entry)
+            if meta is None:
+                skipped.append(entry)
+            else:
+                history.backups.append(meta)
+        if skipped:
+            _log_problem(
+                ValueError(f"{len(skipped)} bad entries skipped: {skipped!r}"[:2000]),
+                f"Backup list {metadata_path}",
+            )
+            known = {b.filename for b in history.backups}
+            history.backups.extend(self._backups_from_disk(known))
+            history.backups.sort(key=lambda b: b.timestamp, reverse=True)
+        return history
+
+    def _backups_from_disk(self, known: set[str]) -> list[BackupMetadata]:
+        """Metadata for the backup files in the folder that are not in known,
+        newest first. Timestamp and description come from the file name
+        when it has the generated layout, else the timestamp is the mtime."""
+        found = []
+        try:
+            paths = list(self.backup_folder.iterdir())
+        except OSError:
+            return found
+        for path in paths:
+            name = path.name
+            if name in known or not path.is_file():
+                continue
+            ext = next((e for e in _BACKUP_EXTENSIONS if name.endswith(e)), None)
+            if ext is None:
+                continue
             try:
-                with open(metadata_path) as f:
-                    data = json.load(f)
-                return BackupHistory.from_dict(data)
-            except (json.JSONDecodeError, KeyError):
-                pass
-        return BackupHistory(save_file=str(self.save_path))
+                stat = path.stat()
+            except OSError:
+                continue
+            timestamp = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            description = ""
+            match = _NAME_STAMP.search(name[: -len(ext)])
+            if match:
+                with contextlib.suppress(ValueError):
+                    timestamp = datetime.strptime(
+                        match.group(1), "%Y-%m-%d_%H-%M-%S"
+                    ).isoformat()
+                description = match.group(2) or ""
+            found.append(
+                BackupMetadata(
+                    filename=name,
+                    original_file=self.save_path.name,
+                    timestamp=timestamp,
+                    description=description,
+                    file_size=stat.st_size,
+                    compressed=ext != ".bak",
+                )
+            )
+        found.sort(key=lambda b: b.timestamp, reverse=True)
+        return found
 
     def _save_history(self) -> None:
         """Save backup history to metadata file."""
         self.backup_folder.mkdir(parents=True, exist_ok=True)
         metadata_path = self.backup_folder / self.METADATA_FILE
-        with open(metadata_path, "w") as f:
-            json.dump(self.history.to_dict(), f, indent=2)
+        text = json.dumps(self.history.to_dict(), indent=2)
+        atomic_write(metadata_path, text.encode("utf-8"))
 
     def _sanitize_filename_part(self, text: str) -> str:
         """Sanitize a string for safe use in filenames."""
@@ -216,6 +340,7 @@ class BackupManager:
         operation: str = "",
         save: Save | None = None,
         compress: bool | None = None,
+        keep: tuple[str, ...] = (),
     ) -> tuple[Path, list[BackupMetadata]]:
         from er_save_manager.ui.settings import (
             get_settings,  # lazy to avoid circular import
@@ -229,10 +354,19 @@ class BackupManager:
             operation: Operation being performed (e.g., "fix_torrent")
             save: Optional Save object to extract character info from
             compress: Whether to compress the backup (None = use settings)
+            keep: Backup file names pruning leaves in place
+
+        Pruning past the max_backups setting, and its warning dialog, run
+        on the Tk main loop once the current event handler returns, so a
+        caller that writes the save right after this call finishes the
+        write first. Without a Tk root it prunes before returning.
 
         Returns:
             Tuple of (Path to created backup, List of BackupMetadata that will be pruned)
         """
+        sources = self._save_files()
+        if not any(p.exists() for p in sources):
+            raise FileNotFoundError(f"Save file not found: {self.save_path}")
         self.backup_folder.mkdir(parents=True, exist_ok=True)
 
         if self._ps_folder:
@@ -247,14 +381,23 @@ class BackupManager:
         backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 
-        if compress:
-            with zipfile.ZipFile(
-                backup_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
-            ) as zipf:
-                for file in self._save_files():
-                    zipf.write(file, arcname=file.name)
-        else:
-            shutil.copy2(self.save_path, backup_path)
+        # Written under a temporary name so a failed copy (disk full) never
+        # leaves a truncated file with a backup name.
+        tmp_path = backup_path.with_name(f"{backup_name}.tmp{os.getpid()}")
+        try:
+            if compress:
+                with zipfile.ZipFile(
+                    tmp_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
+                ) as zipf:
+                    for file in sources:
+                        zipf.write(file, arcname=file.name)
+            else:
+                shutil.copy2(self.save_path, tmp_path)
+            os.replace(tmp_path, backup_path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                tmp_path.unlink()
+            raise
 
         metadata = BackupMetadata(
             filename=backup_name,
@@ -274,29 +417,60 @@ class BackupManager:
 
         pruned_backups = []
         try:
-            settings = get_settings()
-            max_backups = settings.get("max_backups", 50)
+            max_backups = get_settings().get("max_backups", 50)
             if max_backups and max_backups > 0:
-                pruned_backups = self.get_backups_to_prune(keep_count=max_backups)
-                if pruned_backups:
-                    should_prune = True
-                    if settings.get("show_backup_pruning_warning", True):
-                        result = self._show_pruning_warning(max_backups, pruned_backups)
-                        # User raised the limit - re-read setting and skip prune
-                        if result == "raised":
-                            new_max = get_settings().get("max_backups", max_backups)
-                            pruned_backups = self.get_backups_to_prune(
-                                keep_count=new_max
-                            )
-                            should_prune = bool(pruned_backups)
-                    if should_prune:
-                        self.prune_backups(
-                            keep_count=get_settings().get("max_backups", max_backups)
-                        )
+                pruned_backups = self.get_backups_to_prune(
+                    keep_count=max_backups, keep=keep
+                )
         except Exception as e:
-            print(f"Backup pruning failed: {e}")
+            _log_problem(e, f"Backup pruning of {self.backup_folder}")
+        if pruned_backups:
+            self._schedule_prune(keep)
 
         return backup_path, pruned_backups
+
+    def _schedule_prune(self, keep: tuple[str, ...]) -> None:
+        """Run _prune_to_limit on the Tk main loop, or now without a root."""
+        import tkinter as _tk
+
+        root = _tk._default_root
+        try:
+            alive = root is not None and root.winfo_exists()
+        except Exception:
+            alive = False
+        if not alive:
+            self._prune_to_limit(keep)
+            return
+        if threading.current_thread() is threading.main_thread():
+            root.after_idle(self._prune_to_limit, keep)
+        else:
+            root.after(0, self._prune_to_limit, keep)
+
+    def _prune_to_limit(self, keep: tuple[str, ...]) -> None:
+        """Prune past max_backups, asking first when the warning is on."""
+        from er_save_manager.ui.settings import get_settings
+
+        try:
+            # Re-read: other BackupManager instances may have added backups
+            # since this one loaded the list.
+            self._history = None
+            settings = get_settings()
+            max_backups = settings.get("max_backups", 50)
+            if not max_backups or max_backups <= 0:
+                return
+            pruned_backups = self.get_backups_to_prune(
+                keep_count=max_backups, keep=keep
+            )
+            if not pruned_backups:
+                return
+            if settings.get("show_backup_pruning_warning", True):
+                result = self._show_pruning_warning(max_backups, pruned_backups)
+                # User raised the limit - re-read setting and skip prune
+                if result == "raised":
+                    max_backups = get_settings().get("max_backups", max_backups)
+            self.prune_backups(keep_count=max_backups, keep=keep)
+        except Exception as e:
+            _log_problem(e, f"Backup pruning of {self.backup_folder}")
 
     def _show_pruning_warning(
         self, max_backups: int, pruned_backups: list[BackupMetadata]
@@ -367,11 +541,14 @@ class BackupManager:
         if not backup_path.exists():
             raise FileNotFoundError(f"Backup not found: {backup_name}")
 
-        # Create backup of current state before restoring
-        self.create_backup(
-            description="before_restore",
-            operation=f"restore_{backup_name}",
-        )
+        # Back up the current state before restoring, unless the save is
+        # gone. The backup being restored is kept out of pruning.
+        if any(p.exists() for p in self._save_files()):
+            self.create_backup(
+                description="before_restore",
+                operation=f"restore_{backup_name}",
+                keep=(backup_name,),
+            )
 
         is_zip = backup_name.endswith(".zip")
         is_gzip = backup_name.endswith(".gz")
@@ -447,7 +624,9 @@ class BackupManager:
         self._save_history()
         return True
 
-    def get_backups_to_prune(self, keep_count: int = 10) -> list[BackupMetadata]:
+    def get_backups_to_prune(
+        self, keep_count: int = 10, keep: tuple[str, ...] = ()
+    ) -> list[BackupMetadata]:
         """
         Get list of backups that would be deleted by pruning.
 
@@ -457,17 +636,20 @@ class BackupManager:
 
         Args:
             keep_count: Number of non-favorite backups to keep
+            keep: Backup file names treated like favorites
 
         Returns:
             List of BackupMetadata that would be deleted
         """
-        prunable = [b for b in self.history.backups if not b.favorite]
+        prunable = [
+            b for b in self.history.backups if not b.favorite and b.filename not in keep
+        ]
         if len(prunable) <= keep_count:
             return []
 
         return prunable[keep_count:]
 
-    def prune_backups(self, keep_count: int = 10) -> int:
+    def prune_backups(self, keep_count: int = 10, keep: tuple[str, ...] = ()) -> int:
         """
         Delete old backups, keeping only the most recent ones.
 
@@ -475,11 +657,12 @@ class BackupManager:
 
         Args:
             keep_count: Number of non-favorite backups to keep
+            keep: Backup file names treated like favorites
 
         Returns:
             Number of backups deleted
         """
-        to_delete = self.get_backups_to_prune(keep_count=keep_count)
+        to_delete = self.get_backups_to_prune(keep_count=keep_count, keep=keep)
         if not to_delete:
             return 0
 

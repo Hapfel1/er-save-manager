@@ -78,6 +78,16 @@ def _patch_checksum(dec: bytearray) -> None:
     dec[checksum_offset : checksum_offset + 16] = digest
 
 
+def is_ps_memory_dat(save_path: Path) -> bool:
+    """True for a decrypted PlayStation memory.dat, which stores no SteamID."""
+    from er_save_manager.games.NR.parser import _is_ps_save
+
+    try:
+        return _is_ps_save(save_path.read_bytes())
+    except OSError:
+        return False
+
+
 def detect_steamid_nr(save_path: Path) -> int | None:
     """
     Detect the SteamID from a Nightreign save file by decrypting entry 10
@@ -126,6 +136,8 @@ def patch_steamid_nr(
         return False, f"Could not read file: {e}"
 
     if raw[:4] != _BND4_MAGIC:
+        if is_ps_memory_dat(save_path):
+            return False, "PlayStation saves have no SteamID to patch."
         return False, "Not a valid BND4/SL2 file"
 
     file_count = struct.unpack_from("<I", raw, 0x0C)[0]

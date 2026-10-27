@@ -114,6 +114,9 @@ class GameProcessMonitor:
         self._on_backup_created: Callable[[str, Path], None] | None = None
         # Timestamp of the last interval backup per game key, reset on each launch
         self._interval_last_backup: dict[str, float] = {}
+        # Last reported failure per game key; a repeat of it is not reported
+        # again until a backup succeeds or the game exits.
+        self._last_failure: dict[str, str] = {}
 
     def set_backup_callback(self, callback: Callable[[str, Path], None]) -> None:
         """
@@ -135,11 +138,39 @@ class GameProcessMonitor:
             self._thread.join(timeout=2.0)
             self._thread = None
 
+    def _report_failure(self, game_key: str, exc: BaseException) -> None:
+        """Log a failed auto-backup to errors.log and show an error toast."""
+        from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+
+        profile = PROFILES_BY_KEY.get(game_key)
+        game_name = profile.name if profile else game_key
+        message = f"{game_name} auto-backup failed: {exc}"
+        if self._last_failure.get(game_key) == message:
+            return
+        self._last_failure[game_key] = message
+
+        try:
+            from er_save_manager.ui.error_report import log_exception
+
+            log_exception(type(exc), exc, exc.__traceback__, "Auto-backup")
+        except Exception:
+            pass
+        try:
+            import tkinter as tk
+
+            from er_save_manager.ui.toast import show_toast
+
+            root = tk._default_root
+            if root is not None:
+                root.after(0, lambda: show_toast(root, message, 8000, "error"))
+        except Exception:
+            pass
+
     def _create_backup_for_game(self, game_key: str, save_path: str) -> Path | None:
         try:
             path = Path(save_path)
             if not path.exists():
-                return None
+                raise FileNotFoundError(f"Save file not found: {path}")
 
             manager = BackupManager(path)
 
@@ -158,9 +189,10 @@ class GameProcessMonitor:
                 operation="auto_backup",
                 save=save_obj,
             )
+            self._last_failure.pop(game_key, None)
             return backup_path
         except Exception as e:
-            print(f"Auto-backup failed for {game_key}: {e}")
+            self._report_failure(game_key, e)
             return None
 
     # Games that support CPU 0 exclusion.
@@ -239,6 +271,7 @@ class GameProcessMonitor:
 
                     if not is_running:
                         self._interval_last_backup.pop(game_key, None)
+                        self._last_failure.pop(game_key, None)
 
                     was_running[game_key] = is_running
 
