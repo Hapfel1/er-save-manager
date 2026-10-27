@@ -349,16 +349,17 @@ class DS2CharacterManagementTab:
         return save
 
     def _backup(self, save_path, description: str, operation: str) -> None:
+        """Raises when the backup fails, so the operation does not go ahead."""
         if not save_path:
             return
-        try:
-            from er_save_manager.backup.manager import BackupManager
+        from er_save_manager.backup.manager import BackupManager
 
+        try:
             BackupManager(Path(save_path)).create_backup(
                 description=description, operation=operation
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(f"Backup failed: {exc}") from exc
 
     def _confirm_uninitialized_override(self, message: str) -> bool:
         """Show the uninitialized-slot warning and ask whether to proceed

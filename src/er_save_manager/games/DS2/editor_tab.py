@@ -38,6 +38,7 @@ from er_save_manager.ui.pending import (
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
 from er_save_manager.validation.names import name_problem
+from er_save_manager.validation.numbers import parse_whole
 
 
 def _game_blocks_write(parent) -> bool:
@@ -63,7 +64,7 @@ def _format_torch(seconds: float) -> str:
 def _parse_torch(text: str) -> int:
     """Seconds from "H:MM:SS", "M:SS" or plain seconds. Raises ValueError for
     anything else or a time above _TORCH_MAX_SECONDS."""
-    parts = [int(part) for part in text.strip().split(":")]
+    parts = [parse_whole(part) for part in text.strip().split(":")]
     if not 1 <= len(parts) <= 3 or any(part < 0 for part in parts):
         raise ValueError(text)
     if any(part >= 60 for part in parts[1:]):
@@ -89,12 +90,14 @@ def slot_entries(save: DS2Save) -> list[tuple[int, str]]:
         if save.slot_state(i) is not SlotState.NEVER_CREATED
     ]
     entries = []
+    damaged = save.damaged_slots()
     for i in offered or range(CHARACTER_SLOTS):
         state = save.slot_state(i)
         if state is SlotState.CHARACTER:
-            entries.append((i, f"Slot {i + 1} - {save.slot_display_name(i)}"))
+            label = f"Slot {i + 1} - {save.slot_display_name(i)}"
         else:
-            entries.append((i, f"Slot {i + 1} - ({state.value})"))
+            label = f"Slot {i + 1} - ({state.value})"
+        entries.append((i, label + " (damaged)" if i in damaged else label))
     return entries
 
 
@@ -418,7 +421,7 @@ class DS2EditorTab:
             return [
                 f"{stat_name.capitalize()} (min {self._class_base.stats[stat_name]})"
                 for stat_name, var in self._stat_vars.items()
-                if int(var.get()) < self._class_base.stats[stat_name]
+                if parse_whole(var.get()) < self._class_base.stats[stat_name]
             ]
         except ValueError:
             return []
@@ -453,7 +456,7 @@ class DS2EditorTab:
             base_level, base_stats = self._baseline_level, self._baseline_stats
         try:
             delta = sum(
-                int(var.get()) - base_stats[stat_name]
+                parse_whole(var.get()) - base_stats[stat_name]
                 for stat_name, var in self._stat_vars.items()
             )
         except ValueError:
@@ -470,7 +473,10 @@ class DS2EditorTab:
             self._stats_tracker.clear()
             self.slot_status_label.configure(text="")
         else:
-            if save.slot_state(self._slot_index) is SlotState.NEVER_CREATED:
+            reason = save.slot_lock_reason(self._slot_index)
+            if reason:
+                self.slot_status_label.configure(text=reason, text_color="orange")
+            elif save.slot_state(self._slot_index) is SlotState.NEVER_CREATED:
                 self.slot_status_label.configure(
                     text="Never created in-game - edits here will not appear at the load screen",
                     text_color="orange",
@@ -537,7 +543,9 @@ class DS2EditorTab:
             self.class_var.set(self._class_display(self._class_id))
             return
         try:
-            stats = {name: int(var.get()) for name, var in self._stat_vars.items()}
+            stats = {
+                name: parse_whole(var.get()) for name, var in self._stat_vars.items()
+            }
         except ValueError:
             self.show_toast("Enter whole numbers for all stats first", duration=3000)
             self.class_var.set(self._class_display(self._class_id))
@@ -598,15 +606,19 @@ class DS2EditorTab:
         character = save.characters[self._slot_index]
         if not character.missing_cycle_soul_memory():
             return
+        reason = save.slot_lock_reason(self._slot_index)
+        if reason:
+            CTkMessageBox.showerror("Slot Locked", reason, parent=self.parent)
+            return
         if not save_writable():
             return
-        self._backup(
-            save_path,
-            f"before_cycle_soul_memory_fix_slot_{self._slot_index}",
-            "fix_cycle_soul_memory",
-        )
         added = character.fix_cycle_soul_memory()
         try:
+            self._backup(
+                save_path,
+                f"before_cycle_soul_memory_fix_slot_{self._slot_index}",
+                "fix_cycle_soul_memory",
+            )
             save.save_to_file(save_path)
         except Exception as exc:
             write_failed(exc, self.parent)
@@ -628,6 +640,9 @@ class DS2EditorTab:
         if save is None or self._slot_index < 0:
             raise StageError("No character loaded.")
         slot = self._slot_index
+        reason = save.slot_lock_reason(slot)
+        if reason:
+            raise StageError(reason)
         if save.slot_state(slot) is not SlotState.CHARACTER:
             raise StageError(
                 "This slot holds no created character. Create the character "
@@ -635,14 +650,17 @@ class DS2EditorTab:
             )
 
         try:
-            entered_level = int(self.level_var.get())
+            entered_level = parse_whole(self.level_var.get())
             stat_values = {
-                stat_name: int(var.get()) for stat_name, var in self._stat_vars.items()
+                stat_name: parse_whole(var.get())
+                for stat_name, var in self._stat_vars.items()
             }
-            souls = int(self.souls_var.get())
-            ng_plus = int(self.ng_var.get())
+            souls = parse_whole(self.souls_var.get())
+            ng_plus = parse_whole(self.ng_var.get())
         except ValueError:
-            raise StageError("Level, stats, souls and NG+ must be numbers.") from None
+            raise StageError(
+                "Level, stats, souls and NG+ must be whole numbers (digits 0-9)."
+            ) from None
         for stat_name, value in stat_values.items():
             if not STAT_MIN <= value <= STAT_MAX:
                 raise StageError(
@@ -747,18 +765,17 @@ class DS2EditorTab:
         )
 
     def _backup(self, save_path, description: str, operation: str) -> None:
+        """Raises when the backup fails, so the operation does not go ahead."""
         if not save_path:
             return
+        from er_save_manager.backup.manager import BackupManager
+
         try:
-            from pathlib import Path
-
-            from er_save_manager.backup.manager import BackupManager
-
             BackupManager(Path(save_path)).create_backup(
                 description=description, operation=operation
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            raise RuntimeError(f"Backup failed: {exc}") from exc
 
 
 class SlotPanelPage:

@@ -28,8 +28,10 @@ from er_save_manager.games.DS2.world_flags import (
 )
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, patch_combo_scroll
+from er_save_manager.validation.numbers import parse_whole
 
 _ALL_AREAS = "All areas"
 
@@ -129,6 +131,7 @@ class _Page:
         self._has_character = (
             save is not None
             and save.slot_state(self.get_slot_index()) is SlotState.CHARACTER
+            and save.slot_lock_reason(self.get_slot_index()) is None
         )
 
     def _enable(self, *pairs) -> None:
@@ -155,23 +158,29 @@ class _Page:
         if save is None:
             self.show_toast("No save file loaded", duration=2000)
             return
+        reason = save.slot_lock_reason(self.get_slot_index())
+        if reason:
+            CTkMessageBox.showerror("Slot Locked", reason, parent=self.parent)
+            return
         if not CTkMessageBox.askyesno(title, message, parent=self.parent):
+            return
+        if not save_writable():
             return
         changed = mutate(save, self.get_slot_index())
         save_path = self.get_save_path()
         if save_path and changed:
-            try:
-                from er_save_manager.backup.manager import BackupManager
+            from er_save_manager.backup.manager import BackupManager
 
-                BackupManager(Path(save_path)).create_backup(
-                    description=f"before_{operation}", operation=operation
-                )
-            except Exception:
-                pass
             try:
+                try:
+                    BackupManager(Path(save_path)).create_backup(
+                        description=f"before_{operation}", operation=operation
+                    )
+                except Exception as exc:
+                    raise RuntimeError(f"Backup failed: {exc}") from exc
                 save.save_to_file(save_path)
-            except Exception as e:
-                self.show_toast(f"Failed to write save: {e}", duration=3000)
+            except Exception as exc:
+                write_failed(exc, self.parent)
                 return
         self.refresh()
         self.show_toast(done.format(n=changed), duration=2500)
@@ -532,7 +541,7 @@ class DS2FlagsPanel(_Page):
 
     def _id_value(self) -> int | None:
         try:
-            return int(self._id_var.get().strip())
+            return parse_whole(self._id_var.get())
         except ValueError:
             return None
 

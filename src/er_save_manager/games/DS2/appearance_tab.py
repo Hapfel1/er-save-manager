@@ -265,6 +265,9 @@ class DS2AppearanceTab:
         slot = self._slot
         if save is None or slot < 0:
             raise StageError("No character loaded.")
+        reason = save.slot_lock_reason(slot)
+        if reason:
+            raise StageError(reason)
         if save.slot_state(slot) is not SlotState.CHARACTER or self.block is None:
             raise StageError(
                 "This slot holds no created character. Create the character "

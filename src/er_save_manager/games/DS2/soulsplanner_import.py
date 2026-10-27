@@ -42,7 +42,9 @@ from er_save_manager.games.DS2.soulsplanner import (
 )
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
+from er_save_manager.validation.numbers import parse_whole
 
 _TITLE = "Import Soulsplanner Build"
 _POLL_MS = 100
@@ -378,7 +380,7 @@ def _ask_amounts(parent, character, upgradable, stacking):
         for item_id, var in amount_vars.items():
             entry = amount_entries[item_id]
             try:
-                amount = int(var.get())
+                amount = parse_whole(var.get())
             except ValueError:
                 amount = 0
             valid = 1 <= amount <= stack_caps[item_id]
@@ -468,14 +470,15 @@ def _ask_amounts(parent, character, upgradable, stacking):
 
 
 def _backup(save_path, description: str, operation: str) -> None:
-    try:
-        from er_save_manager.backup.manager import BackupManager
+    """Raises when the backup fails, so the write does not go ahead."""
+    from er_save_manager.backup.manager import BackupManager
 
+    try:
         BackupManager(Path(save_path)).create_backup(
             description=description, operation=operation
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        raise RuntimeError(f"Backup failed: {exc}") from exc
 
 
 def import_soulsplanner(
@@ -490,6 +493,10 @@ def import_soulsplanner(
     save_path = get_save_path()
     if not save_path:
         show_toast("No save path to write to", duration=2000)
+        return
+    reason = save.slot_lock_reason(slot_index)
+    if reason:
+        CTkMessageBox.showerror("Slot Locked", reason, parent=parent)
         return
 
     build = _ask_build(parent)
@@ -521,7 +528,17 @@ def import_soulsplanner(
             show_toast("Nothing to import", duration=2500)
             return
 
-    _backup(save_path, f"before_soulsplanner_import_slot_{slot_index}", "import_build")
+    if not save_writable():
+        return
+    try:
+        _backup(
+            save_path, f"before_soulsplanner_import_slot_{slot_index}", "import_build"
+        )
+    except RuntimeError as exc:
+        CTkMessageBox.showerror(
+            "Backup Failed", f"Nothing was written:\n{exc}", parent=parent
+        )
+        return
 
     parts = []
     if mode in (_STATS, _BOTH):
@@ -546,8 +563,8 @@ def import_soulsplanner(
 
     try:
         save.save_to_file(save_path)
-    except Exception as e:
-        show_toast(f"Failed to write save: {e}", duration=3000)
+    except Exception as exc:
+        write_failed(exc, parent)
         return
     on_done()
 

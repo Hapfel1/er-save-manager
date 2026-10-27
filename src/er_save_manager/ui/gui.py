@@ -3605,6 +3605,32 @@ class SaveManagerGUI:
             self.show_toast(
                 f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
             )
+            self._warn_ds2_damage(parsed)
+
+    def _warn_ds2_damage(self, save) -> None:
+        """Name the DS2 entries whose MD5 does not match their data."""
+        slots = save.damaged_slots()
+        shared = save.damaged_shared_entries()
+        if not slots and not shared:
+            return
+        lines = []
+        if slots:
+            names = ", ".join(str(i + 1) for i in slots)
+            lines.append(
+                f"Slot {names}: the character data does not match its checksum. "
+                "Locked for edits and written back unchanged. Restore a backup, "
+                "or overwrite or delete the slot in Character Management."
+            )
+        if shared:
+            entries = ", ".join(str(i) for i in shared)
+            lines.append(
+                f"Entry {entries} (load screen or game data, no single "
+                "character): the data does not match its checksum. Edits work; "
+                "a write keeps the entry as it is unless it updates the load "
+                "screen records in it."
+            )
+        lines.append("How the game handles these entries is unknown.")
+        CTkMessageBox.showwarning("Save Damaged", "\n\n".join(lines), parent=self.root)
 
     def _load_nr_save(self, save_path: str, silent: bool = False) -> None:
         """Parse a Nightreign save file and refresh all NR tabs."""

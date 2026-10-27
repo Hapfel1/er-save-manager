@@ -291,6 +291,9 @@ class DS2EquipmentPanel:
         slot_index = self.get_slot_index()
         if adapter is None or save is None:
             raise StageError("No character loaded.")
+        reason = save.slot_lock_reason(slot_index)
+        if reason:
+            raise StageError(reason)
 
         def commit() -> None:
             adapter.apply(staged)

@@ -1255,6 +1255,11 @@ class _Entry:
     iv: bytes = field(repr=False)
     ciphertext: bytes = field(repr=False)
     _plaintext: bytearray | None = field(default=None, repr=False)
+    # False when the stored MD5 does not match IV + ciphertext.
+    md5_ok: bool = True
+    # Plaintext as decrypted, kept for damaged entries only, to tell an
+    # untouched damaged entry from one an operation replaced.
+    _loaded: bytes | None = field(default=None, repr=False)
 
 
 class DS2Container:
@@ -1277,21 +1282,63 @@ class DS2Container:
             raise ValueError(
                 f"Expected at least {TOTAL_ENTRIES} entries, found {entry_count}"
             )
+        table_end = _ENTRIES_START + entry_count * _ENTRY_STRIDE
+        if table_end > len(raw):
+            raise ValueError(
+                f"The file is cut off: its entry table ends at {table_end:#x}, "
+                f"the file is {len(raw):#x} bytes."
+            )
 
         entries = []
         for i in range(entry_count):
             size, offset = _read_entry_header(raw, i)
+            if offset + size > len(raw):
+                raise ValueError(
+                    f"The file is cut off: entry {i} ends at {offset + size:#x}, "
+                    f"the file is {len(raw):#x} bytes."
+                )
+            if size < _HEADER_SIZE + 16 or (size - _HEADER_SIZE) % 16:
+                raise ValueError(
+                    f"Entry {i} is damaged: its size {size:#x} is not a "
+                    "checksum, IV and whole cipher blocks."
+                )
             blob = bytes(raw[offset : offset + size])
             iv = blob[_MD5_SIZE : _MD5_SIZE + _IV_SIZE]
             ciphertext = blob[_HEADER_SIZE:]
-            entries.append(_Entry(i, size, offset, iv, ciphertext))
+            md5_ok = _md5(blob[_MD5_SIZE:]) == blob[:_MD5_SIZE]
+            entries.append(_Entry(i, size, offset, iv, ciphertext, md5_ok=md5_ok))
 
         return cls(raw, entries)
+
+    def damaged_entries(self) -> list[int]:
+        """Entries whose stored MD5 does not match their IV and ciphertext."""
+        return [e.index for e in self._entries if not e.md5_ok]
+
+    def is_untouched_damaged(self, index: int) -> bool:
+        """True for a damaged entry whose data no operation has replaced.
+
+        save_to_file keeps such an entry's original bytes, so a write never
+        gives damaged data a valid checksum.
+        """
+        entry = self._entries[index]
+        if entry.md5_ok:
+            return False
+        return entry._plaintext is None or bytes(entry._plaintext) == entry._loaded
 
     def get_entry(self, index: int) -> bytearray:
         entry = self._entries[index]
         if entry._plaintext is None:
-            entry._plaintext = _decrypt(entry.iv, entry.ciphertext)
+            try:
+                entry._plaintext = _decrypt(entry.iv, entry.ciphertext)
+            except ValueError as exc:
+                if entry.md5_ok:
+                    raise
+                raise ValueError(
+                    f"Entry {index} is damaged: its checksum does not match "
+                    f"and it cannot be decrypted ({exc})."
+                ) from None
+            if not entry.md5_ok:
+                entry._loaded = bytes(entry._plaintext)
         return entry._plaintext
 
     def set_entry(self, index: int, data: bytearray) -> None:
@@ -1300,7 +1347,7 @@ class DS2Container:
     def save_to_file(self, path: str | Path) -> None:
         out = bytearray(self._raw)
         for entry in self._entries:
-            if entry._plaintext is None:
+            if entry._plaintext is None or self.is_untouched_damaged(entry.index):
                 continue
             ciphertext = _encrypt(entry.iv, entry._plaintext)
             new_md5 = _md5(entry.iv + ciphertext)
@@ -1370,6 +1417,7 @@ class BulkAddResult:
 
     added: int = 0
     updated: int = 0  # existing stacks that were added onto
+    at_max: int = 0  # existing stacks already at their limit, left unchanged
     skipped_owned: int = 0  # non-stackable items already owned
     clamped: int = 0  # items whose requested upgrade exceeded their cap
     infusion_fallback: int = 0  # weapons added plain, infusion not allowed
@@ -2200,9 +2248,11 @@ class Character:
 
             existing = owned.get(item_id)
             if existing is not None and stackable:
-                existing.quantity = min(
-                    existing.quantity + int(quantity), self.max_stack(item_id)
-                )
+                limit = self.max_stack(item_id)
+                if existing.quantity >= limit:
+                    result.at_max += 1
+                    continue
+                existing.quantity = min(existing.quantity + int(quantity), limit)
                 self.write_inventory_slot(existing)
                 result.updated += 1
                 continue
@@ -2354,6 +2404,33 @@ class DS2Save:
     def from_file(cls, path: str | Path) -> DS2Save:
         return cls(DS2Container.from_file(path))
 
+    def damaged_slots(self) -> list[int]:
+        """Slots whose profile or per-character entry fails its MD5 check and
+        has not been replaced since loading. Their bytes are written back
+        unchanged, so edits to them would be lost; the editors lock them."""
+        return [
+            i
+            for i in range(CHARACTER_SLOTS)
+            if self.container.is_untouched_damaged(PROFILE_ENTRY_START + i)
+            or self.container.is_untouched_damaged(BIG_ENTRY_START + i)
+        ]
+
+    def damaged_shared_entries(self) -> list[int]:
+        """Damaged entries that belong to no single slot (load screen
+        records, regulation data)."""
+        slot_entries = range(PROFILE_ENTRY_START, BIG_ENTRY_START + CHARACTER_SLOTS)
+        return [i for i in self.container.damaged_entries() if i not in slot_entries]
+
+    def slot_lock_reason(self, slot_index: int) -> str | None:
+        """Why a slot cannot be edited, or None."""
+        if slot_index in self.damaged_slots():
+            return (
+                f"Slot {slot_index + 1} is damaged: its data does not match its "
+                "checksum. It is locked for edits. Restore a backup, or "
+                "overwrite or delete the slot in Character Management."
+            )
+        return None
+
     def slot_occupancy(self) -> dict[int, str]:
         """Character name per occupied slot, read from the entry 0 summary.
 
@@ -2397,9 +2474,10 @@ class DS2Save:
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         select_data = self.container.get_entry(CHARACTER_SELECT_ENTRY)
 
+        damaged = self.damaged_slots()
         for i, character in enumerate(self.characters):
             name = character.name
-            if not _is_valid_name(name):
+            if i in damaged or not _is_valid_name(name):
                 continue
             encoded = name.encode("utf-16-le")[: _OCC_NAME_SIZE - 2].ljust(
                 _OCC_NAME_SIZE, b"\x00"
@@ -2421,8 +2499,9 @@ class DS2Save:
             (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
         ):
             data = self.container.get_entry(entry)
+            damaged = self.damaged_slots()
             for i, character in enumerate(self.characters):
-                if not _is_valid_name(character.name):
+                if i in damaged or not _is_valid_name(character.name):
                     continue
                 off = name_offset + _CACHE_LEVEL_FROM_NAME + _OCC_STRIDE * i
                 if off + 2 <= len(data):
