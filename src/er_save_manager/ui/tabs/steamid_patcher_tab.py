@@ -6,6 +6,7 @@ Patches SteamID in save files for all supported FromSoftware games.
 from __future__ import annotations
 
 import contextlib
+import re
 import tkinter as tk
 from pathlib import Path
 
@@ -16,6 +17,36 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel
+
+_STEAM64_MIN = 0x0110000100000000
+_STEAM64_MAX = 0x01100001FFFFFFFF
+
+# SteamID2 (STEAM_0:1:123), SteamID3 ([U:1:123]) and bare Steam32 account ids
+_OTHER_STEAMID_FORMAT = re.compile(
+    r"^(STEAM_\d:\d:\d+|\[?U:\d:\d+\]?|\d{1,10})$", re.IGNORECASE
+)
+
+_UNSUPPORTED_FORMAT_MSG = (
+    "{field}: only SteamID64 (17 digits, e.g. 76561198012345678) or a Steam "
+    "profile URL is supported. SteamID2 (STEAM_0:...), SteamID3 ([U:1:...]) "
+    "and Steam32 account IDs are not converted."
+)
+
+
+def steamid64_input_error(text: str, field: str) -> str | None:
+    """Return a message naming `field` if `text` is not a valid SteamID64."""
+    if not text:
+        return f"{field}: enter a SteamID64."
+    if _OTHER_STEAMID_FORMAT.match(text):
+        return _UNSUPPORTED_FORMAT_MSG.format(field=field)
+    if not text.isdigit() or len(text) != 17:
+        return f"{field}: a SteamID64 is exactly 17 digits."
+    if not _STEAM64_MIN <= int(text) <= _STEAM64_MAX:
+        return (
+            f"{field}: {text} is not a valid SteamID64. "
+            f"Valid range: {_STEAM64_MIN} to {_STEAM64_MAX}."
+        )
+    return None
 
 
 class SteamIDPatcherTab:
@@ -343,12 +374,9 @@ class SteamIDPatcherTab:
             return
 
         new_steamid_str = self.new_steamid_var.get().strip()
-        if not new_steamid_str.isdigit() or len(new_steamid_str) != 17:
-            CTkMessageBox.showerror(
-                "Invalid SteamID",
-                "SteamID must be exactly 17 digits",
-                parent=self.parent,
-            )
+        error = steamid64_input_error(new_steamid_str, "New SteamID")
+        if error:
+            CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
             return
 
         new_steamid = int(new_steamid_str)
@@ -386,6 +414,14 @@ class SteamIDPatcherTab:
         save_file = self.get_save_file()
         if not save_file:
             notify(self.parent, "Load an Elden Ring save file first.", "warning")
+            return
+
+        if self._er_already_uses(save_file, new_steamid):
+            CTkMessageBox.showinfo(
+                "SteamID Unchanged",
+                f"The save and all character slots already use SteamID {new_steamid}.",
+                parent=self.parent,
+            )
             return
 
         if not CTkMessageBox.askyesno(
@@ -462,6 +498,57 @@ class SteamIDPatcherTab:
                 "Patch Failed", f"SteamID patch failed:\n{e}", parent=self.parent
             )
 
+    @staticmethod
+    def _er_already_uses(save_file, steamid: int) -> bool:
+        ud10 = save_file.user_data_10_parsed
+        if not ud10 or getattr(ud10, "steam_id", None) != steamid:
+            return False
+        from er_save_manager.fixes.steamid import SteamIdFix
+
+        fix = SteamIdFix()
+        return not any(fix.detect(save_file, i) for i in range(10))
+
+    @staticmethod
+    def _precheck_generic(profile_key: str, save_path: Path, new_steamid: int):
+        """Return (title, message) for a patch that has nothing to do, else None."""
+        if profile_key == "nightreign":
+            from er_save_manager.games.nightreign_steamid import (
+                detect_steamid_nr as detect,
+            )
+            from er_save_manager.games.nightreign_steamid import is_ps_memory_dat
+
+            if is_ps_memory_dat(save_path):
+                return (
+                    "No SteamID",
+                    "PlayStation saves have no SteamID to patch.",
+                )
+        elif profile_key == "dark_souls_3":
+            from er_save_manager.games.DS3.parser import is_ps_userdata
+            from er_save_manager.games.ds3_steamid import detect_steamid_ds3 as detect
+
+            if is_ps_userdata(save_path):
+                return ("No SteamID", "PS4 saves have no SteamID to patch.")
+        elif profile_key == "dark_souls_2":
+            from er_save_manager.games.ds2_dsr_steamid import detect_steamid
+
+            def detect(path):
+                return detect_steamid(path, profile_key)
+        elif profile_key == "armored_core_6":
+            from er_save_manager.games.ac6_steamid import detect_steamid_ac6 as detect
+        elif profile_key == "sekiro":
+            from er_save_manager.games.sekiro_steamid import (
+                detect_steamid_sekiro as detect,
+            )
+        else:
+            return None
+
+        if detect(save_path) == new_steamid:
+            return (
+                "SteamID Unchanged",
+                f"{save_path.name} already uses SteamID {new_steamid}.",
+            )
+        return None
+
     def _patch_generic(self, profile, new_steamid: int):
         """Patch SteamID for non-ER games. Called from a background thread - dialogs use after(0,...)."""
         # Resolve save path (no auto-disk-scan; user must select a file first)
@@ -477,6 +564,15 @@ class SteamIDPatcherTab:
             )
             return
         save_path = Path(selected)
+
+        nothing_to_do = self._precheck_generic(profile.key, save_path, new_steamid)
+        if nothing_to_do:
+            title, text = nothing_to_do
+            self.parent.after(
+                0,
+                lambda: CTkMessageBox.showinfo(title, text, parent=self.parent),
+            )
+            return
 
         # Confirm dialog must run on main thread - use a threading Event to wait
         import threading
@@ -596,17 +692,24 @@ class SteamIDPatcherTab:
             notify(self.parent, "Enter a Steam profile URL", "warning")
             return
 
-        import re
-
-        if url.isdigit() and len(url) == 17:
+        field = "Steam profile URL"
+        if url.isdigit() or _OTHER_STEAMID_FORMAT.match(url):
+            error = steamid64_input_error(url, field)
+            if error:
+                CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
+                return
             self.new_steamid_var.set(url)
             self.steam_url_var.set("")
             self.show_toast(f"SteamID: {url}", duration=2000)
             return
 
-        match = re.search(r"/profiles/(\d{17})", url)
+        match = re.search(r"/profiles/([^/?#]*)", url)
         if match:
             steamid = match.group(1)
+            error = steamid64_input_error(steamid, field)
+            if error:
+                CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
+                return
             self.new_steamid_var.set(steamid)
             self.steam_url_var.set("")
             self.show_toast(f"Extracted SteamID: {steamid}", duration=2500)
@@ -631,7 +734,6 @@ class SteamIDPatcherTab:
         # Steam's XML profile endpoint requires no API key and returns
         # a <steamID64> element directly.
         try:
-            import re
             import urllib.request
 
             xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
