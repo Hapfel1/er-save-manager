@@ -8,6 +8,7 @@ one backup and one save.
 
 from __future__ import annotations
 
+import contextlib
 import tkinter as tk
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -404,7 +405,7 @@ class PendingBar(ctk.CTkFrame):
                 lines.append(f"{page.name}: {field}  {new}".rstrip())
         if len(lines) > _PROMPT_ROWS:
             more = len(lines) - _PROMPT_ROWS + 1
-            lines = lines[: _PROMPT_ROWS - 1] + [f"and {more} more"]
+            lines = [*lines[: _PROMPT_ROWS - 1], f"and {more} more"]
         return "\n".join(lines)
 
     def _poll(self) -> None:
@@ -493,10 +494,8 @@ class PendingBar(ctk.CTkFrame):
 
     def discard_all(self) -> None:
         for page, _n in self.dirty():
-            try:
+            with contextlib.suppress(Exception):
                 page.discard()
-            except Exception:
-                pass
         self._update()
 
     def _discard_clicked(self) -> None:

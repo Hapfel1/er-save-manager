@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -92,9 +93,8 @@ class TeleportFix(BaseFix):
         if slot.is_empty():
             return False
 
-        if hasattr(slot, "map_id") and slot.map_id:
-            if slot.map_id.is_dlc():
-                return True
+        if hasattr(slot, "map_id") and slot.map_id and slot.map_id.is_dlc():
+            return True
 
         has_corruption, _ = slot.has_corruption()
         return has_corruption
@@ -145,10 +145,8 @@ class TeleportFix(BaseFix):
                 rebuilt_data
             )
 
-            try:
+            with contextlib.suppress(Exception):
                 save.recalculate_checksums()
-            except Exception:
-                pass
         except Exception as e:
             return FixResult(
                 applied=False,

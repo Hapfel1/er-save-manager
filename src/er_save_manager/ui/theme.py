@@ -202,18 +202,6 @@ class ThemeManager:
         except Exception:
             pass
 
-    def set_theme(self, theme: str):
-        """Change to a different theme.
-
-        Args:
-            theme: "bright" for light mode, "dark" for dark mode
-        """
-        # Force dark mode unless theme is explicitly 'bright'
-        if not theme or theme not in ("bright", "dark"):
-            theme = "dark"
-        self.theme = theme
-        self.colors = self.LIGHT_COLORS if theme == "bright" else self.DARK_COLORS
-
     def get_color(self, key: str) -> str:
         """Get a color from current theme.
 

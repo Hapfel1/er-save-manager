@@ -127,8 +127,6 @@ class EquippedItemsEquipIndex(EquipmentSlots):
     Inherits all 22 fields from EquipmentSlots.
     """
 
-    pass
-
 
 @dataclass
 class ActiveWeaponSlotsAndArmStyle:
@@ -175,8 +173,6 @@ class EquippedItemsItemIds(EquipmentSlots):
     Inherits all 22 fields from EquipmentSlots.
     """
 
-    pass
-
 
 @dataclass
 class EquippedItemsGaitemHandles(EquipmentSlots):
@@ -186,8 +182,6 @@ class EquippedItemsGaitemHandles(EquipmentSlots):
     Gaitem handles for currently equipped items.
     Inherits all 22 fields from EquipmentSlots.
     """
-
-    pass
 
 
 @dataclass

@@ -8,6 +8,7 @@ tool) changes mtime or size and is reported.
 
 from __future__ import annotations
 
+import contextlib
 import os
 from pathlib import Path
 
@@ -25,10 +26,8 @@ def _signature(path: str | Path) -> tuple[int, int]:
 
 def record_write(path: str | Path) -> None:
     """Remember the stat of a file this process just finished writing."""
-    try:
+    with contextlib.suppress(OSError):
         _last_write[_key(path)] = _signature(path)
-    except OSError:
-        pass
 
 
 def is_own_write(path: str | Path) -> bool:

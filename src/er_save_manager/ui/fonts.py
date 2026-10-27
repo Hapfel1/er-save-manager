@@ -35,7 +35,7 @@ def register() -> None:
     global theme_family
     windows = sys.platform == "win32"
     folder = ("fonts", "windows") if windows else ("fonts",)
-    names = _FILES + (_WINDOWS_THEME_FILE,) if windows else _FILES
+    names = (*_FILES, _WINDOWS_THEME_FILE) if windows else _FILES
     paths = [p for p in (resource_path(*folder, f) for f in names) if p.exists()]
     if not paths:
         return

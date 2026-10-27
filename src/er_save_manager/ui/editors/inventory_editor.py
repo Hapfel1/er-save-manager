@@ -4,6 +4,7 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import tkinter as tk
@@ -52,45 +53,6 @@ def _bump_matchmaking_level(
     slot = save_file.characters[slot_idx]
     char = slot.player_game_data
     if new_mm <= char.matchmaking_weapon_level:
-        return
-
-    char.matchmaking_weapon_level = new_mm
-
-    if not (
-        hasattr(slot, "player_game_data_offset") and slot.player_game_data_offset >= 0
-    ):
-        return
-
-    buf = BytesIO()
-    char.write(buf)
-    data = buf.getvalue()
-    off = slot.player_game_data_offset
-    save_file._raw_data[off : off + len(data)] = data
-
-
-def _lower_matchmaking_level(save_file, slot_idx: int, full_item_id: int) -> None:
-    """
-    Lower matchmaking_weapon_level after a weapon removal if no remaining
-    weapon justifies the current stored value.
-
-    Rescans all weapons in held and storage inventory after removal and
-    writes back the new maximum if it is lower than the stored value.
-    """
-    if (full_item_id & 0xF0000000) != _CAT_WEAPON:
-        return
-
-    from io import BytesIO
-
-    from er_save_manager.editors.matchmaking_utils import get_max_weapon_upgrade
-
-    slot = save_file.characters[slot_idx]
-    char = slot.player_game_data
-    current_mm = char.matchmaking_weapon_level
-    if current_mm == 0:
-        return
-
-    new_mm = get_max_weapon_upgrade(slot)
-    if new_mm >= current_mm:
         return
 
     char.matchmaking_weapon_level = new_mm
@@ -1359,7 +1321,7 @@ class InventoryEditor:
         ]
 
     def _populate_search_categories(self):
-        cats = ["All"] + self._visible_categories()
+        cats = ["All", *self._visible_categories()]
         self._search_cat_combo.configure(values=cats)
         if self._search_cat_var.get() not in cats:
             self._search_cat_var.set("All")
@@ -2017,10 +1979,8 @@ class InventoryEditor:
 
             self._apply_inv_filter()
             for _cb in list(getattr(self, "_inventory_change_listeners", [])):
-                try:
+                with contextlib.suppress(Exception):
                     _cb()
-                except Exception:
-                    pass
 
         except Exception as e:
             CTkMessageBox.showerror(
@@ -2034,10 +1994,8 @@ class InventoryEditor:
         self._all_rows = []
         self._apply_inv_filter()
         for _cb in list(self._inventory_change_listeners):
-            try:
+            with contextlib.suppress(Exception):
                 _cb()
-            except Exception:
-                pass
 
     def _collect_section(
         self, header, items, gaitem_map, location, key, is_convergence: bool = False
@@ -2446,10 +2404,8 @@ class InventoryEditor:
 
     def _notify_loadout(self) -> None:
         for callback in list(self._loadout_listeners):
-            try:
+            with contextlib.suppress(Exception):
                 callback()
-            except Exception:
-                pass
         self._update_loadout_mode_ui()
 
     def _update_loadout_mode_ui(self) -> None:
@@ -2610,16 +2566,12 @@ class InventoryEditor:
             self._create_backup(save_file, slot_idx, "batch_add_category")
 
             target_upg = 0
-            try:
+            with contextlib.suppress(ValueError):
                 target_upg = int(self.inv_upgrade_var.get())
-            except ValueError:
-                pass
 
             target_qty = 1
-            try:
+            with contextlib.suppress(ValueError):
                 target_qty = max(1, int(self.inv_quantity_var.get()))
-            except ValueError:
-                pass
 
             is_cnv = self._is_cnv_save()
             success = 0

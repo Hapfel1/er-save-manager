@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 from typing import TYPE_CHECKING
 
@@ -296,7 +297,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             cats_ordered = sorted(inv_cats)
 
         cats = [c for c in cats_ordered if c in inv_cats]
-        self._cat_combo.configure(values=["All"] + cats)
+        self._cat_combo.configure(values=["All", *cats])
         self._apply_filter()
 
     def _row_cat(self, row) -> str | None:
@@ -521,8 +522,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._rebuild()
 
     def _on_close(self):
-        try:
+        with contextlib.suppress(ValueError):
             self._editor._inventory_change_listeners.remove(self._on_editor_changed)
-        except ValueError:
-            pass
         self.destroy()

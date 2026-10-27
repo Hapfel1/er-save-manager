@@ -105,11 +105,11 @@ def shape_controls() -> tuple[FaceControl, ...]:
             d["gender"]["range"] * RANGE_MARGIN,
         ),
     ]
-    for c in d["controls"]:
-        if c["block"] == "geo":
-            out.append(
-                FaceControl(*_split(c["name"]), tuple(c["vector"]), None, CONTROL_RANGE)
-            )
+    out.extend(
+        FaceControl(*_split(c["name"]), tuple(c["vector"]), None, CONTROL_RANGE)
+        for c in d["controls"]
+        if c["block"] == "geo"
+    )
     return tuple(out)
 
 

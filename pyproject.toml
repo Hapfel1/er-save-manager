@@ -22,15 +22,10 @@ dependencies = [
     "customtkinter>=5.2.2",
     "customtkinterthemes>=1.0.0",
     "requests>=2.32.0",
-    "supabase>=2.4.0",
     "certifi>=2023.7.22",
     "packaging>=23.0",
-    "cryptography>=50.0.0",
     "pycryptodome>=3.23.0",
 ]
-
-[project.scripts]
-er-save-manager = "er_save_manager.cli:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -151,18 +151,6 @@ def notify(parent, message: str, type: str = "info", duration: int = 3000):
     show_toast(root, message, duration, type)
 
 
-def show_toast_bound(root, toast, toast_info):
-    """Bind click-to-dismiss after the toast is shown."""
-
-    def on_click(e):
-        _dismiss(toast, root, toast_info)
-
-    if toast.winfo_exists():
-        toast.bind("<Button-1>", on_click)
-        for child in toast.winfo_children():
-            child.bind("<Button-1>", on_click)
-
-
 def _reposition_toasts(root):
     """Reposition remaining toasts after one is dismissed."""
     if not root.winfo_exists():

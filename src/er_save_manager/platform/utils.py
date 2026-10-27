@@ -16,14 +16,7 @@ class PlatformUtils:
 
     @staticmethod
     def get_platform() -> str:
-        system = platform.system().lower()
-        if system == "windows":
-            return "windows"
-        elif system == "linux":
-            return "linux"
-        elif system == "darwin":
-            return "darwin"
-        return system
+        return platform.system().lower()
 
     @staticmethod
     def is_windows() -> bool:
@@ -32,10 +25,6 @@ class PlatformUtils:
     @staticmethod
     def is_linux() -> bool:
         return PlatformUtils.get_platform() == "linux"
-
-    @staticmethod
-    def is_macos() -> bool:
-        return PlatformUtils.get_platform() == "darwin"
 
     @staticmethod
     def is_game_running() -> bool:
@@ -125,56 +114,6 @@ class PlatformUtils:
         return f"AppData/Roaming/{appdata_subdir}"
 
     @staticmethod
-    def get_default_save_locations(profile: GameProfile | None = None) -> list[Path]:
-        """Get platform-specific directories containing saves for the given game."""
-        appdata_subdir, _glob, _app_id, documents_subdir = (
-            PlatformUtils._profile_params(profile)
-        )
-        platform_name = PlatformUtils.get_platform()
-
-        if platform_name == "windows":
-            if documents_subdir:
-                base = Path.home() / "Documents"
-                for part in documents_subdir.replace("\\", "/").split("/"):
-                    base = base / part
-            else:
-                base = Path.home() / "AppData" / "Roaming" / appdata_subdir
-            return [base] if base.exists() else []
-
-        elif platform_name == "linux":
-            locations = []
-            local_steam = (
-                Path.home() / ".local" / "share" / "Steam" / "steamapps" / "compatdata"
-            )
-            if local_steam.exists():
-                locations.append(local_steam)
-            flatpak_steam = (
-                Path.home()
-                / ".var"
-                / "app"
-                / "com.valvesoftware.Steam"
-                / ".local"
-                / "share"
-                / "Steam"
-                / "steamapps"
-                / "compatdata"
-            )
-            if flatpak_steam.exists():
-                locations.append(flatpak_steam)
-            return locations
-
-        elif platform_name == "darwin":
-            if documents_subdir:
-                base = Path.home() / "Documents"
-                for part in documents_subdir.replace("\\", "/").split("/"):
-                    base = base / part
-            else:
-                base = Path.home() / "Library" / "Application Support" / appdata_subdir
-            return [base] if base.exists() else []
-
-        return []
-
-    @staticmethod
     def find_all_save_files(profile: GameProfile | None = None) -> list[Path]:
         """
         Find all save files for the given game on the system.
@@ -221,8 +160,10 @@ class PlatformUtils:
                 / "steamapps"
                 / "compatdata",
             ]
-            for lib in PlatformUtils.get_steam_library_folders():
-                compat_bases.append(lib / "steamapps" / "compatdata")
+            compat_bases.extend(
+                lib / "steamapps" / "compatdata"
+                for lib in PlatformUtils.get_steam_library_folders()
+            )
 
             seen: set[Path] = set()
             for compat_base in compat_bases:

@@ -69,9 +69,12 @@ class Save:
 
     def __setattr__(self, name, value):
         """Override to ensure _raw_data is always bytearray"""
-        if name == "_raw_data":
-            if isinstance(value, bytes) and not isinstance(value, bytearray):
-                value = bytearray(value)
+        if (
+            name == "_raw_data"
+            and isinstance(value, bytes)
+            and not isinstance(value, bytearray)
+        ):
+            value = bytearray(value)
         super().__setattr__(name, value)
 
     @property
@@ -139,10 +142,7 @@ class Save:
         else:
             raise ValueError(f"Invalid save file magic: {obj.magic.hex()}")
 
-        if obj.is_ps:
-            header_size = 0x6C
-        else:
-            header_size = 0x2FC
+        header_size = 0x6C if obj.is_ps else 0x2FC
 
         obj.header = f.read(header_size)
 
@@ -516,18 +516,20 @@ class Save:
         if self.user_data_10_parsed and hasattr(self.user_data_10_parsed, "steam_id"):
             correct_steam_id = self.user_data_10_parsed.steam_id
 
-        if slot.has_steamid_corruption(correct_steam_id):
-            if correct_steam_id is not None:
-                slot.steam_id = correct_steam_id
+        if (
+            slot.has_steamid_corruption(correct_steam_id)
+            and correct_steam_id is not None
+        ):
+            slot.steam_id = correct_steam_id
 
-                if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
-                    import struct
+            if hasattr(slot, "steamid_offset") and slot.steamid_offset > 0:
+                import struct
 
-                    steamid_bytes = struct.pack("<Q", correct_steam_id)
-                    self._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (
-                        steamid_bytes
-                    )
-                    fixes.append(f"SteamId set to {correct_steam_id}")
+                steamid_bytes = struct.pack("<Q", correct_steam_id)
+                self._raw_data[slot.steamid_offset : slot.steamid_offset + 8] = (
+                    steamid_bytes
+                )
+                fixes.append(f"SteamId set to {correct_steam_id}")
 
         # Fix 3: Time of day out of range
         if slot.has_time_corruption():
@@ -601,8 +603,7 @@ class Save:
                         event_flags_start : event_flags_start + len(event_flags_mutable)
                     ] = event_flags_mutable
 
-                for fix_desc in fix_descriptions:
-                    fixes.append(f"{fix_desc}")
+                fixes.extend(f"{fix_desc}" for fix_desc in fix_descriptions)
             except Exception:
                 # Log error but don't fail the whole fix operation
                 import traceback
@@ -725,12 +726,8 @@ class Save:
 
         try:
             if isinstance(preset, dict):
-                if "data" in preset:
-                    # Format: {"original_slot": N, "data": {...}}
-                    preset_data = preset["data"]
-                else:
-                    # Format: raw preset dict
-                    preset_data = preset
+                # Either {"original_slot": N, "data": {...}} or a raw preset dict
+                preset_data = preset.get("data", preset)
                 new_preset = FacePreset.from_dict(preset_data)
             else:
                 # Already a FacePreset object

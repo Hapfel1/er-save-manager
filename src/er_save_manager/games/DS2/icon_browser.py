@@ -260,9 +260,6 @@ class IconBrowser(ctk.CTkToplevel):
     # Selection
     # ------------------------------------------------------------------
 
-    def _visible_names(self) -> list[str]:
-        return [name for _, name in self._grid.visible_keys()]
-
     def _on_select(self, keys: list) -> None:
         self._selected_keys = list(keys)
         self._selected_cat, self._selected_name = keys[0] if keys else (None, None)

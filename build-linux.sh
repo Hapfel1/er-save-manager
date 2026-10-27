@@ -33,6 +33,15 @@ else
     echo "Warning: libreadline.so.8 not found, skipping bundle"
 fi
 
+# Ship every non-Python file inside the package at its package-relative
+# path. Directories cannot be added whole: data/ and fixes/ also hold
+# .py modules, which must not be copied as source.
+data_flags=""
+for f in $(find src/er_save_manager -type f ! -name '*.py' ! -name '*.pyc' ! -path '*/__pycache__/*' | sort); do
+    dest=$(dirname "${f#src/}")
+    data_flags="$data_flags --add-data $f:$dest"
+done
+
 echo "Building GUI with PyInstaller..."
 # shellcheck disable=SC2086
 pyinstaller --clean --noconfirm \
@@ -44,72 +53,15 @@ pyinstaller --clean --noconfirm \
     --add-data src/resources:resources \
     --add-data resources/icon:resources/icon \
     --add-data resources/fonts:resources/fonts \
-    --add-data src/er_save_manager/data/items:er_save_manager/data/items \
-    --add-data src/er_save_manager/data/icons.db:er_save_manager/data \
-    --add-data src/er_save_manager/data/event_flags.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/item_pickups.csv:er_save_manager/data \
-    --add-data src/er_save_manager/data/item_pickups_convergence.csv:er_save_manager/data \
-    --add-data src/er_save_manager/data/boss_locations.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/boss_locations_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/merchants.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/merchants_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/map_objects.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/map_objects_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/npc_locations.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/npc_locations_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/shop_stock.csv:er_save_manager/data \
-    --add-data src/er_save_manager/data/shop_stock_convergence.csv:er_save_manager/data \
-    --add-data src/er_save_manager/data/locations.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/grace_entities.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/locations_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/grace_regions.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/grace_pieces.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/grace_bosses.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/floor_vanilla.bin:er_save_manager/data \
-    --add-data src/er_save_manager/data/floor_convergence.bin:er_save_manager/data \
-    --add-data src/er_save_manager/data/blood_messages.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/quest_flags.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/world_map_conversion.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/world_map_conversion_convergence.json:er_save_manager/data \
-    --add-data src/er_save_manager/data/auto_refill_defaults.json:er_save_manager/data \
-    --add-data src/er_save_manager/fixes/CSNetMan.bin:er_save_manager/fixes \
-    --add-data src/er_save_manager/fixes/EventFlagBits.bin:er_save_manager/fixes \
-    --add-data src/er_save_manager/games/DSR/data:er_save_manager/games/DSR/data \
-    --add-data src/er_save_manager/games/DS3/data:er_save_manager/games/DS3/data \
-    --add-data src/er_save_manager/games/NR/data:er_save_manager/games/NR/data \
-    --add-data src/er_save_manager/games/DS2/data:er_save_manager/games/DS2/data \
     --collect-data customtkinterthemes \
     --hidden-import customtkinterthemes \
     --hidden-import PIL._tkinter_finder \
     --hidden-import PIL.ImageTk \
     --hidden-import PIL._imagingtk \
-    --hidden-import er_save_manager.ui \
-    --hidden-import er_save_manager.ui.gui \
-    --hidden-import er_save_manager.ui.editors \
-    --hidden-import er_save_manager.platform \
-    --hidden-import er_save_manager.ui.editors.equipment_editor \
-    --hidden-import er_save_manager.ui.editors.stats_editor \
-    --hidden-import er_save_manager.ui.editors.character_info_editor \
-    --hidden-import er_save_manager.ui.editors.inventory_editor \
-    --hidden-import er_save_manager.ui.dialogs \
-    --hidden-import er_save_manager.ui.dialogs.character_details \
-    --hidden-import er_save_manager.ui.dialogs.save_selector \
-    --hidden-import er_save_manager.ui.dialogs.preset_browser \
-    --hidden-import er_save_manager.ui.dialogs.browser_submission \
-    --hidden-import er_save_manager.ui.dialogs.backup_pruning_warning \
-    --hidden-import er_save_manager.ui.tabs \
-    --hidden-import er_save_manager.ui.tabs.character_management_tab \
-    --hidden-import er_save_manager.ui.tabs.save_inspector_tab \
-    --hidden-import er_save_manager.ui.tabs.appearance_tab \
-    --hidden-import er_save_manager.ui.tabs.world_state_tab \
-    --hidden-import er_save_manager.ui.tabs.steamid_patcher_tab \
-    --hidden-import er_save_manager.ui.tabs.event_flags_tab \
-    --hidden-import er_save_manager.ui.tabs.gestures_regions_tab \
-    --hidden-import er_save_manager.ui.tabs.hex_editor_tab \
-    --hidden-import er_save_manager.ui.tabs.advanced_tools_tab \
-    --hidden-import er_save_manager.ui.tabs.backup_manager_tab \
-    --hidden-import er_save_manager.ui.map_view \
+    --collect-submodules er_save_manager \
     --exclude-module tests \
+    --exclude-module PIL._avif \
+    $data_flags \
     $readline_flag \
     --optimize 2 \
     --strip \

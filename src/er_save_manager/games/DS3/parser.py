@@ -46,8 +46,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
@@ -78,9 +77,7 @@ def _read_entry_header(raw: bytes, index: int) -> tuple[int, int]:
 
 
 def _decrypt(iv: bytes, ciphertext: bytes) -> bytearray:
-    cipher = Cipher(algorithms.AES(_DS3_KEY), modes.CBC(iv))
-    dec = cipher.decryptor()
-    padded = bytearray(dec.update(ciphertext) + dec.finalize())
+    padded = bytearray(aes_cbc.decrypt(_DS3_KEY, iv, ciphertext))
     # Strip PKCS7 padding
     pad_len = padded[-1]
     if 1 <= pad_len <= 16:
@@ -92,9 +89,7 @@ def _encrypt(iv: bytes, plaintext: bytearray) -> bytes:
     # Add PKCS7 padding to next 16-byte boundary
     pad_len = 16 - (len(plaintext) % 16)
     padded = bytes(plaintext) + bytes([pad_len] * pad_len)
-    cipher = Cipher(algorithms.AES(_DS3_KEY), modes.CBC(iv))
-    enc = cipher.encryptor()
-    return enc.update(padded) + enc.finalize()
+    return aes_cbc.encrypt(_DS3_KEY, iv, padded)
 
 
 def _md5(data: bytes) -> bytes:

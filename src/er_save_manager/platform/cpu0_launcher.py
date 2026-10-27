@@ -9,7 +9,6 @@ import ctypes.wintypes
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 # Win32 constants
 _PROCESS_QUERY_INFORMATION = 0x0400
@@ -149,84 +148,3 @@ def apply_cpu0_exclusion(process_name: str) -> bool:
         pid = new_pid
 
     return _set_affinity(pid, _affinity_without_cpu0())
-
-
-class LaunchResult:
-    """Outcome of a launch attempt."""
-
-    __slots__ = ("success", "message")
-
-    def __init__(self, success: bool, message: str) -> None:
-        self.success = success
-        self.message = message
-
-
-def launch_with_cpu0_excluded(
-    exe_path: Path,
-    *,
-    poll_interval: float = 0.25,
-    timeout: float = 30.0,
-) -> LaunchResult:
-    if sys.platform != "win32":
-        return LaunchResult(False, "CPU affinity control is only available on Windows.")
-
-    if not exe_path.is_file():
-        return LaunchResult(False, f"Executable not found: {exe_path}")
-
-    cpu_count = _cpu_count()
-    if cpu_count <= 1:
-        return LaunchResult(
-            False, "Only one logical processor detected; cannot exclude CPU 0."
-        )
-
-    process_name = exe_path.name.lower()
-    mask = _affinity_without_cpu0()
-
-    # Launch detached so the process outlives the tool.
-    try:
-        subprocess.Popen(
-            [str(exe_path)],
-            cwd=str(exe_path.parent),
-            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NO_WINDOW,
-            close_fds=True,
-        )
-    except OSError as exc:
-        return LaunchResult(False, f"Failed to launch: {exc}")
-
-    # Poll until the process appears in the process list.
-    deadline = time.monotonic() + timeout
-    pid: int | None = None
-    while time.monotonic() < deadline:
-        pid = _get_pid_by_name_csv(process_name)
-        if pid is not None:
-            break
-        time.sleep(poll_interval)
-
-    if pid is None:
-        return LaunchResult(
-            False,
-            f"Process '{process_name}' did not appear within {timeout:.0f}s after launch.",
-        )
-
-    time.sleep(_STARTUP_DELAY)
-
-    new_pid = _get_pid_by_name_csv(process_name)
-    if new_pid is None:
-        return LaunchResult(
-            False, f"Process '{process_name}' exited during startup delay."
-        )
-    if new_pid != pid:
-        pid = new_pid
-
-    if not _set_affinity(pid, mask):
-        err = ctypes.get_last_error()
-        return LaunchResult(
-            False, f"SetProcessAffinityMask failed (Win32 error {err})."
-        )
-
-    active_cores = cpu_count - 1
-    return LaunchResult(
-        True,
-        f"Launched '{process_name}' (PID {pid}) with CPU 0 excluded "
-        f"({active_cores}/{cpu_count} cores active).",
-    )

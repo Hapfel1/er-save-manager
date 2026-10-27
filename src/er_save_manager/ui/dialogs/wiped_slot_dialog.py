@@ -59,8 +59,7 @@ def show_wiped_slot_dialog(
     shadows: list[RecoverySource] = []
     if save_path:
         baks = find_game_backups(save_path, slot_idx)
-        for bak in baks:
-            rows.append((f"Game backup {bak.path.name}", *_status(bak)))
+        rows.extend((f"Game backup {bak.path.name}", *_status(bak)) for bak in baks)
         if not baks:
             rows.append(("Game backup (.bak)", "none next to the save", _MUTED))
         count = manager_backup_count(save_path)

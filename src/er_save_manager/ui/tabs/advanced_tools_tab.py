@@ -1,5 +1,6 @@
 """Advanced Tools Tab (customtkinter version)."""
 
+import contextlib
 import tkinter as tk
 from pathlib import Path
 
@@ -220,18 +221,14 @@ class AdvancedToolsTab:
                     continue
 
                 name = None
-                try:
+                with contextlib.suppress(Exception):
                     name = slot.get_character_name()
-                except Exception:
-                    pass
                 if not name:
                     issues.append(f"⚠ Slot {i + 1}: Character has no name")
 
                 level = None
-                try:
+                with contextlib.suppress(Exception):
                     level = slot.get_level()
-                except Exception:
-                    pass
                 if level is None or level <= 0:
                     issues.append(f"⚠ Slot {i + 1}: Character level is 0")
 
