@@ -8,7 +8,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from er_save_manager.games.DS2.equipment_tab import DS2EquipmentPanel
+from er_save_manager.games.DS2.equipment_tab import DS2EquipmentPanel, equip_slots
 from er_save_manager.games.DS2.inventory_tab import DS2InventoryPanel
 from er_save_manager.games.DS2.regulation import ClassBase
 from er_save_manager.games.DS2.save import (
@@ -168,6 +168,8 @@ class DS2EditorTab:
             get_slot_index=lambda: self._slot_index,
         )
         self.equipment_panel.setup_ui()
+        yield
+        yield from self.equipment_panel.panel.prebuild(equip_slots())
 
         yield
         self.refresh()

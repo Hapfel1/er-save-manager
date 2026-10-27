@@ -100,11 +100,11 @@ class SaveInspectorTab:
 
     def populate_character_list(self):
         """Populate the character list"""
-        self.list.clear()
         self.selected_slot = None
 
         save_file = self.get_save_file()
         if not save_file:
+            self.list.clear()
             return
 
         try:

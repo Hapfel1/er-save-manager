@@ -1298,15 +1298,26 @@ class SaveManagerGUI:
         self._load_character(current)
 
     def _load_character(self, slot_idx: int) -> None:
-        """Show the character in slot_idx in every character tab."""
-        self._flush_pending_tabs()
+        """Show the character in slot_idx in every character tab. A tab still
+        queued for construction loads it once built (see _when_built)."""
         self.selected_slot_index = slot_idx
         self.character_bar.set_detail(self._slot_detail(slot_idx))
         for name, load in self._character_tabs.items():
+            self._when_built(name, self._character_loader(name, load))
+
+    def _character_loader(
+        self, name: str, load: Callable[[int], None]
+    ) -> Callable[[], None]:
+        def run() -> None:
+            slot_idx = self.selected_slot_index
             try:
                 load(slot_idx)
             except Exception:
                 _log.exception("Loading slot %s into %s failed", slot_idx, name)
+
+        # Equal for one tab, so a queued tab keeps one pending load
+        run.character_tab = name
+        return run
 
     def _on_character_selected(self, slot_idx: int) -> bool:
         """Character picked in the bar; False keeps the previous one."""
@@ -2857,6 +2868,22 @@ class SaveManagerGUI:
         while name in self._pending_tabs:
             self._advance_tab(name)
 
+    def _when_built(self, name: str, fn: Callable[[], None]) -> None:
+        """Run fn now, or as the last step of tab name while it is still
+        queued, so loading a save does not build every queued tab first.
+        A character load replaces the one already queued for the tab."""
+        queue = self._pending_tabs.get(name)
+        if queue is None:
+            fn()
+            return
+        key = getattr(fn, "character_tab", None)
+        for step in list(queue):
+            if step == fn or (key and getattr(step, "character_tab", None) == key):
+                queue.remove(step)
+        queue.append(fn)
+        if self._tab_build_job is None:
+            self._schedule_tab_build()
+
     def _flush_pending_tabs(self) -> None:
         """Finish all queued tabs; call before code that reads tab widgets."""
         while self._pending_tabs:
@@ -3164,7 +3191,6 @@ class SaveManagerGUI:
 
     def _load_dsr_save(self, save_path: str) -> None:
         """Parse a DSR save file and refresh all DSR tabs."""
-        self._flush_pending_tabs()
         if not self._guard_pending("load the save file"):
             return
         if self._reject_wrong_game(save_path):
@@ -3198,10 +3224,13 @@ class SaveManagerGUI:
         self._start_file_watcher()
 
         # Character tabs load through the character bar.
-        for attr in ("dsr_inspector_tab", "dsr_char_mgmt_tab"):
+        for name, attr in (
+            ("Save Inspector", "dsr_inspector_tab"),
+            ("Character Management", "dsr_char_mgmt_tab"),
+        ):
             tab = getattr(self, attr, None)
             if tab is not None:
-                tab.refresh()
+                self._when_built(name, tab.refresh)
         self._refresh_character_bar()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
@@ -3251,7 +3280,6 @@ class SaveManagerGUI:
         running_checked skips the game-running check when the caller has
         already done it; the process query is slow on Windows.
         """
-        self._flush_pending_tabs()
         if not self._guard_pending("load the save file"):
             return
         if self._reject_wrong_game(save_path):
@@ -3285,17 +3313,25 @@ class SaveManagerGUI:
         self._start_file_watcher()
 
         # Character tabs load through the character bar.
-        for attr in ("ds3_inspector_tab", "ds3_char_mgmt_tab"):
+        for name, attr in (
+            ("Save Inspector", "ds3_inspector_tab"),
+            ("Character Management", "ds3_char_mgmt_tab"),
+        ):
             tab = getattr(self, attr, None)
             if tab is not None:
-                tab.refresh()
+                self._when_built(name, tab.refresh)
         self._refresh_character_bar()
 
         # The SteamID scan reads the whole save in pure Python; run it off the
         # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
+            self._when_built(
+                "SteamID Patcher",
+                threading.Thread(
+                    target=steamid_tab._on_game_changed, daemon=True
+                ).start,
+            )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -3304,7 +3340,6 @@ class SaveManagerGUI:
 
     def _load_ds2_save(self, save_path: str) -> None:
         """Parse a DS2 SOTFS save file and refresh the DS2 tabs."""
-        self._flush_pending_tabs()
         if not self._guard_pending("load the save file"):
             return
         if self._reject_wrong_game(save_path):
@@ -3337,17 +3372,25 @@ class SaveManagerGUI:
         self._start_file_watcher()
 
         # Character tabs load through the character bar.
-        for attr in ("ds2_inspector_tab", "ds2_management_tab"):
+        for name, attr in (
+            ("Save Inspector", "ds2_inspector_tab"),
+            ("Character Management", "ds2_management_tab"),
+        ):
             tab = getattr(self, attr, None)
             if tab is not None:
-                tab.refresh()
+                self._when_built(name, tab.refresh)
         self._refresh_character_bar()
 
         # The SteamID scan reads the whole save in pure Python; run it off the
         # UI thread so reloads do not freeze the window.
         steamid_tab = getattr(self, "steamid_tab", None)
         if steamid_tab is not None:
-            threading.Thread(target=steamid_tab._on_game_changed, daemon=True).start()
+            self._when_built(
+                "SteamID Patcher",
+                threading.Thread(
+                    target=steamid_tab._on_game_changed, daemon=True
+                ).start,
+            )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(

@@ -621,7 +621,9 @@ class WorldStateTab:
             )
             self.reload_save()
             return
-        if self._persist("before_map_unlock", "map_unlock"):
+        # unlock() re-parses the slot when the Regions list grows; the other
+        # tabs still hold the old slot object then, so only that case reloads
+        if self._persist("before_map_unlock", "map_unlock", reload=result.regions > 0):
             parts = [
                 count_phrase(n, word)
                 for n, word in (
@@ -655,7 +657,7 @@ class WorldStateTab:
         slot.event_flags = bytes(flags)
         off = slot.event_flags_offset
         save._raw_data[off : off + len(flags)] = flags
-        if self._persist("before_grace_edit", "grace_edit"):
+        if self._persist("before_grace_edit", "grace_edit", reload=False):
             what = "Grace" if len(flag_ids) == 1 else f"{len(flag_ids)} graces"
             self.show_toast(
                 f"{what} {'unlocked' if state else 'locked'}.", duration=2500

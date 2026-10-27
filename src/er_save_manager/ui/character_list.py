@@ -89,19 +89,21 @@ def _status(issues: list[str] | None) -> tuple[str, tuple[str, str] | None]:
     return f"⚠  {n} issue{'s' if n != 1 else ''} detected", ds.WARNING
 
 
-def _elide(label: ctk.CTkLabel, text: str) -> None:
-    """Cut text that is wider than the name column, ending it with an
-    ellipsis, and show the full text as a tooltip. A CTkLabel grows with
-    its text, so a long name would push the row's other columns right."""
+def _elide(label: ctk.CTkLabel, text: str) -> str:
+    """Show text in label, cut with an ellipsis when it is wider than the
+    name column. A CTkLabel grows with its text, so a long name would push
+    the row's other columns right. Returns the tooltip text: the full text
+    when it was cut, else ""."""
     font = tkfont.Font(font=label._label.cget("font"))
     limit = round(NAME_WIDTH * ctk.ScalingTracker.get_widget_scaling(label))
     if font.measure(text) <= limit:
-        return
+        label.configure(text=text)
+        return ""
     cut = len(text)
     while cut > 1 and font.measure(text[:cut] + "…") > limit:
         cut -= 1
     label.configure(text=text[:cut].rstrip() + "…")
-    add_tooltip(label, text)
+    return text
 
 
 class CharacterList:
@@ -130,6 +132,11 @@ class CharacterList:
         # Per grid line (heading first): column key -> label
         self._cells: list[dict[str, ctk.CTkLabel]] = []
         self._hidden: set[str] = set()
+        # Slot of each card, read by the cards' click bindings so a refresh
+        # with the same layout can reuse the cards
+        self._slots: list[int] = []
+        # (columns, row count, status shown) of the cards on screen
+        self._layout: tuple | None = None
         self.frame._parent_canvas.bind("<Configure>", self._fit, add="+")
 
     def pack(self, **kwargs) -> None:
@@ -140,6 +147,8 @@ class CharacterList:
             child.destroy()
         self._cards.clear()
         self._cells.clear()
+        self._slots.clear()
+        self._layout = None
         self._hidden = set()
         self.selected = None
 
@@ -151,7 +160,16 @@ class CharacterList:
         )
 
     def show(self, cols: list[Column], rows: list[CharacterRow]) -> None:
-        """Fill the list and select the first row."""
+        """Fill the list and select the first row. Cards are reused when the
+        columns, row count and status column match the shown list."""
+        layout = (tuple(cols), len(rows), any(r.issues is not None for r in rows))
+        if rows and layout == self._layout:
+            for n, row in enumerate(rows):
+                self._fill_line(self._cells[n + 1], row)
+                self._slots[n] = row.slot
+                self._cards[n] = (row.slot, self._cards[n][1])
+            self.select(rows[0].slot)
+            return
         self.clear()
         self._columns = cols
         if not rows:
@@ -159,68 +177,85 @@ class CharacterList:
             return
         heading = ctk.CTkFrame(self.frame, fg_color="transparent")
         heading.pack(fill=tk.X, padx=4, pady=(2, 0))
-        self._cells.append(
-            self._grid_line(
-                heading,
-                "Name",
-                {c.key: c.heading for c in cols},
-                ("Status", None) if any(r.issues is not None for r in rows) else None,
-                font=ds.SMALL,
-                name_color=ds.MUTED,
-                value_color=ds.MUTED,
-            )
+        cells = self._grid_line(
+            heading,
+            layout[2],
+            font=ds.SMALL,
+            name_color=ds.MUTED,
+            value_color=ds.MUTED,
         )
-        for row in rows:
+        cells["_name"].configure(text="Name")
+        for c in cols:
+            cells[c.key].configure(text=c.heading)
+        if "_status" in cells:
+            cells["_status"].configure(text="Status")
+        self._cells.append(cells)
+        for n, row in enumerate(rows):
             card = ctk.CTkFrame(self.frame, fg_color=ds.CARD_ROW, corner_radius=8)
             card.pack(fill=tk.X, padx=4, pady=3)
-            values = dict(row.values, slot=str(row.slot + 1))
-            status = _status(row.issues)
             cells = self._grid_line(
                 card,
-                row.name,
-                values,
-                status if row.issues is not None else None,
+                layout[2],
                 font=ds.BOLD,
                 name_color=ds.ROW_TEXT,
                 value_color=ds.MUTED,
             )
-            if row.issues:
-                add_tooltip(cells["_status"], "\n".join(f"•  {t}" for t in row.issues))
+            for key in ("_name", "_status"):
+                if key in cells:
+                    add_tooltip(cells[key], "")
+            self._fill_line(cells, row)
             for widget in (card, *cells.values()):
-                widget.bind("<Button-1>", lambda _e, s=row.slot: self.select(s))
+                widget.bind("<Button-1>", lambda _e, n=n: self.select(self._slots[n]))
                 if self._on_double:
                     widget.bind(
                         "<Double-Button-1>",
-                        lambda _e, s=row.slot: self._on_double(s),
+                        lambda _e, n=n: self._on_double(self._slots[n]),
                     )
             self._cells.append(cells)
             self._cards.append((row.slot, card))
+            self._slots.append(row.slot)
+        self._layout = layout
         self.select(rows[0].slot)
         self.frame.after_idle(self._fit)
 
-    def _grid_line(
-        self, parent, name, values, status, *, font, name_color, value_color
-    ):
+    def _fill_line(self, cells: dict[str, ctk.CTkLabel], row: CharacterRow) -> None:
+        """Texts of one character card."""
+        cells["_name"]._tooltip.text = _elide(cells["_name"], row.name)
+        values = dict(row.values, slot=str(row.slot + 1))
+        for col in self._columns:
+            cells[col.key].configure(text=values.get(col.key, ""))
+        if "_status" in cells:
+            text, color = _status(row.issues)
+            cells["_status"].configure(
+                text=text,
+                font=ds.BOLD,
+                text_color=color or ds.MUTED,
+            )
+            cells["_status"]._tooltip.text = "\n".join(
+                f"•  {t}" for t in row.issues or ()
+            )
+
+    def _grid_line(self, parent, status: bool, *, font, name_color, value_color):
+        """Empty labels of one grid line: name, the columns, and the status
+        when status is set."""
         cells: dict[str, ctk.CTkLabel] = {}
         pady = 7 if font == ds.BOLD else 0
         cells["_name"] = ctk.CTkLabel(
-            parent, text=name, font=font, text_color=name_color,
+            parent, text="", font=font, text_color=name_color,
             width=NAME_WIDTH, anchor="w",
         )  # fmt: skip
         cells["_name"].grid(row=0, column=0, padx=(_MARGIN, _GAP), pady=pady)
-        _elide(cells["_name"], name)
         for i, col in enumerate(self._columns, start=1):
             cells[col.key] = ctk.CTkLabel(
-                parent, text=values.get(col.key, ""), font=ds.SMALL,
+                parent, text="", font=ds.SMALL,
                 text_color=value_color, width=col.width, anchor="w",
             )  # fmt: skip
             cells[col.key].grid(row=0, column=i, padx=(0, _GAP), pady=pady)
         parent.grid_columnconfigure(len(self._columns) + 1, weight=1)
-        if status is not None:
-            text, color = status
+        if status:
             cells["_status"] = ctk.CTkLabel(
-                parent, text=text, font=ds.BOLD if color else font,
-                text_color=color or value_color, width=STATUS_WIDTH, anchor="e",
+                parent, text="", font=font,
+                text_color=value_color, width=STATUS_WIDTH, anchor="e",
             )  # fmt: skip
             cells["_status"].grid(
                 row=0, column=len(self._columns) + 2, padx=(0, _MARGIN + 2), pady=pady

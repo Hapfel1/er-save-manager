@@ -63,6 +63,10 @@ def _placeholder_id(k: int) -> tuple[int, int] | None:
     return None
 
 
+def equip_slots() -> list[EquipSlot]:
+    return [EquipSlot(k, label, group) for k, label, group in _SLOTS]
+
+
 class DSREquipAdapter:
     def __init__(self, char: DSRCharacter) -> None:
         self.char = char
@@ -148,7 +152,7 @@ class DSREquipAdapter:
     # ---- EquipAdapter ----------------------------------------------------------
 
     def slots(self) -> list[EquipSlot]:
-        return [EquipSlot(k, label, group) for k, label, group in _SLOTS]
+        return equip_slots()
 
     def current(self, slot_key: Hashable) -> EquipChoice | None:
         slot, _cached_id = self.char.equip_slot(slot_key)
