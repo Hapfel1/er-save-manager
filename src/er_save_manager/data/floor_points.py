@@ -405,13 +405,42 @@ def nearest_floor(
     """(distance, map id, x, y, z) of the floor point or anchor nearest in 3D to
     a position in the map's own frame, searched within radius horizontally.
 
-    Overworld positions past the tile edge also search the neighbouring small
-    tiles; a hit there is returned in that tile's frame and map id.
+    Overworld positions search the small tiles around them, also for map ids
+    of the larger (_01, _02) tiles; a hit is returned in that small tile's
+    frame and map id.
     """
+    hit = _nearest_floor(map_id_str, x, y, z, convergence, radius)
+    return hit[:5] if hit is not None else None
+
+
+def floor_near(
+    map_id_str: str,
+    x: float,
+    y: float,
+    z: float,
+    convergence: bool,
+    radius: float,
+    map_no: int,
+    point: tuple[float, float],
+) -> FloorPoint | None:
+    """Floor point or anchor nearest in 3D to a position in the map's own
+    frame, with its boss arena flag. map_no and point are the world map
+    placement given to the result."""
+    hit = _nearest_floor(map_id_str, x, y, z, convergence, radius)
+    if hit is None:
+        return None
+    _d, map_id, px, py, pz, flag = hit
+    return FloorPoint(map_id, px, py, pz, map_no, point[0], point[1], flag)
+
+
+def _nearest_floor(
+    map_id_str: str, x: float, y: float, z: float, convergence: bool, radius: float
+) -> tuple[float, str, float, float, float, int] | None:
     area, tx, tz, lod = parse_map_id(map_id_str)
     frames = [(map_id_str, x, z)]
-    if area in (60, 61) and lod == 0:
-        gx, gz = tx * 256 + 128 + x, tz * 256 + 128 + z
+    if area in (60, 61):
+        size = 256 << lod
+        gx, gz = tx * size + size / 2 + x, tz * size + size / 2 + z
         frames = [
             (f"m{area}_{nx:02d}_{nz:02d}_00", gx - nx * 256 - 128, gz - nz * 256 - 128)
             for nx in range(int((gx - radius) // 256), int((gx + radius) // 256) + 1)
@@ -423,17 +452,18 @@ def nearest_floor(
         if rec is None:
             continue
         cands = [
-            (px, py, pz) for px, py, pz, *_ in _points_near(rec, lx, lz, radius, None)
+            (px, py, pz, flag)
+            for px, py, pz, flag, *_ in _points_near(rec, lx, lz, radius, None)
         ]
         cands += [
-            (ax, ay, az)
-            for ax, ay, az, *_ in rec.anchors
+            (ax, ay, az, flag)
+            for ax, ay, az, flag, *_ in rec.anchors
             if math.hypot(ax - lx, az - lz) <= radius
         ]
-        for px, py, pz in cands:
+        for px, py, pz, flag in cands:
             d = math.sqrt((px - lx) ** 2 + (py - y) ** 2 + (pz - lz) ** 2)
             if best is None or d < best[0]:
-                best = (d, map_id, px, py, pz)
+                best = (d, map_id, px, py, pz, flag)
     return best
 
 

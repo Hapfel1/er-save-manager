@@ -14,7 +14,12 @@ import customtkinter as ctk
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageTk
 
 from er_save_manager.data.boss_locations import BossSpot, boss_spots
-from er_save_manager.data.floor_points import FloorPoint, floors_near, pin_location
+from er_save_manager.data.floor_points import (
+    FloorPoint,
+    floor_near,
+    floors_near,
+    pin_location,
+)
 from er_save_manager.data.grace_data import arena_gate, location_gate
 from er_save_manager.data.icon_manager import get_icon
 from er_save_manager.data.item_pickups import (
@@ -62,6 +67,7 @@ from er_save_manager.editors.map_markers import (
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import gate_status
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.quest_progress_dialog import steps_up_to
 from er_save_manager.ui.toast import notify
@@ -104,6 +110,8 @@ _SELECT_COLOR = "#f0d890"
 _PIN_PICK_PX = 18
 _PIN_RADIUS_MIN = 4.0
 _PIN_RADIUS_MAX = 60.0
+# Search radius for the floor a pickup, boss, NPC or object teleport lands on
+_PIN_FLOOR_RADIUS = 32.0
 # What a click on empty map selects: a pin on the nearest floor (the tile
 # when there is none), or the small overworld tile.
 _TARGET_PINS = "Pins"
@@ -3830,8 +3838,10 @@ class MapWindow:
 
     def _show_pin_info(self, pin: _Pin):
         """Location panel for a selected pickup or NPC: what it is, and for
-        world pickups a button that respawns or collects it."""
-        self._teleport_btn.configure(state="disabled")
+        pickups a button that respawns or collects it."""
+        self._teleport_btn.configure(
+            state="normal" if self._pin_position(pin) else "disabled"
+        )
         self._area_btn.configure(state="disabled")
         self._grace_row.pack_forget()
         self._floor_frame.pack_forget()
@@ -3896,7 +3906,7 @@ class MapWindow:
         self._show_pin_icons([name for _id, _qty, name in p.items])
         self._info_var.set(f"{self._pin_text(pin)}\n{p.map_id}")
         taken = self._pickup_collected(p)
-        if p.source != "pickup" or taken is None or self._on_set_pickup is None:
+        if taken is None or self._on_set_pickup is None:
             return
         self._pin_btn.configure(text="Respawn" if taken else "Mark Collected")
         self._pin_btn.pack(fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn)
@@ -4274,6 +4284,28 @@ class MapWindow:
         taken = self._pickup_collected(pickup)
         if taken is None:
             return
+        source = {"enemy": "an enemy drop", "other": "an NPC or script reward"}.get(
+            pickup.source, "a reward"
+        )
+        if (
+            taken
+            and pickup.source != "pickup"
+            and not confirm_warning(
+                self._win,
+                "show_reward_respawn_warning",
+                "Respawn Reward",
+                "Reward, not a world item",
+                [
+                    f"{pickup.item_label} is a {source}, not something lying "
+                    "in the world. Clearing its flag does not place it on the "
+                    "map: the game gives it again only when the enemy, boss or "
+                    "event that awards it runs again.",
+                    "Clearing a boss or quest reward flag can break that event.",
+                ],
+                confirm_text="Respawn",
+            )
+        ):
+            return
         self._on_set_pickup(pickup.flag_id, not taken)
         self._update_location_info()
         self._schedule_render()
@@ -4633,11 +4665,51 @@ class MapWindow:
         self._update_location_info()
         self._schedule_render()
 
+    def _pin_position(self, pin: _Pin) -> tuple[str, tuple[float, float, float]] | None:
+        """Map id and position in that map's frame of a pickup, boss, NPC,
+        merchant, object or painting pin."""
+        if pin.obj is not None:
+            return pin.obj.map_id, pin.obj.position
+        if pin.painting is not None:
+            p = pin.painting.painting
+        elif pin.boss is not None:
+            return pin.boss.map_id, pin.boss.position
+        elif pin.merchant is not None:
+            return pin.merchant.map_id, pin.merchant.position
+        elif pin.pickup is not None:
+            p = pin.pickup
+        else:
+            spot = self._npc_spot(pin)
+            return spot.map_id, spot.position
+        return (p.map_id, p.position) if p.position is not None else None
+
+    def _pin_floor(self, pin: _Pin) -> FloorPoint | None:
+        """Floor nearest to a pin, else its own position."""
+        found = self._pin_position(pin)
+        if found is None:
+            return None
+        map_id, (x, y, z) = found
+        floor = floor_near(
+            map_id,
+            x,
+            y,
+            z,
+            self._images.convergence,
+            _PIN_FLOOR_RADIUS,
+            pin.map_no,
+            pin.point,
+        )
+        return floor or FloorPoint(map_id, x, y, z, pin.map_no, *pin.point)
+
     def _teleport(self):
         if self._pins:
             self._on_teleport(pin_location(self._pins[self._pin_var.get()]))
         elif self._selected_loc is not None:
             self._on_teleport(self._selected_loc.loc)
+        elif self._selected_pin is not None:
+            floor = self._pin_floor(self._selected_pin)
+            if floor is not None:
+                self._on_teleport(pin_location(floor))
 
     # ------------------------------------------------------------------
     # Markers
