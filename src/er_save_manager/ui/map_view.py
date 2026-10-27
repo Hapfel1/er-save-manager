@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import math
+import threading
 import tkinter as tk
 from collections.abc import Callable
+from concurrent.futures import Future
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -98,6 +100,9 @@ _TILE_PX = 256
 # once the view has stopped moving for _SETTLE_MS.
 _RENDER_MARGIN = 300
 _SETTLE_MS = 90
+# How often the view checks whether the map's new shading of the revealed
+# pieces, built on a worker thread, is done.
+_LEVELS_POLL_MS = 50
 _BACKGROUND = (20, 20, 22)
 _BACKGROUND_HEX = "#141416"
 
@@ -560,11 +565,35 @@ class _MapImages:
         }
         self.convergence = convergence
         self._levels: dict[int, tuple[frozenset[int], list[Image.Image]]] = {}
+        # Levels being built on a worker thread, see preload()
+        self._pending: dict[int, tuple[frozenset[int], bool, Future]] = {}
 
     def set_convergence(self, convergence: bool):
         if convergence != self.convergence:
             self.convergence = convergence
             self._levels.clear()
+            self._pending.clear()
+
+    def preload(self, map_no: int, locked: frozenset[int] = frozenset()):
+        """Start building levels(map_no, locked) on a worker thread; the JPEG
+        decode takes a few hundred ms and Pillow releases the GIL for it."""
+        cached = self._levels.get(map_no)
+        pending = self._pending.get(map_no)
+        if (cached is not None and cached[0] == locked) or (
+            pending is not None and pending[:2] == (locked, self.convergence)
+        ):
+            return
+        future: Future = Future()
+        convergence = self.convergence
+
+        def work():
+            try:
+                future.set_result(self._build(map_no, locked, convergence))
+            except BaseException as exc:
+                future.set_exception(exc)
+
+        self._pending[map_no] = (locked, convergence, future)
+        threading.Thread(target=work, daemon=True).start()
 
     def bounds(self, map_no: int) -> tuple[float, float, float, float]:
         _, m = self._meta[map_no]
@@ -577,26 +606,56 @@ class _MapImages:
         entry = self._progress.get(map_no)
         return list(entry["flags"]) if entry else []
 
+    def ready(self, map_no: int, locked: frozenset[int]) -> bool:
+        """Whether levels(map_no, locked) returns without building."""
+        pending = self._pending.get(map_no)
+        return self.current(map_no, locked) or (
+            pending is not None
+            and pending[:2] == (locked, self.convergence)
+            and pending[2].done()
+        )
+
+    def current(self, map_no: int, locked: frozenset[int]) -> bool:
+        """Whether levels(map_no, locked, wait=False) returns the shading of
+        locked, not an older one."""
+        cached = self._levels.get(map_no)
+        return cached is not None and cached[0] == locked
+
     def levels(
-        self, map_no: int, locked: frozenset[int] = frozenset()
+        self, map_no: int, locked: frozenset[int] = frozenset(), wait: bool = True
     ) -> list[Image.Image]:
         """The map image and its halved copies, with the fragments in locked
-        shaded."""
+        shaded. wait=False returns the map's levels with an older shading
+        while the new one is built on a worker thread, when there are any."""
         cached = self._levels.get(map_no)
         if cached is None or cached[0] != locked:
-            key, _ = self._meta[map_no]
-            img = Image.open(self._dir / f"{key}.jpg").convert("RGB")
-            patches = [p for p in self._patches if p[0] == map_no]
-            if self.convergence and patches:
-                atlas = Image.open(self._dir / "convergence_patches.jpg").convert("RGB")
-                for _, x, y, w, h, ax, ay in patches:
-                    img.paste(atlas.crop((ax, ay, ax + w, ay + h)), (x, y))
-            img = self._shade(img, map_no, locked)
-            levels = [img]
-            for _ in range(3):
-                levels.append(levels[-1].reduce(2))
+            if not wait and cached is not None:
+                self.preload(map_no, locked)
+                if not self._pending[map_no][2].done():
+                    return cached[1]
+            pending = self._pending.pop(map_no, None)
+            if pending is not None and pending[:2] == (locked, self.convergence):
+                levels = pending[2].result()
+            else:
+                levels = self._build(map_no, locked, self.convergence)
             self._levels[map_no] = (locked, levels)
         return self._levels[map_no][1]
+
+    def _build(
+        self, map_no: int, locked: frozenset[int], convergence: bool
+    ) -> list[Image.Image]:
+        key, _ = self._meta[map_no]
+        img = Image.open(self._dir / f"{key}.jpg").convert("RGB")
+        patches = [p for p in self._patches if p[0] == map_no]
+        if convergence and patches:
+            atlas = Image.open(self._dir / "convergence_patches.jpg").convert("RGB")
+            for _, x, y, w, h, ax, ay in patches:
+                img.paste(atlas.crop((ax, ay, ax + w, ay + h)), (x, y))
+        img = self._shade(img, map_no, locked)
+        levels = [img]
+        for _ in range(3):
+            levels.append(levels[-1].reduce(2))
+        return levels
 
     def _shade(
         self, img: Image.Image, map_no: int, locked: frozenset[int]
@@ -1119,6 +1178,9 @@ class MapWindow:
         self._tile_key: tuple | None = None
         self._settle_job = None
         self._marker_tags: dict[int, str] = {}
+        self._cursor = ""
+        self._list_job = None
+        self._levels_job = None
 
         self._win = ctk.CTkToplevel(parent)
         self._win.title("World Map")
@@ -1151,6 +1213,7 @@ class MapWindow:
         self._icon = MARKER_ICONS[0]
         self._icon_buttons: dict[int, ctk.CTkButton] = {}
 
+        self._images.preload(self._map_no, self._locked_pieces())
         self._build_ui()
         self._refresh_marker_panel()
         self._win.after(60, self._initial_view)
@@ -1207,7 +1270,7 @@ class MapWindow:
                 None,
             )
         if self._filter_var.get() in (*_PIN_FILTERS, _FILTER_DONE):
-            self._fill_location_list()
+            self._queue_list_fill()
         self._update_location_info()
         self._schedule_render()
 
@@ -1228,7 +1291,7 @@ class MapWindow:
         self._selected_loc = None
         self._hover_tile = None
         self._tile_key = None
-        self._fill_location_list()
+        self._queue_list_fill()
         self._update_location_info()
         self._schedule_render()
 
@@ -1298,8 +1361,10 @@ class MapWindow:
 
     def _tile_layers(self) -> tuple:
         """What the map tiles show besides the map: the pickup glows."""
+        if not self._show_pickups.get():
+            return (False,)
         return (
-            self._show_pickups.get(),
+            True,
             self._pickup_version,
             frozenset(self._pickup_types),
             self._pickup_fade(),
@@ -1348,7 +1413,7 @@ class MapWindow:
             if sel is not None and sel.obj is not None and sel.obj.kind == POOL:
                 self._selected_pin = None
         self._completion_cache = None
-        self._fill_location_list()
+        self._queue_list_fill()
         self._update_location_info()
         self._schedule_render()
 
@@ -1764,7 +1829,7 @@ class MapWindow:
         self._loc_list.bind("<<TreeviewSelect>>", self._on_location_list_select)
         bind_mousewheel(self._loc_list)
         self._search_var.trace_add("write", lambda *_: self._fill_location_list())
-        self._fill_location_list()
+        self._queue_list_fill()
 
     @staticmethod
     def _legend_step() -> ctk.CTkImage:
@@ -1952,7 +2017,17 @@ class MapWindow:
                 image=self._pin_list_icon(pin),
             )
 
+    def _queue_list_fill(self):
+        """Fill the location list once the current event is handled, so
+        several state changes in one event (opening, a character load) fill
+        it once."""
+        if self._list_job is None:
+            self._list_job = self._win.after_idle(self._fill_location_list)
+
     def _fill_location_list(self):
+        if self._list_job is not None:
+            self._win.after_cancel(self._list_job)
+            self._list_job = None
         query = self._search_var.get().strip().lower()
         kind = self._filter_var.get()
         if kind in _PIN_FILTERS:
@@ -2211,6 +2286,27 @@ class MapWindow:
         self._draw_overlays()
         # Tiles just outside the view, for the next pan, once this is shown
         self._win.after(30, self._ensure_tiles)
+        if not self._images.current(self._map_no, self._tile_key[2]):
+            self._watch_levels()
+
+    def _watch_levels(self):
+        """The tiles show an older shading of the revealed map pieces while
+        the new one is built: draw them again once it is done."""
+        if self._levels_job is not None or not self._win.winfo_exists():
+            return
+
+        def check():
+            self._levels_job = None
+            key = self._tile_key
+            if key is None or self._images.current(self._map_no, key[2]):
+                return
+            if self._images.ready(self._map_no, key[2]):
+                self._tile_key = None
+                self._schedule_render()
+            else:
+                self._watch_levels()
+
+        self._levels_job = self._win.after(_LEVELS_POLL_MS, check)
 
     def _ensure_tiles(self, ring: int = 1):
         """Create the map tiles covering the view plus ring tiles around it
@@ -2299,7 +2395,7 @@ class MapWindow:
         zoom = self._zoom * scale
         x0, y0, x1, y1 = self._images.bounds(self._map_no)
         levels = self._images.levels(
-            self._map_no, self._tile_key[2] if locked is None else locked
+            self._map_no, self._tile_key[2] if locked is None else locked, wait=False
         )
         # Image pixels per screen pixel at full resolution; use the smallest
         # copy that still has at least one pixel per screen pixel.
@@ -3795,7 +3891,10 @@ class MapWindow:
             cursor = "crosshair"
         else:
             cursor = ""
-        self._canvas.configure(cursor=cursor)
+        # Any Canvas configure redraws the whole canvas, tiles included
+        if cursor != self._cursor:
+            self._cursor = cursor
+            self._canvas.configure(cursor=cursor)
 
     def _on_target_switch(self, _value: str):
         if self._pins:
