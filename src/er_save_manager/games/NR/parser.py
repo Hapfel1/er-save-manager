@@ -734,6 +734,12 @@ class NightreignSlot:
         return not self.player_name and self.entry_count == 0
 
     @property
+    def is_unreadable(self) -> bool:
+        """Slot holds data but no relic loadout chunk where the parse expects
+        it, so the parsed offsets do not match its layout."""
+        return self.loadout is None and not self.is_empty()
+
+    @property
     def player_name(self) -> str:
         if self.name_offset < 0:
             return ""

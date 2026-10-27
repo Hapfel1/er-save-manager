@@ -27,11 +27,14 @@ from er_save_manager.ui.pending import (
     PendingPage,
     StageCancelled,
     StageError,
+    save_writable,
     var_state,
+    write_failed,
 )
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.validation.names import name_problem
 
 
 def _game_blocks_write(parent) -> bool:
@@ -44,6 +47,13 @@ _EMPTY_EFFECT = 0xFFFFFFFF
 _MAX_CURRENCY = 999_999_999
 # Hero selector entry for modded hero vessels whose ID maps to no hero
 _MODDED_HERO_LABEL = "Modded (no hero)"
+# Player name field: 16 UTF-16 units; preset name field: 18
+_PLAYER_NAME_UNITS = 16
+_PRESET_NAME_UNITS = 18
+_LOCKED_TEXT = (
+    "This slot could not be read: its data does not match the layout the "
+    "editor expects. It is shown locked and cannot be edited."
+)
 
 
 def _backup_and_save(nr_save, save_path: Path, op: str) -> None:
@@ -527,6 +537,9 @@ class NREditorTab:
         """Character Editor tab; -1 or an empty slot clears it."""
         slot = self._set_slot(slot_index)
         if slot is None:
+            self._overview_locked.pack_forget()
+            for entry in self._overview_entries:
+                entry.configure(state="normal")
             self._overview_tracker.clear()
             for var in (self._name_var, self._murk_var, self._mon_var):
                 var.set("")
@@ -561,8 +574,15 @@ class NREditorTab:
         ctk.CTkLabel(f, text="Character overview", font=("Inter", 14, "bold")).pack(
             anchor="w", padx=14, pady=(12, 6)
         )
+        self._overview_locked = ds.wrap_to_width(
+            ctk.CTkLabel(
+                f, text=_LOCKED_TEXT, anchor="w", justify="left", text_color=ds.ERROR
+            )
+        )
         grid = ctk.CTkFrame(f, fg_color="transparent")
         grid.pack(anchor="nw", padx=14)
+        self._overview_grid = grid
+        self._overview_entries: list[ctk.CTkEntry] = []
 
         for row, (label, var) in enumerate(
             [
@@ -574,9 +594,9 @@ class NREditorTab:
             ctk.CTkLabel(grid, text=label, anchor="w", width=150).grid(
                 row=row, column=0, sticky="w", pady=4
             )
-            ctk.CTkEntry(grid, textvariable=var, width=200).grid(
-                row=row, column=1, padx=(6, 0), pady=4
-            )
+            entry = ctk.CTkEntry(grid, textvariable=var, width=200)
+            entry.grid(row=row, column=1, padx=(6, 0), pady=4)
+            self._overview_entries.append(entry)
 
         self._overview_tracker = FieldTracker(
             var_state(
@@ -586,9 +606,20 @@ class NREditorTab:
         )
 
     def _populate_overview(self, slot) -> None:
-        self._name_var.set(slot.player_name)
-        self._murk_var.set(str(slot.murk))
-        self._mon_var.set(str(slot.marks_of_night))
+        locked = slot.is_unreadable
+        if locked:
+            self._overview_locked.pack(
+                fill="x", padx=14, pady=(0, 6), before=self._overview_grid
+            )
+        else:
+            self._overview_locked.pack_forget()
+        for entry in self._overview_entries:
+            entry.configure(state="normal")
+        self._name_var.set("" if locked else slot.player_name)
+        self._murk_var.set("" if locked else str(slot.murk))
+        self._mon_var.set("" if locked else str(slot.marks_of_night))
+        for entry in self._overview_entries:
+            entry.configure(state="disabled" if locked else "normal")
         self._overview_tracker.mark_clean()
 
     def _refill_overview(self) -> None:
@@ -601,6 +632,8 @@ class NREditorTab:
         if save is None or self._current_slot < 0:
             raise StageError("No character loaded.")
         slot = save.slots[self._current_slot]
+        if slot.is_unreadable:
+            raise StageError(_LOCKED_TEXT)
         try:
             murk = int(self._murk_var.get())
             mon = int(self._mon_var.get())
@@ -609,14 +642,14 @@ class NREditorTab:
         if not (0 <= murk <= _MAX_CURRENCY and 0 <= mon <= _MAX_CURRENCY):
             raise StageError(f"Values must be between 0 and {_MAX_CURRENCY:,}.")
         name = self._name_var.get().strip()
-        if len(name) > 16:
-            raise StageError("Player name cannot exceed 16 characters.")
+        problem = name_problem(name, _PLAYER_NAME_UNITS, "Player name")
+        if problem:
+            raise StageError(problem)
 
         def commit() -> None:
             slot.murk = murk
             slot.marks_of_night = mon
-            if name:
-                slot.player_name = name
+            slot.player_name = name
 
         return commit
 
@@ -1219,7 +1252,9 @@ class NREditorTab:
     def _populate_relics(self, slot, keep_selection: bool = False) -> None:
         """Fill the grid from slot; keep_selection keeps the selected relic
         when it still exists, otherwise the edit pane is cleared."""
-        self._all_relic_data = list(slot.relic_states.values())
+        self._all_relic_data = (
+            [] if slot.is_unreadable else list(slot.relic_states.values())
+        )
         if not (keep_selection and self._selected_relic_ga in slot.relic_states):
             self._selected_relic_ga = None
             self._clear_edit_pane()
@@ -1259,6 +1294,10 @@ class NREditorTab:
         self._update_relic_count()
 
     def _update_relic_count(self) -> None:
+        slot = self._current_nr_slot()
+        if slot is not None and slot.is_unreadable:
+            self._relic_count_label.configure(text="Slot could not be read, locked")
+            return
         shown = len(self._relic_grid.visible_keys())
         total = len(self._all_relic_data)
         self._relic_count_label.configure(
@@ -1314,6 +1353,66 @@ class NREditorTab:
         self._refresh_rows("edit")
 
     # ------------------------------------------------------------------
+    # Immediate writes
+    # ------------------------------------------------------------------
+
+    def _writable_slot(self):
+        """Current slot when it may be changed and written now, else None
+        after telling the user why."""
+        slot = self._current_nr_slot()
+        if slot is None:
+            notify(self.parent, "Load a slot first.", "warning")
+            return None
+        if slot.is_unreadable:
+            CTkMessageBox.showerror("Slot Locked", _LOCKED_TEXT, parent=self.parent)
+            return None
+        if not save_writable():
+            return None
+        return slot
+
+    def _change_and_write(
+        self, slot, change: Callable[[], object], op: str, error_title: str
+    ) -> tuple[bool, object]:
+        """Run change on the in-memory save, then back up and write it.
+
+        A change that raises leaves the slot as it was. A failed backup or
+        write goes to pending.write_failed, which reloads the save from
+        disk. Returns (written, result of change).
+        """
+        from er_save_manager.games.NR.relic_ops import rollback_on_error
+
+        try:
+            with rollback_on_error(slot):
+                result = change()
+        except Exception as e:
+            CTkMessageBox.showerror(error_title, str(e), parent=self.parent)
+            return False, None
+        try:
+            _backup_and_save(self._get_nr_save(), self._get_save_path(), op)
+        except Exception as e:
+            write_failed(e, self.parent)
+            return False, None
+        return True, result
+
+    @staticmethod
+    def _equipped_misfits(slot, ga: int, real_item_id: int) -> list[str]:
+        """Chalice and preset slots holding relic ga that a relic of type
+        real_item_id does not fit, one line each."""
+        from er_save_manager.games.NR.item_db import vessel_name, vessel_slot_error
+
+        lines = []
+        for v in slot.all_vessels():
+            for i, r in enumerate(v.relics):
+                if r == ga and (err := vessel_slot_error(v.vessel_id, i, real_item_id)):
+                    lines.append(f"{vessel_name(v.vessel_id)}, slot {i + 1}: {err}")
+        for p in slot.all_presets():
+            for i, r in enumerate(p.relics):
+                if r == ga and (err := vessel_slot_error(p.vessel_id, i, real_item_id)):
+                    name = p.name or "(unnamed)"
+                    lines.append(f"Preset {name}, slot {i + 1}: {err}")
+        return lines
+
+    # ------------------------------------------------------------------
     # Edit / remove
     # ------------------------------------------------------------------
 
@@ -1324,9 +1423,10 @@ class NREditorTab:
         if self._selected_relic_ga is None:
             notify(self.parent, "Select a relic row first.", "warning")
             return
-        save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
+        slot = self._writable_slot()
+        if slot is None:
             return
+        save = self._get_nr_save()
         try:
             real_id = int(self._re_item_var.get())
             effects = [int(v.get()) for v in self._re_effect_vars]
@@ -1337,10 +1437,15 @@ class NREditorTab:
             )
             return
 
-        from er_save_manager.games.NR.relic_ops import prepare_relic
+        from er_save_manager.games.NR.relic_ops import ids_problem, prepare_relic
         from er_save_manager.games.NR.relic_rules import edit_issues
 
-        rs = save.slots[self._current_slot].relic_states.get(self._selected_relic_ga)
+        problem = ids_problem(real_id, effects, curses)
+        if problem:
+            CTkMessageBox.showerror("Invalid Relic", problem, parent=self.parent)
+            return
+        ga = self._selected_relic_ga
+        rs = slot.relic_states.get(ga)
         if rs is None:
             return
         old = (
@@ -1372,11 +1477,28 @@ class NREditorTab:
             confirm_text="Apply",
         ):
             return
+        # The game's handling of a relic in a slot of another color is not
+        # known yet, so a type change that causes one only warns.
+        misfits = (
+            self._equipped_misfits(slot, ga, real_id)
+            if real_id != rs.real_item_id
+            else []
+        )
+        if misfits and not CTkMessageBox.askyesno(
+            "Loadout Issues",
+            "The relic is equipped where its new type does not fit:\n"
+            + "\n".join(misfits)
+            + "\n\nApply anyway?",
+            parent=self.parent,
+        ):
+            return
 
-        try:
-            save.modify_relic(
-                self._current_slot,
-                self._selected_relic_ga,
+        slot_index = self._current_slot
+        written, _ = self._change_and_write(
+            slot,
+            lambda: save.modify_relic(
+                slot_index,
+                ga,
                 relic_id=real_id,
                 effect_1=effects[0],
                 effect_2=effects[1],
@@ -1384,13 +1506,15 @@ class NREditorTab:
                 curse_1=curses[0],
                 curse_2=curses[1],
                 curse_3=curses[2],
-            )
-            _backup_and_save(save, self._get_save_path(), "nr_relic_edit")
-            self._populate_relics(save.slots[self._current_slot], keep_selection=True)
-            self._populate_loadouts(save.slots[self._current_slot])
-            self._show_toast("Relic saved.")
-        except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+            ),
+            "nr_relic_edit",
+            "Save Failed",
+        )
+        if not written:
+            return
+        self._populate_relics(slot, keep_selection=True)
+        self._populate_loadouts(slot)
+        self._show_toast("Relic saved.")
 
     def _remove_selected_relic(self) -> None:
         if _game_blocks_write(self.parent):
@@ -1403,26 +1527,25 @@ class NREditorTab:
             "Confirm Remove", "Remove this relic permanently?", parent=self.parent
         ):
             return
-        save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
+        slot = self._writable_slot()
+        if slot is None:
             return
-        try:
-            from er_save_manager.games.NR.relic_ops import remove_relic
+        from er_save_manager.games.NR.relic_ops import remove_relic
 
-            cleared = remove_relic(
-                save.slots[self._current_slot], self._selected_relic_ga
-            )
-            _backup_and_save(save, self._get_save_path(), "nr_relic_remove")
-            self._selected_relic_ga = None
-            self._populate_relics(save.slots[self._current_slot])
-            self._populate_loadouts(save.slots[self._current_slot])
-            self._show_toast(
-                f"Relic removed and unequipped from {cleared} loadout slot(s)."
-                if cleared
-                else "Relic removed."
-            )
-        except Exception as e:
-            CTkMessageBox.showerror("Remove Failed", str(e), parent=self.parent)
+        ga = self._selected_relic_ga
+        written, cleared = self._change_and_write(
+            slot, lambda: remove_relic(slot, ga), "nr_relic_remove", "Remove Failed"
+        )
+        if not written:
+            return
+        self._selected_relic_ga = None
+        self._populate_relics(slot)
+        self._populate_loadouts(slot)
+        self._show_toast(
+            f"Relic removed and unequipped from {cleared} loadout slot(s)."
+            if cleared
+            else "Relic removed."
+        )
 
     # ------------------------------------------------------------------
     # Spawn
@@ -1432,13 +1555,12 @@ class NREditorTab:
         if _game_blocks_write(self.parent):
             return
 
-        save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
-            notify(self.parent, "Load a slot first.", "warning")
-            return
         rid = self._spawn_relic_id.get()
-        if rid < 0:
+        if self._current_nr_slot() is not None and rid < 0:
             notify(self.parent, "Select a relic type first.", "warning")
+            return
+        slot = self._writable_slot()
+        if slot is None:
             return
         try:
             effects = [int(v.get()) for v in self._spawn_effect_vars]
@@ -1448,25 +1570,19 @@ class NREditorTab:
                 "Invalid Input", "Could not parse IDs.", parent=self.parent
             )
             return
-        try:
-            from er_save_manager.games.NR.relic_ops import spawn_relic
+        from er_save_manager.games.NR.relic_ops import spawn_relic
 
-            spawn_relic(
-                save.slots[self._current_slot],
-                real_item_id=rid,
-                effect_1=effects[0],
-                effect_2=effects[1],
-                effect_3=effects[2],
-                curse_1=curses[0],
-                curse_2=curses[1],
-                curse_3=curses[2],
-            )
-            _backup_and_save(save, self._get_save_path(), "nr_relic_spawn")
-            self._populate_relics(save.slots[self._current_slot], keep_selection=True)
-            self._populate_loadouts(save.slots[self._current_slot])
-            self._show_toast("Relic spawned.")
-        except Exception as e:
-            CTkMessageBox.showerror("Spawn Failed", str(e), parent=self.parent)
+        written, _ = self._change_and_write(
+            slot,
+            lambda: spawn_relic(slot, rid, *effects, *curses),
+            "nr_relic_spawn",
+            "Spawn Failed",
+        )
+        if not written:
+            return
+        self._populate_relics(slot, keep_selection=True)
+        self._populate_loadouts(slot)
+        self._show_toast("Relic spawned.")
 
     # ------------------------------------------------------------------
     # Copy to spawn / JSON import and export
@@ -1532,14 +1648,13 @@ class NREditorTab:
     def _import_relics_json(self) -> None:
         import json
 
-        from er_save_manager.games.NR.relic_ops import import_issues, import_relics
+        from er_save_manager.games.NR.relic_ops import import_relics, sort_import_rows
         from er_save_manager.ui.utils import pick_file
 
         if _game_blocks_write(self.parent):
             return
-        save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
-            notify(self.parent, "Load a slot first.", "warning")
+        slot = self._writable_slot()
+        if slot is None:
             return
         path = pick_file("Import Relics", filetypes=[("JSON", "*.json")])
         if not path:
@@ -1551,29 +1666,41 @@ class NREditorTab:
         except (OSError, ValueError) as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
             return
-        blocking, warnings = import_issues(rows)
-        if blocking:
+        relics, skipped, warnings = sort_import_rows(rows)
+        skipped_text = (
+            "These rows are skipped (the game cannot roll them or a value "
+            "does not fit):\n" + "\n".join(skipped)
+            if skipped
+            else ""
+        )
+        if not relics:
             CTkMessageBox.showerror(
                 "Import Failed",
-                "The game cannot roll these relics:\n" + "\n".join(blocking),
+                "No relic in the file can be imported."
+                + (f"\n\n{skipped_text}" if skipped else ""),
                 parent=self.parent,
             )
             return
-        prompt = f"Spawn {len(rows)} relics into this slot?"
+        parts = []
+        if skipped:
+            parts.append(skipped_text)
         if warnings:
-            prompt = (
-                "\n".join(warnings)
-                + "\n\nThese relics may come from mod data or an older game "
-                "version.\n\n" + prompt
+            parts.append(
+                "\n".join(warnings) + "\n\nThese relics may come from mod data "
+                "or an older game version."
             )
-        if not CTkMessageBox.askyesno("Confirm Import", prompt, parent=self.parent):
+        parts.append(f"Spawn {len(relics)} relics into this slot?")
+        if not CTkMessageBox.askyesno(
+            "Confirm Import", "\n\n".join(parts), parent=self.parent
+        ):
             return
-        slot = save.slots[self._current_slot]
-        try:
-            handles = import_relics(slot, rows, allow_warnings=True)
-            _backup_and_save(save, self._get_save_path(), "nr_relic_import")
-        except Exception as e:
-            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+        written, handles = self._change_and_write(
+            slot,
+            lambda: import_relics(slot, relics),
+            "nr_relic_import",
+            "Import Failed",
+        )
+        if not written:
             return
         self._populate_relics(slot, keep_selection=True)
         self._populate_loadouts(slot)
@@ -1777,7 +1904,10 @@ class NREditorTab:
         info = slot.loadout
         lines = []
         color = ds.WARNING
-        if info is None:
+        if slot.is_unreadable:
+            lines.append(_LOCKED_TEXT)
+            color = ds.ERROR
+        elif info is None:
             lines.append("No relic loadout section found in this slot.")
         else:
             if not info.is_vanilla:
@@ -2078,13 +2208,11 @@ class NREditorTab:
             self._lo_name_var.set(self._lo_target.name)
         self._refresh_loadout_slots()
 
-    def _prepare_loadout(self):
+    def _loadout_issues_confirmed(self, slot, action: str) -> bool:
+        """Check the edit panel's relics against the target vessel; with
+        issues, ask "<action> anyway?". The game's handling of wrong-color
+        and doubly equipped relics is not known yet, so they only warn."""
         from er_save_manager.games.NR.item_db import vessel_slot_error
-
-        save = self._get_nr_save()
-        slot = self._current_nr_slot()
-        if self._lo_target is None or save is None or slot is None:
-            raise StageError("Select a chalice or preset first.")
 
         vid = self._target_vessel_id()
         warnings = []
@@ -2102,18 +2230,36 @@ class NREditorTab:
             if ga in seen:
                 warnings.append(f"Slot {i + 1}: same relic equipped twice")
             seen.add(ga)
-        if warnings and not CTkMessageBox.askyesno(
+        return not warnings or CTkMessageBox.askyesno(
             "Loadout Issues",
             "Issues found in the loadout:\n"
             + "\n".join(warnings)
-            + "\n\nApply anyway?",
+            + f"\n\n{action} anyway?",
             parent=self.parent,
-        ):
-            raise StageCancelled()
+        )
 
-        kind, target, slot_index = self._lo_kind, self._lo_target, self._current_slot
-        relics = list(self._lo_relics)
+    def _preset_name(self) -> str:
+        """Preset name from the edit panel; StageError when it cannot be
+        stored. An empty name passes."""
         name = self._lo_name_var.get().strip()
+        if name:
+            problem = name_problem(name, _PRESET_NAME_UNITS, "Preset name")
+            if problem:
+                raise StageError(problem)
+        return name
+
+    def _prepare_loadout(self):
+        save = self._get_nr_save()
+        slot = self._current_nr_slot()
+        if self._lo_target is None or save is None or slot is None:
+            raise StageError("Select a chalice or preset first.")
+        if slot.is_unreadable:
+            raise StageError(_LOCKED_TEXT)
+        kind, target, slot_index = self._lo_kind, self._lo_target, self._current_slot
+        name = self._preset_name() if kind == "preset" else ""
+        if not self._loadout_issues_confirmed(slot, "Apply"):
+            raise StageCancelled()
+        relics = list(self._lo_relics)
 
         def commit() -> None:
             if kind == "preset":
@@ -2131,16 +2277,14 @@ class NREditorTab:
         if self._lo_target is None:
             notify(self.parent, "Select a chalice or preset first.", "warning")
             return
-        save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
+        slot = self._writable_slot()
+        if slot is None:
             return
-        name = self._lo_name_var.get().strip()
-        if len(name) > 18:
-            CTkMessageBox.showerror(
-                "Name Too Long",
-                "Preset name cannot exceed 18 characters.",
-                parent=self.parent,
-            )
+        save = self._get_nr_save()
+        try:
+            name = self._preset_name()
+        except StageError as e:
+            CTkMessageBox.showerror("Invalid Preset Name", str(e), parent=self.parent)
             return
         hero_type = (
             self._lo_target.hero_id
@@ -2154,19 +2298,19 @@ class NREditorTab:
                 "warning",
             )
             return
-        try:
-            save.create_preset(
-                self._current_slot,
-                hero_type,
-                name,
-                self._lo_target.vessel_id,
-                self._lo_relics,
-            )
-            _backup_and_save(save, self._get_save_path(), "nr_preset_create")
-        except Exception as e:
-            CTkMessageBox.showerror("Save Failed", str(e), parent=self.parent)
+        if not self._loadout_issues_confirmed(slot, "Save the preset"):
             return
-        self._populate_loadouts(save.slots[self._current_slot])
+        slot_index, vessel_id = self._current_slot, self._lo_target.vessel_id
+        relics = list(self._lo_relics)
+        written, _ = self._change_and_write(
+            slot,
+            lambda: save.create_preset(slot_index, hero_type, name, vessel_id, relics),
+            "nr_preset_create",
+            "Save Failed",
+        )
+        if not written:
+            return
+        self._populate_loadouts(slot)
         self._show_toast("Preset created.")
 
     def _delete_preset(self) -> None:
@@ -2180,14 +2324,18 @@ class NREditorTab:
             "Confirm Delete", f"Delete preset '{name}'?", parent=self.parent
         ):
             return
+        slot = self._writable_slot()
+        if slot is None:
+            return
         save = self._get_nr_save()
-        if save is None or self._current_slot < 0:
+        slot_index, preset_index = self._current_slot, self._lo_target.index
+        written, _ = self._change_and_write(
+            slot,
+            lambda: save.delete_preset(slot_index, preset_index),
+            "nr_preset_delete",
+            "Delete Failed",
+        )
+        if not written:
             return
-        try:
-            save.delete_preset(self._current_slot, self._lo_target.index)
-            _backup_and_save(save, self._get_save_path(), "nr_preset_delete")
-        except Exception as e:
-            CTkMessageBox.showerror("Delete Failed", str(e), parent=self.parent)
-            return
-        self._populate_loadouts(save.slots[self._current_slot])
+        self._populate_loadouts(slot)
         self._show_toast("Preset deleted.")

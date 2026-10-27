@@ -40,6 +40,8 @@ clear the ItemEntry and decrement entry_count.
 from __future__ import annotations
 
 import struct
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from er_save_manager.games.NR.parser import _ACQ_COUNTER_REL, ENTRY_SLOT_COUNT
@@ -97,6 +99,43 @@ def _reparse(slot: NightreignSlot) -> None:
 
     fresh = _parse_slot(slot.decrypted, slot.slot_index)
     slot.__dict__.update(fresh.__dict__)
+
+
+@contextmanager
+def rollback_on_error(slot: NightreignSlot) -> Iterator[None]:
+    """Restore the slot's bytes and parse when the body raises, so a failed
+    operation leaves no partial change in memory."""
+    snapshot = bytes(slot.decrypted)
+    try:
+        yield
+    except BaseException:
+        slot.decrypted[:] = snapshot
+        _reparse(slot)
+        raise
+
+
+def _u32_problem(value, field: str) -> str | None:
+    """Message naming field unless value is an int in 0..0xFFFFFFFF."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        return f"{field} must be a whole number, not {value!r}."
+    if not 0 <= value <= 0xFFFFFFFF:
+        return f"{field} {value} is outside 0 to 4294967295."
+    return None
+
+
+def ids_problem(real_item_id, effects: list, curses: list) -> str | None:
+    """First relic id, effect or curse value that cannot be stored."""
+    for value, field in (
+        (real_item_id, "Relic ID"),
+        *((e, f"Effect {i}") for i, e in enumerate(effects, 1)),
+        *((c, f"Curse {i}") for i, c in enumerate(curses, 1)),
+    ):
+        problem = _u32_problem(value, field)
+        if problem:
+            return problem
+    if real_item_id > 0x00FFFFFF:
+        return f"Relic ID {real_item_id} is outside 0 to {0x00FFFFFF}."
+    return None
 
 
 def _walk_states_cursor(dec: bytearray) -> int:
@@ -184,9 +223,16 @@ def spawn_relic(
 ) -> int:
     """
     Spawn a relic. Returns the new ga_handle.
-    Raises ValueError on invalid IDs (when validate=True).
+    Raises ValueError on IDs that do not fit their fields, and on IDs the
+    game cannot roll when validate=True.
     Raises RuntimeError if there is no free space.
+    The slot is unchanged when it raises.
     """
+    problem = ids_problem(
+        real_item_id, [effect_1, effect_2, effect_3], [curse_1, curse_2, curse_3]
+    )
+    if problem:
+        raise ValueError(problem)
     (effect_1, effect_2, effect_3), (curse_1, curse_2, curse_3) = prepare_relic(
         real_item_id,
         [effect_1, effect_2, effect_3],
@@ -198,7 +244,20 @@ def spawn_relic(
             [effect_1, effect_2, effect_3],
             [curse_1, curse_2, curse_3],
         )
+    with rollback_on_error(slot):
+        return _spawn(
+            slot,
+            real_item_id,
+            [effect_1, effect_2, effect_3],
+            [curse_1, curse_2, curse_3],
+        )
 
+
+def _spawn(
+    slot: NightreignSlot, real_item_id: int, effects: list[int], curses: list[int]
+) -> int:
+    effect_1, effect_2, effect_3 = effects
+    curse_1, curse_2, curse_3 = curses
     allocated = _allocate_state(slot)
     if allocated is None:
         raise RuntimeError("No free state slot: all 5120 item states are in use")
@@ -345,66 +404,98 @@ def relic_to_dict(rs: RelicState) -> dict:
     }
 
 
-def _row_to_args(row: dict) -> tuple[int, list[int], list[int]]:
-    empty = 0xFFFFFFFF
-    real_id = int(row["id"])
-    effects = [int(x) for x in row.get("effects", [])][:3]
-    curses = [int(x) for x in row.get("curses", [])][:3]
-    effects += [empty] * (3 - len(effects))
-    curses += [empty] * (3 - len(curses))
-    return real_id, effects, curses
+_ImportRelic = tuple[int, list[int], list[int]]
 
 
-def import_issues(rows: list[dict]) -> tuple[list[str], list[str]]:
-    """(blocking, warnings) for importing rows, one message per problem.
+def _id_list(row: dict, key: str, field: str) -> list:
+    values = row.get(key, [])
+    if not isinstance(values, list):
+        raise ValueError(f"{key} must be a list, not {values!r}.")
+    if len(values) > 3:
+        raise ValueError(f"{key} holds {len(values)} entries, at most 3 fit.")
+    for i, value in enumerate(values, 1):
+        problem = _u32_problem(value, f"{field} {i}")
+        if problem:
+            raise ValueError(problem)
+    return values + [0xFFFFFFFF] * (3 - len(values))
 
-    Unknown effects (mod data) and pool issues an older game version can
-    cause only warn, since exported relics come from a save.
+
+def _row_to_args(row) -> _ImportRelic:
+    """(relic id, effects, curses) of an import row; ValueError naming the
+    field when a value is missing or cannot be stored."""
+    if not isinstance(row, dict):
+        raise ValueError(f"expected an object with an id, not {row!r}.")
+    if "id" not in row:
+        raise ValueError("no relic id.")
+    effects = _id_list(row, "effects", "Effect")
+    curses = _id_list(row, "curses", "Curse")
+    problem = ids_problem(row["id"], effects, curses)
+    if problem:
+        raise ValueError(problem)
+    return row["id"], effects, curses
+
+
+def sort_import_rows(rows: list) -> tuple[list[_ImportRelic], list[str], list[str]]:
+    """(relics to spawn, skipped rows, warnings), one message per problem.
+
+    A row is skipped when a value does not fit its field, the relic id is
+    unknown or the game cannot roll the relic. Unknown effects (mod data)
+    and pool issues an older game version can cause only warn, since
+    exported relics come from a save.
     """
-    from er_save_manager.games.NR.relic_rules import VERSION_SENSITIVE, check
+    from er_save_manager.games.NR.relic_rules import (
+        VERSION_SENSITIVE,
+        check,
+        relic_kind,
+    )
 
-    blocking, warnings = [], []
+    relics, skipped, warnings = [], [], []
     for i, row in enumerate(rows, 1):
         try:
             real_id, effects, curses = _row_to_args(row)
-        except (KeyError, TypeError, ValueError) as e:
-            blocking.append(f"Row {i}: {e}")
+        except ValueError as e:
+            skipped.append(f"Row {i}: {e}")
+            continue
+        if relic_kind(real_id) == "unknown":
+            skipped.append(f"Row {i}: Unknown relic ID {real_id}.")
             continue
         effects, curses = prepare_relic(real_id, effects, curses)
-        for issue in check(real_id, effects, curses):
-            soft = issue.code == "unknown" or issue.code in VERSION_SENSITIVE
-            (warnings if soft else blocking).append(f"Row {i}: {issue.message}")
-    return blocking, warnings
+        issues = check(real_id, effects, curses)
+        # With a known relic id, "unknown" means an effect missing from the
+        # game data
+        hard = [
+            issue
+            for issue in issues
+            if issue.code != "unknown" and issue.code not in VERSION_SENSITIVE
+        ]
+        if hard:
+            skipped.append(f"Row {i}: " + " ".join(x.message for x in hard))
+            continue
+        warnings.extend(f"Row {i}: {issue.message}" for issue in issues)
+        relics.append((real_id, effects, curses))
+    return relics, skipped, warnings
 
 
-def import_relics(
-    slot: NightreignSlot, rows: list[dict], allow_warnings: bool = False
-) -> list[int]:
-    """Validate every row, then spawn them all. Returns the new ga_handles.
+def import_relics(slot: NightreignSlot, relics: list[_ImportRelic]) -> list[int]:
+    """Spawn relics from sort_import_rows. Returns the new ga_handles.
 
-    Nothing is spawned if any row is invalid (or only warns and
-    allow_warnings is False) or the slot lacks room for all of them, so a
-    failure never leaves a partial import behind.
+    Nothing is spawned if the slot lacks room for all of them or a spawn
+    fails, so a failure never leaves a partial import behind.
     """
-    blocking, warnings = import_issues(rows)
-    if blocking or (warnings and not allow_warnings):
-        raise ValueError("\n".join(blocking + warnings))
-    parsed = []
-    for row in rows:
-        real_id, effects, curses = _row_to_args(row)
-        parsed.append((real_id, *prepare_relic(real_id, effects, curses)))
-
     free_states = _count_spawnable_states(slot)
     free_entries = sum(1 for e in slot.item_entries if e.is_empty)
-    if len(parsed) > min(free_states, free_entries):
+    if len(relics) > min(free_states, free_entries):
         raise RuntimeError(
-            f"Not enough room: {len(parsed)} relics requested, "
+            f"Not enough room: {len(relics)} relics requested, "
             f"{min(free_states, free_entries)} free"
         )
 
     handles = []
-    for real_id, effects, curses in parsed:
-        handles.append(spawn_relic(slot, real_id, *effects, *curses, validate=False))
+    with rollback_on_error(slot):
+        for real_id, effects, curses in relics:
+            handles.append(
+                spawn_relic(slot, real_id, *effects, *curses, validate=False)
+            )
     return handles
 
 
