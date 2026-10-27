@@ -187,6 +187,19 @@ def _resolve_name(key: str, raw_id: int, is_cnv: bool = False) -> str:
     return ""
 
 
+def _weapon_upgrade_cap(item, reinforcement: str, is_cnv: bool) -> int:
+    """Max upgrade level of a weapon: the per-item override, else the cap of
+    its reinforcement type (Convergence: +15 for standard and somber)."""
+    explicit_cap = getattr(item, "max_upgrade", -1)
+    if explicit_cap >= 0:
+        return explicit_cap
+    if reinforcement not in ("standard", "somber"):
+        return 0
+    if is_cnv:
+        return 15
+    return 25 if reinforcement == "standard" else 10
+
+
 def _decode_slot_value(raw: int, category_bit: int = 0) -> int:
     """Convert an on-disk item-id-type field to the editor's internal value.
 
@@ -1073,6 +1086,9 @@ class EquipmentEditor:
         # For talisman/quickitem/pouch: direct handle (0xA0/0xB0 | base_id).
         # For spell/physick: unused (0), those fields store the raw id only.
         self._handles: dict[str, int] = {}
+        # Slot key -> (raw id, (full_id, upgrade, reinforcement)): unowned
+        # loadout items that Apply All adds to the inventory, then equips.
+        self._pending_spawns: dict[str, tuple[int, tuple[int, int, str]]] = {}
         # Slot key -> label, filled while the sections are built
         self._slot_labels: dict[str, str] = {}
         self.tracker = FieldTracker(
@@ -1380,6 +1396,7 @@ class EquipmentEditor:
     # ---- data ---------------------------------------------------------------
 
     def load_equipment(self):
+        self._pending_spawns.clear()
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -1477,7 +1494,14 @@ class EquipmentEditor:
             name = _resolve_name(key, raw, self._is_cnv_save())
         except Exception:
             name = ""
+        if self._spawn_pending(key, value):
+            return f"{name} (added on Apply)"
         return name or "(empty)"
+
+    def _spawn_pending(self, key: str, value: tuple[int, int] | None) -> bool:
+        """The (raw id, handle) pair of slot key is a staged spawn."""
+        spawn = self._pending_spawns.get(key)
+        return bool(spawn and value and value == (spawn[0], 0))
 
     def _apply_spell_lock(self, slot):
         """Disable pick buttons for empty spell slots beyond the estimated cap.
@@ -1534,10 +1558,21 @@ class EquipmentEditor:
             raise StageError("Character has no equipment data.")
         raw = {key: self._get_raw(key) for key in self.equipment_vars}
         handles = dict(self._handles)
+        # A staged spawn is dropped when the slot was repicked since.
+        spawns = {
+            key: spec
+            for key, (_want, spec) in self._pending_spawns.items()
+            if self._spawn_pending(key, (raw.get(key, 0), handles.get(key, 0)))
+        }
+        is_cnv = self._is_cnv_save()
 
-        def commit() -> None:
+        def commit() -> list[str]:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
+
+            notes, skip = self._spawn_staged(
+                save_file, slot_idx, spawns, handles, is_cnv
+            )
 
             # Write item_id to both structs that store item IDs, and handle
             # to the gaitem handle struct, for weapon/armor/talisman/ammo.
@@ -1545,7 +1580,7 @@ class EquipmentEditor:
             equip_armaments = getattr(slot, "equipped_armaments_and_items", None)
             equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
 
-            for key in _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS:
+            for key in (_WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS) - skip:
                 item_id = _encode_slot_value(raw.get(key, 0))
                 handle = handles.get(key, 0)
 
@@ -1561,7 +1596,7 @@ class EquipmentEditor:
             # gaitem_handle which drive the in-hand model.
             equip_index = getattr(slot, "equipped_items_equip_index", None)
             if equip_index is not None:
-                for key in _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS:
+                for key in (_WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS) - skip:
                     setattr(
                         equip_index,
                         key,
@@ -1572,6 +1607,8 @@ class EquipmentEditor:
             spells = getattr(slot, "equipped_spells", None)
             if spells and spells.spell_slots:
                 for i in range(1, 15):
+                    if f"spell{i}" in skip:
+                        continue
                     spells.spell_slots[i - 1].spell_id = _encode_slot_value(
                         raw.get(f"spell{i}", 0)
                     )
@@ -1579,8 +1616,14 @@ class EquipmentEditor:
             # Wondrous Physick tears: goods category bit included on disk.
             physics = getattr(slot, "equipped_physics", None)
             if physics:
-                physics.slot1 = _encode_slot_value(raw.get("physick1", 0), 0x40000000)
-                physics.slot2 = _encode_slot_value(raw.get("physick2", 0), 0x40000000)
+                if "physick1" not in skip:
+                    physics.slot1 = _encode_slot_value(
+                        raw.get("physick1", 0), 0x40000000
+                    )
+                if "physick2" not in skip:
+                    physics.slot2 = _encode_slot_value(
+                        raw.get("physick2", 0), 0x40000000
+                    )
 
             # Quick items and pouch: goods-category mirror id plus the
             # direct gaitem handle (handle's own empty value is 0, not
@@ -1590,7 +1633,7 @@ class EquipmentEditor:
             for i in range(1, 11):
                 key = f"quickitem{i}"
                 value = raw.get(key, 0)
-                if _is_flask(value):
+                if _is_flask(value) or key in skip:
                     continue
                 handle = handles.get(key, 0)
                 if equip_armaments and hasattr(equip_armaments, key):
@@ -1603,7 +1646,7 @@ class EquipmentEditor:
             for i in range(1, 7):
                 key = f"pouch{i}"
                 value = raw.get(key, 0)
-                if _is_flask(value):
+                if _is_flask(value) or key in skip:
                     continue
                 handle = handles.get(key, 0)
                 if equip_armaments and hasattr(equip_armaments, key):
@@ -1615,8 +1658,59 @@ class EquipmentEditor:
                     )
 
             _patch_equipment(save_file, slot_idx, slot)
+            return notes
 
         return commit
+
+    def _spawn_staged(
+        self,
+        save_file,
+        slot_idx: int,
+        spawns: dict[str, tuple[int, int, str]],
+        handles: dict[str, int],
+        is_cnv: bool,
+    ) -> tuple[list[str], set[str]]:
+        """Add the staged loadout items to the held inventory and put their
+        handles into handles. Returns notes for the user and the slot keys
+        whose item could not be added; those slots keep their current item.
+        """
+        from er_save_manager.parser.inventory_ops import add_item
+
+        notes: list[str] = []
+        skip: set[str] = set()
+        direct: dict[int, int] = {}
+        for key, (full_id, upgrade, reinforcement) in spawns.items():
+            if full_id in direct:
+                # Talismans and goods share one direct handle per item id.
+                handles[key] = direct[full_id]
+                continue
+            label = self._slot_labels.get(key, key)
+            try:
+                result = add_item(
+                    save_file,
+                    slot_idx,
+                    full_id,
+                    1,
+                    "held",
+                    upgrade=upgrade,
+                    reinforcement=reinforcement,
+                    convergence=is_cnv,
+                )
+            except ValueError as exc:
+                skip.add(key)
+                notes.append(f"{label}: not added ({exc}), slot unchanged.")
+                continue
+            if result["location"] != "held":
+                skip.add(key)
+                notes.append(
+                    f"{label}: held inventory is full, added to storage and "
+                    "not equipped."
+                )
+                continue
+            handles[key] = result["gaitem_handle"]
+            if key not in _WEAPON_KEYS | _ARMOR_KEYS:
+                direct[full_id] = result["gaitem_handle"]
+        return notes, skip
 
     def _get_raw(self, key: str) -> int:
         try:
@@ -1630,34 +1724,39 @@ class EquipmentEditor:
     def _collect_state(self) -> dict[str, int]:
         return {key: self._get_raw(key) for key in self.equipment_vars}
 
-    def _apply_state(self, data: dict) -> tuple[list[str], list[tuple[str, int]]]:
+    def _apply_state(
+        self, data: dict
+    ) -> tuple[list[tuple[str, object, str]], list[tuple[str, int]]]:
         """Apply a loadout dict to the current vars, validating ownership.
 
-        Returns (skipped_keys, unresolved) where unresolved is a list of
-        (key, raw) pairs not currently owned - candidates for spawning.
-        Handles already claimed earlier in this same pass are excluded too,
-        so a loadout cannot assign one physical item to two slots.
+        Returns (rejected, unresolved): rejected lists (key, value, reason)
+        for values that are not item ids; unresolved lists (key, raw) pairs
+        not currently owned, the spawn candidates. Handles already claimed
+        earlier in this same pass are excluded too, so a loadout cannot
+        assign one physical item to two slots.
         """
-        skipped: list[str] = []
+        rejected: list[tuple[str, object, str]] = []
         unresolved: list[tuple[str, int]] = []
         claimed: set[int] = set()
         for key, raw in data.items():
             if key not in self.equipment_vars:
                 continue
-            try:
-                raw = int(raw)
-            except (TypeError, ValueError):
+            self._pending_spawns.pop(key, None)
+            if isinstance(raw, bool) or not isinstance(raw, int):
+                rejected.append((key, raw, "not an item id"))
                 continue
             if raw in _EMPTY_IDS:
                 self.equipment_vars[key].set("0")
                 self._handles[key] = 0
+                continue
+            if not 0 < raw < 0x10000000:
+                rejected.append((key, raw, "not an item id"))
                 continue
             if key in (_QUICKITEM_KEYS | _POUCH_KEYS) and _is_flask(raw):
                 continue  # never touched - equipping via the tool duplicates flasks
             owned = [o for o in self._owned_items_for_key(key) if o[1] not in claimed]
             match = next((o for o in owned if o[0] == raw), None)
             if match is None:
-                skipped.append(key)
                 unresolved.append((key, raw))
                 continue
             self.equipment_vars[key].set(str(raw))
@@ -1666,67 +1765,56 @@ class EquipmentEditor:
 
         for key in self.equipment_vars:
             self.update_equipment_name(key)
-        return skipped, unresolved
+        return rejected, unresolved
 
-    def _spawn_unresolved(self, unresolved: list[tuple[str, int]]) -> int:
-        """Spawn unowned loadout items into inventory via inventory_ops.add_item.
+    def _spawn_spec(
+        self, key: str, raw: int
+    ) -> tuple[tuple[int, int, str] | None, str]:
+        """(full_id, upgrade, reinforcement) for add_item to give raw for the
+        slot key, or None and the reason it cannot be given.
 
-        Returns the number successfully spawned. Caller should re-run
-        _apply_state for the same data afterward to pick them up.
+        A weapon's raw value is base id + affinity * 100 + upgrade; full_id is
+        the base id, the upgrade goes to add_item apart. An infused weapon is
+        refused: the loadout holds no Ash of War, and an affinity without one
+        does not occur in the game.
         """
-        save_file = self.get_save_file()
-        slot_idx = self.get_char_slot()
         from er_save_manager.data.item_database import get_item_database
-        from er_save_manager.parser.inventory_ops import add_item
 
         db = get_item_database()
-        slot = save_file.characters[slot_idx]
-        spawned = 0
-        for key, raw in unresolved:
-            try:
-                if key in _WEAPON_KEYS:
-                    full_id = raw
-                    true_base = (raw & 0x0FFFFFFF) // 10000 * 10000
-                    item = db.items_by_id.get(true_base)
-                    upgrade = raw % 100
-                    reinf = (
-                        getattr(item, "reinforcement", "standard")
-                        if item
-                        else "standard"
-                    )
-                elif key in _ARMOR_KEYS:
-                    full_id = 0x10000000 | raw
-                    upgrade, reinf = 0, "standard"
-                elif key in _TALISMAN_KEYS:
-                    full_id = 0x20000000 | raw
-                    upgrade, reinf = 0, "standard"
-                elif key in _GOODS_KEYS:
-                    full_id = 0x40000000 | raw
-                    upgrade, reinf = 0, "standard"
-                else:
-                    continue
+        is_cnv = self._is_cnv_save()
+        upgrade = affinity = 0
+        if key in _WEAPON_KEYS:
+            upgrade = raw % 100
+            affinity = (raw // 100) % 100
+            full_id = raw - upgrade - affinity * 100
+        elif key in _ARMOR_KEYS:
+            full_id = 0x10000000 | raw
+        elif key in _TALISMAN_KEYS:
+            full_id = 0x20000000 | raw
+        elif key in _GOODS_KEYS:
+            full_id = 0x40000000 | raw
+        else:
+            return None, "not an equipment slot"
 
-                loc = (
-                    "storage"
-                    if all(
-                        it.gaitem_handle != 0 for it in slot.inventory_held.common_items
-                    )
-                    else "held"
-                )
-                add_item(
-                    save_file,
-                    slot_idx,
-                    full_id,
-                    1,
-                    loc,
-                    upgrade=upgrade,
-                    gem_full_id=0,
-                    reinforcement=reinf,
-                )
-                spawned += 1
-            except Exception:
-                continue
-        return spawned
+        item = db.items_by_id.get(full_id)
+        if item is None:
+            return None, "not in the item database"
+        if item.category_name not in _SLOT_CATS.get(key, ()) or not _cat_allowed(
+            item.category_name, is_cnv, self._is_co2_save()
+        ):
+            return None, "the editor cannot equip it in this slot"
+        armor_slot = _ARMOR_KEY_TO_SLOT.get(key)
+        if armor_slot and _load_armor_slot_types().get(raw) != armor_slot:
+            return None, "the editor cannot equip it in this slot"
+        if affinity:
+            return None, "infused weapon, the loadout has no Ash of War for it"
+        item = db.resolve(item, is_cnv)
+        reinforcement = getattr(item, "reinforcement", "standard")
+        if upgrade:
+            cap = _weapon_upgrade_cap(item, reinforcement, is_cnv)
+            if upgrade > cap:
+                return None, f"+{upgrade} is above the +{cap} cap"
+        return (full_id, upgrade, reinforcement), ""
 
     def _loadout_store_path(self) -> Path:
         from er_save_manager.ui.settings import Settings
@@ -1789,49 +1877,90 @@ class EquipmentEditor:
             store.pop(name, None)
             self._write_loadout_store(store)
             return
-        slots = store.get(name, {})
-        self._apply_loadout_data(slots)
+        self._apply_loadout_data(store.get(name), "Loadout Load Failed")
 
-    def _apply_loadout_data(self, slots: dict) -> None:
-        skipped, unresolved = self._apply_state(slots)
-        if not unresolved:
-            notify(
-                self.parent,
-                "Loadout applied. Click Apply Equipment Changes to save.",
-                "success",
+    @staticmethod
+    def _loadout_slots(data) -> dict | None:
+        """Slot dict of a loadout file, share code payload or saved loadout;
+        None when it holds no Elden Ring equipment slot."""
+        slots = data.get("slots", data) if isinstance(data, dict) else None
+        if not isinstance(slots, dict) or not any(key in _SLOT_CATS for key in slots):
+            return None
+        return slots
+
+    def _slot_line(self, key: str, raw, reason: str) -> str:
+        label = self._slot_labels.get(key, key)
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            name = _resolve_name(key, raw, self._is_cnv_save()) or f"ID {raw}"
+        else:
+            name = repr(raw)
+        return f"{label}: {name} ({reason})" if reason else f"{label}: {name}"
+
+    @staticmethod
+    def _join_lines(lines: list[str], limit: int = 15) -> str:
+        if len(lines) > limit:
+            lines = [*lines[: limit - 1], f"and {len(lines) - limit + 1} more"]
+        return "\n".join(lines)
+
+    def _apply_loadout_data(self, data, error_title: str) -> None:
+        """Put a loadout into the editor. Owned items are equipped; unowned
+        ones are staged to be added by Apply All, after a confirmation.
+        Values that cannot be equipped or added are skipped and listed."""
+        slots = self._loadout_slots(data)
+        if slots is None:
+            CTkMessageBox.showerror(
+                error_title,
+                "This is not an Elden Ring equipment loadout. It has no "
+                "equipment slots.",
+                parent=self.parent,
             )
             return
 
-        if CTkMessageBox.askyesno(
-            "Items Not Owned",
-            f"{len(unresolved)} item(s) in this loadout are not in your "
-            "inventory:\n"
-            + ", ".join(k for k, _ in unresolved)
-            + "\n\nSpawn them into inventory now, then equip them?",
-            parent=self.parent,
-        ):
-            spawned = self._spawn_unresolved(unresolved)
-            skipped, unresolved = self._apply_state(slots)
-            notify(
-                self.parent,
-                f"Spawned {spawned} item(s). "
-                + (
-                    f"{len(unresolved)} slot(s) still could not be resolved: "
-                    + ", ".join(k for k, _ in unresolved)
-                    if unresolved
-                    else "All slots resolved."
-                )
-                + "\n\nClick Apply Equipment Changes to save.",
-                "success",
-            )
-        else:
+        rejected, unresolved = self._apply_state(slots)
+        staged: list[tuple[str, int, tuple[int, int, str]]] = []
+        for key, raw in unresolved:
+            spec, reason = self._spawn_spec(key, raw)
+            if spec is None:
+                rejected.append((key, raw, reason))
+            else:
+                staged.append((key, raw, spec))
+
+        if staged:
+            if CTkMessageBox.askyesno(
+                "Add Missing Items",
+                f"{len(staged)} item(s) in this loadout are not in the "
+                "inventory:\n"
+                + self._join_lines([self._slot_line(k, r, "") for k, r, _ in staged])
+                + "\n\nAdd them to the inventory with Apply All and equip them?",
+                parent=self.parent,
+            ):
+                for key, raw, spec in staged:
+                    self.equipment_vars[key].set(str(raw))
+                    self._handles[key] = 0
+                    self._pending_spawns[key] = (raw, spec)
+                    self.update_equipment_name(key)
+            else:
+                rejected += [(k, r, "not in the inventory") for k, r, _ in staged]
+
+        changed = self.tracker.changes() > 0
+        if rejected:
             CTkMessageBox.showwarning(
-                "Loadout Applied",
-                "Applied, skipping items not owned:\n"
-                + ", ".join(skipped)
-                + "\n\nClick Apply Equipment Changes to save the rest.",
+                "Loadout Partly Loaded",
+                "Skipped these slots:\n"
+                + self._join_lines([self._slot_line(*r) for r in rejected])
+                + (
+                    "\n\nClick Apply All to save the other slots."
+                    if changed
+                    else "\n\nNo other slot changed."
+                ),
                 parent=self.parent,
             )
+        elif changed:
+            notify(
+                self.parent, "Loadout loaded. Click Apply All to save it.", "success"
+            )
+        else:
+            notify(self.parent, "The loadout matches the current equipment.", "info")
 
     def export_loadout_file(self):
         save_file = self.get_save_file()
@@ -1879,18 +2008,24 @@ class EquipmentEditor:
             return
 
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
-            slots = data.get("slots", data) if isinstance(data, dict) else {}
-        except Exception as e:
+        except OSError as e:
             CTkMessageBox.showerror(
                 "Loadout Import Failed",
-                f"Failed to import loadout:\n{e}",
+                f"Could not read {Path(path).name}:\n{e}",
+                parent=self.parent,
+            )
+            return
+        except ValueError:
+            CTkMessageBox.showerror(
+                "Loadout Import Failed",
+                f"{Path(path).name} is not a JSON loadout file.",
                 parent=self.parent,
             )
             return
 
-        self._apply_loadout_data(slots)
+        self._apply_loadout_data(data, "Loadout Import Failed")
 
     def _show_share_code(self, code: str, description: str = "loadout"):
         """Show a dialog with a generated share code and a copy button."""
@@ -1967,7 +2102,7 @@ class EquipmentEditor:
         def done(code):
             if not code:
                 CTkMessageBox.showerror(
-                    "Share Failed",
+                    "Loadout Share Failed",
                     "Failed to share loadout. Check your internet connection.",
                     parent=self.parent,
                 )
@@ -1997,20 +2132,20 @@ class EquipmentEditor:
         def done(slots):
             if slots is None:
                 CTkMessageBox.showerror(
-                    "Not Found",
+                    "Loadout Code Not Found",
                     "No loadout found for that code, or the connection failed.",
                     parent=self.parent,
                 )
                 return
             if self.get_save_file() is not save_file or self.get_char_slot() != slot:
                 CTkMessageBox.showerror(
-                    "Import Cancelled",
+                    "Loadout Import Cancelled",
                     "The loaded save or character changed while the loadout "
                     "was downloading. Import the code again.",
                     parent=self.parent,
                 )
                 return
-            self._apply_loadout_data(slots)
+            self._apply_loadout_data(slots, "Loadout Code Import Failed")
 
         self._run_share_request(
             "Downloading loadout...", lambda: fetch_loadout(code), done
