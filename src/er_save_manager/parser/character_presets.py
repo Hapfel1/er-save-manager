@@ -1535,6 +1535,8 @@ class CSMenuSystemSaveLoad:
     unk0x2: int = 0
     size: int = 0
     presets: list[FacePreset] = field(default_factory=list)
+    # Start of each preset relative to the start of this block
+    preset_offsets: list[int] = field(default_factory=list)
     padding: bytes = b""
 
     @classmethod
@@ -1548,7 +1550,9 @@ class CSMenuSystemSaveLoad:
         obj.size = struct.unpack("<I", f.read(4))[0]
 
         obj.presets = []
+        obj.preset_offsets = []
         for _ in range(15):
+            obj.preset_offsets.append(f.tell())
             preset = FacePreset.read(f)
             obj.presets.append(preset)
 

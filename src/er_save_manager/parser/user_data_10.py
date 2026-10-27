@@ -251,12 +251,13 @@ class MenuSystemSaveLoad:
 
     raw_data: bytes = b""
     parsed: object = None  # CSMenuSystemSaveLoad from character_presets module
+    offset: int = -1  # absolute position in the save, from f.tell() at parse time
 
     @classmethod
     def read(cls, f: BytesIO) -> MenuSystemSaveLoad:
         """Read MenuSystemSaveLoad - 0x1808 bytes"""
         obj = cls()
-        f.tell()
+        obj.offset = f.tell()
         obj.raw_data = f.read(0x1808)
 
         # Parse presets if character_presets module is available
