@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import gzip
 import json
+import os
 import re
 import shutil
 import threading
@@ -72,6 +74,56 @@ class BackupHistory:
         )
 
 
+# Suffixes of backup files, checked in order (".bak.zip" before ".zip").
+_BACKUP_EXTENSIONS = (".bak.zip", ".bak.gz", ".bak", ".zip", ".gz")
+# "<stem>_<YYYY-mm-dd_HH-MM-SS>[_<operation and description>]"
+_NAME_STAMP = re.compile(r"_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})(?:_(.*))?$")
+
+
+def _metadata_from_entry(entry) -> BackupMetadata | None:
+    """BackupMetadata from one metadata.json entry, None when a required
+    field is missing or a known field has the wrong type."""
+    if not isinstance(entry, dict):
+        return None
+    try:
+        meta = BackupMetadata.from_dict(entry)
+    except TypeError:
+        return None
+    for f in fields(BackupMetadata):
+        value = getattr(meta, f.name)
+        expected = _FIELD_TYPES[f.name]
+        if not isinstance(value, expected) or (
+            expected is int and isinstance(value, bool)
+        ):
+            return None
+    if not meta.filename or Path(meta.filename).name != meta.filename:
+        return None
+    return meta
+
+
+_FIELD_TYPES = {
+    "filename": str,
+    "original_file": str,
+    "timestamp": str,
+    "description": str,
+    "operation": str,
+    "character_summary": list,
+    "file_size": int,
+    "compressed": bool,
+    "favorite": bool,
+}
+
+
+def _log_problem(exc: BaseException, where: str) -> None:
+    """Append exc to errors.log without showing a dialog."""
+    try:
+        from er_save_manager.ui.error_report import log_exception
+
+        log_exception(type(exc), exc, exc.__traceback__, where)
+    except Exception:
+        pass
+
+
 class BackupManager:
     """
     Manages backups for Elden Ring save files.
@@ -133,23 +185,95 @@ class BackupManager:
         return self._history
 
     def _load_history(self) -> BackupHistory:
-        """Load backup history from metadata file."""
+        """Load backup history from metadata file.
+
+        An unreadable metadata.json is replaced by a list built from the
+        backup files on disk, and entries with missing or mistyped fields
+        are dropped; backup files no entry names are added from disk. Both
+        cases are logged to errors.log.
+        """
+        history = BackupHistory(save_file=str(self.save_path))
         metadata_path = self.backup_folder / self.METADATA_FILE
-        if metadata_path.exists():
+        if not metadata_path.exists():
+            return history
+        try:
+            with open(metadata_path, encoding="utf-8") as f:
+                data = json.load(f)
+            entries = data["backups"] if isinstance(data, dict) else None
+            if not isinstance(entries, list):
+                raise ValueError("metadata.json has no backup list")
+        except (OSError, ValueError, KeyError) as e:
+            _log_problem(
+                e, f"Backup list {metadata_path} unreadable, rebuilt from files"
+            )
+            history.backups = self._backups_from_disk(set())
+            return history
+
+        skipped = []
+        for entry in entries:
+            meta = _metadata_from_entry(entry)
+            if meta is None:
+                skipped.append(entry)
+            else:
+                history.backups.append(meta)
+        if skipped:
+            _log_problem(
+                ValueError(f"{len(skipped)} bad entries skipped: {skipped!r}"[:2000]),
+                f"Backup list {metadata_path}",
+            )
+            known = {b.filename for b in history.backups}
+            history.backups.extend(self._backups_from_disk(known))
+            history.backups.sort(key=lambda b: b.timestamp, reverse=True)
+        return history
+
+    def _backups_from_disk(self, known: set[str]) -> list[BackupMetadata]:
+        """Metadata for the backup files in the folder that are not in known,
+        newest first. Timestamp and description come from the file name
+        when it has the generated layout, else the timestamp is the mtime."""
+        found = []
+        try:
+            paths = list(self.backup_folder.iterdir())
+        except OSError:
+            return found
+        for path in paths:
+            name = path.name
+            if name in known or not path.is_file():
+                continue
+            ext = next((e for e in _BACKUP_EXTENSIONS if name.endswith(e)), None)
+            if ext is None:
+                continue
             try:
-                with open(metadata_path) as f:
-                    data = json.load(f)
-                return BackupHistory.from_dict(data)
-            except (json.JSONDecodeError, KeyError):
-                pass
-        return BackupHistory(save_file=str(self.save_path))
+                stat = path.stat()
+            except OSError:
+                continue
+            timestamp = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            description = ""
+            match = _NAME_STAMP.search(name[: -len(ext)])
+            if match:
+                with contextlib.suppress(ValueError):
+                    timestamp = datetime.strptime(
+                        match.group(1), "%Y-%m-%d_%H-%M-%S"
+                    ).isoformat()
+                description = match.group(2) or ""
+            found.append(
+                BackupMetadata(
+                    filename=name,
+                    original_file=self.save_path.name,
+                    timestamp=timestamp,
+                    description=description,
+                    file_size=stat.st_size,
+                    compressed=ext != ".bak",
+                )
+            )
+        found.sort(key=lambda b: b.timestamp, reverse=True)
+        return found
 
     def _save_history(self) -> None:
         """Save backup history to metadata file."""
         self.backup_folder.mkdir(parents=True, exist_ok=True)
         metadata_path = self.backup_folder / self.METADATA_FILE
-        with open(metadata_path, "w") as f:
-            json.dump(self.history.to_dict(), f, indent=2)
+        text = json.dumps(self.history.to_dict(), indent=2)
+        atomic_write(metadata_path, text.encode("utf-8"))
 
     def _sanitize_filename_part(self, text: str) -> str:
         """Sanitize a string for safe use in filenames."""
@@ -247,14 +371,23 @@ class BackupManager:
         backup_name = self._generate_backup_name(description, operation, compress)
         backup_path = self.backup_folder / backup_name
 
-        if compress:
-            with zipfile.ZipFile(
-                backup_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
-            ) as zipf:
-                for file in self._save_files():
-                    zipf.write(file, arcname=file.name)
-        else:
-            shutil.copy2(self.save_path, backup_path)
+        # Written under a temporary name so a failed copy (disk full) never
+        # leaves a truncated file with a backup name.
+        tmp_path = backup_path.with_name(f"{backup_name}.tmp{os.getpid()}")
+        try:
+            if compress:
+                with zipfile.ZipFile(
+                    tmp_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
+                ) as zipf:
+                    for file in self._save_files():
+                        zipf.write(file, arcname=file.name)
+            else:
+                shutil.copy2(self.save_path, tmp_path)
+            os.replace(tmp_path, backup_path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                tmp_path.unlink()
+            raise
 
         metadata = BackupMetadata(
             filename=backup_name,
