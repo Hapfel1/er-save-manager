@@ -821,14 +821,10 @@ class Save:
         """Update preset in raw save data"""
         from io import BytesIO
 
-        userdata10_start = self._user_data_10_offset + 0x10  # Skip checksum
-
-        # MenuSystemSaveLoad offset within USER_DATA_10
-        # Version(4) + SteamID(8) + Settings(0x140)
-        menu_offset = userdata10_start + 4 + 8 + 0x140
-
-        # CSMenuSystemSaveLoad header is 8 bytes, each preset is 0x130
-        preset_offset = menu_offset + 8 + (slot_idx * 0x130)
+        # Both offsets come from the parse: PC has a checksum before
+        # USER_DATA_10, PlayStation does not.
+        menu = self.user_data_10_parsed.menu_system_save_load
+        preset_offset = menu.offset + menu.parsed.preset_offsets[slot_idx]
 
         preset_stream = BytesIO()
         preset.write(preset_stream)

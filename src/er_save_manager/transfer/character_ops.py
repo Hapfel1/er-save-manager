@@ -395,12 +395,13 @@ class CharacterOperations:
 
         f = BytesIO(save._raw_data)
 
+        # get_slot_offset already points past the PC checksum prefix
         for slot_idx, offset in [(slot_a, offset_a), (slot_b, offset_b)]:
-            f.seek(offset + CharacterOperations.CHECKSUM_SIZE)
+            f.seek(offset)
             save.character_slots[slot_idx] = UserDataX.read(
                 f,
                 save.is_ps,
-                offset + CharacterOperations.CHECKSUM_SIZE,
+                offset,
                 CharacterOperations.SLOT_DATA_SIZE,
             )
 
