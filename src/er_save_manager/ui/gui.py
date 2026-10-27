@@ -203,6 +203,7 @@ class SaveManagerGUI:
         # Vanilla saves already confirmed in the ban warning this session
         self._vanilla_warned_paths: set[str] = set()
         self._backup_warned_paths: set[str] = set()
+        self._short_warned_paths: set[str] = set()
         self.selected_slot = None
         self.selected_slot_index = -1  # Current selected character slot (0-9)
 
@@ -3277,10 +3278,43 @@ class SaveManagerGUI:
         return True
 
     def _confirm_open(self, save_path: str) -> bool:
-        """Backup and online ban warnings, asked after the file parsed."""
-        return self._confirm_backup_file(save_path) and self._confirm_vanilla_save(
-            save_path
+        """Short file, backup and online ban warnings, asked after the file
+        parsed."""
+        return (
+            self._confirm_short_save(save_path)
+            and self._confirm_backup_file(save_path)
+            and self._confirm_vanilla_save(save_path)
         )
+
+    def _confirm_short_save(self, save_path: str) -> bool:
+        """Warn once per path per session about an Elden Ring save whose
+        regulation data is cut off; the characters load. Returns False when
+        cancelled."""
+        from er_save_manager.games.save_identify import tail_cut_reason
+
+        reason = tail_cut_reason(save_path)
+        if not reason:
+            return True
+        key = os.path.normcase(os.path.abspath(save_path))
+        if key in self._short_warned_paths:
+            return True
+        name = os.path.basename(save_path)
+        _log.warning("%s is shorter than a complete save: %s", save_path, reason)
+        if not CTkMessageBox.askyesno(
+            "Incomplete Save File",
+            f"{name} is shorter than a complete save, so it may be damaged. "
+            "The characters are complete; the regulation data at the end "
+            "of the file is cut off.\n\n"
+            "The game may refuse to load it. Edits are written, but the file "
+            "stays short. Keep a copy of the original.\n\n"
+            "Open the file anyway?",
+            parent=self.root,
+        ):
+            self.status_var.set("Load cancelled")
+            self._restore_path_entry()
+            return False
+        self._short_warned_paths.add(key)
+        return True
 
     def _confirm_vanilla_save(self, save_path: str) -> bool:
         """Show the per-game online ban warning for a vanilla save.

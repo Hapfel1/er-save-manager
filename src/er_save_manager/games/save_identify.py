@@ -70,9 +70,43 @@ def bnd4_game(head: bytes) -> str | None:
     return _BND4_SIGNATURES.get((count, first))
 
 
+def _cut_entries(data: bytes, size: int) -> list[int]:
+    """Indices of the BND4 entries that end past size. data holds the
+    header and the whole entry table."""
+    count = struct.unpack_from("<I", data, _ENTRY_COUNT_OFFSET)[0]
+    cut = []
+    for i in range(count):
+        rec = _ENTRY_TABLE + i * _ENTRY_STRIDE
+        entry_size = struct.unpack_from("<Q", data, rec + _ENTRY_SIZE_FIELD)[0]
+        offset = struct.unpack_from("<I", data, rec + _ENTRY_DATA_OFFSET_FIELD)[0]
+        if offset + entry_size > size:
+            cut.append(i)
+    return cut
+
+
+def er_tail_cut(data: bytes, size: int) -> bool:
+    """True for an Elden Ring BND4 where only the last entry (USER_DATA_11,
+    regulation data) ends past the file end and starts inside it: every
+    character slot and USER_DATA_10 are whole."""
+    if bnd4_game(data) != "elden_ring" or len(data) < _ENTRY_TABLE:
+        return False
+    count = struct.unpack_from("<I", data, _ENTRY_COUNT_OFFSET)[0]
+    if (
+        not 0 < count <= _MAX_ENTRIES
+        or len(data) < _ENTRY_TABLE + count * _ENTRY_STRIDE
+    ):
+        return False
+    last = count - 1
+    start = struct.unpack_from(
+        "<I", data, _ENTRY_TABLE + last * _ENTRY_STRIDE + _ENTRY_DATA_OFFSET_FIELD
+    )[0]
+    return _cut_entries(data, size) == [last] and start < size
+
+
 def bnd4_problem(data: bytes, size: int) -> str | None:
     """Why a BND4 file of the given size is cut off, None when every entry
-    lies inside it. data holds at least the header and entry table."""
+    lies inside it or only an Elden Ring save's regulation entry is cut
+    (er_tail_cut). data holds at least the header and entry table."""
     if len(data) < _ENTRY_TABLE:
         return f"BND4 header cut off at {size:#x} bytes"
     count = struct.unpack_from("<I", data, _ENTRY_COUNT_OFFSET)[0]
@@ -81,16 +115,15 @@ def bnd4_problem(data: bytes, size: int) -> str | None:
     table_end = _ENTRY_TABLE + count * _ENTRY_STRIDE
     if len(data) < table_end:
         return f"BND4 entry table ends at {table_end:#x}, file is {size:#x} bytes"
-    for i in range(count):
-        rec = _ENTRY_TABLE + i * _ENTRY_STRIDE
-        entry_size = struct.unpack_from("<Q", data, rec + _ENTRY_SIZE_FIELD)[0]
-        offset = struct.unpack_from("<I", data, rec + _ENTRY_DATA_OFFSET_FIELD)[0]
-        if offset + entry_size > size:
-            return (
-                f"BND4 entry {i} ends at {offset + entry_size:#x}, "
-                f"file is {size:#x} bytes"
-            )
-    return None
+    cut = _cut_entries(data, size)
+    if not cut or er_tail_cut(data, size):
+        return None
+    rec = _ENTRY_TABLE + cut[0] * _ENTRY_STRIDE
+    end = (
+        struct.unpack_from("<I", data, rec + _ENTRY_DATA_OFFSET_FIELD)[0]
+        + struct.unpack_from("<Q", data, rec + _ENTRY_SIZE_FIELD)[0]
+    )
+    return f"BND4 entry {cut[0]} ends at {end:#x}, file is {size:#x} bytes"
 
 
 def incomplete_reason(path: str | Path) -> str | None:
@@ -110,6 +143,26 @@ def incomplete_reason(path: str | Path) -> str | None:
     if head[:4] == _ER_PS_MAGIC and size < ER_PS_SIZE:
         return f"PS save is {size:#x} bytes, needs {ER_PS_SIZE:#x}"
     return None
+
+
+def tail_cut_reason(path: str | Path) -> str | None:
+    """Description of a cut regulation entry (er_tail_cut), None otherwise."""
+    path = Path(path)
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            head = f.read(_ENTRY_TABLE + _MAX_ENTRIES * _ENTRY_STRIDE)
+    except OSError:
+        return None
+    if head[:4] != b"BND4" or not er_tail_cut(head, size):
+        return None
+    count = struct.unpack_from("<I", head, _ENTRY_COUNT_OFFSET)[0]
+    rec = _ENTRY_TABLE + (count - 1) * _ENTRY_STRIDE
+    end = (
+        struct.unpack_from("<I", head, rec + _ENTRY_DATA_OFFSET_FIELD)[0]
+        + struct.unpack_from("<Q", head, rec + _ENTRY_SIZE_FIELD)[0]
+    )
+    return f"{end - size:#x} bytes of the regulation data are missing"
 
 
 def identify_game(path: str | Path) -> str | None:
