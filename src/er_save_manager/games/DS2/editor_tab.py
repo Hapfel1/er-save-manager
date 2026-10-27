@@ -17,15 +17,27 @@ from er_save_manager.games.DS2.save import (
     NAME_MAX_CHARS,
     NAME_MAX_CHARS_SEAMLESS,
     NG_PLUS_MAX,
+    SOULS_MAX,
     STARTING_CLASSES,
     DS2Save,
     SlotState,
 )
+from er_save_manager.games.DS2.soulsplanner import STAT_MAX, STAT_MIN
 from er_save_manager.games.DS2.soulsplanner_import import import_soulsplanner
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    PendingPage,
+    StageCancelled,
+    StageError,
+    guard_before_write,
+    save_writable,
+    var_state,
+    write_failed,
+)
 from er_save_manager.ui.scrollable_frame import ScrollableFrame
 from er_save_manager.ui.utils import game_blocks_write
+from er_save_manager.validation.names import name_problem
 
 
 def _game_blocks_write(parent) -> bool:
@@ -37,6 +49,9 @@ _HINT_COLOR = ("gray40", "gray70")
 # Largest torch time the game allows, 99:59:59.
 _TORCH_MAX_SECONDS = 99 * 3600 + 59 * 60 + 59
 _TORCH_FORMAT_HINT = "H:MM:SS, max 99:59:59"
+
+# Souls above this ask for confirmation: the game's souls cap is unknown.
+_SOULS_WARN_ABOVE = 999_999_999
 
 
 def _format_torch(seconds: float) -> str:
@@ -571,6 +586,8 @@ class DS2EditorTab:
     def _fix_cycle_soul_memory(self) -> None:
         """Set the cycle soul memory to the total, which an NG character
         always has unless an older Seamless Co-op version skipped it."""
+        if not guard_before_write("fix the cycle soul memory"):
+            return
         if _game_blocks_write(self.parent):
             return
         save: DS2Save | None = self.get_save()
@@ -581,6 +598,8 @@ class DS2EditorTab:
         character = save.characters[self._slot_index]
         if not character.missing_cycle_soul_memory():
             return
+        if not save_writable():
+            return
         self._backup(
             save_path,
             f"before_cycle_soul_memory_fix_slot_{self._slot_index}",
@@ -589,8 +608,8 @@ class DS2EditorTab:
         added = character.fix_cycle_soul_memory()
         try:
             save.save_to_file(save_path)
-        except Exception as e:
-            self.show_toast(f"Failed to write save: {e}", duration=3000)
+        except Exception as exc:
+            write_failed(exc, self.parent)
             return
         self.refresh()
         self.show_toast(
@@ -609,6 +628,11 @@ class DS2EditorTab:
         if save is None or self._slot_index < 0:
             raise StageError("No character loaded.")
         slot = self._slot_index
+        if save.slot_state(slot) is not SlotState.CHARACTER:
+            raise StageError(
+                "This slot holds no created character. Create the character "
+                "in game first."
+            )
 
         try:
             entered_level = int(self.level_var.get())
@@ -619,6 +643,15 @@ class DS2EditorTab:
             ng_plus = int(self.ng_var.get())
         except ValueError:
             raise StageError("Level, stats, souls and NG+ must be numbers.") from None
+        for stat_name, value in stat_values.items():
+            if not STAT_MIN <= value <= STAT_MAX:
+                raise StageError(
+                    f"{stat_name.capitalize()} must be {STAT_MIN}-{STAT_MAX}."
+                )
+        if souls < 0:
+            raise StageError("Souls cannot be negative.")
+        if souls > SOULS_MAX:
+            raise StageError(f"Souls can be at most {SOULS_MAX:,}.")
         # Written only when edited, so saving other fields keeps the stored
         # fraction of a second.
         torch_seconds = None
@@ -627,17 +660,24 @@ class DS2EditorTab:
         if self.torch_var.get().strip() != self._torch_loaded:
             torch_seconds = _parse_torch(self.torch_var.get())
 
-        name = self.name_var.get()
+        name = self.name_var.get().strip()
         # Only a changed name is checked, so stat edits keep a name the game
         # accepted.
         if name != save.characters[slot].name:
-            max_chars = self._name_max_chars()
-            if not name.strip():
-                raise StageError("Name cannot be empty.")
-            if len(name) > max_chars:
-                raise StageError(f"Name can be at most {max_chars} characters.")
-            if not all(ch.isalnum() or ch == " " for ch in name):
-                raise StageError("Name can only contain letters, digits and spaces.")
+            problem = name_problem(name, self._name_max_chars())
+            if problem:
+                raise StageError(problem)
+            # sync_name_caches and slot_display_name treat a name with
+            # non-printable characters as uninitialized data
+            # (_is_valid_name), so it would never reach the load screen.
+            hidden = next(
+                (ch for ch in name if not ch.isprintable() or ch == "\ufffd"), None
+            )
+            if hidden is not None:
+                raise StageError(
+                    f"Name contains a character that cannot be used "
+                    f"(U+{ord(hidden):04X})."
+                )
 
         expected_level = self._expected_level()
         if expected_level is None or entered_level != expected_level:
@@ -651,6 +691,20 @@ class DS2EditorTab:
                 "Stats below the class's starting values: " + ", ".join(below)
             )
         class_id = self._class_id
+        character = save.characters[slot]
+        if (
+            souls != character.souls
+            and souls > _SOULS_WARN_ABOVE
+            and not CTkMessageBox.askyesno(
+                "Souls Above 999,999,999",
+                f"Souls: {souls:,} is above 999,999,999. The game's souls cap "
+                "is unknown, so the game may cut or reject this value. Soul "
+                "memory rises to cover it and cannot be lowered here.\n\n"
+                f"Apply {souls:,} souls?",
+                parent=self.parent,
+            )
+        ):
+            raise StageCancelled()
 
         def commit() -> list[str]:
             character = save.characters[slot]
@@ -675,6 +729,8 @@ class DS2EditorTab:
         return commit
 
     def _on_import_build(self) -> None:
+        if not guard_before_write("import a build"):
+            return
         if _game_blocks_write(self.parent):
             return
         save: DS2Save | None = self.get_save()

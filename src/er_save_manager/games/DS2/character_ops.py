@@ -19,6 +19,7 @@ from er_save_manager.games.DS2.save import (
     PROFILE_ENTRY_START,
     Character,
     SlotState,
+    _is_valid_name,
 )
 
 _EXPORT_MAGIC = b"DS2C\x00"
@@ -31,6 +32,15 @@ UNINITIALIZED_SLOT_WARNING = (
     "Create a throwaway character in this slot "
     "in-game first, save and quit, then run this again."
 )
+
+
+def _clear_unnamed_name_caches(save: DS2Save, *slots: int) -> None:
+    """Zero the load screen name of each slot whose profile now holds no
+    name. sync_name_caches() skips such slots, so the name of the character
+    that left the slot would stay on the load screen."""
+    for slot in slots:
+        if not _is_valid_name(save.characters[slot].name):
+            save.clear_name_cache(slot)
 
 
 class DS2CharacterOperations:
@@ -76,6 +86,7 @@ class DS2CharacterOperations:
         save.container.get_entry(BIG_ENTRY_START + to_slot)[:] = big_data
 
         save.sync_name_caches()
+        _clear_unnamed_name_caches(save, to_slot)
 
     @staticmethod
     def transfer_slot(
@@ -108,6 +119,7 @@ class DS2CharacterOperations:
         target_save.container.get_entry(BIG_ENTRY_START + to_slot)[:] = big_data
 
         target_save.sync_name_caches()
+        _clear_unnamed_name_caches(target_save, to_slot)
 
     @staticmethod
     def delete_slot(save: DS2Save, slot_index: int) -> None:
@@ -153,6 +165,7 @@ class DS2CharacterOperations:
         big_a[:], big_b[:] = bytes(big_b), bytes(big_a)
 
         save.sync_name_caches()
+        _clear_unnamed_name_caches(save, slot_a, slot_b)
 
     @staticmethod
     def export_character(save: DS2Save, slot_index: int, output_path: str) -> None:
@@ -250,6 +263,7 @@ class DS2CharacterOperations:
         target_profile[:] = profile_data
         target_big[:] = big_data
         save.sync_name_caches()
+        _clear_unnamed_name_caches(save, slot_index)
 
         return save.characters[slot_index].name
 

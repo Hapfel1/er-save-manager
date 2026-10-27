@@ -16,7 +16,7 @@ from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import guard_before_write
+from er_save_manager.ui.pending import guard_before_write, save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -369,10 +369,22 @@ class DS2CharacterManagementTab:
             parent=self.parent,
         )
 
-    def _write_and_reload(self, save: DS2Save, toast_message: str) -> None:
+    def _write(self, save: DS2Save) -> bool:
+        """Write the loaded save; a failure reloads it from disk, which drops
+        the operation's in-memory change."""
         save_path = self.get_save_path()
-        if save_path:
+        if not save_path:
+            return True
+        try:
             save.save_to_file(save_path)
+        except Exception as exc:
+            write_failed(exc, self.parent)
+            return False
+        return True
+
+    def _write_and_reload(self, save: DS2Save, toast_message: str) -> None:
+        if not self._write(save):
+            return
         if self.reload_save:
             self.reload_save()
         self.show_toast(f"{toast_message} {STALE_SUMMARY_NOTE}", duration=4000)
@@ -412,6 +424,8 @@ class DS2CharacterManagementTab:
             parent=self.parent,
         ):
             return
+        if not save_writable():
+            return
 
         try:
             self._backup(
@@ -449,6 +463,8 @@ class DS2CharacterManagementTab:
             CTkMessageBox.showerror(
                 "Same Slot", "Slots must differ.", parent=self.parent
             )
+            return
+        if not save_writable():
             return
 
         try:
@@ -535,6 +551,8 @@ class DS2CharacterManagementTab:
             parent=self.parent,
         ):
             return
+        if not save_writable():
+            return
 
         try:
             self._backup(
@@ -577,6 +595,8 @@ class DS2CharacterManagementTab:
             parent=self.parent,
         ):
             return
+        if not save_writable():
+            return
 
         try:
             self._backup(
@@ -591,9 +611,8 @@ class DS2CharacterManagementTab:
             )
             return
 
-        save_path = self.get_save_path()
-        if save_path:
-            save.save_to_file(save_path)
+        if not self._write(save):
+            return
         if self.reload_save:
             self.reload_save()
         self.show_toast(f"Character deleted from Slot {slot}.", duration=2500)
@@ -702,7 +721,15 @@ class DS2CharacterManagementTab:
             )
             return
 
-        target_save.save_to_file(target_path)
+        try:
+            target_save.save_to_file(target_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Transfer Failed",
+                f"The target save was not written:\n{e}",
+                parent=self.parent,
+            )
+            return
         if self.reload_save:
             self.reload_save()
         self.show_toast(
