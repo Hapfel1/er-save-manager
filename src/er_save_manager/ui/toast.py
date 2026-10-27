@@ -157,6 +157,7 @@ class _Toast:
         self._remaining = duration
         self._anim = 0
         self._image = None
+        self._shaped = None
 
         scale = ctk.ScalingTracker.get_widget_scaling(root)
         self.scale = scale
@@ -192,6 +193,7 @@ class _Toast:
         self.canvas.bind("<Button-1>", lambda e: self.dismiss())
         self.canvas.bind("<Enter>", lambda e: self._pause())
         self.canvas.bind("<Leave>", lambda e: self._resume())
+        self.win.bind("<Configure>", self._on_configure)
         self._render()
 
     def _render(self):
@@ -212,14 +214,29 @@ class _Toast:
         self._image = ImageTk.PhotoImage(body)
         self.canvas.itemconfigure(self._body, image=self._image)
 
-    def _shape(self):
-        radius = min(self.radius, self.h // 2)
-        if not radius or sys.platform == "win32":
+    def _needs_shape(self) -> bool:
+        return bool(self.radius) and sys.platform != "win32"
+
+    def _on_configure(self, event):
+        """Cut the window once it has its new size: a shape set before the
+        resize is clipped to the old size by the compositor (KWin), which
+        leaves square corners on the grown side."""
+        if event.widget is not self.win or (event.width, event.height) != (
+            self.w,
+            self.h,
+        ):
+            return
+        if not self._needs_shape() or self._shaped == (self.w, self.h):
             return
         xshape = _get_xshape()
         frame = self.win.wm_frame()
         if xshape and frame:
+            radius = min(self.radius, self.h // 2)
             xshape.apply(int(frame, 16), _outline_mask(self.w, self.h, radius))
+        if self._shaped is None and not self.dismissing:
+            # Hidden until the first cut so no square frame shows.
+            self.win.attributes("-alpha", _ALPHA)
+        self._shaped = (self.w, self.h)
 
     def show(self, x: int, y: int):
         self.x, self.y = x, y
@@ -227,12 +244,11 @@ class _Toast:
         # Position then show - one geometry call before deiconify to prevent flash.
         self.win.geometry(f"{self.w}x{self.h}+{x}+{start_y}")
         self.win.deiconify()
-        self.win.update_idletasks()
-        self._shape()
         if _USE_FADE:
             self._fade_in()
         else:
-            self.win.attributes("-alpha", _ALPHA)
+            if not self._needs_shape():
+                self.win.attributes("-alpha", _ALPHA)
             self._move(x, start_y, x, y, steps=15, ease=3)
         self._start_timer(self.duration)
 
@@ -241,7 +257,6 @@ class _Toast:
         self.count += 1
         self._render()
         self.win.geometry(f"{self.w}x{self.h}+{self.x}+{self.y}")
-        self._shape()
         if self._timer is not None:
             self._start_timer(self.duration)
         else:
@@ -333,7 +348,8 @@ class _Toast:
 
 
 def _app_geometry(root):
-    root.update_idletasks()
+    # No update_idletasks(): it lays out the whole app first, 60-90 ms
+    # right after a save load.
     return root.winfo_rootx(), root.winfo_rooty(), root.winfo_width()
 
 
