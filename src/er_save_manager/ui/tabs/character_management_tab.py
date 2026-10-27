@@ -11,6 +11,7 @@ import customtkinter as ctk
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 
@@ -523,9 +524,7 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         from_slot = int(self.copy_from_var.get()) - 1
@@ -543,9 +542,7 @@ class CharacterManagementTab:
         to_char = save_file.characters[to_slot]
 
         if from_char.is_empty():
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         from_name = from_char.get_character_name()
@@ -623,18 +620,14 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         from_slot = int(self.transfer_from_var.get()) - 1
         from_char = save_file.characters[from_slot]
 
         if from_char.is_empty():
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         target_path = self._select_target_save_file()
@@ -655,10 +648,10 @@ class CharacterManagementTab:
 
             source_path = self._get_current_save_path()
             if source_path and Path(target_path).resolve() == source_path.resolve():
-                CTkMessageBox.showerror(
-                    "Same Save File",
+                notify(
+                    self.parent,
                     "Select a different target save file for transfer.",
-                    parent=self.parent,
+                    "warning",
                 )
                 return
 
@@ -771,9 +764,7 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot_a = int(self.swap_a_var.get()) - 1
@@ -832,18 +823,14 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot = int(self.export_slot_var.get()) - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {slot + 1} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {slot + 1} is empty.", "warning")
             return
 
         char_name = char.get_character_name() or f"Character_{slot + 1}"
@@ -865,10 +852,10 @@ class CharacterManagementTab:
 
             CharacterOperations.export_character(save_file, slot, Path(output_path))
 
-            CTkMessageBox.showinfo(
-                "Character Exported",
+            notify(
+                self.parent,
                 f"Character '{char_name}' exported to:\n{output_path}",
-                parent=self.parent,
+                "success",
             )
 
         except Exception as e:
@@ -891,9 +878,7 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         import_path = pick_file(
@@ -967,11 +952,7 @@ class CharacterManagementTab:
 
         save = self.get_save_file()
         if not save:
-            CTkMessageBox.showwarning(
-                "No Save File",
-                "Load a save file first",
-                parent=self.parent,
-            )
+            notify(self.parent, "Load a save file first", "warning")
             return
 
         browser = CharacterBrowser(self.parent, character_tab=self, save_file=save)
@@ -989,20 +970,14 @@ class CharacterManagementTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         slot = int(self.delete_slot_var.get()) - 1
         char = save_file.characters[slot]
 
         if char.is_empty():
-            CTkMessageBox.showinfo(
-                "Slot Already Empty",
-                f"Slot {slot + 1} is already empty.",
-                parent=self.parent,
-            )
+            notify(self.parent, f"Slot {slot + 1} is already empty.", "info")
             return
 
         char_name = char.get_character_name()

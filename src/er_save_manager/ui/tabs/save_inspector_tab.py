@@ -15,6 +15,7 @@ from er_save_manager.ui.character_list import (
 )
 from er_save_manager.ui.dialogs.character_details import scan_character
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.version_mismatch_dialog import VersionMismatchDialog
 
 
@@ -188,9 +189,7 @@ class SaveInspectorTab:
     def show_character_details(self):
         """Show character details dialog"""
         if self.selected_slot is None:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a character first.", parent=self.parent
-            )
+            notify(self.parent, "Select a character first.", "warning")
             return
 
         if self.show_details:
@@ -200,9 +199,7 @@ class SaveInspectorTab:
         """Open the save/game version mismatch fix dialog."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save Loaded", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         VersionMismatchDialog(

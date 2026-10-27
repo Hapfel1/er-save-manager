@@ -12,6 +12,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import filter_unlock, gate_status
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
@@ -245,9 +246,7 @@ class GraceDialog:
         def _apply(targets: list[Grace], state: bool):
             action = "Unlock" if state else "Lock"
             if not targets:
-                CTkMessageBox.showinfo(
-                    "No Selection", "No sites of grace selected.", parent=dialog
-                )
+                notify(dialog, "No sites of grace selected.", "warning")
                 return
 
             changed = [g for g in targets if _is_unlocked(g.flag_id) != state]
@@ -266,11 +265,11 @@ class GraceDialog:
                 if not changed:
                     return
             if not changed:
-                CTkMessageBox.showinfo(
-                    "Nothing to Change",
+                notify(
+                    dialog,
                     f"All {len(targets)} selected sites of grace are already "
                     f"{'unlocked' if state else 'locked'}.",
-                    parent=dialog,
+                    "info",
                 )
                 return
 

@@ -19,6 +19,7 @@ from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.popups import reopenable
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -337,9 +338,7 @@ class GesturesRegionsTab:
             select_type: "base" for base game only, "all" for base + DLC
         """
         if self.current_slot is None:
-            CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character slot first.", "warning")
             return
 
         include_dlc = select_type == "all"
@@ -356,9 +355,7 @@ class GesturesRegionsTab:
     def deselect_all_gestures(self):
         """Deselect all gestures"""
         if self.current_slot is None:
-            CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character slot first.", "warning")
             return
 
         for var in self.gesture_states.values():
@@ -371,24 +368,16 @@ class GesturesRegionsTab:
         """Open unlocked regions editor dialog."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         if self.current_slot is None:
-            CTkMessageBox.showwarning(
-                "No Slot", "Load a character slot first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character slot first.", "warning")
             return
 
         slot = save_file.character_slots[self.current_slot]
         if slot.is_empty():
-            CTkMessageBox.showwarning(
-                "Empty Slot",
-                f"Slot {self.current_slot + 1} is empty.",
-                parent=self.parent,
-            )
+            notify(self.parent, f"Slot {self.current_slot + 1} is empty.", "warning")
             return
 
         from er_save_manager.ui import dialog_style as ds

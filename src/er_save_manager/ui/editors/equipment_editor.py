@@ -17,6 +17,7 @@ import customtkinter as ctk
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
@@ -1366,9 +1367,7 @@ class EquipmentEditor:
     def open_visual_picker(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
         _VisualEquipmentBrowser(self.parent, self)
 
@@ -1738,9 +1737,7 @@ class EquipmentEditor:
     def save_loadout(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         name = self._ask_code("Save Loadout", "Loadout name:")
@@ -1751,9 +1748,7 @@ class EquipmentEditor:
         store[name] = self._collect_state()
         try:
             self._write_loadout_store(store)
-            CTkMessageBox.showinfo(
-                "Saved", f"Loadout '{name}' saved.", parent=self.parent
-            )
+            notify(self.parent, f"Loadout '{name}' saved.", "success")
         except Exception as e:
             CTkMessageBox.showerror(
                 "Loadout Save Failed",
@@ -1764,16 +1759,12 @@ class EquipmentEditor:
     def load_loadout(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         store = self._read_loadout_store()
         if not store:
-            CTkMessageBox.showinfo(
-                "No Loadouts", "No saved loadouts yet.", parent=self.parent
-            )
+            notify(self.parent, "No saved loadouts yet.", "info")
             return
 
         _LoadoutBrowserDialog(self.parent, store, self._on_loadout_chosen)
@@ -1789,10 +1780,10 @@ class EquipmentEditor:
     def _apply_loadout_data(self, slots: dict) -> None:
         skipped, unresolved = self._apply_state(slots)
         if not unresolved:
-            CTkMessageBox.showinfo(
-                "Loadout Applied",
+            notify(
+                self.parent,
                 "Loadout applied. Click Apply Equipment Changes to save.",
-                parent=self.parent,
+                "success",
             )
             return
 
@@ -1806,8 +1797,8 @@ class EquipmentEditor:
         ):
             spawned = self._spawn_unresolved(unresolved)
             skipped, unresolved = self._apply_state(slots)
-            CTkMessageBox.showinfo(
-                "Loadout Applied",
+            notify(
+                self.parent,
                 f"Spawned {spawned} item(s). "
                 + (
                     f"{len(unresolved)} slot(s) still could not be resolved: "
@@ -1816,7 +1807,7 @@ class EquipmentEditor:
                     else "All slots resolved."
                 )
                 + "\n\nClick Apply Equipment Changes to save.",
-                parent=self.parent,
+                "success",
             )
         else:
             CTkMessageBox.showwarning(
@@ -1830,9 +1821,7 @@ class EquipmentEditor:
     def export_loadout_file(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         path = pick_file(
@@ -1853,11 +1842,7 @@ class EquipmentEditor:
         try:
             with open(path, "w") as f:
                 json.dump(data, f, indent=2)
-            CTkMessageBox.showinfo(
-                "Exported",
-                f"Loadout exported to:\n{Path(path).name}",
-                parent=self.parent,
-            )
+            notify(self.parent, f"Loadout exported to:\n{Path(path).name}", "success")
         except Exception as e:
             CTkMessageBox.showerror(
                 "Loadout Export Failed",
@@ -1868,9 +1853,7 @@ class EquipmentEditor:
     def import_loadout_file(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         path = pick_file(
@@ -1920,9 +1903,7 @@ class EquipmentEditor:
     def share_loadout_code(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         from er_save_manager.data.equipment_sharing import share_loadout
@@ -1946,9 +1927,7 @@ class EquipmentEditor:
     def import_loadout_code(self):
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         code = self._ask_code("Import via Code", "Paste share code:")

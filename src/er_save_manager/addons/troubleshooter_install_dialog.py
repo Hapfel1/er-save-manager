@@ -10,6 +10,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 
 def show_troubleshooter_dialog(parent, addon_manager):
@@ -73,10 +74,10 @@ def show_troubleshooter_dialog(parent, addon_manager):
                 CTkMessageBox.showwarning("Launch Failed", msg, parent=parent)
 
             if addon_manager.launch(show_error=show_error):
-                CTkMessageBox.showinfo(
-                    "Troubleshooter Installed",
+                notify(
+                    parent,
                     "Troubleshooter installed and launched successfully.",
-                    parent=parent,
+                    "success",
                 )
         else:
             progress_var.set("Installation failed.")

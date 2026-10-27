@@ -10,6 +10,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 _WRAP = 600
 
@@ -162,7 +163,7 @@ class CharacterDetailsDialog:
         open_backup_settings=None,
     ):
         if not save_file:
-            CTkMessageBox.showwarning("No Save", "No save file loaded.", parent=parent)
+            notify(parent, "No save file loaded.", "warning")
             return
 
         from er_save_manager.fixes.wiped_slot import is_wiped_slot
@@ -636,10 +637,8 @@ class CharacterDetailsDialog:
 
             _parent = dialog.master
             dialog.destroy()
-            CTkMessageBox.showinfo(
-                "DLC Flags",
-                "DLC flag cleared. The save file has been updated.",
-                parent=_parent,
+            notify(
+                _parent, "DLC flag cleared. The save file has been updated.", "success"
             )
 
         except Exception as e:
@@ -669,9 +668,7 @@ class CharacterDetailsDialog:
                 return
 
             if result.delta == 0:
-                CTkMessageBox.showinfo(
-                    "Deep Scan", "No byte shift detected.", parent=dialog
-                )
+                notify(dialog, "No byte shift detected.", "info")
                 return
 
             delta = result.delta
@@ -851,9 +848,7 @@ class CharacterDetailsDialog:
                     )
                     teleport_dialog.destroy()
                 else:
-                    CTkMessageBox.showwarning(
-                        "Not Applied", "No fixes were applied.", parent=teleport_dialog
-                    )
+                    notify(teleport_dialog, "No fixes were applied.", "info")
 
             except Exception as e:
                 CTkMessageBox.showerror(
@@ -1102,11 +1097,7 @@ class CharacterDetailsDialog:
                     parent=_parent,
                 )
             else:
-                CTkMessageBox.showinfo(
-                    "Nothing to Fix",
-                    "No fixes were needed or could be applied.",
-                    parent=_parent,
-                )
+                notify(_parent, "No fixes were needed or could be applied.", "info")
 
         except Exception as e:
             CTkMessageBox.showerror(

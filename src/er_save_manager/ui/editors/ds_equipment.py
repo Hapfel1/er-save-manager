@@ -16,7 +16,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
@@ -409,9 +409,7 @@ class EquipmentPanel:
         try:
             choice = self.adapter.clear_choice(slot_key)
         except ValueError as exc:
-            CTkMessageBox.showwarning(
-                "Slot Cannot Be Emptied", str(exc), parent=self.parent
-            )
+            notify(self.parent, str(exc), "warning")
             return
         self._stage(slot_key, choice)
 
@@ -541,10 +539,10 @@ class AttunementSection:
         if adapter is None:
             return
         if len(adapter.spells) >= self.max_spells:
-            CTkMessageBox.showwarning(
-                "Attunement Full",
+            notify(
+                self.panel.parent,
                 f"At most {self.max_spells} spells can be attuned.",
-                parent=self.panel.parent,
+                "warning",
             )
             return
 

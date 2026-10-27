@@ -25,7 +25,9 @@ from er_save_manager.games.DS3.character_ops import sync_dir_equipment
 from er_save_manager.games.DS3.icon_manager import get_infusion_icon
 from er_save_manager.games.DS3.slot import ID_ARMOR, ID_WEAPON, LayoutError, id_kind
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
@@ -798,9 +800,7 @@ class DS3InventoryTab:
         """(save, save path, character) for a batch, or Nones after telling
         the user why nothing can be written."""
         if not offsets:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more items first.", parent=parent
-            )
+            notify(parent, "Select one or more items first.", "warning")
             return None, None, None
         if _game_blocks_write(parent):
             return None, None, None
@@ -1234,17 +1234,13 @@ class DS3InventoryTab:
 
     def _do_spawn(self, items, quantity, upgrade, parent) -> bool:
         if not items:
-            CTkMessageBox.showwarning(
-                "No Item", "Select one or more items to spawn first.", parent=parent
-            )
+            notify(parent, "Select one or more items to spawn first.", "warning")
             return False
         if _game_blocks_write(parent):
             return False
         save, save_path, char = self._get_char()
         if char is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=parent
-            )
+            notify(parent, "Load a character first.", "warning")
             return False
         if self.editing_error:
             return False
@@ -1259,12 +1255,17 @@ class DS3InventoryTab:
         ):
             return False
         cut = [i["Name"] for i in items if not catalog.is_obtainable(i)]
-        if cut and not CTkMessageBox.askyesno(
+        if cut and not confirm_warning(
+            parent,
+            "show_cut_content_warning",
             "Cut Content",
-            f"{', '.join(cut[:5])}{' and more' if len(cut) > 5 else ''} "
-            "cannot be obtained in the game data. Cut items can behave oddly "
-            "and are likely to be flagged online.\n\nSpawn anyway?",
-            parent=parent,
+            "Cut content",
+            [
+                f"{', '.join(cut[:5])}{' and more' if len(cut) > 5 else ''} "
+                "cannot be obtained in the game. Cut items can behave oddly "
+                "and are likely to be flagged online."
+            ],
+            confirm_text="Spawn",
         ):
             return False
 
@@ -1328,9 +1329,7 @@ class DS3InventoryTab:
 
     def _require_character(self) -> bool:
         if self.current_character() is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return False
         return True
 

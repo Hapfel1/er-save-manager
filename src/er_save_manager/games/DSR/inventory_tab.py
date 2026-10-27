@@ -21,7 +21,9 @@ import customtkinter as ctk
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
 
@@ -560,9 +562,7 @@ class DSRInventoryTab:
 
     def _begin(self, slots: list[int], parent):
         if not slots:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more items first.", parent=parent
-            )
+            notify(parent, "Select one or more items first.", "warning")
             return None, None, None
         if _game_blocks_write(parent):
             return None, None, None
@@ -696,10 +696,10 @@ class DSRInventoryTab:
             if s in equipped and self.row_for(s)
         ]
         if not targets:
-            CTkMessageBox.showwarning(
-                "Equipped",
+            notify(
+                parent,
                 "The selected items are equipped. Unequip them in game first.",
-                parent=parent,
+                "warning",
             )
             return False
         what = (
@@ -882,9 +882,7 @@ class DSRInventoryTab:
         (read from the spawner's fields when not given) are capped per item."""
         parent = parent or self.parent
         if not items:
-            CTkMessageBox.showwarning(
-                "No Item", "Select one or more items to spawn first.", parent=parent
-            )
+            notify(parent, "Select one or more items to spawn first.", "warning")
             return False
         save, save_path, char = self._begin([0], parent)
         if char is None:
@@ -904,12 +902,17 @@ class DSRInventoryTab:
         ):
             return False
         cut = [i["name"] for i in items if not i["obtainable"]]
-        if cut and not CTkMessageBox.askyesno(
+        if cut and not confirm_warning(
+            parent,
+            "show_cut_content_warning",
             "Cut Content",
-            f"{', '.join(cut[:5])}{' and more' if len(cut) > 5 else ''} cannot be "
-            "obtained in the game. Cut items can behave oddly and are likely to be "
-            "flagged online.\n\nSpawn anyway?",
-            parent=parent,
+            "Cut content",
+            [
+                f"{', '.join(cut[:5])}{' and more' if len(cut) > 5 else ''} "
+                "cannot be obtained in the game. Cut items can behave oddly "
+                "and are likely to be flagged online."
+            ],
+            confirm_text="Spawn",
         ):
             return False
 
@@ -963,9 +966,7 @@ class DSRInventoryTab:
 
     def _require_character(self) -> bool:
         if self.current_character() is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return False
         return True
 

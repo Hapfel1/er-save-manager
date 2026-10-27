@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, open_folder
 
 STAR_SIZE = 20
@@ -328,7 +329,7 @@ class BackupManagerTab:
     def show_backup_manager(self):
         profile = self._selected_profile()
         if profile is None:
-            CTkMessageBox.showwarning("No Game", "Select a game.", parent=self.parent)
+            notify(self.parent, "Select a game.", "warning")
             return
 
         # For ER: require a loaded save
@@ -658,11 +659,7 @@ class BackupManagerTab:
 
         def delete_backup():
             if not selected:
-                CTkMessageBox.showwarning(
-                    "No Selection",
-                    "Select one or more backups to delete.",
-                    parent=dialog,
-                )
+                notify(dialog, "Select one or more backups to delete.", "warning")
                 return
             locked = [fn for fn in selected if backup_items[fn]["metadata"].favorite]
             targets = [fn for fn in selected if fn not in locked]
@@ -714,9 +711,7 @@ class BackupManagerTab:
 
             info = manager.get_backup_info(fname)
             if not info:
-                CTkMessageBox.showwarning(
-                    "Not Found", "Backup metadata not found.", parent=dialog
-                )
+                notify(dialog, "Backup metadata not found.", "warning")
                 return
 
             dd = ds.create(dialog, "Backup Details")

@@ -141,6 +141,16 @@ def _dismiss(toast, root, toast_info):
         label_widget.bind("<Button-1>", lambda e: None)
 
 
+def notify(parent, message: str, type: str = "info", duration: int = 3000):
+    """Toast over the window that holds parent, or nothing once that window
+    is closed."""
+    try:
+        root = parent.winfo_toplevel()
+    except tk.TclError:
+        return
+    show_toast(root, message, duration, type)
+
+
 def show_toast_bound(root, toast, toast_info):
     """Bind click-to-dismiss after the toast is shown."""
 

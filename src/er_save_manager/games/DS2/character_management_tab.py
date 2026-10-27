@@ -16,6 +16,7 @@ from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
 # Shown after any operation that writes a character into a slot that
@@ -343,9 +344,7 @@ class DS2CharacterManagementTab:
     def _require_save(self) -> DS2Save | None:
         save = self.get_save()
         if save is None:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
         return save
 
     def _backup(self, save_path, description: str, operation: str) -> None:
@@ -400,9 +399,7 @@ class DS2CharacterManagementTab:
 
         from_name = save.characters[from_slot].name
         if not from_name:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot} is empty.", "warning")
             return
 
         to_name = save.characters[to_slot].name
@@ -476,9 +473,7 @@ class DS2CharacterManagementTab:
         slot = self._slot_index_from_display(self.export_slot_var.get())
         character = save.characters[slot]
         if not character.name:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {slot} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {slot} is empty.", "warning")
             return
 
         save_path = self.get_save_path()
@@ -502,10 +497,10 @@ class DS2CharacterManagementTab:
             )
             return
 
-        CTkMessageBox.showinfo(
-            "Character Exported",
+        notify(
+            self.parent,
             f"Character '{character.name}' exported to:\n{output_path}",
-            parent=self.parent,
+            "success",
         )
 
     def _import_character(self) -> None:
@@ -561,11 +556,7 @@ class DS2CharacterManagementTab:
         slot = self._slot_index_from_display(self.delete_slot_var.get())
         character = save.characters[slot]
         if not character.name:
-            CTkMessageBox.showinfo(
-                "Slot Already Empty",
-                f"Slot {slot} is already empty.",
-                parent=self.parent,
-            )
+            notify(self.parent, f"Slot {slot} is already empty.", "info")
             return
 
         name = character.name
@@ -650,9 +641,7 @@ class DS2CharacterManagementTab:
         from_slot = self._slot_index_from_display(self.transfer_from_var.get())
         from_character = save.characters[from_slot]
         if not from_character.name:
-            CTkMessageBox.showerror(
-                "Empty Slot", f"Slot {from_slot} is empty.", parent=self.parent
-            )
+            notify(self.parent, f"Slot {from_slot} is empty.", "warning")
             return
 
         target_path = self._select_target_save_file()
@@ -661,11 +650,7 @@ class DS2CharacterManagementTab:
 
         current_path = self.get_save_path()
         if current_path and Path(target_path).resolve() == Path(current_path).resolve():
-            CTkMessageBox.showerror(
-                "Same Save File",
-                "Select a different target save file.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Select a different target save file.", "warning")
             return
 
         try:

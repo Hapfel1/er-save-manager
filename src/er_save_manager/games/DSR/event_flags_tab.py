@@ -20,6 +20,7 @@ import customtkinter as ctk
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
 
@@ -192,9 +193,7 @@ class DSREventFlagsTab:
 
         sel = self._npc_tree.selection()
         if not sel or sel[0] not in self._npc_iid_map:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select a flag row to toggle.", parent=self.parent
-            )
+            notify(self.parent, "Select a flag row to toggle.", "warning")
             return
         save, save_path, char = self._get_char()
         if char is None:

@@ -9,6 +9,7 @@ from er_save_manager.backup.manager import BackupManager
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.popups import reopenable
+from er_save_manager.ui.toast import notify
 
 
 class AdvancedToolsTab:
@@ -162,9 +163,7 @@ class AdvancedToolsTab:
         """Validate save file integrity."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         try:
@@ -237,10 +236,10 @@ class AdvancedToolsTab:
                     issues.append(f"⚠ Slot {i + 1}: Character level is 0")
 
             if not issues:
-                CTkMessageBox.showinfo(
-                    "Validation Complete",
+                notify(
+                    self.parent,
                     "Save file validation passed.\n\nNo critical issues detected.",
-                    parent=self.parent,
+                    "success",
                 )
             else:
                 message = "Validation found potential issues:\n\n" + "\n".join(issues)
@@ -259,17 +258,11 @@ class AdvancedToolsTab:
         """Recalculate all checksums in save file."""
         save_file = self.get_save_file()
         if not save_file:
-            CTkMessageBox.showwarning(
-                "No Save", "Load a save file first.", parent=self.parent
-            )
+            notify(self.parent, "Load a save file first.", "warning")
             return
 
         if getattr(save_file, "is_ps", False):
-            CTkMessageBox.showinfo(
-                "Not Applicable",
-                "PlayStation saves do not use slot checksums.",
-                parent=self.parent,
-            )
+            notify(self.parent, "PlayStation saves do not use slot checksums.", "info")
             return
 
         try:

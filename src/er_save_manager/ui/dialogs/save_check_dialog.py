@@ -10,6 +10,7 @@ import customtkinter as ctk
 from er_save_manager.games import save_check
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 
 _WRAP = 540
 
@@ -20,7 +21,7 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     reload is called after a successful fix.
     """
     if not save_path or not Path(save_path).is_file():
-        CTkMessageBox.showwarning("No Save", "No save file loaded.", parent=parent)
+        notify(parent, "No save file loaded.", "warning")
         return
 
     all_issues = save_check.check(game_key, save_path)

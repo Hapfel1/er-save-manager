@@ -13,6 +13,7 @@ from er_save_manager.data.shop_stock import StockRow, bought, get_stock
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     center_window,
     force_render_dialog,
@@ -241,11 +242,7 @@ class MerchantRestockDialog:
                 stock_by_iid[iid] for iid in iids if bought_by_flag[int(iid)] > 0
             ]
             if not targets:
-                CTkMessageBox.showinfo(
-                    "Nothing to Restock",
-                    f"None of the {scope} items has been bought.",
-                    parent=dialog,
-                )
+                notify(dialog, f"None of the {scope} items has been bought.", "info")
                 return
             if not CTkMessageBox.askyesno(
                 "Restock Merchants",

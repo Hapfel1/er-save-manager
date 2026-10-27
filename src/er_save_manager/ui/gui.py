@@ -55,6 +55,7 @@ from er_save_manager.ui.tabs import (
     WorldStateTab,
 )
 from er_save_manager.ui.theme import ThemeManager
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     center_window,
     fit_size_to_work_area,
@@ -2599,11 +2600,7 @@ class SaveManagerGUI:
                     parent=self.root,
                 )
             else:
-                CTkMessageBox.showwarning(
-                    "Not Found",
-                    f"No {game_name} save files found.",
-                    parent=self.root,
-                )
+                notify(self.root, f"No {game_name} save files found.", "warning")
             return
 
         def _on_selected(path: str):
@@ -3070,9 +3067,7 @@ class SaveManagerGUI:
         save_path = self.file_path_var.get()
 
         if not save_path or not os.path.exists(save_path):
-            CTkMessageBox.showerror(
-                "No Save File", "Select a valid save file first.", parent=self.root
-            )
+            notify(self.root, "Select a valid save file first.", "warning")
             return
         if not self._guard_pending("load the save file"):
             return

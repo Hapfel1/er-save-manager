@@ -16,6 +16,8 @@ from er_save_manager.data.grace_data import (
     location_gate,
 )
 from er_save_manager.data.locations import MapLocation
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
+from er_save_manager.ui.dialogs.teleport_warnings import BOSS_GATE_SETTING
 from er_save_manager.ui.messagebox import CTkMessageBox
 
 FlagState = Callable[[int], bool | None]
@@ -71,13 +73,14 @@ def confirm_teleport(
         )
     else:
         where = f"{loc.name} is at a grace that only appears after {gate.condition}."
-    return CTkMessageBox.askyesno(
-        "Boss Not Defeated"
-        if gate.boss or loc.tile_type == "pin"
-        else "Grace Not Spawned",
-        f"{where}{arrival}\n\nTeleport anyway?",
-        parent=parent,
-        icon_type="warning",
+    boss = gate.boss or loc.tile_type == "pin"
+    return confirm_warning(
+        parent,
+        BOSS_GATE_SETTING,
+        "Boss Not Defeated" if boss else "Grace Not Spawned",
+        "Boss alive" if boss else "Grace not spawned",
+        [f"{where}{arrival}"],
+        confirm_text="Teleport",
     )
 
 

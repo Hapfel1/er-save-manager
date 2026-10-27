@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import patch_combo_scroll, pick_file
 
 
@@ -160,11 +161,7 @@ class AppearanceShareCard:
             )
             return
         if not chars:
-            CTkMessageBox.showinfo(
-                "No Characters",
-                f"{Path(path).name} holds no characters.",
-                parent=self._body,
-            )
+            notify(self._body, f"{Path(path).name} holds no characters.", "info")
             return
         idx = pick_character(
             self._body, "Copy Appearance", [(i, name) for i, name, _c in chars]

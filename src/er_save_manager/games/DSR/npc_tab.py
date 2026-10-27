@@ -19,6 +19,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -202,9 +203,7 @@ class DSRNPCTab:
     def _apply(self, tree, setter, kill: bool) -> None:
         rows = [int(i) for i in tree.selection()]
         if not rows:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more entries first.", parent=self.parent
-            )
+            notify(self.parent, "Select one or more entries first.", "warning")
             return
         setter(rows, kill)
 
@@ -232,9 +231,7 @@ class DSRNPCTab:
         save_path = self._get_save_path()
         char = self._char()
         if char is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
         if _game_blocks_write(self.parent):
             return
@@ -264,9 +261,7 @@ class DSRNPCTab:
         save_path = self._get_save_path()
         char = self._char()
         if char is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
         try:
             change(char)

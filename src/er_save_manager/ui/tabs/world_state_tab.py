@@ -25,12 +25,18 @@ from er_save_manager.editors.map_markers import (
 from er_save_manager.editors.map_unlock import unlock
 from er_save_manager.editors.world_state import WorldStateEditor
 from er_save_manager.parser.er_types import FloatVector3, MapId
-from er_save_manager.parser.event_flags import EventFlags
+from er_save_manager.parser.event_flags import EventFlags, FixFlags
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import closed_gate, confirm_teleport, filter_unlock
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
-from er_save_manager.ui.dialogs.pin_teleport_warning import confirm_pin_teleport
+from er_save_manager.ui.dialogs.teleport_warnings import (
+    confirm_ashen_teleport,
+    confirm_custom_teleport,
+    confirm_dlc_teleport,
+    confirm_pin_teleport,
+)
+from er_save_manager.ui.dialogs.vanilla_save_warning import is_vanilla_save
 from er_save_manager.ui.map_view import (
     count_phrase,
     current_window,
@@ -39,6 +45,7 @@ from er_save_manager.ui.map_view import (
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import StageError
 from er_save_manager.ui.popups import reopenable
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 if TYPE_CHECKING:
@@ -353,11 +360,7 @@ class WorldStateTab:
         if not save:
             if quiet:
                 return
-            CTkMessageBox.showwarning(
-                "No Save",
-                "Load a save file first.",
-                parent=self._dialog_parent(),
-            )
+            notify(self._dialog_parent(), "Load a save file first.", "warning")
             return
 
         try:
@@ -366,20 +369,14 @@ class WorldStateTab:
             slot_idx = 0
 
         if not (0 <= slot_idx < 10):
-            CTkMessageBox.showerror(
-                "Invalid Slot",
-                "Select a slot between 1 and 10.",
-                parent=self._dialog_parent(),
-            )
+            notify(self._dialog_parent(), "Select a slot between 1 and 10.", "warning")
             return
 
         slot = save.character_slots[slot_idx]
         if slot.is_empty() or slot_idx not in save.get_active_slots():
             if not quiet:
-                CTkMessageBox.showwarning(
-                    "Empty Slot",
-                    f"Slot {slot_idx + 1} is empty.",
-                    parent=self._dialog_parent(),
+                notify(
+                    self._dialog_parent(), f"Slot {slot_idx + 1} is empty.", "warning"
                 )
             self.map_name_var.set("Empty slot")
             self.coords_var.set("N/A")
@@ -427,9 +424,7 @@ class WorldStateTab:
     @reopenable
     def _open_message_manager(self):
         if not self.editor:
-            CTkMessageBox.showerror(
-                "No Character Loaded", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
 
         def reload():
@@ -448,11 +443,7 @@ class WorldStateTab:
 
     def _sync_bloodstain_to_player(self):
         if not self.editor:
-            CTkMessageBox.showerror(
-                "No Character Loaded",
-                "Load a character first.",
-                parent=self._dialog_parent(),
-            )
+            notify(self._dialog_parent(), "Load a character first.", "warning")
             return
 
         if not CTkMessageBox.askyesno(
@@ -630,9 +621,7 @@ class WorldStateTab:
 
     def _open_map_window(self):
         if not self._maps_dir:
-            CTkMessageBox.showwarning(
-                "Map Unavailable", "Map images not found.", parent=self.parent
-            )
+            notify(self.parent, "Map images not found.", "warning")
             return
         open_map_window(
             self.parent,
@@ -809,11 +798,7 @@ class WorldStateTab:
         }
         names = list(targets)
         if not names:
-            CTkMessageBox.showinfo(
-                "Copy Markers",
-                "There is no other character in this save.",
-                parent=parent,
-            )
+            notify(parent, "There is no other character in this save.", "info")
             return
 
         dialog = ds.create(parent, "Copy Markers To")
@@ -886,9 +871,7 @@ class WorldStateTab:
     @reopenable
     def _open_item_history(self):
         if not self.editor:
-            CTkMessageBox.showwarning(
-                "No Character", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
         from er_save_manager.ui.dialogs.item_history import show_item_history
 
@@ -973,18 +956,12 @@ class WorldStateTab:
 
     def _teleport_to_known(self):
         if not self.editor:
-            CTkMessageBox.showerror(
-                "No Character Loaded", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
 
         sel = self.location_listbox.curselection()
         if not sel:
-            CTkMessageBox.showerror(
-                "No Location Selected",
-                "Select a location from the list.",
-                parent=self.parent,
-            )
+            notify(self.parent, "Select a location from the list.", "warning")
             return
 
         self._teleport_to_known_loc(self.filtered_locations[sel[0]])
@@ -994,35 +971,40 @@ class WorldStateTab:
         window = current_window()
         return window._win if window else self.parent
 
+    def _has_dlc(self) -> bool:
+        """Whether the character's Shadow of the Erdtree entry flag is set."""
+        slot = self.get_save_file().character_slots[self.slot_var.get() - 1]
+        dlc = getattr(slot, "dlc", None)
+        return dlc is not None and dlc.has_dlc_flag()
+
+    def _ashen_ban_risk(self, ashen_map: bool) -> bool:
+        """A teleport into Leyndell, Ashen Capital on a vanilla save (.sl2 or
+        PlayStation) while Maliketh is alive, so the rest of the world is not
+        ashen."""
+        save_path = self.get_save_path()
+        return (
+            ashen_map
+            and bool(save_path)
+            and is_vanilla_save(str(save_path))
+            and self._grace_state(FixFlags.DEFEATED_MALIKETH) is False
+        )
+
     def _teleport_to_known_loc(self, loc: MapLocation):
         if not self.editor:
-            CTkMessageBox.showerror(
-                "No Character Loaded",
-                "Load a character first.",
-                parent=self._dialog_parent(),
-            )
+            notify(self._dialog_parent(), "Load a character first.", "warning")
             return
 
-        if loc.is_dlc:
-            save = self.get_save_file()
-            slot_idx = self.slot_var.get() - 1
-            slot = save.character_slots[slot_idx]
-            has_dlc = False
-            try:
-                if hasattr(slot, "dlc_data"):
-                    from er_save_manager.parser.world import DLC
+        if (
+            loc.is_dlc
+            and not self._has_dlc()
+            and not confirm_dlc_teleport(self._dialog_parent(), loc.name)
+        ):
+            return
 
-                    has_dlc = DLC.from_bytes(slot.dlc_data).has_dlc_access()
-            except Exception:
-                pass
-
-            if not has_dlc:
-                if not CTkMessageBox.askyesno(
-                    "DLC Warning",
-                    f"{loc.name}\n\nThis is a DLC location. Teleporting without owning the DLC will cause an infinite loading screen.\n\nContinue?",
-                    parent=self._dialog_parent(),
-                ):
-                    return
+        if self._ashen_ban_risk(
+            loc.map_id_str.startswith("m11_05")
+        ) and not confirm_ashen_teleport(self._dialog_parent()):
+            return
 
         if loc.tile_type == "pin" and not confirm_pin_teleport(self._dialog_parent()):
             return
@@ -1125,9 +1107,7 @@ class WorldStateTab:
 
     def _teleport_to_custom(self):
         if not self.editor:
-            CTkMessageBox.showerror(
-                "No Character Loaded", "Load a character first.", parent=self.parent
-            )
+            notify(self.parent, "Load a character first.", "warning")
             return
 
         try:
@@ -1179,15 +1159,20 @@ class WorldStateTab:
             )
             return
 
-        dlc_warning = ""
-        if map_id.is_dlc():
-            dlc_warning = "\n\nThis is a DLC map. Without owning the DLC you will get an infinite loading screen."
+        if (
+            map_id.is_dlc()
+            and not self._has_dlc()
+            and not confirm_dlc_teleport(self.parent, f"Map {raw}")
+        ):
+            return
 
-        if not CTkMessageBox.askyesno(
-            "Confirm Custom Teleport",
-            f"Custom teleportation can corrupt your save if the Map ID or coordinates are invalid.{dlc_warning}\n\n"
-            f"Coords: X={coords.x}, Y={coords.y}, Z={coords.z}\n\nContinue?",
-            parent=self.parent,
+        if self._ashen_ban_risk(
+            map_id.data[3] == 11 and map_id.data[2] == 5
+        ) and not confirm_ashen_teleport(self.parent):
+            return
+
+        if not confirm_custom_teleport(
+            self.parent, f"X={coords.x}, Y={coords.y}, Z={coords.z}"
         ):
             return
 

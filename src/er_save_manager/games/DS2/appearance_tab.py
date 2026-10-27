@@ -25,6 +25,7 @@ from er_save_manager.ui.appearance_share import AppearanceShareCard, ShareSource
 from er_save_manager.ui.color_sliders import ColorSliders
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _SAVE_FILETYPES = [("DS2 save files", "*.sl2 *.co2"), ("All files", "*")]
@@ -287,7 +288,7 @@ class DS2AppearanceTab:
         try:
             data = self._current().to_json()
         except ValueError as exc:
-            CTkMessageBox.showwarning("Nothing to Export", str(exc), parent=self.parent)
+            notify(self.parent, str(exc), "info")
             return
         save = self._get_save()
         name = save.slot_display_name(self._slot) if save is not None else ""

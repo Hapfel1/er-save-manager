@@ -25,6 +25,7 @@ from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import game_blocks_write
 
 
@@ -354,9 +355,7 @@ class DS3WorldStateTab:
 
     def _set_bonfires(self, rows: list[int], lit: bool) -> None:
         if not rows:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more bonfires first.", parent=self.parent
-            )
+            notify(self.parent, "Select one or more bonfires first.", "warning")
             return
         if _game_blocks_write(self.parent):
             return
@@ -387,9 +386,7 @@ class DS3WorldStateTab:
 
     def _set_gestures(self, rows: list[int], unlocked: bool) -> None:
         if not rows:
-            CTkMessageBox.showwarning(
-                "No Selection", "Select one or more gestures first.", parent=self.parent
-            )
+            notify(self.parent, "Select one or more gestures first.", "warning")
             return
         if _game_blocks_write(self.parent):
             return
@@ -429,14 +426,10 @@ class DS3WorldStateTab:
         save = self._get_save()
         save_path = self._get_save_path()
         if save is None or save_path is None:
-            CTkMessageBox.showwarning(
-                "No Save", "No DS3 save loaded.", parent=self.parent
-            )
+            notify(self.parent, "No DS3 save loaded.", "warning")
             return None, None, None
         char = save.characters[self._current_slot] if self._current_slot >= 0 else None
         if char is None:
-            CTkMessageBox.showwarning(
-                "Empty Slot", "No character in this slot.", parent=self.parent
-            )
+            notify(self.parent, "No character in this slot.", "warning")
             return None, None, None
         return save, save_path, char

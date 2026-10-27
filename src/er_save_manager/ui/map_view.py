@@ -43,6 +43,7 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import gate_status
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     center_window,
@@ -1570,10 +1571,8 @@ class MapWindow:
 
     def _move_bloodstain(self):
         if self._on_move_bloodstain is None:
-            CTkMessageBox.showinfo(
-                "Bloodstain",
-                "Load a character in the World State tab first.",
-                parent=self._win,
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
             )
             return
         self._on_move_bloodstain()
@@ -1639,10 +1638,8 @@ class MapWindow:
         of the given ones when no piece or every piece is chosen.
         """
         if self._grace_state is None or self._on_unlock is None:
-            CTkMessageBox.showinfo(
-                "No Character Loaded",
-                "Load a character in the World State tab first.",
-                parent=self._win,
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
             )
             return
         fragments = [p for p in pieces if p.fragment]
@@ -1910,10 +1907,10 @@ class MapWindow:
         marker = self._editor.add(mx, my, self._map_no, self._icon, kind)
         if marker is None:
             what = "10 beacon" if kind == BEACON else "100 marker"
-            CTkMessageBox.showwarning(
-                "Map Markers",
+            notify(
+                self._win,
                 f"All {what} records are in use. Delete one first.",
-                parent=self._win,
+                "warning",
             )
             return
         self._selected_marker = marker
