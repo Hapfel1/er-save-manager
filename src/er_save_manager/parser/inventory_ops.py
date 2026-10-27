@@ -1075,7 +1075,8 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     old_gaitem_size = slot.gaitem_map[gaitem_idx].get_size()
     gaitem_size_delta = 8 - old_gaitem_size
 
-    empty_gaitem = Gaitem()
+    # The game writes empty entries as handle 0, item id 0xFFFFFFFF.
+    empty_gaitem = Gaitem(item_id=0xFFFFFFFF)
     buf = BytesIO()
     empty_gaitem.write(buf)
     empty_bytes = buf.getvalue()
@@ -1131,6 +1132,23 @@ def _update_inv_counters(
 # ---- public API -------------------------------------------------------------
 
 
+def _require_gaitem_room_for_aow(slot) -> None:
+    """Raise ValueError unless the gaitem map has room for an Ash of War entry
+    and the weapon entry that links to it."""
+    if _find_empty_gaitem_slot(slot, _PREFIX_GEM) == -1:
+        raise ValueError("gaitem map has no free Ash of War entry")
+    if sum(1 for g in slot.gaitem_map if g.gaitem_handle == 0) < 2:
+        raise ValueError("gaitem map has no room for the weapon and its Ash of War")
+
+
+def _remove_gaitem_by_handle(save: Save, slot_idx: int, handle: int) -> None:
+    slot = save.character_slots[slot_idx]
+    for i, g in enumerate(slot.gaitem_map):
+        if g.gaitem_handle == handle:
+            _remove_gaitem(save, slot_idx, slot, i)
+            return
+
+
 def add_item(
     save: Save,
     slot_idx: int,
@@ -1163,7 +1181,8 @@ def add_item(
 
     Raises:
         ValueError: Unknown category, invalid upgrade, item already present,
-                    gaitem map full, or inventory full.
+                    gaitem map full, inventory full, or the Ash of War cannot
+                    be added (nothing is written then).
     """
     from er_save_manager.parser.equipment import InventoryItem
 
@@ -1193,11 +1212,11 @@ def add_item(
 
     # AoW: insert gem into gaitem map only (no inventory entry needed).
     gem_handle = 0
-    if cat == _CAT_WEAPON and gem_full_id and _category(gem_full_id) == _CAT_GEM:
-        try:
-            gem_handle, _ = insert_gaitem(save, slot_idx, gem_full_id)
-        except Exception:
-            gem_handle = 0  # continue without AoW on failure
+    if cat == _CAT_WEAPON and gem_full_id:
+        if _category(gem_full_id) != _CAT_GEM:
+            raise ValueError(f"0x{gem_full_id:08X} is not an Ash of War id")
+        _require_gaitem_room_for_aow(save.character_slots[slot_idx])
+        gem_handle, _ = insert_gaitem(save, slot_idx, gem_full_id)
 
     slot = save.character_slots[slot_idx]
     if slot.is_empty():
@@ -1209,7 +1228,12 @@ def add_item(
     gaitem_slot = None
 
     if _needs_gaitem(full_item_id):
-        handle, _ = insert_gaitem(save, slot_idx, full_item_id, upgrade, gem_handle)
+        try:
+            handle, _ = insert_gaitem(save, slot_idx, full_item_id, upgrade, gem_handle)
+        except Exception:
+            if gem_handle:
+                _remove_gaitem_by_handle(save, slot_idx, gem_handle)
+            raise
         # Re-read slot after insert_gaitem updated offsets
         slot = save.character_slots[slot_idx]
         inventory = _select_inventory(slot, location)
