@@ -481,7 +481,7 @@ class PendingBar(ctk.CTkFrame):
         if text:
             n = self._count(dirty, rows)
             self._label.configure(
-                text=f"{n} unapplied change{'s' if n != 1 else ''}:  {text}"
+                text=f"{n} unapplied change{'s' if n != 1 else ''}: {text}"
             )
         if bool(text) != self._shown:
             self._shown = bool(text)
