@@ -264,6 +264,8 @@ class PendingBar(ctk.CTkFrame):
     changed fields, as shown in the bar. write() writes the in-memory
     save to it.
     blocks_write() returns True (after telling the user) when the game runs.
+    file_writable() returns False (after asking the user) when the save
+    changed on disk since it was loaded or cannot be written.
     after_apply() reloads the character into every tab.
     reload_from_disk() restores the in-memory save after a failed apply.
     """
@@ -276,6 +278,7 @@ class PendingBar(ctk.CTkFrame):
         backup: Callable[[int, str], None],
         write: Callable[[], None],
         blocks_write: Callable[[], bool],
+        file_writable: Callable[[], bool],
         after_apply: Callable[[], None],
         reload_from_disk: Callable[[], None],
         show_toast: Callable[..., None],
@@ -287,6 +290,7 @@ class PendingBar(ctk.CTkFrame):
         self._backup = backup
         self._write = write
         self._blocks_write = blocks_write
+        self._file_writable = file_writable
         self._after_apply = after_apply
         self._reload_from_disk = reload_from_disk
         self._show_toast = show_toast
@@ -439,7 +443,7 @@ class PendingBar(ctk.CTkFrame):
             return False
         from er_save_manager.ui.messagebox import CTkMessageBox
 
-        if self._blocks_write():
+        if self._blocks_write() or not self._file_writable():
             return False
         self._busy = True
         try:
@@ -508,23 +512,34 @@ class PendingBar(ctk.CTkFrame):
         ):
             self.discard_all()
 
-    def guard(self, action: str) -> bool:
+    def guard(self, action: str, *, apply: bool = True, discard: str = "Discard") -> bool:
         """Ask before an action that would drop unapplied edits.
 
         Returns True when the action may go ahead (applied, discarded or
         nothing pending), False when the user cancelled or applying failed.
+        apply=False offers only discard (button text discard) and Cancel, for
+        actions where applying would overwrite newer data on disk.
         """
         if not self.dirty():
             return True
         from er_save_manager.ui.messagebox import CTkMessageBox
 
+        head = (
+            f"Slot {self._get_slot() + 1} has unapplied changes:\n\n"
+            f"{self._change_lines()}\n\n"
+        )
+        if apply:
+            question = f"Apply them before you {action}?"
+            buttons = [("Apply", "apply"), ("Discard", "discard"), ("Cancel", None)]
+        else:
+            question = f"Discard them and {action}?"
+            buttons = [(discard, "discard"), ("Cancel", None)]
         choice = CTkMessageBox._create_dialog(
             self.winfo_toplevel(),
             "Unapplied Changes",
-            f"Slot {self._get_slot() + 1} has unapplied changes:\n\n"
-            f"{self._change_lines()}\n\nApply them before you {action}?",
+            head + question,
             icon_type="question",
-            buttons=[("Apply", "apply"), ("Discard", "discard"), ("Cancel", None)],
+            buttons=buttons,
         )
         if choice == "apply":
             return self.apply_all()

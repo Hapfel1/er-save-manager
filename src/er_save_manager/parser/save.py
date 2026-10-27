@@ -357,7 +357,7 @@ class Save:
         self._refresh_player_data_hashes()
         self._sync_profile_summaries(edited)
 
-        atomic_write(filepath, self._raw_data)
+        atomic_write(filepath, self._raw_data, loaded=True)
 
     def get_active_slots(self) -> list[int]:
         """

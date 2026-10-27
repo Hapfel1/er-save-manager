@@ -1217,7 +1217,7 @@ class NightreignSave:
                 )
             out[entry.data_offset : entry.data_offset + entry.size] = enc
         del out[self.declared_end :]
-        atomic_write(path, out)
+        atomic_write(path, out, loaded=True)
 
     def get_active_slots(self) -> list[NightreignSlot]:
         """Return only slots that contain a character."""

@@ -159,7 +159,7 @@ class DS3Parser:
                     f"original {entry.size}. Plaintext must not change in length."
                 )
             out[entry.offset : entry.offset + entry.size] = blob
-        atomic_write(path, out)
+        atomic_write(path, out, loaded=True)
 
     def get_slot_plaintext_size(self, index: int) -> int:
         return len(self._entries[index].plaintext)

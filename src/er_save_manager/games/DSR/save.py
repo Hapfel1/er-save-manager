@@ -1561,7 +1561,7 @@ class DSRSave:
         raw[sys_off : sys_off + 16] = sys_new_iv
         raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE] = sys_ciphertext
 
-        atomic_write(path, raw)
+        atomic_write(path, raw, loaded=True)
 
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """

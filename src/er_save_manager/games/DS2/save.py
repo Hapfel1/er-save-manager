@@ -1308,7 +1308,7 @@ class DS2Container:
                 )
             out[entry.offset : entry.offset + entry.size] = blob
 
-        atomic_write(path, out)
+        atomic_write(path, out, loaded=True)
 
 
 @dataclass
