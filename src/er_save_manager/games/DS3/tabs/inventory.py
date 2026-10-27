@@ -27,6 +27,7 @@ from er_save_manager.games.DS3.slot import ID_ARMOR, ID_WEAPON, LayoutError, id_
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
@@ -805,7 +806,7 @@ class DS3InventoryTab:
         if _game_blocks_write(parent):
             return None, None, None
         save, save_path, char = self._get_char()
-        if char is None or self.editing_error:
+        if char is None or self.editing_error or not save_writable():
             return None, None, None
         return save, save_path, char
 
@@ -1196,7 +1197,7 @@ class DS3InventoryTab:
             sync_dir_equipment(save, self._current_slot)
             _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return False
         self._reload_inventory()
         self._show_toast(message)
@@ -1242,7 +1243,7 @@ class DS3InventoryTab:
         if char is None:
             notify(parent, "Load a character first.", "warning")
             return False
-        if self.editing_error:
+        if self.editing_error or not save_writable():
             return False
         if quantity is None:
             quantity = self._read_int(self._spawn_qty_var, "Quantity", parent)
@@ -1267,6 +1268,9 @@ class DS3InventoryTab:
             ],
             confirm_text="Spawn",
         ):
+            return False
+
+        if not self._confirm_foreign_items(char, items, parent):
             return False
 
         to_storage = self.location_var.get() == LOCATIONS[1]
@@ -1323,6 +1327,37 @@ class DS3InventoryTab:
             "ds3_spawn_items",
             _summary(done, len(spawned), skipped, capped),
             len(spawned),
+        )
+
+    def _confirm_foreign_items(self, char, items: list[dict], parent) -> bool:
+        """Ask before spawning items missing from the game data the
+        character's class and level fit, when another game data is
+        selected. True when there are none or the user agrees."""
+        source = self.source
+        try:
+            stats = {k: char.get_stat(k) for k in catalog.STAT_KEYS}
+            own = catalog.matching_sources(char.starting_class, stats, char.level)
+        except LayoutError:
+            return True
+        if not own or source in own:
+            return True
+        foreign = [
+            i["Name"]
+            for i in items
+            if not any(catalog.lookup(int(i["Id"], 16), s) for s in own)
+        ]
+        if not foreign:
+            return True
+        own_label = " or ".join(catalog.SOURCES[s] for s in own)
+        names = f"{', '.join(foreign[:5])}{' and more' if len(foreign) > 5 else ''}"
+        return CTkMessageBox.askyesno(
+            "Item Not in Game Data",
+            f"{names} {'is' if len(foreign) == 1 else 'are'} not in the "
+            f"{own_label} game data. The character's class and level fit "
+            f"{own_label}, not {catalog.SOURCES[source]}, so the game may not "
+            f"know {'this item' if len(foreign) == 1 else 'these items'}.\n\n"
+            "Spawn anyway?",
+            parent=parent,
         )
 
     # --- Popups ------------------------------------------------------------ #

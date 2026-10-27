@@ -280,3 +280,21 @@ def starting_classes(source: str = "vanilla") -> list[StartingClass]:
                 for row in rows
             ]
     return _classes[source]
+
+
+def matching_sources(class_index: int, stats: dict[str, int], level: int) -> list[str]:
+    """Sources whose class table fits a character: the class index exists,
+    every attribute is at least the class's starting value and the level is
+    the class level plus the points above it. A character never edited
+    outside the game fits the source it was made with."""
+    found = []
+    for source in SOURCES:
+        classes = starting_classes(source)
+        if class_index >= len(classes):
+            continue
+        cls = classes[class_index]
+        if all(stats[k] >= v for k, v in cls.stats.items()) and (
+            cls.level_for(stats) == level
+        ):
+            found.append(source)
+    return found

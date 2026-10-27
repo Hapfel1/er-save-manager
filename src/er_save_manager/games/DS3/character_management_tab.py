@@ -16,7 +16,11 @@ from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import guard_before_write
+from er_save_manager.ui.pending import (
+    guard_before_write,
+    save_writable,
+    write_failed,
+)
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -409,6 +413,9 @@ class DS3CharacterManagementTab:
                 return
 
         save_path = self._get_save_path()
+        if not save_writable():
+            return
+        changed = False
         try:
             if save_path:
                 self._backup(
@@ -417,6 +424,7 @@ class DS3CharacterManagementTab:
                     "copy_character",
                 )
 
+            changed = True
             character_ops.copy_slot(save, from_slot, to_slot)
 
             if save_path:
@@ -430,6 +438,9 @@ class DS3CharacterManagementTab:
                 duration=4500,
             )
         except Exception as e:
+            if changed:
+                write_failed(e, self.parent)
+                return
             CTkMessageBox.showerror(
                 "Copy Failed", f"Copy failed:\n{str(e)}", parent=self.parent
             )
@@ -466,6 +477,9 @@ class DS3CharacterManagementTab:
             return
 
         save_path = self._get_save_path()
+        if not save_writable():
+            return
+        changed = False
         try:
             if save_path:
                 self._backup(
@@ -474,6 +488,7 @@ class DS3CharacterManagementTab:
                     "swap_characters",
                 )
 
+            changed = True
             character_ops.swap_slots(save, slot_a, slot_b)
 
             if save_path:
@@ -484,6 +499,9 @@ class DS3CharacterManagementTab:
                 f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}.", duration=2500
             )
         except Exception as e:
+            if changed:
+                write_failed(e, self.parent)
+                return
             CTkMessageBox.showerror(
                 "Swap Failed", f"Swap failed:\n{str(e)}", parent=self.parent
             )
@@ -515,6 +533,9 @@ class DS3CharacterManagementTab:
             return
 
         save_path = self._get_save_path()
+        if not save_writable():
+            return
+        changed = False
         try:
             if save_path:
                 self._backup(
@@ -523,6 +544,7 @@ class DS3CharacterManagementTab:
                     "delete_character",
                 )
 
+            changed = True
             character_ops.delete_slot(save, slot)
 
             if save_path:
@@ -531,6 +553,9 @@ class DS3CharacterManagementTab:
                 self._reload()
             self._show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
         except Exception as e:
+            if changed:
+                write_failed(e, self.parent)
+                return
             CTkMessageBox.showerror(
                 "Delete Failed", f"Delete failed:\n{str(e)}", parent=self.parent
             )
@@ -605,6 +630,9 @@ class DS3CharacterManagementTab:
                 return
 
         save_path = self._get_save_path()
+        if not save_writable():
+            return
+        changed = False
         try:
             if save_path:
                 self._backup(
@@ -613,6 +641,7 @@ class DS3CharacterManagementTab:
                     "import_character",
                 )
 
+            changed = True
             character_ops.import_character(save, to_slot, Path(import_path))
 
             if save_path:
@@ -623,6 +652,9 @@ class DS3CharacterManagementTab:
                 f"Character imported to Slot {to_slot + 1}.", duration=2500
             )
         except Exception as e:
+            if changed:
+                write_failed(e, self.parent)
+                return
             CTkMessageBox.showerror(
                 "Import Failed", f"Import failed:\n{str(e)}", parent=self.parent
             )
@@ -675,6 +707,8 @@ class DS3CharacterManagementTab:
         ):
             return
 
+        if not save_writable():
+            return
         try:
             if current_path:
                 self._backup(
