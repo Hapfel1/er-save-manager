@@ -66,9 +66,20 @@ def find_compiled_extension_packages() -> set[str]:
 # (data/, fixes/, games/*/data/) is not listed: er_save_manager is kept out
 # of library.zip (file_dependent_packages below), so cx_Freeze copies its
 # data files into lib/er_save_manager/, where Path(__file__) lookups find them.
+# Linux-only files in resources/ are left out: fonts.py loads
+# resources/fonts/windows on Windows, and gui.py reads icon.png only when
+# icon.ico is missing.
+linux_only_resources = {
+    Path("resources/icon/icon.png"),
+    *Path("resources/fonts").glob("*.ttf"),
+}
 include_files = [
     ("src/resources/", "resources/"),
-    ("resources/", "resources/"),
+    *(
+        (str(path), str(path))
+        for path in sorted(Path("resources").rglob("*"))
+        if path.is_file() and path not in linux_only_resources
+    ),
     ("resources/app.manifest", "app.manifest"),
 ]
 
