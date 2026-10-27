@@ -53,6 +53,8 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100119,110190,1,weapon:5000000,3000,Patches,m16_00_00_00,71602,0,Estoc
 100122,110220,1,weapon:31240000,1000,Patches,m16_00_00_00,71602,0,Horse Crest Wooden Shield
 100123,110230,1,gem:85000,1000,Patches,m16_00_00_00,71602,0,Ash of War: White Shadow's Lure
+100126,110260,1,goods:6750,2500,"D, Hunter of the Dead",m11_10_00_00,71190,0,Sacred Ground
+100127,110270,1,goods:6770,3000,"D, Hunter of the Dead",m11_10_00_00,71190,0,Order's Blade
 100150,400300,1,goods:8136,1000,Blackguard,m60_36_43_00,76216,0,Rya's Necklace
 100156,110560,1,weapon:5080000,2000,Blackguard,m60_36_43_00,76216,0,Foil of Caddock
 100175,110750,1,goods:4610,4000,Sage Gowry,m60_50_38_00,76418,0,Night Shard
@@ -197,6 +199,21 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100636,160360,5,goods:10101,200,Nomadic Merchant,m60_38_41_00,76201,0,Smithing Stone
 100637,160370,3,goods:10105,400,Nomadic Merchant,m60_38_41_00,76201,0,Large Smithing Stone
 100674,69640,1,goods:8704,1000,Collector Merchant,m60_41_32_00,76156,0,Note: Wandering Mausoleum
+100676,160760,3,goods:20651,1000,Isolated Merchant,m60_35_45_00,76205,0,Trina's Lily
+100678,160780,1,goods:20740,1500,Isolated Merchant,m60_35_45_00,76205,0,Eye of Yelough
+100680,160800,5,goods:630,500,Isolated Merchant,m60_35_45_00,76205,0,Cursed-Blood Pot
+100681,160810,1,goods:10070,4000,Isolated Merchant,m60_35_45_00,76205,0,Lost Ashes of War
+100682,160820,3,talisman:6070,3000,Isolated Merchant,m60_35_45_00,76205,0,Sacrificial Twig
+100686,69710,1,goods:8711,800,Isolated Merchant,m60_35_45_00,76205,0,Note: Revenants
+100687,69750,1,goods:8715,800,Isolated Merchant,m60_35_45_00,76205,0,Note: Frenzied Flame Village
+100688,160880,1,goods:203000,2000,Isolated Merchant,m60_35_45_00,76205,0,Fanged Imp Ashes
+100689,160890,20,weapon:50040000,160,Isolated Merchant,m60_35_45_00,76205,0,St. Trina's Arrow 
+100691,160910,1,armor:670000,1000,Isolated Merchant,m60_35_45_00,76205,0,Blue Cloth Cowl
+100692,160920,1,armor:670100,1500,Isolated Merchant,m60_35_45_00,76205,0,Blue Cloth Vest
+100693,160930,1,armor:670200,1000,Isolated Merchant,m60_35_45_00,76205,0,Warrior Gauntlets
+100694,160940,1,armor:670300,1000,Isolated Merchant,m60_35_45_00,76205,0,Warrior Greaves
+100695,160950,8,goods:111,1500,Isolated Merchant,m60_35_45_00,76205,0,Festering Bloody Finger
+100696,69910,1,goods:8224,1200,Isolated Merchant,m60_35_45_00,76205,0,Note: The Preceptor's Secret
 100700,170000,1,weapon:15030000,1500,Nomadic Merchant,m60_36_49_00,76208,0,Crescent Moon Axe
 100704,170040,1,weapon:40050000,3500,Nomadic Merchant,m60_36_49_00,76208,0,Composite Bow
 100705,170050,1,weapon:30110000,1800,Nomadic Merchant,m60_36_49_00,76208,0,Rift Shield
@@ -207,6 +224,17 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100718,170180,3,goods:1310,2000,Nomadic Merchant,m60_36_49_00,76208,0,Immunizing White Cured Meat
 100719,170190,3,goods:1320,2000,Nomadic Merchant,m60_36_49_00,76208,0,Invigorating White Cured Meat
 100720,170200,3,goods:1330,2000,Nomadic Merchant,m60_36_49_00,76208,0,Clarifying White Cured Meat
+100727,170270,1,weapon:24070000,7000,Hermit Merchant,m60_43_53_00,76311,0,Sentry's Torch
+100728,170280,3,goods:190,2000,Hermit Merchant,m60_43_53_00,76311,0,Rune Arc
+100729,170290,10,goods:20683,300,Hermit Merchant,m60_43_53_00,76311,0,Golden Sunflower
+100730,170300,1,weapon:32020000,5500,Hermit Merchant,m60_43_53_00,76311,0,Distinguished Greatshield
+100737,170370,1,armor:962100,2400,Hermit Merchant,m60_43_53_00,76311,0,Upper-Class Robe
+100739,170390,1,armor:620000,1000,Hermit Merchant,m60_43_53_00,76311,0,Prophet Blindfold
+100740,170400,1,armor:620300,1000,Hermit Merchant,m60_43_53_00,76311,0,Prophet Trousers
+100741,170410,1,armor:622100,1500,Hermit Merchant,m60_43_53_00,76311,0,Prophet Robe
+100743,69770,1,goods:8717,800,Hermit Merchant,m60_43_53_00,76311,0,Note: Below the Capital
+100744,69780,1,gem:60500,1000,Hermit Merchant,m60_43_53_00,76311,0,Ash of War: Shared Order
+100745,69790,1,gem:70100,1000,Hermit Merchant,m60_43_53_00,76311,0,Ash of War: Vow of the Indomitable
 100750,170500,1,weapon:16140000,1500,Nomadic Merchant,m60_40_52_00,76304,0,Spiked Spear
 100751,69610,1,goods:8701,1200,Nomadic Merchant,m60_40_52_00,76304,0,Note: Imp Shades
 100752,69650,1,goods:8705,2000,Nomadic Merchant,m60_40_52_00,76304,0,Note: Unseen Assassins
@@ -222,6 +250,8 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100795,170950,1,armor:880100,1500,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Armor
 100796,170960,1,armor:880200,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Gloves
 100797,170970,1,armor:880300,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Boots
+100813,180130,3,goods:940,2500,Nomadic Merchant,m60_48_38_00,76406,0,Preserving Boluses
+100814,180140,5,goods:20801,1500,Nomadic Merchant,m60_48_38_00,76406,0,Aeonian Butterfly
 100825,180250,1,weapon:7010000,2000,Nomadic Merchant,m60_49_37_00,76411,0,Beastman's Curved Sword
 100826,180260,10,goods:301,500,Nomadic Merchant,m60_49_37_00,76411,0,Redmane Fire Pot 
 100827,180270,1,weapon:30060000,2000,Nomadic Merchant,m60_49_37_00,76411,0,Beastman's Jar-Shield
@@ -252,6 +282,15 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100916,190160,1,armor:660100,1500,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Armor
 100917,190170,1,armor:660200,1000,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Gauntlets
 100918,190180,1,armor:660300,1000,Hermit Merchant,m60_51_56_00,76503,0,Vagabond Knight Greaves
+100926,190260,4,goods:10101,100,Abandoned Merchant,m12_02_00_00,71224,0,Smithing Stone
+100927,190270,2,goods:10160,200,Abandoned Merchant,m12_02_00_00,71224,0,Somber Stone
+100928,190280,1,goods:209000,1000,Abandoned Merchant,m12_02_00_00,71224,0,Ancestral Follower Ashes
+100929,190290,10,goods:640,500,Abandoned Merchant,m12_02_00_00,71224,0,Sleep Pot
+100935,190350,30,weapon:50100000,160,Abandoned Merchant,m12_02_00_00,71224,0,Dwelling Arrow 
+100936,190360,1,goods:8185,3000,Abandoned Merchant,m12_02_00_00,71224,0,Larval Tear
+100937,190370,1,weapon:7020000,2500,Abandoned Merchant,m12_02_00_00,71224,0,Shotel
+100940,190400,3,goods:2120,400,Abandoned Merchant,m12_02_00_00,71224,0,Soap
+100941,190410,5,goods:20800,1500,Abandoned Merchant,m12_02_00_00,71224,0,Nascent Butterfly
 100950,1054590000,4,goods:10101,100,Hermit Merchant,m12_01_00_00,71213,0,Smithing Stone
 100951,1054590010,2,goods:10160,200,Hermit Merchant,m12_01_00_00,71213,0,Somber Stone
 100953,190530,1,goods:10070,3000,Hermit Merchant,m12_01_00_00,71213,0,Lost Ashes of War
@@ -261,6 +300,72 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100965,190650,1,armor:890000,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Iron Mask
 100966,190660,1,armor:890100,1500,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Clothing
 100967,190670,1,armor:890300,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Trousers
+100976,190760,10,goods:340,500,Imprisoned Merchant,m12_05_00_00,71254,0,Swarm Pot
+100977,190770,1,goods:10070,5000,Imprisoned Merchant,m12_05_00_00,71254,0,Lost Ashes of War
+100978,190780,10,goods:1440,500,Imprisoned Merchant,m12_05_00_00,71254,0,Blood Grease
+100981,190810,3,goods:190,2000,Imprisoned Merchant,m12_05_00_00,71254,0,Rune Arc
+100982,190820,10,goods:111,2000,Imprisoned Merchant,m12_05_00_00,71254,0,Festering Bloody Finger
+100983,190830,3,goods:910,1200,Imprisoned Merchant,m12_05_00_00,71254,0,Stanching Boluses
+101507,250070,1,armor:470000,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Redmane Helm
+101508,250080,1,armor:470100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Lion Armor
+101509,250090,1,armor:470200,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Gauntlets
+101510,250100,1,armor:470300,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Greaves
+101511,250110,1,armor:480100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Lord of Blood's Robe
+101512,250120,1,armor:510000,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Crescent Crown
+101513,250130,1,armor:510100,10000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Robe
+101514,250140,1,armor:510200,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Bracelets
+101515,250150,1,armor:510300,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Leggings
+101516,250160,1,armor:760000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Helm
+101517,250170,1,armor:760100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Armor
+101518,250180,1,armor:760200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Gauntlets
+101519,250190,1,armor:760300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Greaves
+101520,250200,1,armor:770000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Winged Helm
+101521,250210,1,armor:770100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Armor
+101522,250220,1,armor:770200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Gauntlet
+101523,250230,1,armor:770300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Greaves
+101524,250240,1,armor:1050100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Fell Omen Cloak
+101525,250250,1,armor:280000,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Helm
+101526,250260,1,armor:280100,6000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Armor
+101527,250270,1,armor:280200,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Gauntlets
+101528,250280,1,armor:280300,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Greaves
+101550,250500,1,armor:210000,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Helm
+101551,250510,1,armor:210100,6000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Armor
+101552,250520,1,armor:210200,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Gauntlets
+101553,250530,1,armor:210300,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Greaves
+101555,250550,1,armor:3010000,8000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Helm
+101556,250560,1,armor:3010100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Armor
+101557,250570,1,armor:3010200,8000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Gauntlets
+101558,250580,1,armor:3010300,8000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Greaves
+101559,250590,1,armor:5220000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Helm
+101560,250600,1,armor:5220100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Armor
+101561,250610,1,armor:5220200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Gauntlets
+101562,250620,1,armor:5220300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Greaves
+101563,250630,1,armor:5260000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Helm
+101564,250640,1,armor:5260100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Armor
+101565,250650,1,armor:5260200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Gloves
+101566,250660,1,armor:5260300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Greaves
+101567,250670,1,armor:5270000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Helm
+101568,250680,1,armor:5270100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Armor
+101569,250690,1,armor:5270200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Gauntlets
+101570,250700,1,armor:5270300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Greaves
+101571,250710,1,armor:401000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Spiritshaper's Antlers
+101572,250720,1,armor:401100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Spiritshaper's Cloak
+101573,250730,1,armor:401200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Spiritshaper's Wraps
+101574,250740,1,armor:401300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Spiritshaper's Trousers
+101775,270750,1,goods:2950,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Grafted
+101776,270760,1,goods:2951,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Starscourge
+101777,270770,1,goods:2952,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Omen King
+101778,270780,1,goods:2953,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Blasphemous
+101779,270790,1,goods:2954,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Rot Goddess
+101780,270800,1,goods:2959,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Full Moon Queen
+101781,270810,1,goods:2955,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Blood Lord
+101785,270850,1,goods:2956,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Black Blade
+101786,270860,1,goods:2957,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of Hoarah Loux
+101787,270870,1,goods:2958,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Dragonlord
+101788,270880,1,goods:2960,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Lichdragon
+101789,270890,1,goods:2961,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Fire Giant
+101791,270910,1,goods:2963,0,Walking Mausoleum,m60_11_14_02,76653,0,Elden Remembrance
+101792,270920,1,goods:2964,0,Walking Mausoleum,m60_11_14_02,76653,0,Remembrance of the Naturalborn
 101800,60280,1,goods:104,1000,Twin Maiden Husks,m11_10_00_00,71190,0,White Cipher Ring
 101801,60290,1,goods:105,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Blue Cipher Ring
 101802,60110,1,goods:8158,100,Twin Maiden Husks,m11_10_00_00,71190,0,Spirit Calling Bell
@@ -446,3 +551,164 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 102824,380240,1,talisman:9130,0,Rauh Reliquary,m61_50_48_00,76935,1,Jewel of the Prince
 102825,380250,1,talisman:9170,0,Rauh Reliquary,m61_50_48_00,76935,1,Jewel of the Righteous
 102826,380260,1,talisman:9200,0,Rauh Reliquary,m61_50_48_00,76935,1,Jewel of the Flayer
+105000,560000,1,goods:11021,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Strength-knot Crystal Tear
+105001,560010,1,goods:11022,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Dexterity-knot Crystal Tear
+105002,560020,1,goods:11023,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Intelligence-knot Crystal Tear
+105003,560030,1,goods:11024,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Faith-knot Crystal Tear
+105004,560040,1,goods:11033,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Arcane-knot Crystal Tear
+105005,560050,1,goods:11034,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Knight's Crystal Tear
+105006,560060,1,goods:11035,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Battlemage's Crystal Tear
+105007,560070,1,goods:11036,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Templar's Crystal Tear
+105008,560080,1,goods:11037,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Barbarian's Crystal Tear
+105009,560090,1,goods:11038,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Assassin's Crystal Tear
+105010,560100,1,goods:11039,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Inquisitor's Crystal Tear
+105011,560110,1,goods:11040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Rogue's Crystal Tear
+105012,560120,1,goods:11041,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Zealot's Crystal Tear
+105013,560130,1,goods:11042,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Witch's Crystal Tear
+105014,560140,1,goods:11043,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cultist's Crystal Tear
+105020,560200,1,goods:11032,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stone-Shrouding Cracked Tear
+105021,560210,1,goods:11029,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Magic-Shrouding Cracked Tear
+105022,560220,1,goods:11028,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Flame-Shrouding Cracked Tear
+105023,560230,1,goods:11030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Lightning-Shrouding Cracked Tear
+105024,560240,1,goods:11031,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Holy-Shrouding Cracked Tear
+105025,560250,1,goods:11016,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ruptured Crystal Tear
+105026,560260,1,goods:11017,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ruptured Crystal Tear
+105030,560300,1,goods:11014,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Spiked Cracked Tear
+105031,560310,1,goods:11013,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Thorny Cracked Tear
+105032,560320,1,goods:11026,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stonebarb Cracked Tear
+105033,560330,1,goods:11050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Waterblade Cracked Tear
+105034,560340,1,goods:11051,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stonetalon Cracked Tear
+105035,560350,1,goods:11052,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Windbarb Cracked Tear
+105036,560360,1,goods:11053,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Shadowblade Cracked Tear
+105037,560370,1,goods:11054,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stoneblade Cracked Tear
+105038,560380,1,goods:11055,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stonehoof Cracked Tear
+105040,560400,1,goods:11003,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimson Crystal Tear
+105041,560410,1,goods:11000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimsonspill Crystal Tear
+105042,560420,1,goods:11009,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimsonburst Crystal Tear
+105043,560430,1,goods:11007,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimson Bubbletear
+105044,560440,1,goods:11005,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cerulean Crystal Tear
+105045,560450,1,goods:11057,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ceruleanspill Crystal Tear
+105046,560460,1,goods:11056,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ceruleanburst Crystal Tear
+105047,560470,1,goods:11025,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cerulean Hidden Tear
+105048,560480,1,goods:11001,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Greenspill Crystal Tear
+105049,560490,1,goods:11010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Greenburst Crystal Tear
+105050,560500,1,goods:11011,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Opaline Hardtear
+105051,560510,1,goods:11020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimsonwhorl Bubbletear
+105052,560520,1,goods:11008,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Opaline Bubbletear
+105053,560530,1,goods:11018,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Leaden Hardtear
+105054,560540,1,goods:11015,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Windy Crystal Tear
+105055,560550,1,goods:11012,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Winged Crystal Tear
+105056,560560,1,goods:11019,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Twiggy Cracked Tear
+105057,560570,1,goods:11027,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Purifying Crystal Tear
+105058,560580,1,goods:2011000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Viridian Hidden Tear
+105059,560590,1,goods:2011010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimsonburst Dried Tear
+105060,560600,1,goods:2011020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimson-Sapping Cracked Tear
+105061,560610,1,goods:2011030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cerulean-Sapping Cracked Tear
+105062,560620,1,goods:2011040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Oil-Soaked Tear
+105063,560630,1,goods:2011050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Bloodsucking Cracked Tear
+105064,560640,1,goods:2011060,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Glovewort Crystal Tear
+105095,560950,1,talisman:8150,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Sharpshot Talisman
+105096,560960,1,talisman:8220,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Rellana's Cameo
+105097,560970,1,talisman:8230,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blade of Mercy
+105098,560980,1,talisman:8090,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Pearl Shield Talisman
+105099,560990,1,talisman:8200,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Talisman of Lord's Bestowal
+105100,550000,1,talisman:2090,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Dagger Talisman
+105101,550010,1,talisman:2200,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Curved Sword Talisman
+105102,550020,1,talisman:2120,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Twinblade Talisman
+105103,550030,1,talisman:2130,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Axe Talisman
+105104,550040,1,talisman:2070,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Hammer Talisman
+105105,550050,1,talisman:2060,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Spear Talisman
+105106,550060,1,talisman:2140,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Lance Talisman
+105107,550070,1,talisman:2180,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Claw Talisman
+105108,550080,1,talisman:2150,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Arrow's Soaring Sting Talisman
+105109,550090,1,talisman:1230,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Warrior Jar Shard
+105110,550100,1,talisman:2080,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Winged Sword Insignia
+105111,550110,1,talisman:1060,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Starscourge Heirloom
+105112,550120,1,talisman:1070,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Prosthesis-Wearer Heirloom
+105113,550130,1,talisman:1080,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stargazer Heirloom
+105114,550140,1,talisman:1090,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Two Fingers Heirloom
+105115,550150,1,talisman:1095,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Outer God Heirloom
+105116,550160,1,talisman:1061,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Valorous Heirloom
+105117,550170,1,talisman:1062,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Strategist Heirloom
+105118,550180,1,talisman:1063,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Chosen Heirloom
+105119,550190,1,talisman:1064,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blackguard Heirloom
+105120,550200,1,talisman:1071,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Saboteur Heirloom
+105121,550210,1,talisman:1072,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cloister Heirloom
+105122,550220,1,talisman:1073,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Perfume Heirloom
+105123,550230,1,talisman:1081,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Midnight Heirloom
+105124,550240,1,talisman:1082,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Forbidden Heirloom
+105125,550250,1,talisman:1091,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Scorpion Heirloom
+105126,550260,1,talisman:3010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Runebear's Claw
+105127,550270,1,talisman:3002,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Glowing Glintshard
+105128,550280,1,talisman:2021,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Firemonk's Filigree
+105129,550290,1,talisman:2011,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Dragonkin Crest
+105130,550300,1,talisman:2031,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Emblem of Gold
+105131,550310,1,talisman:3020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Primordial Pumice Fragment
+105132,550320,1,talisman:3000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Graven-School Talisman
+105133,550330,1,talisman:2022,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Everburning Ember
+105134,550340,1,talisman:2012,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Chime of Godwyn
+105135,550350,1,talisman:3040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Faithful's Canvas Talisman
+105136,550360,1,talisman:3030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Primordial Glass Shard
+105137,550370,1,talisman:3001,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Graven-Mass Talisman
+105138,550380,1,talisman:2023,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Coal of the Forge
+105139,550390,1,talisman:2013,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Scale of Gransax
+105140,550400,1,talisman:3050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Flock's Canvas Talisman
+105141,550410,1,talisman:2190,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Giant's Insignia
+105142,550420,1,talisman:2000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Magic Scorpion Charm
+105143,550430,1,talisman:2020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Fire Scorpion Charm
+105144,550440,1,talisman:2010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Lightning Scorpion Charm
+105145,550450,1,talisman:2030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Sacred Scorpion Charm
+105146,550460,1,talisman:1032,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Great-Jar's Arsenal
+105147,550470,1,talisman:2210,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Companion Jar
+105148,550480,1,talisman:1210,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Bull-Goat's Talisman
+105149,550490,1,talisman:2110,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blue Dancer Charm
+105150,550500,1,talisman:2040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Red-Feathered Branchsword
+105151,550510,1,talisman:4080,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blue-Feathered Branchsword
+105152,550520,1,talisman:2050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ritual Sword Talisman
+105153,550530,1,talisman:5050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Assassin's Curio
+105154,550540,1,talisman:5040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Godskin Swaddling Cloth
+105155,550550,1,talisman:7030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Two-Headed Turtle Talisman
+105156,550560,1,talisman:5010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blessed Blue Dew Talisman
+105157,550570,1,talisman:1040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Erdtree's Favor
+105159,550590,1,talisman:3080,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Primal Glintstone Blade
+105160,550600,1,talisman:1140,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Moon of Nokstella
+105161,550610,1,talisman:3060,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Old Lord's Talisman
+105162,550620,1,talisman:3070,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Radagon Icon
+105163,550630,1,talisman:6020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Carian Filigreed Crest
+105164,550640,1,talisman:3090,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Godfrey Icon
+105165,550650,1,talisman:2220,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Perfumer's Talisman
+105166,550660,1,talisman:1110,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Gold Scarab
+105167,550670,1,talisman:1100,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Silver Scarab
+105168,550680,1,talisman:6000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Thief's Bauble
+105170,550700,1,talisman:4050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Pearldrake Talisman
+105171,550710,1,talisman:8240,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Talisman of All Crucibles
+105172,550720,1,talisman:8210,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Verdigris Discus
+105173,550730,1,talisman:4090,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Ritual Shield Talisman
+105174,550740,1,talisman:5020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blessed Dew Talisman
+105175,550750,1,talisman:4010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Spelldrake Talisman
+105176,550760,1,talisman:4020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Flamedrake Talisman
+105177,550770,1,talisman:4030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Boltdrake Talisman
+105178,550780,1,talisman:4040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Golden Braid
+105179,550790,1,talisman:4003,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Dragoncrest Greatshield Talisman
+105180,550800,1,talisman:1170,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Immunizing Horn Charm
+105181,550810,1,talisman:1280,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Curative Horn Charm
+105182,550820,1,talisman:1160,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Stalwart Horn Charm
+105183,550830,1,talisman:1260,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Warming Horn Charm
+105184,550840,1,talisman:1270,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Clarifying Horn Charm
+105185,550850,1,talisman:1180,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Rousing Horn Charm
+105186,550860,1,talisman:1191,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Prince of Death's Cyst
+105187,550870,1,talisman:1200,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Mottled Necklace
+105188,550880,1,talisman:5030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Taker's Cameo
+105189,550890,1,talisman:4120,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Blasphemer's Crest
+105190,550900,1,talisman:7000,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crimson Amber Medallion
+105191,550910,1,talisman:7010,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Cerulean Amber Medallion
+105192,550920,1,talisman:7020,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Viridian Amber Medallion
+105193,550930,1,talisman:8100,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Dried Bouquet
+105194,550940,1,talisman:8190,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Beloved Stardust
+105195,550950,1,talisman:8030,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Shattered Stone Talisman
+105196,550960,1,talisman:8040,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Two-Handed Sword Talisman
+105197,550970,1,talisman:8050,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crusade Insignia
+105198,550980,1,talisman:8110,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Smithing Talisman
+105199,550990,1,talisman:8130,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Crossed-Tree Talisman
+105200,570000,1,talisman:4130,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Sigil of Freedom
+105201,570010,1,talisman:4140,0,Nox Oracle Sadia,m60_49_39_00,76416,0,Quiver Talisman

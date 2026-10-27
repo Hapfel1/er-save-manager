@@ -77,13 +77,17 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 69740,35000070,m35_00_00_00,73504,pickup,0,goods:8714:1,Note: Miquella's Needle,136.69,-368.56,-75.57
 69760,1038480040,m60_38_48_00,76298,pickup,0,goods:10167:1,Colossal Somber Stone,-18.42,439.52,-7.71
 400001,100010,,0,other,0,goods:10020:1,Sacred Tear,,,
+400020,100200,m10_00_00_00,71000,other,0,goods:900:1,Neutralizing Boluses,-231.52,73.78,347.29
 400030,100300,m11_10_00_00,71190,other,0,goods:111:5,Festering Bloody Finger,-298.32,-22.62,-275.39
 400031,100310,m60_35_44_00,76236,other,0,goods:8154:1|weapon:34150000:1,Lord of Blood's Favor|Mohgwyn Seal,-71.10,241.70,-96.74
 400032,100320,m60_35_44_00,76236,other,0,goods:2160:1,Pureblood Knight's Medal,-71.10,241.70,-96.74
 400033,100330,m13_00_00_00,71310,reward,0,goods:8155:1,Lord of Blood's Favor,147.63,-126.29,487.79
 400036,100361,m12_05_00_00,71254,reward,0,goods:111:6,Festering Bloody Finger,1603.01,-579.49,1167.75
 400037,100360,m12_05_00_00,71254,reward,0,weapon:11060000:1,Varré's Bouquet,1603.01,-579.49,1167.75
+400041,100410,,0,other,0,goods:3520:1|goods:3550:1,Ironjar Aromatic|Bloodboil Aromatic,,,
+400042,100420,m60_42_36_00,76100,other,0,goods:2030:1,Glowstone,-56.96,92.32,91.60
 400049,110410,m60_42_36_00,76100,enemy,0,goods:8920:1,Kalé's Bell Bearing,-56.96,92.32,91.60
+400050,100500,m10_00_00_00,71008,other,0,goods:2050:1,Grace Mimic,-122.16,21.61,16.77
 400051,100510,,0,other,0,goods:8918:1|goods:10000:1|goods:1190:1,Gostoc's Bell Bearing|Glass Shard|Silver-Pickled Fowl Foot,,,
 400060,100600,m11_10_00_00,71190,other,0,talisman:6070:1,Sacrificial Twig,-298.32,-22.62,-275.39
 400061,100610,m60_33_44_00,76218,reward,0,goods:1240:1|weapon:18030000:1|goods:1235:5,Shabriri Grape|Banished Knight's Halberd|Raw Meat Dumpling,19.24,256.89,26.87
@@ -97,6 +101,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400076,100760,m14_00_00_00,71400,other,0,armor:960000:1|armor:960100:1|armor:960200:1|armor:960300:1,Consort's Mask|Consort's Robe|Consort's Gloves|Consort's Trousers,41.77,154.17,-23.84
 400077,100770,m16_00_00_00,71602,other,0,weapon:9080000:1,Serpentbone Blade,39.39,5.37,-71.32
 400078,100780,m16_00_00_00,71602,other,0,goods:20957:1,Warding Remnant,39.39,5.37,-71.32
+400079,100790,,0,other,0,goods:2914:1,Hero's Rune [1],,,
 400080,100800,m11_10_00_00,71190,other,0,goods:8131:1,Irina's Letter,-298.32,-22.62,-275.39
 400089,100890,m35_00_00_00,73504,reward,0,goods:3311:5|goods:3311:3,Frenzyflame Stone|Frenzyflame Stone,137.20,-408.49,-78.43
 400090,100900,m11_10_00_00,71190,other,0,goods:8137:1,Volcano Manor Invitation,-298.32,-22.62,-275.39
@@ -105,12 +110,19 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400101,101010,m14_00_00_00,71400,other,0,goods:2919:1,Lord's Rune,41.78,154.23,-23.52
 400102,101020,m60_44_36_00,76120,other,0,goods:8169:1,Sellian Sealbreaker,18.02,80.81,19.13
 400103,101030,m14_00_00_00,71400,other,0,goods:1290:1,Starlight Shards,41.78,154.23,-23.52
+400104,101040,,0,other,0,weapon:33230000:1,Azur's Glintstone Staff,,,
+400105,101050,,0,other,0,goods:4220:1,Stars of Ruin,,,
 400106,101060,m14_00_00_00,71405,reward,0,goods:8913:1,Sellen's Bell Bearing,,,
 400107,101061,m14_00_00_00,71405,reward,0,armor:834000:1,Witch's Glintstone Crown,,,
+400108,111080,,0,other,0,goods:2030:1,Glowstone,,,
+400109,111090,,0,other,0,goods:2030:1,Glowstone,,,
+400120,101200,,0,other,0,goods:2030:1,Glowstone,,,
+400121,101210,,0,other,0,goods:2030:1,Glowstone,,,
 400130,101300,m60_35_42_00,76220,other,0,goods:2913:1,Numen's Rune,-102.31,285.92,-117.42
 400140,101400,m60_34_50_00,76231,other,0,goods:8164:1,Seluvis's Potion,69.13,417.13,-88.82
 400141,101410,m60_34_50_00,76231,other,0,goods:2919:1,Lord's Rune,69.13,417.13,-88.82
 400143,101430,m60_34_50_00,76231,other,0,goods:8143:1,Seluvis's Introduction,69.13,417.13,-88.82
+400144,101440,,0,other,0,goods:2030:1,Glowstone,,,
 400145,101450,m60_34_50_00,76231,other,0,goods:8166:1,Amber Draught,69.13,417.13,-88.82
 400148,101480,m60_34_50_00,76231,reward,0,goods:1290:5,Starlight Shards,67.81,417.13,-89.50
 400149,101490,m60_35_50_00,76231,reward,0,goods:8910:1|goods:262000:1|goods:259000:1,Pidia's Bell Bearing|Dolores the Sleeping Arrow Puppet|Nepheli Loux Puppet,-101.28,357.66,-18.87
@@ -121,16 +133,21 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400163,101630,m60_39_52_00,76306,reward,0,weapon:9010000:1,Nagakiba,28.84,771.80,53.74
 400164,101640,,0,other,0,armor:150000:1,Iron Kasa,,,
 400170,101700,m13_00_00_00,71305,other,0,goods:1210:1,Exalted Flesh,-131.74,16.05,393.74
+400171,101710,m13_00_00_00,71305,other,0,goods:1210:3,Exalted Flesh,-131.74,16.05,393.74
 400172,101720,m13_00_00_00,71305,other,0,armor:1120000:1,Jar,-131.74,16.05,393.74
+400173,101730,,0,other,0,goods:1235:5,Raw Meat Dumpling,,,
 400174,101740,m13_00_00_00,71305,reward,0,goods:8222:1|goods:2510000:1|goods:20950:1,Alexander's Innards|Warrior Jar Alexander|Combat Remnant,-131.74,16.05,393.74
 400175,111700,m60_43_39_00,76117,enemy,0,goods:20950:1,Combat Remnant,-17.65,182.41,-15.54
 400180,101800,m11_10_00_00,71190,other,0,goods:8167:1,Letter to Patches,-298.32,-22.62,-275.39
+400181,101810,m16_00_00_00,71602,other,0,goods:8168:1,Dancer's Castanets,27.82,5.01,-33.06
 400182,101820,m16_00_00_00,71602,other,0,weapon:20030000:1,Magma Whip Candlestick,27.82,5.01,-33.06
 400183,101830,m31_00_00_00,73100,reward,0,goods:2900:2,Golden Rune [1],,,
+400184,101840,,0,other,0,weapon:16010002:1,Spear,,,
 400189,111800,m31_00_00_00,73100,enemy,0,goods:8912:1|weapon:16010002:1,Patches' Bell Bearing|Spear,24.83,52.97,54.04
 400190,101900,m11_10_00_00,71190,other,0,goods:236000:1,Spirit Jellyfish Ashes,-317.39,-21.96,-314.89
 400191,101910,m60_41_38_00,76102,reward,0,goods:10010:1,Golden Seed,35.55,204.65,8.81
 400209,111900,,0,other,0,goods:2030:1|goods:8917:1|goods:15090:12,Glowstone|Miriel's Bell Bearing|Turtle Neck Meat,,,
+400210,102100,,0,other,0,goods:8590:1,Whetstone Knife,,,
 400220,112200,m60_45_38_00,76114,enemy,0,goods:10010:1,Golden Seed,-88.56,41.69,-29.20
 400221,102200,m10_00_00_00,71000,other,0,weapon:1150000:1,Erdsteel Dagger,-283.93,81.51,410.20
 400230,102310,m11_10_00_00,71190,other,0,goods:10168:1|goods:10140:1,Ancient Somber Stone|Ancient Smithing Stone,-298.32,-22.62,-275.39
@@ -145,9 +162,14 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400239,102304,m60_51_43_00,76454,other,0,goods:8979:1,Beast Eye,-72.48,345.34,30.35
 400240,102400,m60_34_49_00,76213,reward,0,goods:8940:1,Iji's Bell Bearing,44.13,277.36,-51.23
 400241,102401,m60_34_49_00,76213,reward,0,armor:1301000:1,Iji's Mirrorhelm,44.13,277.36,-51.23
+400260,102600,,0,other,0,goods:2030:1,Glowstone,,,
 400271,102710,m11_00_00_00,71102,other,0,goods:20760:10,Mushroom,-39.17,8.03,-83.56
+400280,102800,m61_46_45_00,76915,other,1,goods:10020:1,Sacred Tear,-40.36,168.20,-30.76
+400281,102860,,0,other,0,weapon:11110000:1,Scepter of the All-Knowing,,,
 400282,102820,m11_10_00_00,71190,other,0,armor:1750000:1|armor:1750100:1|armor:1750200:1|armor:1750300:1|armor:590000:1,Haligtree Helm|Haligtree Crest Surcoat|Haligtree Gauntlets|Haligtree Greaves|All-Knowing Helm,-327.39,-21.98,-316.21
+400283,102830,m11_10_00_00,71190,other,0,weapon:12160000:1|armor:590100:1,Envoy's Long Horn|All-Knowing Armor,-327.39,-21.98,-316.21
 400284,102840,m11_10_00_00,71190,other,0,armor:590000:1|armor:590200:1,All-Knowing Helm|All-Knowing Gauntlets,-327.39,-21.98,-316.21
+400285,102850,m11_10_00_00,71190,other,0,goods:6760:1|armor:590300:1,Law of Causality|All-Knowing Greaves,-327.39,-21.98,-316.21
 400290,102900,m16_00_00_00,71602,other,0,goods:8173:1,Letter to Bernahl,12.37,4.07,-87.68
 400291,102910,m16_00_00_00,71602,reward,0,goods:4810:1,Gelmir's Fury,12.31,4.07,-86.81
 400292,102920,m13_00_00_00,71309,reward,0,goods:2080:1,Blasphemous Claw,129.12,-80.54,557.71
@@ -167,6 +189,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400324,103240,m15_00_00_00,71500,reward,0,goods:2190:1,Miquella's Needle,-2.72,50.79,492.49
 400325,103241,m15_00_00_00,71500,reward,0,goods:10168:1,Ancient Somber Stone,-2.72,50.79,492.49
 400331,103310,m11_10_00_00,71190,other,0,goods:8980:1,Weathered Dagger,-283.26,-21.57,-325.10
+400332,103320,m11_10_00_00,71190,other,0,goods:340:5,Swarm Pot,-283.26,-21.57,-325.10
 400333,103330,m11_10_00_00,71190,other,0,goods:3361:1,Radiant Baldachin's Blessing,-283.26,-21.57,-325.10
 400334,103340,m11_10_00_00,71190,other,0,goods:8190:1,Knifeprint Clue,-283.26,-21.57,-325.10
 400339,113300,m12_03_00_00,71230,reward,0,goods:2914:1,Hero's Rune [1],-358.86,150.38,-191.73
@@ -185,9 +208,12 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400382,103820,m35_00_00_00,73501,reward,0,armor:970000:1|armor:970100:1|armor:970200:1|armor:970300:1,Omen Helm|Omen Armor|Omen Gauntlets|Omen Greaves,-201.30,-88.48,-118.72
 400390,103901,m60_42_36_00,76100,reward,0,goods:232000:1,Lone Wolf Ashes,-34.54,92.39,85.07
 400391,103910,m60_34_50_00,76247,other,0,goods:8383:1,Shining Rune of Frost,-52.74,511.67,25.57
+400392,103920,,0,other,0,goods:8191:1,Cursemark of Death,,,
 400393,103930,m60_35_42_00,76251,reward,0,weapon:3090000:1,Dark Moon Greatsword,32.50,373.68,6.58
 400394,103940,m12_01_00_00,71214,pickup,0,goods:8146:1,Miniature Ranni,333.41,-79.43,301.77
+400395,103950,,0,other,0,goods:8159:1,Fingerslayer Blade,,,
 400396,103960,m60_34_50_00,76247,other,0,weapon:64570000:1,Fingerslayer Blade,-52.74,511.67,25.57
+400400,104000,m14_00_00_00,71400,other,0,goods:10140:1,Ancient Smithing Stone,92.10,154.08,-48.79
 400401,104010,m14_00_00_00,71405,reward,0,goods:2919:1,Lord's Rune,,,
 400410,104100,m13_00_00_00,71310,reward,0,goods:204000:1,Latenna the Albinauric,147.63,-126.29,487.79
 400411,104110,m60_47_58_00,76653,reward,0,goods:10168:1,Ancient Somber Stone,37.52,1291.60,-9.60
@@ -220,6 +246,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400595,105930,m21_01_00_00,72112,reward,1,weapon:41510000:1|goods:2002950:1,Ansbach's Longbow|Leda's Rune,,,
 400596,115900,,0,other,0,goods:2002950:1,Leda's Rune,,,
 400598,105940,m20_01_00_00,72015,reward,1,goods:8986:1,Somber Shadow Stone Bell Bearing [3],-182.88,174.73,-345.42
+400600,106000,m21_01_00_00,72113,other,1,armor:5120000:1,Freyja's Helm,175.06,328.10,293.93
 400602,106010,m20_01_00_00,72015,reward,1,weapon:8510000:1|weapon:31530000:1,Freyja's Greatsword|Golden Lion Shield,-222.08,174.80,-333.35
 400610,106100,m21_01_00_00,72110,other,1,goods:2008007:1,Cross Map,83.00,351.88,374.88
 400611,106121,,0,other,0,goods:2008012:1,New Cross Map,,,
@@ -230,9 +257,11 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400623,106214,m21_01_00_00,72116,reward,1,weapon:41510000:1,Ansbach's Longbow,236.55,268.00,320.95
 400624,106220,m20_01_00_00,72010,reward,1,armor:5110000:1|armor:5110100:1|armor:5110200:1|armor:5110300:1|weapon:19500000:1,Wise Man's Mask|Ansbach's Attire|Ansbach's Manchettes|Ansbach's Boots|Obsidian Lamina,-206.19,299.31,-170.66
 400625,106230,m21_01_00_00,72116,reward,1,armor:5110000:1|armor:5110100:1|armor:5110200:1|armor:5110300:1|weapon:41510000:1|goods:2008015:1,Wise Man's Mask|Ansbach's Attire|Ansbach's Manchettes|Ansbach's Boots|Ansbach's Longbow|Letter for Freyja,236.55,268.00,320.95
+400627,116200,,0,other,0,armor:5110000:1|armor:5110100:1|armor:5110200:1|armor:5110300:1|weapon:41510000:1,Wise Man's Mask|Ansbach's Attire|Ansbach's Manchettes|Ansbach's Boots|Ansbach's Longbow,,,
 400630,106300,m61_48_43_00,76810,other,1,goods:2002140:1,Thiollier's Concoction,40.18,312.91,-80.53
 400632,106310,m22_00_00_00,72202,reward,1,goods:20950:1,Combat Remnant,,,
 400634,106301,,0,other,0,armor:5030000:1|armor:5030100:1|armor:5030200:1|armor:5030300:1|weapon:21500000:1,Thiollier's Mask|Thiollier's Garb|Thiollier's Gloves|Thiollier's Trousers|Thiollier's Hidden Needle,,,
+400636,106330,,0,other,0,armor:5030000:1|armor:5030100:1|armor:5030200:1|armor:5030300:1,Thiollier's Mask|Thiollier's Garb|Thiollier's Gloves|Thiollier's Trousers,,,
 400642,106410,m61_45_42_00,76803,other,1,goods:2008019:1,Black Syrup,-102.29,392.32,93.90
 400644,106420,m61_45_42_00,76803,reward,1,goods:2008900:1,Moore's Bell Bearing,-102.29,392.32,93.90
 400645,106421,m61_45_42_00,76803,reward,1,weapon:32520000:1|armor:5010000:1,Verdigris Greatshield|Verdigris Helm,-102.29,392.32,93.90
@@ -264,8 +293,12 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400730,107300,m61_49_44_00,76902,reward,1,weapon:60500000:1,Dryleaf Arts,-49.85,350.83,121.44
 400732,107310,m20_01_00_00,72015,reward,1,weapon:60510000:1,Dane's Footwork,-200.70,174.92,-327.68
 400740,107400,m22_00_00_00,72200,reward,1,armor:5300000:1,St. Trina's Blossom,-178.60,-298.71,78.78
+400750,107500,m61_48_44_00,76822,other,1,goods:2001120:2|goods:2020007:3,Spellproof Pickled Liver|Glintslab Firefly,-48.89,361.54,-64.19
 400751,107510,m61_49_46_00,76916,other,1,goods:2001160:2|goods:2015020:1,Opaline Pickled Liver|Pearlescent Scale,9.74,335.34,91.48
+400752,107520,m61_50_47_00,76935,other,1,goods:2001170:2|goods:2020005:3,Well-Pickled Turtle Neck|Dewgem,-55.19,489.25,4.18
 400753,107530,m61_45_41_00,76804,other,1,goods:2001130:2|goods:2020006:3,Fireproof Pickled Liver|Black Pyrefly,99.91,401.55,-128.96
+400754,107540,m61_48_40_00,76842,other,1,goods:2001140:2|goods:2020008:3,Lightningproof Pickled Liver|Yellow Fulgurbloom,79.77,24.10,122.21
+400755,107550,m61_47_46_00,76965,other,1,goods:2001150:2|goods:2020009:3,Holyproof Pickled Liver|Shadow Sunflower,25.22,449.70,1.50
 400800,108000,m60_49_39_00,76416,reward,0,weapon:9050000:1,Star Shadow,67.54,64.85,-30.45
 400810,108100,m11_00_00_00,71104,reward,0,weapon:10070000:1,Godwyn's Cragblades,-202.64,-62.11,-186.87
 400820,108200,m60_35_50_00,76261,reward,0,weapon:11160000:1,Zamor Star Mace,67.27,413.88,125.96
@@ -505,6 +538,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 530955,30955,m61_47_45_00,76907,reward,1,weapon:32500000:1,Black Steel Greatshield,-27.67,346.02,-138.66
 530960,30960,m61_52_48_00,76936,reward,1,weapon:4500000:1|goods:10110:2|goods:10170:1|goods:10111:1,Ancient Meteoric Ore Greatsword|Shadow Smithing Stone|Somber Shadow Stone|Large Shadow Smithing Stone,39.21,478.27,117.00
 530965,30965,m61_49_43_00,76910,reward,1,gem:200100:1,Ash of War: Aspects of the Crucible: Wings,68.88,396.47,-95.66
+530995,30995,,0,other,0,goods:20722:1,Rimed Rowa,,,
 540100,40100,m60_40_39_00,76200,reward,0,goods:10160:1,Somber Stone,33.69,234.80,34.10
 540104,40104,m60_41_38_00,76102,reward,0,gem:11000:1,Ash of War: Wild Strikes,-73.14,248.33,109.17
 540108,40108,m60_43_37_00,76108,reward,0,goods:10160:1,Somber Stone,53.83,90.58,-91.19
@@ -577,20 +611,40 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 540510,40510,m60_53_57_00,76504,reward,0,gem:60600:1,Ash of War: Seppuku,18.77,1620.17,72.58
 540512,40512,m60_51_54_00,76506,reward,0,gem:65300:1,Ash of War: Troll's Roar,-27.78,1695.78,5.05
 540516,40516,m60_52_55_00,76520,reward,0,gem:11300:1,Ash of War: Prelate's Charge,-34.12,1704.03,-6.51
+540520,40520,,0,other,0,goods:10101:1,Smithing Stone,,,
 540522,40522,m60_48_55_00,76551,reward,0,goods:10101:1,Smithing Stone,-37.34,1284.09,-35.54
 540524,40524,,0,other,0,goods:10167:1,Colossal Somber Stone,,,
 540526,40526,m60_48_57_00,76652,reward,0,goods:10101:1,Smithing Stone,,,
+540528,40528,,0,other,0,goods:10101:1,Smithing Stone,,,
+540570,40570,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540572,40572,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540574,40574,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540576,40578,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540590,40590,m16_00_00_00,71603,reward,0,goods:10164:1,Large Somber Stone,-127.12,-23.47,-104.52
 540592,40592,m16_00_00_00,71601,reward,0,goods:10164:1,Large Somber Stone,37.10,33.80,-138.56
 540600,40600,m12_01_00_00,71217,reward,0,goods:10165:1,Great Somber Stone,-340.69,-307.84,-347.47
 540602,40602,m12_01_00_00,71219,reward,0,goods:10165:1,Great Somber Stone,-204.38,-111.04,276.70
 540610,40610,m12_02_00_00,71291,reward,0,goods:10164:1,Large Somber Stone,1232.03,-748.51,1535.08
+540612,40612,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540614,40614,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540616,40616,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540618,40618,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540630,40630,m12_02_00_00,71224,reward,0,gem:10300:1,Ash of War: Spinning Slash,1385.66,-796.76,1677.74
+540632,40632,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540634,40634,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540636,40636,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540638,40638,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540640,40640,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540642,40642,m12_02_00_00,71221,reward,0,goods:10164:1,Large Somber Stone,1055.93,-611.95,1214.71
+540644,40644,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540646,40646,m12_02_00_00,71227,reward,0,gem:40400:1,Ash of War: Enchanted Shot,1035.05,-583.09,1701.50
 540648,40648,m12_02_00_00,71220,reward,0,goods:10165:1,Great Somber Stone,1319.57,-626.40,1816.57
+540650,40650,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540652,40652,m12_07_00_00,71270,reward,0,goods:8355:1,Faint Rune of the Dragonkin,857.85,-896.98,1223.59
 540660,40660,m12_03_00_00,71232,reward,0,gem:21300:1,Ash of War: Golden Land,-221.15,94.63,-612.51
+540662,40662,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540664,40664,,0,other,0,goods:2900:1,Golden Rune [1],,,
+540666,40666,,0,other,0,goods:2900:1,Golden Rune [1],,,
 540668,40668,m12_03_00_00,71234,reward,0,goods:10165:1,Great Somber Stone,-807.20,101.98,-264.92
 540670,40670,m12_03_00_00,71235,reward,0,goods:10165:1,Great Somber Stone,-543.59,92.75,-349.31
 540680,40680,m12_05_00_00,71253,reward,0,goods:2900:1,Golden Rune [1],,,
@@ -609,6 +663,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 540916,40916,m61_45_47_00,76914,reward,1,gem:505000:1,Ash of War: The Poison Flower Blooms Twice,11.82,297.39,-97.66
 540920,40920,m61_48_44_00,76822,reward,1,goods:10167:1,Colossal Somber Stone,118.37,364.49,-48.65
 540922,40922,m61_48_44_00,76822,reward,1,goods:10167:1,Colossal Somber Stone,80.26,375.50,-125.99
+540998,40998,,0,other,0,goods:20722:1,Rimed Rowa,,,
 580000,80000,m60_44_38_00,76103,reward,0,goods:8200:1,"""Homing Instinct"" Painting",-10.93,93.67,-15.88
 580010,80010,m60_38_45_00,76217,reward,0,goods:8201:1,"""Resurrection"" Painting",86.86,318.35,-107.96
 580020,80020,m60_39_54_00,76320,reward,0,goods:8202:1,"""Champion's Song"" Painting",36.08,717.71,23.62
@@ -1560,6 +1615,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 15001270,15001270,m15_00_00_00,71502,reward,0,goods:2590000:1,Erdtree Sentry Shamar,-6.71,211.42,606.27
 15001280,15001280,m15_00_00_00,71503,reward,0,goods:670:20,Rot Pot,132.04,213.00,520.48
 15001300,402056001,m15_00_00_00,71501,other,0,goods:10918:1,Blooming Ghost Glovewort,,,
+15001320,402056021,m15_00_00_00,71501,other,0,goods:10918:1,Blooming Ghost Glovewort,,,
 15007000,15000000,m15_00_00_00,71507,pickup,0,goods:3350:3,Bewitching Branch,52.20,501.48,238.14
 15007010,15000010,m15_00_00_00,71506,pickup,0,goods:20753:3,Sacramental Bud,-4.09,619.52,23.40
 15007020,15000020,m15_00_00_00,71506,pickup,0,goods:2909:1,Golden Rune [10],55.12,608.26,56.06
@@ -2468,6 +2524,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 31047050,31040050,m31_04_00_00,73104,pickup,0,goods:1460:2,Poison Grease,6.01,219.95,-123.89
 31047060,31040060,m31_04_00_00,73104,pickup,0,armor:430000:1|armor:430100:1|armor:430300:1,Sage Hood|Sage Robe|Sage Trousers,26.44,214.56,-89.89
 31047070,31040070,m31_04_00_00,73104,pickup,0,weapon:64530000:1,Reverse-Bladed Sword,-0.44,216.46,-66.52
+31047990,420120010,m31_04_00_00,73104,other,0,goods:2905:1,Golden Rune [6],,,
 31057000,31050000,m31_05_00_00,73105,pickup,0,goods:15341:3,Hefty Beast Bone,-161.11,227.12,-2.68
 31057010,31050010,m31_05_00_00,73105,pickup,0,goods:1700:5,Throwing Dagger,-103.49,182.62,20.11
 31057020,31050020,m31_05_00_00,73105,pickup,0,goods:2904:1,Golden Rune [5],-116.74,179.31,45.47
@@ -3143,6 +3200,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 1035507660,424021150,m60_35_50_00,76214,other,0,goods:10160:1,Somber Stone,,,
 1035507670,424021140,m60_35_50_00,76214,other,0,goods:10160:1,Somber Stone,,,
 1035507680,424021130,m60_35_50_00,76214,other,0,goods:10160:1,Somber Stone,,,
+1035507690,424021120,m60_35_50_00,76214,other,0,goods:10160:1,Somber Stone,,,
 1035507700,1035500700,m60_35_50_00,76230,reward,0,goods:20904:1|goods:10160:1,Enduring Physick Remnant|Somber Stone,44.83,320.98,-22.36
 1035507710,1035500710,m60_35_50_00,76214,reward,0,goods:20902:1|goods:10160:1,Prowess Physick Remnant|Somber Stone,83.17,332.71,-151.56
 1035507720,1035500720,m60_35_50_00,76214,reward,0,goods:20900:1|goods:10160:1,Essence Physick Remnant|Somber Stone,48.25,336.33,-84.68
@@ -4536,6 +4594,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 2046397030,2046390030,m61_46_39_00,76832,pickup,1,goods:2001130:1,Fireproof Pickled Liver,-4.36,104.71,30.54
 2046397040,2046390040,m61_46_39_00,76832,pickup,1,goods:2202000:1,Gravebird Ashes,-152.13,175.09,-16.23
 2046397050,2046390050,m61_46_39_00,76832,pickup,1,goods:10908:1,Blooming Grave Glovewort,8.65,30.94,-58.24
+2046397060,2046390060,m61_46_39_00,76832,other,1,goods:2020035:1,Furnace Visage,,,
 2046407000,2046400000,m61_46_40_00,76800,pickup,1,weapon:21510000:1,Pata,16.66,365.02,-35.85
 2046407010,2046400010,m61_46_40_00,76800,pickup,1,goods:2000320:5,Hefty Lightning Pot,-89.68,385.35,49.42
 2046407020,2046400020,m61_46_40_00,76800,pickup,1,armor:5000100:1,Leda's Armor,8.78,365.30,-37.85

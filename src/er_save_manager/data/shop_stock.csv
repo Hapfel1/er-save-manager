@@ -54,6 +54,8 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100120,110200,10,weapon:51000000,300,Patches,m16_00_00_00,71602,0,Great Arrow
 100121,110210,5,weapon:53000000,300,Patches,m16_00_00_00,71602,0,Ballista Bolt
 100122,110220,1,weapon:31240000,1000,Patches,m16_00_00_00,71602,0,Horse Crest Wooden Shield
+100126,110260,1,goods:6750,2500,"D, Hunter of the Dead",m11_10_00_00,71190,0,Litany of Proper Death
+100127,110270,1,goods:6770,3000,"D, Hunter of the Dead",m11_10_00_00,71190,0,Order's Blade
 100150,400300,1,goods:8136,1000,Blackguard,m60_36_43_00,76216,0,Rya's Necklace
 100175,110750,1,goods:4610,4000,Sage Gowry,m60_50_38_00,76418,0,Night Shard
 100176,110760,1,goods:6500,5000,Sage Gowry,m60_50_38_00,76418,0,Night Maiden's Mist
@@ -295,6 +297,8 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100796,170960,1,armor:880200,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Gloves
 100797,170970,1,armor:880300,1000,Nomadic Merchant,m60_37_54_00,76352,0,Confessor Boots
 100798,170980,1,armor:160000,500,Nomadic Merchant,m60_37_54_00,76352,0,Guilty Hood
+100813,180130,3,goods:940,2500,Nomadic Merchant,m60_48_38_00,76406,0,Preserving Boluses
+100814,180140,5,goods:20801,1500,Nomadic Merchant,m60_48_38_00,76406,0,Aeonian Butterfly
 100825,67900,1,goods:9390,4000,Nomadic Merchant,m60_49_37_00,76411,0,Nomadic Warrior's Cookbook [15]
 100826,180260,1,goods:8000,4000,Nomadic Merchant,m60_49_37_00,76411,0,Stonesword Key
 100827,66180,1,goods:9500,1500,Nomadic Merchant,m60_49_37_00,76411,0,Cracked Pot
@@ -343,6 +347,60 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 100965,190650,1,armor:890000,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Iron Mask
 100966,190660,1,armor:890100,1500,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Clothing
 100967,190670,1,armor:890300,1000,Hermit Merchant,m12_01_00_00,71213,0,Prisoner Trousers
+100976,190760,5,goods:8000,5000,Imprisoned Merchant,m12_05_00_00,71253,0,Stonesword Key
+100977,190770,1,goods:10070,5000,Imprisoned Merchant,m12_05_00_00,71253,0,Lost Ashes of War
+100981,190810,3,goods:190,8000,Imprisoned Merchant,m12_05_00_00,71253,0,Rune Arc
+100982,190820,10,goods:111,2000,Imprisoned Merchant,m12_05_00_00,71253,0,Festering Bloody Finger
+100983,190830,3,goods:910,1200,Imprisoned Merchant,m12_05_00_00,71253,0,Stanching Boluses
+101503,250030,1,armor:460000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Elden Lord Crown
+101504,250040,1,armor:460100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Elden Lord Armor
+101505,250050,1,armor:460200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Elden Lord Bracers
+101506,250060,1,armor:460300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Elden Lord Greaves
+101507,250070,1,armor:470000,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Redmane Helm
+101508,250080,1,armor:470100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Lion Armor
+101509,250090,1,armor:470200,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Gauntlets
+101510,250100,1,armor:470300,8000,Finger Reader Enia,m11_10_00_00,71190,0,Radahn's Greaves
+101511,250110,1,armor:480100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Lord of Blood's Robe
+101512,250120,1,armor:510000,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Crescent Crown
+101513,250130,1,armor:510100,10000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Robe
+101514,250140,1,armor:510200,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Bracelets
+101515,250150,1,armor:510300,7000,Finger Reader Enia,m11_10_00_00,71190,0,Queen's Leggings
+101516,250160,1,armor:760000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Helm
+101517,250170,1,armor:760100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Armor
+101518,250180,1,armor:760200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Gauntlets
+101519,250190,1,armor:760300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Maliketh's Greaves
+101520,250200,1,armor:770000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Winged Helm
+101521,250210,1,armor:770100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Armor
+101522,250220,1,armor:770200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Gauntlet
+101523,250230,1,armor:770300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Malenia's Greaves
+101524,250240,1,armor:1050100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Fell Omen Cloak
+101525,250250,1,armor:280000,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Helm
+101526,250260,1,armor:280100,6000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Armor
+101527,250270,1,armor:280200,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Gauntlets
+101528,250280,1,armor:280300,4000,Finger Reader Enia,m11_10_00_00,71190,0,Royal Knight Greaves
+101529,250290,1,armor:780000,4000,Finger Reader Enia,m11_10_00_00,71190,0,Veteran's Helm
+101530,250300,1,armor:780100,6000,Finger Reader Enia,m11_10_00_00,71190,0,Veteran's Armor
+101531,250310,1,armor:780200,4000,Finger Reader Enia,m11_10_00_00,71190,0,Veteran's Gauntlets
+101532,250320,1,armor:780300,4000,Finger Reader Enia,m11_10_00_00,71190,0,Veteran's Greaves
+101550,250500,1,armor:210000,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Helm
+101551,250510,1,armor:210100,6000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Armor
+101552,250520,1,armor:210200,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Gauntlets
+101553,250530,1,armor:210300,4000,Finger Reader Enia,m11_10_00_00,71190,0,Briar Greaves
+101555,250550,1,armor:3010000,8000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Helm
+101556,250560,1,armor:3010100,12000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Armor
+101557,250570,1,armor:3010200,8000,Finger Reader Enia,m11_10_00_00,71190,0,Gaius's Gauntlets
+101558,250580,1,armor:5220000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Helm
+101559,250590,1,armor:5220100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Armor
+101560,250600,1,armor:5220200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Gauntlets
+101561,250610,1,armor:5220300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Messmer's Greaves
+101562,250620,1,armor:5260000,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Helm
+101563,250630,1,armor:5260100,15000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Armor
+101564,250640,1,armor:5260200,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Gloves
+101565,250650,1,armor:5260300,10000,Finger Reader Enia,m11_10_00_00,71190,0,Rellana's Greaves
+101566,250660,1,armor:5270000,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Helm
+101567,250670,1,armor:5270100,20000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Armor
+101568,250680,1,armor:5270200,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Gauntlets
+101569,250690,1,armor:5270300,12000,Finger Reader Enia,m11_10_00_00,71190,0,Young Lion's Greaves
 101800,60280,1,goods:104,1000,Twin Maiden Husks,m11_10_00_00,71190,0,White Cipher Ring
 101801,60290,1,goods:105,1000,Twin Maiden Husks,m11_10_00_00,71190,0,Blue Cipher Ring
 101802,60110,1,goods:8158,100,Twin Maiden Husks,m11_10_00_00,71190,0,Spirit Calling Bell
@@ -478,6 +536,31 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 102350,290650,1,goods:2007000,1,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Bayle's Tyranny
 102351,290660,1,goods:2007010,1,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Bayle's Flame Lightning
 102355,290670,1,goods:2007020,3,Grand Altar of Dragon Communion,m61_49_39_00,76840,1,Ghostflame Breath
+102700,370000,1,goods:2950,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Grafted
+102701,370010,1,goods:2951,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Starscourge
+102702,370020,1,goods:2952,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Omen King
+102703,370030,1,goods:2953,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Blasphemous
+102704,370040,1,goods:2954,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Rot Goddess
+102705,370050,1,goods:2959,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Full Moon Queen
+102706,370060,1,goods:2955,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Blood Lord
+102707,370070,1,goods:2002907,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of a God and a Lord
+102708,370080,1,goods:2002901,0,Walking Mausoleum,m12_03_00_00,71234,0,Remembrance of the Impaler
+102710,370100,1,goods:2956,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Black Blade
+102711,370110,1,goods:2957,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of Hoarah Loux
+102712,370120,1,goods:2958,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Dragonlord
+102713,370130,1,goods:2960,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Lichdragon
+102714,370140,1,goods:2961,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Fire Giant
+102715,370150,1,goods:2962,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Regal Ancestor
+102716,370160,1,goods:2963,0,Walking Mausoleum,m60_09_11_02,76226,0,Elden Remembrance
+102717,370170,1,goods:2964,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Naturalborn
+102718,370180,1,goods:2002900,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Wild Boar Rider
+102720,370200,1,goods:2002902,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Shadow Sunflower
+102721,370210,1,goods:2002903,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Twin Moon Knight
+102722,370220,1,goods:2002904,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Saint of the Bud
+102723,370230,1,goods:2002905,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Dancing Lion
+102724,370240,1,goods:2002908,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Lord of Frenzied Flame
+102725,370250,1,goods:2002909,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Mother of Fingers
+102726,370260,1,goods:2002910,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of Putrescence
 102800,380000,1,goods:2950,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Grafted
 102801,380010,1,goods:2951,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Starscourge
 102802,380020,1,goods:2952,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Omen King
