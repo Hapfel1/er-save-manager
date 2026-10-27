@@ -213,7 +213,7 @@ class StatsEditor:
                 row=i, column=0, sticky=ctk.W, padx=5, pady=5
             )
 
-            var = ctk.IntVar(value=0)
+            var = tk.StringVar(value="0")
             self.stat_vars[key] = var
             entry = ctk.CTkEntry(
                 stats_grid,
@@ -290,7 +290,7 @@ class StatsEditor:
             row=content_row, column=0, sticky=ctk.W, padx=5, pady=5
         )
 
-        self.level_var = ctk.IntVar(value=0)
+        self.level_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             other_frame,
             textvariable=self.level_var,
@@ -328,7 +328,7 @@ class StatsEditor:
             row=content_row + 1, column=0, sticky=ctk.W, padx=5, pady=5
         )
 
-        self.runes_var = ctk.IntVar(value=0)
+        self.runes_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             other_frame,
             textvariable=self.runes_var,
@@ -547,6 +547,9 @@ class StatsEditor:
 
     def load_stats(self):
         """Load stats from current character slot"""
+        # Errors belong to the edits that load or discard replaces.
+        for label in self._attr_error_labels.values():
+            label.configure(text="")
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -584,14 +587,8 @@ class StatsEditor:
         except Exception:
             self._logger.exception("Failed logging stats for slot %s", slot_idx)
 
-        self.stat_vars["vigor"].set(getattr(char, "vigor", 0))
-        self.stat_vars["mind"].set(getattr(char, "mind", 0))
-        self.stat_vars["endurance"].set(getattr(char, "endurance", 0))
-        self.stat_vars["strength"].set(getattr(char, "strength", 0))
-        self.stat_vars["dexterity"].set(getattr(char, "dexterity", 0))
-        self.stat_vars["intelligence"].set(getattr(char, "intelligence", 0))
-        self.stat_vars["faith"].set(getattr(char, "faith", 0))
-        self.stat_vars["arcane"].set(getattr(char, "arcane", 0))
+        for key in _ATTR_KEYS:
+            self.stat_vars[key].set(str(getattr(char, key, 0)))
 
         # Load base max resources only
         self.stat_vars["base_max_hp"].set(getattr(char, "base_max_hp", 0))
@@ -599,7 +596,7 @@ class StatsEditor:
         self.stat_vars["base_max_sp"].set(getattr(char, "base_max_sp", 0))
 
         self.level_var.set(str(getattr(char, "level", 0)))
-        self.runes_var.set(getattr(char, "runes", 0))
+        self.runes_var.set(str(getattr(char, "runes", 0)))
         self._recovered_runes = 0
         self._refresh_bloodstain(slot)
 
@@ -684,7 +681,7 @@ class StatsEditor:
                 "the excess is lost.",
                 parent=self.parent,
             )
-        self.runes_var.set(min(MAX_RUNES, runes + stain_runes))
+        self.runes_var.set(str(min(MAX_RUNES, runes + stain_runes)))
         self._recovered_runes = stain_runes
         self._refresh_bloodstain(slot)
 
@@ -717,14 +714,19 @@ class StatsEditor:
                 except Exception:
                     pass
 
-            vigor = self.stat_vars["vigor"].get()
-            mind = self.stat_vars["mind"].get()
-            endurance = self.stat_vars["endurance"].get()
-            strength = self.stat_vars["strength"].get()
-            dexterity = self.stat_vars["dexterity"].get()
-            intelligence = self.stat_vars["intelligence"].get()
-            faith = self.stat_vars["faith"].get()
-            arcane = self.stat_vars["arcane"].get()
+            vigor, mind, endurance, strength, dexterity, intelligence, faith, arcane = (
+                int(self.stat_vars[key].get().strip())
+                for key in (
+                    "vigor",
+                    "mind",
+                    "endurance",
+                    "strength",
+                    "dexterity",
+                    "intelligence",
+                    "faith",
+                    "arcane",
+                )
+            )
 
             is_convergence = False
             save_file = self.get_save_file()
@@ -949,11 +951,13 @@ class StatsEditor:
             raise StageError("Fix the attributes marked in red before applying.")
 
         try:
-            runes = int(self.runes_var.get())
-        except (ValueError, tk.TclError):
+            runes = int(self.runes_var.get().strip())
+        except ValueError:
             runes = -1
         if not 0 <= runes <= MAX_RUNES:
-            raise StageError(f"Runes must be between 0 and {MAX_RUNES:,}.")
+            raise StageError(
+                f"Runes must be a whole number between 0 and {MAX_RUNES:,}."
+            )
 
         # Silently correct level to match attributes
         calculated_level = (
@@ -963,7 +967,15 @@ class StatsEditor:
         )
         self.level_var.set(str(calculated_level))
 
-        stats = {key: self.stat_vars[key].get() for key in _ATTR_KEYS}
+        stats = {}
+        for key in sorted(_ATTR_KEYS):
+            try:
+                stats[key] = int(self.stat_vars[key].get().strip())
+            except ValueError:
+                self._on_attr_change(key)
+                raise StageError(
+                    f"{key.capitalize()} must be a whole number."
+                ) from None
         level = int(self.level_var.get()) if self.level_var.get() else 0
         great_rune_on = bool(self.great_rune_on_var.get())
         mm_value = self._range_value("matchmaking")

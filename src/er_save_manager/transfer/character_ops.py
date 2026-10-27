@@ -586,6 +586,55 @@ class CharacterOperations:
             f.write(checksum)
 
     @staticmethod
+    def read_erc(input_path) -> tuple[bytes, bytes]:
+        """Slot data and profile data of an .erc file.
+
+        Raises ValueError with a plain message for a file that is not an
+        .erc export, is cut short or fails its checksum.
+        """
+        import hashlib
+
+        with open(input_path, "rb") as f:
+            data = f.read()
+        truncated = ValueError(
+            "The .erc file is incomplete (cut short). Export the character again."
+        )
+        if data[:4] != b"ERC\x00":
+            raise ValueError("Not a character export (.erc) file.")
+        pos = 4
+
+        def take(size: int) -> bytes:
+            nonlocal pos
+            if pos + size > len(data):
+                raise truncated
+            chunk = data[pos : pos + size]
+            pos += size
+            return chunk
+
+        version = struct.unpack("<I", take(4))[0]
+        if version != 1:
+            raise ValueError(f"Unsupported .erc version: {version}")
+        take(1)  # active flag
+        slot_size = struct.unpack("<I", take(4))[0]
+        if slot_size > CharacterOperations.SLOT_SIZE:
+            raise ValueError(
+                f"The .erc slot data is {slot_size:#x} bytes, larger than a "
+                f"character slot ({CharacterOperations.SLOT_SIZE:#x})."
+            )
+        slot_data = take(slot_size)
+        profile_size = struct.unpack("<I", take(4))[0]
+        if profile_size != 0x24C:
+            raise ValueError(
+                f"Profile size mismatch in .erc file: expected 0x24C bytes, got "
+                f"{profile_size:#x}. The .erc file may be corrupted."
+            )
+        profile_data = take(profile_size)
+        checksum_expected = take(16)
+        if hashlib.md5(data[:-16]).digest() != checksum_expected:
+            raise ValueError("Checksum mismatch - file may be corrupted")
+        return slot_data, profile_data
+
+    @staticmethod
     def import_character(save: Save, slot_index: int, input_path: str) -> str:
         """
         Import character from .erc file.
@@ -604,55 +653,8 @@ class CharacterOperations:
         if isinstance(save._raw_data, bytes):
             save._raw_data = bytearray(save._raw_data)
 
-        with open(input_path, "rb") as f:
-            magic = f.read(4)
-            if magic != b"ERC\x00":
-                raise ValueError("Invalid .erc file: bad magic")
-
-            version = struct.unpack("<I", f.read(4))[0]
-            if version != 1:
-                raise ValueError(f"Unsupported .erc version: {version}")
-
-            # Read active flag (added in version 1)
-            active_flag = struct.unpack("<B", f.read(1))[0]
-            bool(active_flag)
-
-            slot_size = struct.unpack("<I", f.read(4))[0]
-            slot_data = f.read(slot_size)
-
-            profile_size = struct.unpack("<I", f.read(4))[0]
-            if profile_size != 0x24C:
-                raise ValueError(
-                    f"Profile size mismatch in .erc file: expected 0x24C ({0x24C}) bytes, "
-                    f"got {profile_size} ({hex(profile_size)}). The .erc file may be corrupted."
-                )
-            profile_data = f.read(profile_size)
-
-            if len(profile_data) != profile_size:
-                raise ValueError(
-                    f"Failed to read full profile data from .erc file: "
-                    f"expected {profile_size} bytes, got {len(profile_data)} bytes. "
-                    f"The .erc file may be truncated."
-                )
-
-            print(
-                f"[CharacterOps] Read .erc file: slot_data={len(slot_data)} bytes, "
-                f"profile_data={len(profile_data)} bytes"
-            )
-
-            checksum_expected = f.read(16)
-
-        with open(input_path, "rb") as f:
-            f.seek(0)
-            data_to_hash = f.read()
-            data_to_hash = data_to_hash[:-16]  # Remove checksum from end
-
-            import hashlib
-
-            checksum_actual = hashlib.md5(data_to_hash).digest()
-
-            if checksum_actual != checksum_expected:
-                raise ValueError("Checksum mismatch - file may be corrupted")
+        slot_data, profile_data = CharacterOperations.read_erc(input_path)
+        profile_size = len(profile_data)
 
         slot_offset = CharacterOperations.get_slot_offset(save, slot_index)
 

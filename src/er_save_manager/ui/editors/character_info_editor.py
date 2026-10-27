@@ -11,6 +11,7 @@ import customtkinter as ctk
 from er_save_manager.data.starting_classes import get_all_classes, get_class_data
 from er_save_manager.ui.pending import FieldTracker, StageError, var_state
 from er_save_manager.ui.utils import bind_mousewheel, trace_variable
+from er_save_manager.validation.names import name_problem, utf16_len
 
 # Index = stored body type
 _BODY_TYPES = ["Type A", "Type B"]
@@ -25,6 +26,12 @@ _TARNISHED_PACK_CLASS_NAMES = frozenset(
 )
 _TARNISHED_PACK_FLAG = 6953
 
+
+# Name field: 16 UTF-16 code units plus a terminator.
+_MAX_NAME_UNITS = 16
+
+# PlayerGameData stores the keepsake as a u8.
+_MAX_GIFT = 0xFF
 
 # The load screen profile stores seconds played as a u32.
 _MAX_PLAYTIME_SECONDS = 0xFFFFFFFF
@@ -154,30 +161,33 @@ class CharacterInfoEditor:
             row=1, column=0, sticky=ctk.W, padx=5, pady=5
         )
         self.char_name_var = ctk.StringVar(value="")
-
-        def validate_name(new_value):
-            return len(new_value) <= 16
-
-        name_vcmd = (creation_frame.register(validate_name), "%P")
         name_entry = ctk.CTkEntry(
             creation_frame,
             textvariable=self.char_name_var,
             width=200,
-            validate="key",
-            validatecommand=name_vcmd,
         )
         name_entry.grid(row=1, column=1, columnspan=3, padx=5, pady=5)
 
         self.char_name_count_label = ctk.CTkLabel(
             creation_frame,
-            text="0/16",
+            text=f"0/{_MAX_NAME_UNITS}",
             font=("Inter", 8),
         )
         self.char_name_count_label.grid(row=1, column=4, padx=5, pady=5)
+        self.name_error_label = ctk.CTkLabel(
+            creation_frame, text="", text_color="red", font=("Inter", 10)
+        )
+        self.name_error_label.grid(row=1, column=5, sticky=ctk.W, padx=5)
 
         def update_name_count(*args):
-            count = len(self.char_name_var.get())
-            self.char_name_count_label.configure(text=f"{count}/16")
+            # Checked on every change instead of with key validation, so
+            # pasted and loaded names are covered too; prepare() blocks.
+            name = self.char_name_var.get()
+            count = utf16_len(name)
+            self.char_name_count_label.configure(text=f"{count}/{_MAX_NAME_UNITS}")
+            self.name_error_label.configure(
+                text=name_problem(name.strip(), _MAX_NAME_UNITS) or ""
+            )
 
         trace_variable(self.char_name_var, "w", update_name_count)
 
@@ -203,6 +213,7 @@ class CharacterInfoEditor:
             creation_frame,
             variable=self.char_archetype_var,
             values=["Vagabond"],  # Will be populated dynamically on load
+            state="readonly",
             width=140,
         )
         self.char_archetype_combo.grid(row=2, column=3, padx=5, pady=5)
@@ -238,7 +249,7 @@ class CharacterInfoEditor:
         ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
             row=3, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_gift_var = ctk.IntVar(value=0)
+        self.char_gift_var = tk.StringVar(value="0")
         ctk.CTkEntry(
             creation_frame,
             textvariable=self.char_gift_var,
@@ -272,6 +283,7 @@ class CharacterInfoEditor:
                 "NG+6 (6)",
                 "NG+7 (7)",
             ],
+            state="readonly",
             width=140,
         )
         ng_combo.grid(row=1, column=1, padx=5, pady=5)
@@ -462,7 +474,7 @@ class CharacterInfoEditor:
             self.char_voice_var.set(
                 _VOICE_TYPES[voice] if voice < len(_VOICE_TYPES) else str(voice)
             )
-            self.char_gift_var.set(getattr(char, "gift", 0))
+            self.char_gift_var.set(str(getattr(char, "gift", 0)))
 
         # Play time lives in the slot header; the load screen copy follows it
         seconds_played = getattr(slot, "play_time_ms", 0) // 1000
@@ -534,12 +546,18 @@ class CharacterInfoEditor:
         try:
             body = _BODY_TYPES.index(self.char_body_type_var.get())
             voice = _VOICE_TYPES.index(self.char_voice_var.get())
-            gift = int(self.char_gift_var.get())
-        except (ValueError, tk.TclError):
-            raise StageError(
-                "Body type, voice type and keepsake are invalid."
-            ) from None
-        char_name = self.char_name_var.get()
+        except ValueError:
+            raise StageError("Body type and voice type are invalid.") from None
+        try:
+            gift = int(self.char_gift_var.get().strip())
+        except ValueError:
+            gift = -1
+        if not 0 <= gift <= _MAX_GIFT:
+            raise StageError(f"Keepsake must be a whole number 0-{_MAX_GIFT}.")
+        char_name = self.char_name_var.get().strip()
+        problem = name_problem(char_name, _MAX_NAME_UNITS)
+        if problem:
+            raise StageError(problem)
         target_level = int(self.char_ng_level_var.get().split("(")[1].rstrip(")"))
         time_of_day = (
             int(self.time_h_var.get()),

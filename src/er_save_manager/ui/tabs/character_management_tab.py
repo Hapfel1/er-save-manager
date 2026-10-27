@@ -16,6 +16,93 @@ from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
+# Convergence caps weapon upgrades at +15.
+_CONVERGENCE_MAX_UPGRADE = 15
+# Event flag blob bits (byte index * 8 + MSB-first bit) set only in
+# Convergence characters.
+_CONVERGENCE_FLAG_BITS = (
+    760,
+    13100,
+    15730,
+    15740,
+    15750,
+    15760,
+    15770,
+    15780,
+    15790,
+    11062000,
+    11076505,
+    11076601,
+)
+
+
+def _slot_item_ids(slot) -> set[int]:
+    """Full item ids of the gaitem map, talismans and goods in a slot."""
+    ids = set()
+    for gaitem in slot.gaitem_map:
+        if gaitem.gaitem_handle not in (0, 0xFFFFFFFF) and gaitem.item_id not in (
+            0,
+            0xFFFFFFFF,
+            -1,
+        ):
+            ids.add(gaitem.item_id & 0xFFFFFFFF)
+    for inv in (slot.inventory_held, slot.inventory_storage_box):
+        for item in list(inv.common_items) + list(inv.key_items):
+            handle = item.gaitem_handle & 0xFFFFFFFF
+            if item.quantity <= 0 or handle in (0, 0xFFFFFFFF):
+                continue
+            if handle >> 28 == 0xA:
+                ids.add(0x20000000 | (handle & 0xFFFFFF))
+            elif handle >> 28 == 0xB:
+                ids.add(0x40000000 | (handle & 0xFFFFFF))
+    return ids
+
+
+def _erc_is_convergence(slot_data: bytes, is_ps: bool) -> bool | None:
+    """Flavor of the character in .erc slot data: True for Convergence-only
+    items or event flags, False for a weapon above +15, None when neither
+    shows."""
+    from io import BytesIO
+
+    from er_save_manager.data.item_database import get_item_database
+    from er_save_manager.parser.user_data_x import UserDataX
+
+    try:
+        slot = UserDataX.read(BytesIO(slot_data), is_ps, 0, len(slot_data))
+        ids = _slot_item_ids(slot)
+    except Exception:
+        return None
+    flags = slot.event_flags or b""
+    if any(
+        len(flags) > bit >> 3 and flags[bit >> 3] >> (7 - (bit & 7)) & 1
+        for bit in _CONVERGENCE_FLAG_BITS
+    ):
+        return True
+    db = get_item_database()
+    vanilla = {
+        i.full_id for i in db.items if not i.category_name.startswith("Convergence")
+    }
+    for full_id in ids:
+        root = full_id
+        if full_id & 0xF0000000 == 0:
+            root = full_id // 10000 * 10000
+        if (
+            full_id not in vanilla
+            and root not in vanilla
+            and any(
+                (item := db.get_item_by_id(i, is_convergence=True)) is not None
+                and item.category_name.startswith("Convergence")
+                for i in (full_id, root)
+            )
+        ):
+            return True
+    if any(
+        full_id & 0xF0000000 == 0 and full_id % 100 > _CONVERGENCE_MAX_UPGRADE
+        for full_id in ids
+    ):
+        return False
+    return None
+
 
 class CharacterManagementTab:
     """Tab for character management operations"""
@@ -274,7 +361,6 @@ class CharacterManagementTab:
         self.copy_to_var = tk.IntVar(value=2)
         to_combo = ctk.CTkComboBox(
             controls,
-            variable=self.copy_to_var,
             values=slot_names,
             state="readonly",
             width=200,
@@ -644,24 +730,44 @@ class CharacterManagementTab:
         if not target_path:
             return
 
+        source_path = self._get_current_save_path()
+        if source_path and Path(target_path).resolve() == source_path.resolve():
+            CTkMessageBox.showerror(
+                "Same Save File",
+                "The target is the save file that is open. Use Copy Character "
+                "to copy a character within one save file.",
+                parent=self.parent,
+            )
+            return
+
+        from er_save_manager.parser import Save
+
+        try:
+            target_save = Save.from_file(target_path)
+        except Exception as e:
+            CTkMessageBox.showerror(
+                "Not an Elden Ring Save",
+                f"{Path(target_path).name} is not an Elden Ring save file, or it "
+                f"could not be read.\n\n{e}",
+                parent=self.parent,
+            )
+            return
+
+        if save_file.is_convergence != target_save.is_convergence and (
+            not self._confirm_flavor_mismatch(
+                save_file.is_convergence,
+                target_save.is_convergence,
+                Path(target_path).name,
+            )
+        ):
+            return
+
         try:
             from er_save_manager.backup.manager import BackupManager
-            from er_save_manager.parser import Save
             from er_save_manager.transfer.character_ops import CharacterOperations
-
-            target_save = Save.from_file(target_path)
 
             to_slot = self._select_target_slot(target_save, target_path)
             if to_slot is None:
-                return
-
-            source_path = self._get_current_save_path()
-            if source_path and Path(target_path).resolve() == source_path.resolve():
-                notify(
-                    self.parent,
-                    "Select a different target save file for transfer.",
-                    "warning",
-                )
                 return
 
             if source_path:
@@ -705,6 +811,24 @@ class CharacterManagementTab:
             import traceback
 
             traceback.print_exc()
+
+    def _confirm_flavor_mismatch(
+        self, source_convergence: bool, target_convergence: bool, name: str
+    ) -> bool:
+        """Ask before moving a character between Convergence and vanilla."""
+
+        def flavor(convergence: bool) -> str:
+            return "Convergence" if convergence else "vanilla Elden Ring"
+
+        return CTkMessageBox.askyesno(
+            "Convergence and Vanilla",
+            f"The character comes from a {flavor(source_convergence)} save and "
+            f"the target {name} is a {flavor(target_convergence)} save.\n\n"
+            "Items, classes and upgrade levels from one do not all exist in the "
+            "other. How the game handles such a character is not known; keep "
+            "the backup.\n\nContinue?",
+            parent=self.parent,
+        )
 
     def _get_current_save_path(self) -> Path | None:
         """Return the current save path as a Path object when available."""
@@ -903,6 +1027,27 @@ class CharacterManagementTab:
 
         if not import_path:
             return
+
+        from er_save_manager.transfer.character_ops import CharacterOperations
+
+        try:
+            slot_data, _profile = CharacterOperations.read_erc(import_path)
+        except (OSError, ValueError) as e:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"{Path(import_path).name} cannot be imported:\n\n{e}",
+                parent=self.parent,
+            )
+            return
+        erc_convergence = _erc_is_convergence(slot_data, save_file.is_ps)
+        if erc_convergence is not None and erc_convergence != save_file.is_convergence:
+            save_path = self.get_save_path()
+            if not self._confirm_flavor_mismatch(
+                erc_convergence,
+                save_file.is_convergence,
+                Path(save_path).name if save_path else "this save",
+            ):
+                return
 
         to_slot = int(self.import_slot_var.get()) - 1
         to_char = save_file.characters[to_slot]
