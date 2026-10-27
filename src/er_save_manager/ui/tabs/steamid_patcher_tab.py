@@ -628,20 +628,24 @@ class SteamIDPatcherTab:
         )
 
     def _resolve_vanity_url(self, custom_name: str):
-        # Steam's XML profile endpoint requires no API key and returns
-        # a <steamID64> element directly.
-        try:
-            import re
-            import urllib.request
+        """Look up the SteamID of a vanity URL on a worker thread."""
+        import threading
 
-            xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
-            req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                body = resp.read().decode("utf-8", errors="replace")
+        if getattr(self, "_resolving_vanity", False):
+            notify(self.parent, "A Steam profile lookup is still running.", "warning")
+            return
+        self._resolving_vanity = True
+        notify(self.parent, f"Looking up {custom_name}...", "info")
 
-            match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
-            if match:
-                steamid = match.group(1)
+        def finish(steamid, error):
+            self._resolving_vanity = False
+            if error is not None:
+                CTkMessageBox.showerror(
+                    "Resolution Failed",
+                    f"Failed to resolve vanity URL: {custom_name}\n\nError: {error}",
+                    parent=self.parent,
+                )
+            elif steamid:
                 self.new_steamid_var.set(steamid)
                 self.steam_url_var.set("")
                 self.show_toast(f"Resolved: {steamid}", duration=2500)
@@ -653,12 +657,35 @@ class SteamIDPatcherTab:
                     "Enter the SteamID directly instead.",
                     parent=self.parent,
                 )
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Resolution Failed",
-                f"Failed to resolve vanity URL: {custom_name}\n\nError: {e}",
-                parent=self.parent,
-            )
+
+        def run():
+            steamid = error = None
+            try:
+                steamid = self._fetch_vanity_steamid(custom_name)
+            except Exception as e:
+                error = e
+            try:
+                self.parent.after(0, lambda: finish(steamid, error))
+            except (RuntimeError, tk.TclError):
+                # Window closed while the request ran
+                pass
+
+        threading.Thread(target=run, daemon=True).start()
+
+    @staticmethod
+    def _fetch_vanity_steamid(custom_name: str) -> str | None:
+        # Steam's XML profile endpoint requires no API key and returns
+        # a <steamID64> element directly.
+        import re
+        import urllib.request
+
+        xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
+        req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+
+        match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
+        return match.group(1) if match else None
 
     def auto_detect_steamid(self):
         """
