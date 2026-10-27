@@ -30,8 +30,13 @@ import customtkinter as ctk
 from er_save_manager.games.DS3.slot import LayoutError
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import game_blocks_write
+
+_QUESTS_STALE = (
+    "The save was reloaded from disk. Close this window and open Quests again."
+)
 
 
 def _game_blocks_write(parent) -> bool:
@@ -187,12 +192,20 @@ class DS3NpcsTab:
                 parent=self.parent,
             )
             return
-        if _game_blocks_write(self.parent):
+        if _game_blocks_write(self.parent) or not save_writable():
             return
         slot = self._current_slot
 
         def commit(_description: str) -> None:
-            _backup_and_save(save, save_path, f"ds3_quest_progress_slot_{slot + 1}")
+            # After a failed write the save is reloaded; this dialog still
+            # edits the old character.
+            if self._get_save() is not save:
+                raise RuntimeError(_QUESTS_STALE)
+            try:
+                _backup_and_save(save, save_path, f"ds3_quest_progress_slot_{slot + 1}")
+            except Exception as exc:
+                write_failed(exc, self.parent)
+                raise RuntimeError(_QUESTS_STALE) from exc
             self._update_states()
 
         QuestProgressDialog.open(
@@ -233,6 +246,8 @@ class DS3NpcsTab:
                 parent=self.parent,
             )
             return
+        if not save_writable():
+            return
         if revive:
             try:
                 for npc in npcs:
@@ -250,7 +265,7 @@ class DS3NpcsTab:
                 save, save_path, f"ds3_npc_{verb}_slot_{self._current_slot + 1}"
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return
         self._update_states()
         what = npcs[0]["name"] if len(npcs) == 1 else f"{len(npcs)} NPCs"

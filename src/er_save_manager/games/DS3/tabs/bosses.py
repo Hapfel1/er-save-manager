@@ -17,6 +17,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
@@ -173,7 +174,7 @@ class DS3BossesTab:
                 save, save_path, f"ds3_boss_{action}_slot_{self._current_slot + 1}"
             )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return
         self._update_states()
         what = bosses[0]["name"] if len(bosses) == 1 else f"{len(bosses)} bosses"
@@ -199,5 +200,7 @@ class DS3BossesTab:
                 f"Event flags cannot be edited for this character: {char.flags_error}",
                 parent=self.parent,
             )
+            return None, None, None
+        if not save_writable():
             return None, None, None
         return save, save_path, char

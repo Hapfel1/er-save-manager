@@ -81,6 +81,11 @@ class DS3EquipAdapter:
             )
         return names
 
+    def choice_for(self, key: Hashable) -> EquipChoice | None:
+        """Choice of the held entry with this key, None when it is gone."""
+        entry = self._by_key.get(key)
+        return None if entry is None else self._choice(entry)
+
     def _choice(self, entry: DS3InventoryEntry) -> EquipChoice:
         source = self.source
         item = catalog.lookup(entry.item_id, source)
@@ -203,10 +208,10 @@ class DS3EquipAdapter:
 
     # ---- writing -----------------------------------------------------------------
 
-    def apply(self, staged: dict) -> None:
-        """Write staged picks into the slot data. Raises ValueError, before
-        writing anything, when a picked entry changed since the panel
-        loaded."""
+    def check(self, staged: dict) -> list:
+        """(slot key, inventory entry) per staged pick. Raises ValueError
+        when a picked entry was removed or moved since the panel loaded, or
+        the picks break a slot or attunement rule."""
         resolved = []
         for slot_key, choice in staged.items():
             entry = None
@@ -215,8 +220,9 @@ class DS3EquipAdapter:
                 entry = self.char.entry_at(offset)
                 if entry is None or entry.handle != handle:
                     raise ValueError(
-                        f"{choice.name} moved in the inventory. Reload the "
-                        "character and pick it again."
+                        f"{choice.name} is no longer at its inventory position "
+                        "(removed or moved in the Inventory tab). Pick it "
+                        "again or reset the slot."
                     )
                 if not self._accepts(slot_key, entry) and not (
                     self._is_placeholder(entry)
@@ -235,7 +241,12 @@ class DS3EquipAdapter:
             self.attunement_budget({}),
             self.spells_changed,
         )
-        for slot_key, entry in resolved:
+        return resolved
+
+    def apply(self, staged: dict) -> None:
+        """Write staged picks into the slot data, after check (nothing is
+        written when it raises)."""
+        for slot_key, entry in self.check(staged):
             if isinstance(slot_key, tuple):
                 self.char.set_quick_item(slot_key[1], entry)
             else:

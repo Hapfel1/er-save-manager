@@ -24,7 +24,14 @@ from er_save_manager.games.DS3.slot import GESTURE_COUNT
 from er_save_manager.games.DS3.tabs.style import make_tree
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    PendingPage,
+    StageError,
+    save_writable,
+    var_state,
+    write_failed,
+)
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import game_blocks_write
 
@@ -416,7 +423,7 @@ class DS3WorldStateTab:
         try:
             _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return False
         self._update_states()
         return True
@@ -432,5 +439,7 @@ class DS3WorldStateTab:
         char = save.characters[self._current_slot] if self._current_slot >= 0 else None
         if char is None:
             notify(self.parent, "No character in this slot.", "warning")
+            return None, None, None
+        if not save_writable():
             return None, None, None
         return save, save_path, char

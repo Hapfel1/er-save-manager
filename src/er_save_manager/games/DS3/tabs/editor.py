@@ -39,6 +39,10 @@ from er_save_manager.ui.utils import (
     game_blocks_write,
     patch_combo_scroll,
 )
+from er_save_manager.validation.names import name_problem
+
+# NG+ field text for a character whose NG+ counter cannot be located
+_NG_UNKNOWN = "--"
 
 
 def _game_blocks_write(parent) -> bool:
@@ -299,13 +303,14 @@ class DS3EditorTab:
             row=1, column=1, padx=5, pady=5, sticky="w"
         )
         ctk.CTkLabel(cf, text="NG+:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        ctk.CTkComboBox(
+        self._ng_combo = ctk.CTkComboBox(
             cf,
             variable=self._ng_var,
             values=[str(i) for i in range(8)],
             state="readonly",
             width=200,
-        ).grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        )
+        self._ng_combo.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         ctk.CTkLabel(
             frame,
@@ -343,6 +348,7 @@ class DS3EditorTab:
             var.set("")
         self._name_var.set("")
         self._ng_var.set("0")
+        self._set_ng_editable(True)
         self._class_var.set("")
         if hasattr(self, "_class_note"):
             self._set_class_note([])
@@ -391,8 +397,16 @@ class DS3EditorTab:
 
     def _fill_identity(self, char) -> None:
         self._name_var.set(char.name)
-        self._ng_var.set("0" if char.layout_error else str(char.ng_plus))
+        # NG+ sits behind the slot's offset chain; a broken chain hides it.
+        broken = bool(char.layout_error)
+        self._ng_var.set(_NG_UNKNOWN if broken else str(char.ng_plus))
+        self._set_ng_editable(not broken)
         self._identity_tracker.mark_clean()
+
+    def _set_ng_editable(self, editable: bool) -> None:
+        combo = getattr(self, "_ng_combo", None)
+        if combo is not None:
+            combo.configure(state="readonly" if editable else "disabled")
 
     def _stats_state(self) -> dict:
         state = var_state(
@@ -442,6 +456,25 @@ class DS3EditorTab:
             return
         panel.load(DS3EquipAdapter(char, self._source))
 
+    def _reload_equipment_keeping_staged(self) -> None:
+        """Reload the equipment page for another game data source and stage
+        the same picks and spells again; only their names change."""
+        panel = getattr(self, "_equip_panel", None)
+        old = panel.adapter if panel is not None else None
+        staged = panel.staged if panel is not None else {}
+        spells = list(old.spells) if old is not None else None
+        self._load_equipment()
+        new = panel.adapter if panel is not None else None
+        if new is None or old is None or new.char is not old.char:
+            return
+        new.spells = spells
+        for slot_key, choice in staged.items():
+            # A pick whose entry is gone keeps its old choice; prepare reports it.
+            if choice is not None:
+                choice = new.choice_for(choice.key) or choice
+            panel._stage(slot_key, choice)
+        self._attunement.refresh()
+
     def _equipment_changes(self) -> int:
         panel = getattr(self, "_equip_panel", None)
         if panel is None or panel.adapter is None:
@@ -460,6 +493,12 @@ class DS3EditorTab:
         save, slot = self._get_save(), self._current_slot
         if adapter is None or save is None:
             raise StageError("No character loaded.")
+        # Inventory edits since the picks were staged can leave a pick
+        # pointing at a removed or moved entry.
+        try:
+            adapter.check(staged)
+        except ValueError as exc:
+            raise StageError(str(exc)) from None
 
         def commit() -> None:
             adapter.apply(staged)
@@ -488,7 +527,7 @@ class DS3EditorTab:
         return save.characters[self._current_slot]
 
     def _on_source_change(self) -> None:
-        self._load_equipment()
+        self._reload_equipment_keeping_staged()
         if not hasattr(self, "_class_combo"):
             self._class_source = self._source
             return
@@ -668,16 +707,16 @@ class DS3EditorTab:
         if char is None:
             raise StageError("No character loaded.")
         slot = self._current_slot
-        name = self._name_var.get()
-        if len(name) > NAME_MAX_CHARS:
-            raise StageError(f"The name can be at most {NAME_MAX_CHARS} characters.")
-        ng = int(self._ng_var.get())
-        if ng != char.ng_plus and char.layout_error:
-            raise StageError(f"NG+ cannot be changed: {char.layout_error}")
+        name = self._name_var.get().strip()
+        problem = name_problem(name, NAME_MAX_CHARS)
+        if problem:
+            raise StageError(problem)
+        # None: NG+ is not shown (broken offset chain) and stays as stored.
+        ng = None if char.layout_error else int(self._ng_var.get())
 
         def commit() -> None:
             char.name = name
-            if ng != char.ng_plus:
+            if ng is not None and ng != char.ng_plus:
                 char.ng_plus = ng
             _sync_dir_name_level(save, slot, char.name, char.level)
 

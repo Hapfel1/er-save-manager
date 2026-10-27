@@ -496,3 +496,24 @@ def test_matchmaking_level_scale():
     assert catalog.matchmaking_level(DAGGER + 7) == 7
     assert catalog.matchmaking_level(0x107AC0 + 3) == 6  # Tailbone Short Sword, +5 cap
     assert catalog.matchmaking_level(0x10000000 | 1000) == 0
+
+
+def test_matching_sources(slot):
+    stats = {k: slot.get_stat(k) for k in catalog.STAT_KEYS}
+    assert "vanilla" in catalog.matching_sources(slot.starting_class, stats, slot.level)
+    # A level that fits no class table, and a class index past every table
+    assert catalog.matching_sources(slot.starting_class, stats, slot.level + 1) == []
+    assert catalog.matching_sources(999, stats, slot.level) == []
+
+
+def test_equipment_check_rejects_removed_pick(slot):
+    from er_save_manager.games.DS3.tabs.equipment import DS3EquipAdapter
+
+    dagger = slot.add_item(DAGGER, sort_key=5000000, durability=50)
+    adapter = DS3EquipAdapter(slot, "vanilla")
+    choice = adapter.choice_for((dagger.offset, dagger.handle))
+    staged = {2: choice}
+    assert adapter.check(staged) == [(2, slot.entry_at(dagger.offset))]
+    slot.remove_item(slot.entry_at(dagger.offset))
+    with pytest.raises(ValueError, match="no longer at its inventory position"):
+        adapter.check(staged)
