@@ -41,7 +41,12 @@ from er_save_manager.ui.editors import (
     StatsEditor,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import CharacterBar, PendingBar, PendingPage
+from er_save_manager.ui.pending import (
+    CharacterBar,
+    PendingBar,
+    PendingPage,
+    register_save_hooks,
+)
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
@@ -976,6 +981,10 @@ class SaveManagerGUI:
         ]
 
         self.character_bar = CharacterBar(self.root, self._on_character_selected)
+        register_save_hooks(
+            write_failed=self._write_failed,
+            file_writable=self._pending_file_writable,
+        )
         self.pending_bar = PendingBar(
             self.root,
             get_slot=lambda: self.character_bar.index,
@@ -984,7 +993,6 @@ class SaveManagerGUI:
             blocks_write=self._pending_blocks_write,
             file_writable=self._pending_file_writable,
             after_apply=self._after_apply,
-            reload_from_disk=self._reload_after_failed_apply,
             show_toast=self.show_toast,
             on_visibility=self._show_pending_bar,
         )
@@ -1388,6 +1396,20 @@ class SaveManagerGUI:
             return True
         self.save_write_blocked(problem)
         return False
+
+    def _write_failed(self, exc: BaseException, parent=None) -> None:
+        """Handler of pending.write_failed: the in-memory save holds a
+        change the file does not, so it is re-read from disk."""
+        dropped = (
+            " Unapplied changes are dropped." if self.pending_bar.dirty() else ""
+        )
+        CTkMessageBox.showerror(
+            "Save Not Written",
+            f"The change was not written:\n{exc}\n\n"
+            f"The save is reloaded from disk.{dropped}",
+            parent=parent or self.root,
+        )
+        self._reload_after_failed_apply()
 
     def save_write_blocked(self, exc: OSError) -> None:
         """Tell the user why the loaded save was not written. A changed or

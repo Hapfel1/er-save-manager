@@ -28,6 +28,48 @@ _NAME_CHARS = 36
 Change = tuple[str, str, str]
 
 
+# Window-wide handlers for save writes outside Apply All, set by the main
+# window through register_save_hooks.
+_hooks: dict[str, Callable] = {}
+
+
+def register_save_hooks(
+    *,
+    write_failed: Callable[[BaseException, object], None],
+    file_writable: Callable[[], bool],
+) -> None:
+    """Install the main window's handlers behind write_failed and
+    save_writable."""
+    _hooks["write_failed"] = write_failed
+    _hooks["file_writable"] = file_writable
+
+
+def write_failed(exc: BaseException, parent=None) -> None:
+    """Report a failed write of the loaded save and reload it from disk.
+
+    Call it from the except branch of any tab that changed the in-memory
+    save and then failed to write it: the in-memory save holds the change
+    the file does not, and the next write would carry it along.
+    """
+    handler = _hooks.get("write_failed")
+    if handler is not None:
+        handler(exc, parent)
+        return
+    from er_save_manager.ui.messagebox import CTkMessageBox
+
+    CTkMessageBox.showerror("Save Not Written", str(exc), parent=parent)
+
+
+def save_writable() -> bool:
+    """Check the loaded save before a tab changes it in memory.
+
+    False, after telling the user (Reload / Cancel), when the file changed
+    on disk since it was loaded or is read-only.
+    """
+    handler = _hooks.get("file_writable")
+    return True if handler is None else bool(handler())
+
+
 class StageError(Exception):
     """Input of a page is invalid; raised before the page changes the save."""
 
@@ -267,7 +309,7 @@ class PendingBar(ctk.CTkFrame):
     file_writable() returns False (after asking the user) when the save
     changed on disk since it was loaded or cannot be written.
     after_apply() reloads the character into every tab.
-    reload_from_disk() restores the in-memory save after a failed apply.
+    A failed write goes to write_failed(), which reloads the save from disk.
     """
 
     def __init__(
@@ -280,7 +322,6 @@ class PendingBar(ctk.CTkFrame):
         blocks_write: Callable[[], bool],
         file_writable: Callable[[], bool],
         after_apply: Callable[[], None],
-        reload_from_disk: Callable[[], None],
         show_toast: Callable[..., None],
         on_visibility: Callable[[bool], None],
     ) -> None:
@@ -292,7 +333,6 @@ class PendingBar(ctk.CTkFrame):
         self._blocks_write = blocks_write
         self._file_writable = file_writable
         self._after_apply = after_apply
-        self._reload_from_disk = reload_from_disk
         self._show_toast = show_toast
         self._on_visibility = on_visibility
         self._shown = False
@@ -476,12 +516,7 @@ class PendingBar(ctk.CTkFrame):
                     notes += commit() or []
                 self._write()
             except Exception as exc:
-                CTkMessageBox.showerror(
-                    "Apply Failed",
-                    f"The save was not written:\n{exc}\n\nIt is reloaded from disk.",
-                    parent=self,
-                )
-                self._reload_from_disk()
+                write_failed(exc, self)
                 return False
             self._after_apply()
             self._update()
