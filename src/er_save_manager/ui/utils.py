@@ -466,6 +466,10 @@ def bind_mousewheel(widget, target_widget=None):
     root.bind_all("<Button-5>", _wheel_linux, add="+")
 
 
+# Dropdown rows added per event loop turn after the visible ones
+_COMBO_BATCH = 10
+
+
 def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
     """
     Replace a CTkComboBox's dropdown with a scrollable popup.
@@ -553,18 +557,32 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
             if combo._command is not None:
                 combo._command(value)
 
-        for value in values:
-            ctk.CTkButton(
-                frame,
-                text=value,
-                anchor="w",
-                width=width - 16,
-                fg_color="transparent",
-                hover_color=theme["hover_color"],
-                text_color=theme["text_color"],
-                height=row_height - 4,
-                command=lambda v=value: _select(v),
-            ).pack(fill="x", pady=1)
+        def _add_rows(start: int, count: int) -> None:
+            """Buttons for values[start:start + count]; the ones that fit the
+            popup are made before it shows, the rest in later event loop
+            turns, so a long list opens without a pause."""
+            if closed or not popup.winfo_exists():
+                return
+            for value in values[start : start + count]:
+                ctk.CTkButton(
+                    frame,
+                    text=value,
+                    anchor="w",
+                    width=width - 16,
+                    fg_color="transparent",
+                    hover_color=theme["hover_color"],
+                    text_color=theme["text_color"],
+                    height=row_height - 4,
+                    command=lambda v=value: _select(v),
+                ).pack(fill="x", pady=1)
+            if start + count < len(values):
+                # Tk runs due timers before the idle callbacks that repaint,
+                # so the timer is armed from an idle callback
+                popup.after_idle(
+                    lambda: popup.after(1, _add_rows, start + count, _COMBO_BATCH)
+                )
+
+        _add_rows(0, rows)
 
         def _arm_close():
             popup.geometry(geometry)
