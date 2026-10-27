@@ -416,6 +416,35 @@ def _wheel_linux(event):
         return
 
 
+_ctk_frame_wheel = ctk.CTkScrollableFrame._mouse_wheel_all
+
+
+def _frame_wheel(self, event):
+    """<MouseWheel> handler that scrolls only the innermost scrollable target.
+
+    CTkScrollableFrame binds <MouseWheel> with bind_all, so every frame
+    around the pointer scrolls, together with any list, map or grid that
+    handles the wheel itself.
+    """
+    if self._shift_pressed:
+        _ctk_frame_wheel(self, event)
+        return
+    widget = event.widget
+    try:
+        if isinstance(widget, str):
+            widget = self.nametowidget(widget)
+        target = _wheel_target(widget, "<MouseWheel>")
+    except (AttributeError, KeyError, tkinter.TclError):
+        return
+    if target is self._parent_canvas:
+        _ctk_frame_wheel(self, event)
+
+
+# Patched on the class so frames created anywhere in the application get it.
+# Depends on CTkScrollableFrame internals (customtkinter 5.2.x).
+ctk.CTkScrollableFrame._mouse_wheel_all = _frame_wheel
+
+
 def bind_mousewheel(widget, target_widget=None):
     """
     Enable wheel scrolling of CTkScrollableFrames on Linux.
