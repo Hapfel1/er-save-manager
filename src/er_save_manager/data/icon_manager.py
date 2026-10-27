@@ -375,11 +375,6 @@ def get_icon(name: str, category_name: str = "") -> PILImage.Image | None:
         return None
 
 
-def coverage_stats() -> dict[str, int]:
-    _ensure_loaded()
-    return {"total_icons": len(_available) if _available else 0, "cached": len(_cache)}
-
-
 # ---- affinity icons ---------------------------------------------------------
 
 # Maps affinity display name -> icon lookup name.

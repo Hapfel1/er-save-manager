@@ -55,9 +55,10 @@ Outputs to `dist/linux-{version}/`
 ```
 src/er_save_manager/
     __init__.py                 # Package init, version
-    cli.py                      # Command-line interface (legacy)
     preset_manager.py           # Community preset download/cache
     preset_metrics.py           # Supabase metrics (likes/downloads)
+    supabase_api.py             # PostgREST calls for share codes and metrics
+    aes_cbc.py                  # AES-CBC for the BND4 save containers
     
     parser/                     # Save file parsing
         __init__.py
@@ -94,7 +95,6 @@ src/er_save_manager/
         gestures.py             # Gesture unlock data
         item_database.py        # Item IDs and names
         locations.py            # World locations for teleport
-        region_ids_map.py       # Map region unlock IDs
         regions.py              # Region unlock data
         starting_classes.py     # Character class data
         items/                  # Item category text files
@@ -121,7 +121,6 @@ src/er_save_manager/
         theme.py                # Custom theme configuration
         utils.py                # UI utilities
         messagebox.py           # Custom message boxes
-        backup_utils.py         # Backup UI utilities
         
         tabs/                   # Main UI tabs
             __init__.py

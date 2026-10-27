@@ -4861,11 +4861,14 @@ class MapWindow:
             self._on_export_markers(self._editor)
 
     def _import(self):
-        if self._markers_editable() and self._on_import_markers:
-            if self._on_import_markers(self._editor):
-                self._selected_marker = None
-                self._refresh_marker_panel()
-                self._schedule_render()
+        if (
+            self._markers_editable()
+            and self._on_import_markers
+            and self._on_import_markers(self._editor)
+        ):
+            self._selected_marker = None
+            self._refresh_marker_panel()
+            self._schedule_render()
 
     def _copy(self):
         if self._markers_editable() and self._on_copy_markers:

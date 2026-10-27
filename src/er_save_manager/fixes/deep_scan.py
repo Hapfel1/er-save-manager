@@ -762,7 +762,7 @@ class DeepScanFix(BaseFix):
                         break
                     pos_check += 4 + sz
                 if any_nonzero:
-                    pass  # d=0 is a genuine clean match, no EF tear
+                    # d=0 is a genuine clean match, no EF tear
                     ef_delta = 0  # ensure delta scan below is skipped
                 else:
                     # All-zero structs: EF overflow, remove false hit and scan for real delta
@@ -962,24 +962,22 @@ class DeepScanFix(BaseFix):
                 sz,
                 pos + 4 + sz,
             )
-            if sz == 0 and sname in (
-                "WorldArea",
-                "WorldGeomMan",
-                "WorldGeomMan2",
-                "RendMan",
+            # Zero size for a struct that should have content.
+            # Struct zone was likely patched already (zeroed region wiped a size field).
+            # Use pivot position as authoritative: if netman_start_from_steamid is in a
+            # plausible range, treat as clean.
+            if (
+                sz == 0
+                and sname in ("WorldArea", "WorldGeomMan", "WorldGeomMan2", "RendMan")
+                and netman_start_from_steamid > ef_end_rel + fixed_tail
             ):
-                # Zero size for a struct that should have content.
-                # Struct zone was likely patched already (zeroed region wiped a size field).
-                # Use pivot position as authoritative: if netman_start_from_steamid is in a
-                # plausible range, treat as clean.
-                if netman_start_from_steamid > ef_end_rel + fixed_tail:
-                    log.debug(
-                        "[deep_scan] walk: zero size for %s, pivot looks valid - "
-                        "struct zone appears post-fix, delta=0",
-                        sname,
-                    )
-                    result.delta = 0
-                    return result
+                log.debug(
+                    "[deep_scan] walk: zero size for %s, pivot looks valid - "
+                    "struct zone appears post-fix, delta=0",
+                    sname,
+                )
+                result.delta = 0
+                return result
             pos += 4 + sz
 
         walk_netman = pos + fixed_tail

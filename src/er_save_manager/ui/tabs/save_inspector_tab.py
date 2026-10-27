@@ -177,15 +177,6 @@ class SaveInspectorTab:
             slot_idx, name, values, scan_character(save_file, slot_idx).issue_texts
         )
 
-    def on_character_select(self, event):
-        """Handle character selection"""
-        # Not used in CTk list version
-        return
-
-    def on_character_double_click(self, event):
-        """Handle double-click to show details"""
-        self.show_character_details()
-
     def show_character_details(self):
         """Show character details dialog"""
         if self.selected_slot is None:

@@ -1,5 +1,6 @@
 """Utility functions for UI components."""
 
+import contextlib
 import os
 import platform as platform_module
 import re
@@ -534,10 +535,8 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
             except Exception:
                 pass
             if previous_grab is not None:
-                try:
+                with contextlib.suppress(Exception):
                     previous_grab.grab_set()
-                except Exception:
-                    pass
 
         def _on_click(event):
             left, top = popup.winfo_rootx(), popup.winfo_rooty()
@@ -572,10 +571,8 @@ def patch_combo_scroll(combo, max_visible_rows: int = 20, row_height: int = 28):
             popup.bind("<FocusOut>", _close)
             popup.bind("<Button-1>", _on_click, add="+")
             popup.focus_force()
-            try:
+            with contextlib.suppress(Exception):
                 popup.grab_set()
-            except Exception:
-                pass
 
         popup.bind("<Escape>", _close)
         popup.update_idletasks()
@@ -620,10 +617,7 @@ def _open_url_linux(url: str) -> bool:
         ["kde-open5", url],
         ["kde-open", url],
     ]
-    for cmd in commands:
-        if shutil.which(cmd[0]) and _run_command(cmd, env=env):
-            return True
-    return False
+    return any(shutil.which(cmd[0]) and _run_command(cmd, env=env) for cmd in commands)
 
 
 _LINUX_FILE_MANAGERS = ("nautilus", "dolphin", "thunar", "nemo", "pcmanfm", "caja")

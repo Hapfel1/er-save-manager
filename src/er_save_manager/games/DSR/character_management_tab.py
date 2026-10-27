@@ -449,9 +449,12 @@ class DSRCharacterManagementTab:
         if char_a is None and char_b is not None:
             if not self._confirm_empty_target(slot_a):
                 return
-        elif char_b is None and char_a is not None:
-            if not self._confirm_empty_target(slot_b):
-                return
+        elif (
+            char_b is None
+            and char_a is not None
+            and not self._confirm_empty_target(slot_b)
+        ):
+            return
 
         save_path = self._get_save_path()
         try:
@@ -650,9 +653,10 @@ class DSRCharacterManagementTab:
         if to_slot is None:
             return
 
-        if target_save.characters[to_slot] is None:
-            if not self._confirm_empty_target(to_slot):
-                return
+        if target_save.characters[to_slot] is None and not self._confirm_empty_target(
+            to_slot
+        ):
+            return
 
         try:
             if current_path:

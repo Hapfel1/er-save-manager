@@ -432,24 +432,6 @@ class EquipmentPanel:
         self._stage(slot_key, choice)
 
 
-class AttunementAdapter(Protocol):
-    """Attunement half of an adapter. Spell keys identify a spell to the
-    adapter; spells is the staged list, written by the adapter's apply."""
-
-    spells: list[Hashable]
-    loaded_spells: list[Hashable]
-
-    def spell_choices(self) -> list[EquipChoice]:
-        """Spells the character can attune that are not in the staged list."""
-
-    def spell_name(self, key: Hashable) -> str: ...
-
-    def spell_cost(self, key: Hashable) -> int | None: ...
-
-    def attunement_budget(self, staged: dict) -> int | None:
-        """Attunement slots with the staged equipment, None when unknown."""
-
-
 def check_attunement(
     cost: int, budget: int | None, loaded_budget: int | None, spells_changed: bool
 ) -> None:

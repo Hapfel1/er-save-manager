@@ -372,7 +372,7 @@ class DS2InventoryPanel:
         ctk.CTkComboBox(
             filter_row,
             variable=self.filter_category_var,
-            values=["All"] + list(CATEGORY_LABELS.values()),
+            values=["All", *list(CATEGORY_LABELS.values())],
             state="readonly",
             width=160,
             command=lambda _v: self._apply_filter(),
@@ -894,11 +894,11 @@ class DS2InventoryPanel:
                 self.show_toast("No addable items", duration=2000)
             return
 
-        if (category in UPGRADABLE_CATEGORIES and upgrade > 0) or (
-            category == "weapons" and infusion > 0
-        ):
-            if self._load_regulation(save) is None:
-                return
+        if (
+            (category in UPGRADABLE_CATEGORIES and upgrade > 0)
+            or (category == "weapons" and infusion > 0)
+        ) and self._load_regulation(save) is None:
+            return
 
         in_box = self._add_to_box()
         where = "item box" if in_box else "inventory"

@@ -193,7 +193,7 @@ class MerchantRestockDialog:
 
         def _on_scope_changed():
             merchants = sorted({r.merchant for r in stock if _in_scope(r)})
-            merchant_combo.configure(values=[_ALL] + merchants)
+            merchant_combo.configure(values=[_ALL, *merchants])
             if merchant_var.get() not in merchants:
                 merchant_var.set(_ALL)
             _refresh()

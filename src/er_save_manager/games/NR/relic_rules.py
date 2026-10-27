@@ -256,11 +256,8 @@ def check(real_item_id: int, effects: list[int], curses: list[int]) -> list[Issu
     effects, curses = canonical(effects, curses)
     filled = [e for e in effects if e != _EMPTY]
     cursed = [c for c in curses if c != _EMPTY]
-    issues = []
-
     unknown = [e for e in filled + cursed if _effect_info(e) is None]
-    for e in unknown:
-        issues.append(Issue("unknown", f"Effect {e} is not in the game data."))
+    issues = [Issue("unknown", f"Effect {e} is not in the game data.") for e in unknown]
     known = [e for e in filled if e not in unknown]
 
     if len(filled) != len(set(filled)):
@@ -294,11 +291,11 @@ def check(real_item_id: int, effects: list[int], curses: list[int]) -> list[Issu
 
     if kind == "deep":
         needs_curse, other, curse_ids = _deep_pools()
-        for e in known:
-            if e not in needs_curse and e not in other:
-                issues.append(
-                    Issue("pool", f"{effect_name(e)} cannot roll on a deep relic.")
-                )
+        issues.extend(
+            Issue("pool", f"{effect_name(e)} cannot roll on a deep relic.")
+            for e in known
+            if e not in needs_curse and e not in other
+        )
         for i, (e, c) in enumerate(zip(effects, curses, strict=True), 1):
             if c != _EMPTY and c not in unknown and c not in curse_ids:
                 issues.append(Issue("curse", f"{effect_name(c)} is not a curse."))
@@ -332,8 +329,9 @@ def check(real_item_id: int, effects: list[int], curses: list[int]) -> list[Issu
     pools = [_pool(t) for t in _slot_tables(real_item_id)]
     union = frozenset().union(*pools)
     outside = [e for e in known if e not in union]
-    for e in outside:
-        issues.append(Issue("pool", f"{effect_name(e)} cannot roll on this relic."))
+    issues.extend(
+        Issue("pool", f"{effect_name(e)} cannot roll on this relic.") for e in outside
+    )
     if (
         not outside
         and not unknown

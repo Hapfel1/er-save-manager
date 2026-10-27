@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+import contextlib
 import struct
 from typing import TYPE_CHECKING
 
 from er_save_manager.data.locations import (
-    LOCATIONS,
     MapLocation,
     get_name_for_map_id,
 )
@@ -47,10 +47,8 @@ class WorldStateEditor:
         map_name = get_name_for_map_id(map_id_str)
 
         coords = None
-        try:
+        with contextlib.suppress(AttributeError):
             coords = slot.player_coordinates.coordinates
-        except AttributeError:
-            pass
 
         return {
             "map_name": map_name,
@@ -121,16 +119,6 @@ class WorldStateEditor:
 
         return True, "Bloodstain moved to player position"
 
-    def teleport_to_map_id(self, map_id_str: str) -> tuple[bool, str]:
-        """
-        Teleport character to a map by its string ID (e.g. "m60_42_36_00").
-        Uses safe_coords from the location database if available, otherwise keeps the current coordinates.
-        """
-        loc = LOCATIONS.get(map_id_str)
-        if loc is None:
-            return False, f"Unknown map ID: {map_id_str}"
-        return self.teleport_to_location(loc)
-
     def teleport_to_location(self, loc: MapLocation) -> tuple[bool, str]:
         """Teleport character to a map or grace entry from the location database."""
         try:
@@ -180,10 +168,8 @@ class WorldStateEditor:
             coord_base = slot.coordinates_offset
             pc_map_id_offset = coord_base + 12
             raw[pc_map_id_offset : pc_map_id_offset + 4] = map_id.data
-            try:
+            with contextlib.suppress(AttributeError):
                 slot.player_coordinates.map_id = map_id
-            except AttributeError:
-                pass
 
             if zero_coords:
                 zero = struct.pack("<fff", 0.0, 0.0, 0.0)

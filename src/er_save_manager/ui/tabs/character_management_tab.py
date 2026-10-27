@@ -3,6 +3,7 @@ Character Management Tab (CustomTkinter)
 Handles copy, transfer, swap, export, import, and delete operations
 """
 
+import contextlib
 import tkinter as tk
 from pathlib import Path
 
@@ -222,10 +223,8 @@ class CharacterManagementTab:
 
             char_name = "Unknown"
             if profiles and i < len(profiles):
-                try:
+                with contextlib.suppress(Exception):
                     char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
 
             if i not in active:
                 char_name += " (deleted)"

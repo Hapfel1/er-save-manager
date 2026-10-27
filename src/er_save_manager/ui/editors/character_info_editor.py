@@ -3,6 +3,7 @@ Character Info Editor Module (customtkinter)
 Handles character information editing (name, body type, class, etc.)
 """
 
+import contextlib
 import tkinter as tk
 
 import customtkinter as ctk
@@ -672,16 +673,12 @@ class CharacterInfoEditor:
             )
 
             for flag_id in ng_flag_ids:
-                try:
+                with contextlib.suppress(Exception):
                     EventFlags.set_flag(flags, flag_id, False)
-                except Exception:
-                    pass
 
             target_flag_id = ng_flag_ids[target_level]
-            try:
+            with contextlib.suppress(Exception):
                 EventFlags.set_flag(flags, target_flag_id, True)
-            except Exception:
-                pass
 
             slot.event_flags = bytes(flags)
 

@@ -19,6 +19,7 @@ import struct
 from dataclasses import dataclass
 from pathlib import Path
 
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 # AES-128-CBC key for Nightreign save files (credit: TKGP / EonaCat)
@@ -60,24 +61,14 @@ class _NrEntry:
 
 
 def _decrypt_entry(raw: bytes, offset: int, size: int) -> tuple[bytes, bytearray]:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
     enc = raw[offset : offset + size]
     iv = enc[:_IV_SIZE]
     payload = enc[_IV_SIZE:]
-    cipher = Cipher(algorithms.AES(_NR_KEY), modes.CBC(iv), backend=default_backend())
-    dec = cipher.decryptor()
-    return iv, bytearray(dec.update(payload) + dec.finalize())
+    return iv, bytearray(aes_cbc.decrypt(_NR_KEY, iv, payload))
 
 
 def _encrypt_entry(iv: bytes, decrypted: bytearray) -> bytes:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    cipher = Cipher(algorithms.AES(_NR_KEY), modes.CBC(iv), backend=default_backend())
-    enc = cipher.encryptor()
-    return iv + enc.update(bytes(decrypted)) + enc.finalize()
+    return iv + aes_cbc.encrypt(_NR_KEY, iv, bytes(decrypted))
 
 
 def _patch_checksum(dec: bytearray) -> None:
@@ -129,16 +120,6 @@ def patch_steamid_nr(
     Returns (success, message).
     Writes the patched file in-place.
     """
-    try:
-        from cryptography.hazmat.primitives.ciphers import (
-            Cipher,  # noqa: F401 - availability check
-        )
-    except ImportError:
-        return (
-            False,
-            "cryptography package is required for Nightreign SteamID patching. Install it with: pip install cryptography",
-        )
-
     try:
         raw = bytearray(save_path.read_bytes())
     except OSError as e:

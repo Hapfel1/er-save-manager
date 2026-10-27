@@ -53,11 +53,6 @@ def _backup_and_save(nr_save, save_path: Path, op: str) -> None:
     nr_save.write_file(save_path)
 
 
-def _parse_int(s: str) -> int:
-    s = s.strip()
-    return int(s, 16) if s.lower().startswith("0x") else int(s)
-
-
 def _fmt_effect(effect_id: int) -> str:
     from er_save_manager.games.NR.item_db import effect_name
 
@@ -1086,7 +1081,7 @@ class NREditorTab:
         else:
             opts = sorted(((e, effect_name(e)) for e in rollable), key=lambda x: x[1])
         opts = [(e, name) for e, name in opts if can_add(relic_id, e, others)]
-        return [(_EMPTY_EFFECT, "(empty)")] + opts
+        return [(_EMPTY_EFFECT, "(empty)"), *opts]
 
     def _curse_picker_items(self, others: list[int]) -> list[tuple[int, str]]:
         """Curses not already used in another row."""

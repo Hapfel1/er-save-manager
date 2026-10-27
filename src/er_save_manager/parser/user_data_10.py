@@ -342,14 +342,6 @@ class KeyConfigSaveLoad:
     def prompt_device(self) -> int:
         return self._option(self.PROMPT_DEVICE)
 
-    def bindings(self) -> list[tuple[int, int, int, int, int]]:
-        """(pad, keyboard, keyboard modifier, mouse, mouse modifier) per action."""
-        return [
-            struct.unpack_from("<5i", self.data, k * 20)
-            for k in range(self.BINDING_COUNT)
-            if (k + 1) * 20 <= len(self.data)
-        ]
-
     @classmethod
     def read(cls, f: BytesIO) -> KeyConfigSaveLoad:
         """Read KeyConfigSaveLoad"""

@@ -22,6 +22,7 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
@@ -43,25 +44,15 @@ def _steam32_to_64(steam32: int) -> int:
 
 def _decrypt_entry(raw_entry: bytes) -> tuple[bytes, bytes, bytearray]:
     """Returns (md5, iv, decrypted)."""
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
     md5 = raw_entry[:_MD5_SIZE]
     iv = raw_entry[_MD5_SIZE : _MD5_SIZE + _IV_SIZE]
     payload = raw_entry[_MD5_SIZE + _IV_SIZE :]
-    cipher = Cipher(algorithms.AES(_DS3_KEY), modes.CBC(iv), backend=default_backend())
-    dec = cipher.decryptor()
-    return md5, iv, bytearray(dec.update(payload) + dec.finalize())
+    return md5, iv, bytearray(aes_cbc.decrypt(_DS3_KEY, iv, payload))
 
 
 def _encrypt_entry(iv: bytes, decrypted: bytearray) -> bytes:
     """Returns [MD5][IV][encrypted]."""
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    cipher = Cipher(algorithms.AES(_DS3_KEY), modes.CBC(iv), backend=default_backend())
-    enc = cipher.encryptor()
-    encrypted = enc.update(bytes(decrypted)) + enc.finalize()
+    encrypted = aes_cbc.encrypt(_DS3_KEY, iv, bytes(decrypted))
     md5 = hashlib.md5(iv + encrypted).digest()
     return md5 + iv + encrypted
 
@@ -102,11 +93,6 @@ def patch_steamid_ds3(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     Accepts Steam64 and converts to Steam32 internally.
     Returns (success, message).
     """
-    try:
-        from cryptography.hazmat.primitives.ciphers import Cipher  # noqa: F401
-    except ImportError:
-        return False, "cryptography package required. Run: uv add cryptography"
-
     try:
         raw = bytearray(save_path.read_bytes())
     except OSError as e:

@@ -189,7 +189,7 @@ class GraceDialog:
 
         def _on_scope_changed():
             regions = sorted({g.region for g in graces if _in_scope(g)})
-            region_combo.configure(values=[_ALL] + regions)
+            region_combo.configure(values=[_ALL, *regions])
             if region_var.get() not in regions:
                 region_var.set(_ALL)
             _refresh()

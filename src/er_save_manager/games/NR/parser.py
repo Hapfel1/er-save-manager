@@ -185,14 +185,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
-
-try:
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    _CRYPTO_AVAILABLE = True
-except ImportError:
-    _CRYPTO_AVAILABLE = False
 
 # AES-128-CBC key (same key as DS2/ER Seamless Coop)
 _NR_KEY = bytes(
@@ -329,23 +323,15 @@ HERO_NAMES = [
 
 def _decrypt_entry(raw: bytes, offset: int, size: int) -> bytearray:
     """Decrypt a single BND4 entry from the raw file."""
-    if not _CRYPTO_AVAILABLE:
-        raise RuntimeError("cryptography package required for Nightreign saves")
     enc = raw[offset : offset + size]
     iv = enc[:_IV_SIZE]
     payload = enc[_IV_SIZE:]
-    cipher = Cipher(algorithms.AES(_NR_KEY), modes.CBC(iv))
-    dec = cipher.decryptor()
-    return bytearray(dec.update(payload) + dec.finalize())
+    return bytearray(aes_cbc.decrypt(_NR_KEY, iv, payload))
 
 
 def _encrypt_entry(iv: bytes, decrypted: bytearray) -> bytes:
     """Re-encrypt a decrypted entry using the original IV."""
-    if not _CRYPTO_AVAILABLE:
-        raise RuntimeError("cryptography package required for Nightreign saves")
-    cipher = Cipher(algorithms.AES(_NR_KEY), modes.CBC(iv))
-    enc = cipher.encryptor()
-    return iv + enc.update(bytes(decrypted)) + enc.finalize()
+    return iv + aes_cbc.encrypt(_NR_KEY, iv, bytes(decrypted))
 
 
 def _patch_checksum(dec: bytearray) -> None:
@@ -819,10 +805,6 @@ class NightreignSlot:
     def all_presets(self) -> list[CustomPreset]:
         return [p for h in self.heroes.values() for p in h.presets]
 
-    def _update_entry_count(self) -> None:
-        count = sum(1 for e in self.item_entries if not e.is_empty)
-        struct.pack_into("<I", self.decrypted, self.entry_count_offset, count)
-
 
 # ---------------------------------------------------------------------------
 # Global profile data (entry 10)
@@ -957,29 +939,10 @@ class NightreignProfile:
         self.don_score = value
         struct.pack_into("<I", self.decrypted, _E10_DON_SCORE, value)
 
-    def set_run_count(self, value: int) -> None:
-        struct.pack_into("<I", self.decrypted, _E10_RUN_COUNT, value)
-        self.run_count = value
-
 
 # ---------------------------------------------------------------------------
 # Slot parser
 # ---------------------------------------------------------------------------
-
-
-def _iter_item_states(data: bytearray, start: int, count: int):
-    """
-    Yield (ga_handle, type_bits, state_size, abs_offset) for each state slot.
-    Advances cursor by each state's variable size.
-    """
-    cursor = start
-    for _ in range(count):
-        ga_handle = struct.unpack_from("<I", data, cursor)[0]
-        type_bits = ga_handle & 0xF0000000
-        size = _STATE_SIZE.get(type_bits, 8)
-        yield ga_handle, type_bits, size, cursor
-        cursor += size
-    return cursor
 
 
 def _find_steam_id_offset(dec: bytearray, start: int) -> int:
@@ -1266,12 +1229,6 @@ class NightreignSave:
 
     # --- Convenience edit methods ---
 
-    def set_murk(self, slot_index: int, value: int) -> None:
-        self.slots[slot_index].murk = value
-
-    def set_marks_of_night(self, slot_index: int, value: int) -> None:
-        self.slots[slot_index].marks_of_night = value
-
     def set_don_rank(self, value: int) -> None:
         """Set Deep of Night rank in the global profile."""
         if self.profile is None:
@@ -1282,10 +1239,6 @@ class NightreignSave:
         if self.profile is None:
             raise RuntimeError("profile not parsed")
         self.profile.set_don_score(value)
-
-    def get_relics(self, slot_index: int) -> dict[int, RelicState]:
-        """Return all relic states for a slot keyed by ga_handle."""
-        return self.slots[slot_index].relic_states
 
     def modify_relic(
         self,
@@ -1322,24 +1275,6 @@ class NightreignSave:
         if curse_3 is not None:
             rs.curse_3 = curse_3
         rs.write_to(slot.decrypted)
-
-    def set_vessel_relics(
-        self, slot_index: int, hero_type: int, vessel_id: int, relics: list[int]
-    ) -> None:
-        """
-        Set the 6 relic slots for a vessel and write to slot data.
-        relics: list of 6 ga_handles (0 = empty).
-        """
-        if len(relics) != 6:
-            raise ValueError("relics must have exactly 6 elements")
-        hero = self.slots[slot_index].heroes.get(hero_type)
-        if hero is None:
-            raise KeyError(f"hero_type {hero_type} not found in slot {slot_index}")
-        vessel = hero.get_vessel(vessel_id)
-        if vessel is None:
-            raise KeyError(f"vessel_id {vessel_id} not found for hero {hero_type}")
-        vessel.relics = relics
-        vessel.write_to(self.slots[slot_index].decrypted)
 
     def update_preset(
         self,
@@ -1438,16 +1373,3 @@ class NightreignSave:
             elif hero.cur_preset_idx == last.index:
                 dec[sel_off] = target.index
         _refresh_slot(slot)
-
-    def dump_summary(self, slot_index: int) -> str:
-        """Return a human-readable summary of the slot."""
-        slot = self.slots[slot_index]
-        lines = [f"Slot {slot_index}: {slot.player_name!r}"]
-        lines.append(f"  murk: {slot.murk}  Marks of Night: {slot.marks_of_night}")
-        lines.append(f"  Relics: {len(slot.relic_states)}")
-        lines.append(f"  Entries: {slot.entry_count}")
-        if self.profile:
-            lines.append(
-                f"  Deep of Night Rank: {self.profile.don_rank} (score {self.profile.don_score})"
-            )
-        return "\n".join(lines)

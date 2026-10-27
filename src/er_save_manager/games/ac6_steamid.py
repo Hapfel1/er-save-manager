@@ -15,6 +15,7 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 _AC6_KEY = bytes(
@@ -48,23 +49,13 @@ _ENTRIES_START = 64
 
 
 def _decrypt(raw_entry: bytes) -> tuple[bytes, bytearray]:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
     iv = raw_entry[:_IV_SIZE]
     payload = raw_entry[_IV_SIZE:]
-    cipher = Cipher(algorithms.AES(_AC6_KEY), modes.CBC(iv), backend=default_backend())
-    dec = cipher.decryptor()
-    return iv, bytearray(dec.update(payload) + dec.finalize())
+    return iv, bytearray(aes_cbc.decrypt(_AC6_KEY, iv, payload))
 
 
 def _encrypt(iv: bytes, decrypted: bytearray) -> bytes:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    cipher = Cipher(algorithms.AES(_AC6_KEY), modes.CBC(iv), backend=default_backend())
-    enc = cipher.encryptor()
-    return iv + enc.update(bytes(decrypted)) + enc.finalize()
+    return iv + aes_cbc.encrypt(_AC6_KEY, iv, bytes(decrypted))
 
 
 def _patch_checksum(dec: bytearray) -> None:
@@ -138,11 +129,6 @@ def patch_steamid_ac6(save_path: Path, new_steamid: int) -> tuple[bool, str]:
     Patch the SteamID in an AC6 save. Writes in-place.
     Returns (success, message).
     """
-    try:
-        from cryptography.hazmat.primitives.ciphers import Cipher  # noqa: F401
-    except ImportError:
-        return False, "cryptography package required. Run: uv add cryptography"
-
     try:
         raw = bytearray(save_path.read_bytes())
     except OSError as e:

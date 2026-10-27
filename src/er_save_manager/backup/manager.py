@@ -352,25 +352,6 @@ class BackupManager:
             print(f"Backup pruning warning failed: {e}")
             return "delete"
 
-    def create_pre_write_backup(self, save: Save, operation: str) -> Path:
-        """
-        Create mandatory backup before any write operation.
-
-        This is called automatically before modifications.
-
-        Args:
-            save: The save object being modified
-            operation: Description of the operation
-
-        Returns:
-            Path to the backup file
-        """
-        return self.create_backup(
-            description="before_modification",
-            operation=operation,
-            save=save,
-        )
-
     def list_backups(self) -> list[BackupMetadata]:
         """
         List all backups for this save file.
@@ -548,47 +529,6 @@ class BackupManager:
                 self._save_history()
                 return True
         return False
-
-    def verify_backup(self, backup_name: str) -> bool:
-        """
-        Verify a backup file is valid.
-        Supports .zip, legacy .gz, and uncompressed backups.
-
-        Args:
-            backup_name: Name of the backup file to verify
-
-        Returns:
-            True if backup is valid
-        """
-        backup_path = self.backup_folder / backup_name
-        if not backup_path.exists():
-            return False
-
-        if backup_path.stat().st_size < 1000:
-            return False
-
-        is_zip = backup_name.endswith(".zip")
-        is_gzip = backup_name.endswith(".gz")
-
-        if is_zip:
-            try:
-                with zipfile.ZipFile(backup_path, "r") as zipf:
-                    return len(zipf.namelist()) > 0
-            except zipfile.BadZipFile:
-                return False
-
-        if is_gzip:
-            try:
-                with gzip.open(backup_path, "rb") as f:
-                    f.read(4)
-                return True
-            except (gzip.BadGzipFile, OSError):
-                return False
-
-        # Check magic bytes for uncompressed save
-        with open(backup_path, "rb") as f:
-            magic = f.read(4)
-            return magic in (b"BND4", b"SL2\x00")
 
     def get_backup_info(self, backup_name: str) -> BackupMetadata | None:
         """

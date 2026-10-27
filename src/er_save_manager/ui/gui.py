@@ -3,6 +3,7 @@ Main GUI Application
 Modular Elden Ring Save Manager GUI
 """
 
+import contextlib
 import logging
 import os
 import re
@@ -1212,10 +1213,8 @@ class SaveManagerGUI:
         if game == "elden_ring" and self.save_file is not None:
             save = self.save_file
             profiles = None
-            try:
+            with contextlib.suppress(Exception):
                 profiles = save.user_data_10_parsed.profile_summary.profiles
-            except Exception:
-                pass
             # Deleted characters keep their slot data and profile summary
             # entry until a new character is created in the slot, so only
             # slots marked active in the profile summary hold a character.
@@ -2503,9 +2502,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         initialdir = None
         if self.settings.get("remember_last_location", True):
@@ -2520,10 +2518,9 @@ class SaveManagerGUI:
             if default_loc and default_loc.exists():
                 initialdir = str(default_loc)
 
-        if not initialdir:
-            # ER legacy fallback
-            if self.default_save_path.exists():
-                initialdir = str(self.default_save_path)
+        # ER legacy fallback
+        if not initialdir and self.default_save_path.exists():
+            initialdir = str(self.default_save_path)
 
         if not initialdir and PlatformUtils.is_linux():
             steam_base = Path.home() / ".local" / "share" / "Steam"
@@ -2640,31 +2637,30 @@ class SaveManagerGUI:
             if target_dir and steamid:
                 target_dir = target_dir / steamid
 
-            if target_dir:
-                if CTkMessageBox.askyesno(
-                    "Copy Save",
-                    f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
-                    parent=self.root,
-                ):
-                    try:
-                        import shutil
+            if target_dir and CTkMessageBox.askyesno(
+                "Copy Save",
+                f"Copy save file to:\n{target_dir}\n\nThe original file will remain in its current location.",
+                parent=self.root,
+            ):
+                try:
+                    import shutil
 
-                        target_dir.mkdir(parents=True, exist_ok=True)
-                        new_path = target_dir / current_path.name
-                        shutil.copy2(save_path, new_path)
-                        self.file_path_var.set(str(new_path))
-                        CTkMessageBox.showinfo(
-                            "Save Copied",
-                            f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
-                            parent=self.root,
-                        )
-                        dialog.destroy()
-                    except Exception as e:
-                        CTkMessageBox.showerror(
-                            "Copy Failed",
-                            f"Failed to copy save:\n{e}",
-                            parent=self.root,
-                        )
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    new_path = target_dir / current_path.name
+                    shutil.copy2(save_path, new_path)
+                    self.file_path_var.set(str(new_path))
+                    CTkMessageBox.showinfo(
+                        "Save Copied",
+                        f"Save file copied to:\n{new_path}\n\nOriginal file remains at:\n{save_path}",
+                        parent=self.root,
+                    )
+                    dialog.destroy()
+                except Exception as e:
+                    CTkMessageBox.showerror(
+                        "Copy Failed",
+                        f"Failed to copy save:\n{e}",
+                        parent=self.root,
+                    )
 
         def dont_show_again():
             self.settings.set("show_linux_save_warning", False)
@@ -2774,71 +2770,6 @@ class SaveManagerGUI:
                 return result.returncode == 0
         except Exception:
             return False
-
-    def _get_game_folder(self) -> Path | None:
-        """Attempt to detect the Elden Ring installation folder."""
-        try:
-            # Try to find via Steam registry on Windows
-            if PlatformUtils.is_windows():
-                import winreg
-
-                try:
-                    key = winreg.OpenKey(
-                        winreg.HKEY_LOCAL_MACHINE,
-                        r"SOFTWARE\WOW6432Node\Valve\Steam",
-                    )
-                    steam_path = Path(winreg.QueryValueEx(key, "InstallPath")[0])
-                    winreg.CloseKey(key)
-
-                    game_folder = steam_path / "steamapps" / "common" / "ELDEN RING"
-                    if game_folder.exists():
-                        return game_folder
-
-                    library_file = steam_path / "steamapps" / "libraryfolders.vdf"
-                    if library_file.exists():
-                        content = library_file.read_text(encoding="utf-8")
-                        # Simple parse for paths (not perfect VDF parsing)
-                        import re
-
-                        paths = re.findall(r'"path"\s+"(.+?)"', content)
-                        for path_str in paths:
-                            lib_path = Path(path_str.replace("\\\\", "\\"))
-                            game_folder = (
-                                lib_path / "steamapps" / "common" / "ELDEN RING"
-                            )
-                            if game_folder.exists():
-                                return game_folder
-
-                except Exception:
-                    pass
-
-            # Fallback: Check common default locations
-            common_paths = [
-                Path("C:/Program Files (x86)/Steam/steamapps/common/ELDEN RING"),
-                Path("C:/Program Files/Steam/steamapps/common/ELDEN RING"),
-                Path.home()
-                / ".steam"
-                / "steam"
-                / "steamapps"
-                / "common"
-                / "ELDEN RING",
-                Path.home()
-                / ".local"
-                / "share"
-                / "Steam"
-                / "steamapps"
-                / "common"
-                / "ELDEN RING",
-            ]
-
-            for path in common_paths:
-                if path.exists():
-                    return path
-
-        except Exception:
-            pass
-
-        return None
 
     def _open_inventory_editor(self):
         """Show Character Editor > Inventory for the active game; for
@@ -2988,14 +2919,13 @@ class SaveManagerGUI:
                     self.nr_char_mgmt_tab.refresh()
                 if hasattr(self, "ds2_management_tab") and self.ds2_management_tab:
                     self.ds2_management_tab.refresh()
-            elif tab_name == "Hex Editor":
-                if self.save_file:
-                    try:
-                        with open(self.save_path, "rb") as f:
-                            self.save_file._raw_data = f.read()
-                        self.hex_tab.hex_display_at_offset(0)
-                    except Exception:
-                        pass
+            elif tab_name == "Hex Editor" and self.save_file:
+                try:
+                    with open(self.save_path, "rb") as f:
+                        self.save_file._raw_data = f.read()
+                    self.hex_tab.hex_display_at_offset(0)
+                except Exception:
+                    pass
             # "Gestures" has no auto-load
 
             self.tabs_loaded[tab_name] = True
@@ -3038,9 +2968,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         self.save_path = Path(save_path)
         self.save_file = None
@@ -3088,11 +3017,12 @@ class SaveManagerGUI:
             if profile and profile.process_name
             else "eldenring.exe"
         )
-        if not self.settings.get(
-            "skip_game_running_check", False
-        ) and self.is_game_running(process_name):
-            if not self._handle_game_running_dialog(profile):
-                return
+        if (
+            not self.settings.get("skip_game_running_check", False)
+            and self.is_game_running(process_name)
+            and not self._handle_game_running_dialog(profile)
+        ):
+            return
 
         if self.active_game == "elden_ring" and not self._confirm_vanilla_save(
             save_path
@@ -3247,9 +3177,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         if not self._confirm_vanilla_save(save_path):
             return
@@ -3336,9 +3265,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         if not self._confirm_vanilla_save(save_path):
             return
@@ -3389,9 +3317,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         if not self._confirm_vanilla_save(save_path):
             return
@@ -3440,9 +3367,8 @@ class SaveManagerGUI:
             and profile
             and profile.process_name
             and self.is_game_running(profile.process_name)
-        ):
-            if not self._handle_game_running_dialog(profile):
-                return
+        ) and not self._handle_game_running_dialog(profile):
+            return
 
         if not self._confirm_vanilla_save(save_path):
             return
@@ -3467,16 +3393,18 @@ class SaveManagerGUI:
                 tab.refresh()
         self._refresh_character_bar()
 
-        if hasattr(self, "nr_steamid_tab") and self.nr_steamid_tab:
-            if self._nr_save and self._nr_save.profile:
-                sid = self._nr_save.profile.steam_id
-                path = Path(save_path)
-                try:
-                    self.nr_steamid_tab.current_steamid_var.set(
-                        f"Save: {path.name}  |  SteamID: {sid}"
-                    )
-                except Exception:
-                    pass
+        if (
+            hasattr(self, "nr_steamid_tab")
+            and self.nr_steamid_tab
+            and self._nr_save
+            and self._nr_save.profile
+        ):
+            sid = self._nr_save.profile.steam_id
+            path = Path(save_path)
+            with contextlib.suppress(Exception):
+                self.nr_steamid_tab.current_steamid_var.set(
+                    f"Save: {path.name}  |  SteamID: {sid}"
+                )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
         self.show_toast(
@@ -3818,10 +3746,8 @@ def _set_dpi_aware_unscaled() -> None:
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except (AttributeError, OSError):
-        try:
+        with contextlib.suppress(AttributeError, OSError):
             ctypes.windll.user32.SetProcessDPIAware()
-        except (AttributeError, OSError):
-            pass
 
 
 def main():

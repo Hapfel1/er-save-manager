@@ -3,6 +3,7 @@ Custom message dialogs for customtkinter with lavender theme
 Replacement for tkinter.messagebox with styled CTk dialogs
 """
 
+import contextlib
 import tkinter as tk
 
 import customtkinter as ctk
@@ -162,10 +163,8 @@ class CTkMessageBox:
         # force_render_dialog focuses the dialog before it is mapped; focus it
         # again once visible so Enter and Escape reach it, not the parent.
         def take_focus():
-            try:
+            with contextlib.suppress(tk.TclError):
                 dialog.focus_force()
-            except tk.TclError:
-                pass
 
         take_focus()
         dialog.after(150, take_focus)
@@ -177,7 +176,7 @@ class CTkMessageBox:
         dialog.protocol("WM_DELETE_WINDOW", lambda: choose(cancel_value))
 
         dialog.wait_window()
-        return result["value"] if "value" in result else None
+        return result.get("value")
 
     @staticmethod
     def showinfo(title, message, parent=None, font_size=13, position=None):
@@ -225,19 +224,6 @@ class CTkMessageBox:
             message,
             icon_type=icon_type,
             buttons=[("Yes", True), ("No", False)],
-            font_size=font_size,
-            position=position,
-        )
-        return result if result is not None else False
-
-    @staticmethod
-    def askokcancel(title, message, parent=None, font_size=13, position=None):
-        result = CTkMessageBox._create_dialog(
-            parent,
-            title,
-            message,
-            icon_type="question",
-            buttons=[("OK", True), ("Cancel", False)],
             font_size=font_size,
             position=position,
         )

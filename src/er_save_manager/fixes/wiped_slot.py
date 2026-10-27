@@ -8,6 +8,7 @@ only fix is restoring the character from an older copy of the save.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import os
 import sys
@@ -66,10 +67,8 @@ def find_game_backups(save_path: str | Path, slot_index: int) -> list[RecoverySo
     sources = []
     for bak in sorted(save_path.parent.glob(save_path.name + "*.bak")):
         character = None
-        try:
+        with contextlib.suppress(Exception):
             character = _slot_character(Save.from_file(str(bak)), slot_index)
-        except Exception:
-            pass
         sources.append(RecoverySource(bak, character))
     return sources
 
@@ -128,10 +127,8 @@ def find_shadow_copies(save_path: str | Path, slot_index: int) -> list[RecoveryS
             continue
         seen.add(digest)
         character = None
-        try:
+        with contextlib.suppress(Exception):
             character = _slot_character(Save.from_file(candidate), slot_index)
-        except Exception:
-            pass
         sources.append(RecoverySource(candidate, character, modified, data))
     sources.sort(key=lambda s: s.modified, reverse=True)
     return sources

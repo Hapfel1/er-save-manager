@@ -330,11 +330,6 @@ class ItemDatabase:
             return self._convergence_overrides.get(item.full_id, item)
         return item
 
-    def get_item_by_base_id(
-        self, base_id: int, category: ItemCategory
-    ) -> "Item | None":
-        return self.items_by_id.get(category | base_id)
-
     def get_items_by_category(self, category_name: str) -> list[Item]:
         return self.items_by_category.get(category_name, [])
 

@@ -5,6 +5,7 @@ Browse and contribute community character builds with 10-slot support.
 
 from __future__ import annotations
 
+import contextlib
 import queue
 import tkinter as tk
 from pathlib import Path
@@ -125,10 +126,8 @@ class CharacterBrowser:
 
             char_name = "Unknown"
             if profiles and i < len(profiles):
-                try:
+                with contextlib.suppress(Exception):
                     char_name = profiles[i].character_name or "Unknown"
-                except Exception:
-                    pass
 
             if i not in active:
                 char_name += " (deleted)"
@@ -1351,10 +1350,8 @@ class CharacterBrowser:
                         self.character_metrics_cache[char_id].get("downloads", 0) + 1
                     )
 
-                try:
+                with contextlib.suppress(Exception):
                     temp_erc.unlink()
-                except Exception:
-                    pass
 
                 if self.character_tab and hasattr(self.character_tab, "reload_save"):
                     self.character_tab.reload_save()

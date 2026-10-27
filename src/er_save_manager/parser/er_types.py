@@ -181,13 +181,6 @@ class MapId:
         """Alias for to_decimal() for backward compatibility"""
         return self.to_decimal()
 
-    def to_hex_string(self) -> str:
-        """
-        Convert to hex string format.
-        Format: "AA_BB_CC_DD"
-        """
-        return f"{self.data[0]:02X}_{self.data[1]:02X}_{self.data[2]:02X}_{self.data[3]:02X}"
-
     def __str__(self):
         return self.to_decimal()
 

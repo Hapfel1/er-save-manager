@@ -73,10 +73,6 @@ def effect_name(effect_id: int) -> str:
     return _display_name(e["name"]) if e else f"Unknown ({effect_id})"
 
 
-def all_effects() -> dict[str, dict]:
-    return _load()["effects"]
-
-
 def effects_for_slot(is_deep_relic: bool, hero_type: int = 0) -> list[tuple[int, str]]:
     """
     Return (effect_id, name) pairs valid for an effect slot (not curse slot).
@@ -127,17 +123,6 @@ def get_vessel(vessel_id: int) -> dict | None:
 def vessel_name(vessel_id: int) -> str:
     v = get_vessel(vessel_id)
     return v["name"] if v else f"Unknown ({vessel_id})"
-
-
-def vessels_for_hero(hero_type: int) -> list[tuple[int, str]]:
-    return sorted(
-        (
-            (int(vid), v["name"])
-            for vid, v in _load()["vessels"].items()
-            if v["hero"] == hero_type
-        ),
-        key=lambda x: x[0],
-    )
 
 
 def all_vessels() -> dict[str, dict]:

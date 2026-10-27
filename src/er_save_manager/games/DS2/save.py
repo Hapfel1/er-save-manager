@@ -66,8 +66,7 @@ from enum import Enum
 from functools import cached_property
 from pathlib import Path
 
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
+from er_save_manager import aes_cbc
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.boss_arenas import LIMITED_ARENA_GENERATORS
 from er_save_manager.games.DS2.boss_database import BOSS_NAMES
@@ -265,11 +264,6 @@ ITEM_BOX_FLAG = 0x100
 KEY_ITEMS_START = 0x10E30
 KEY_ITEMS_END = 0x11DF0
 
-# Candidate event/quest/boss flag region in the profile entry. Unmapped,
-# only used by the WIP world state tab.
-FLAG_REGION_START = 0x11E00
-FLAG_REGION_END = 0x1B2FC
-
 # Bonfire state in a slot's large entry. An array of ascending u16 ids, one per
 # bonfire in BONFIRES, is followed by two byte arrays in the same order:
 # - lit state, _BONFIRE_ID_CAPACITY ids (0x200 bytes) after the id array:
@@ -420,7 +414,7 @@ def _map_records(data: bytes | bytearray, anchor: int) -> list[tuple[int, int]]:
     """(map id, record offset) of every per-map record, in save order."""
     records = []
     offset = anchor - _MAP_RECORDS_BEFORE_IDS
-    while 0 <= offset and offset + 4 <= len(data):
+    while offset >= 0 and offset + 4 <= len(data):
         map_id = struct.unpack_from("<I", data, offset)[0]
         if map_id & 0xFFFF or not map_id:
             break
@@ -580,11 +574,6 @@ class Bonfires:
                 if copy == 0:
                     changed += 1
         return changed
-
-    def unlock_all(self) -> int:
-        """Light every unlit bonfire in every copy and return how many bonfires
-        were newly lit in the first copy."""
-        return self.set_lit(self._ids, True)
 
 
 @dataclass
@@ -1219,8 +1208,7 @@ def _make_padding(data_len: int) -> bytes:
 
 
 def _decrypt(iv: bytes, ciphertext: bytes) -> bytearray:
-    decryptor = Cipher(algorithms.AES(DS2_KEY), modes.CBC(iv)).decryptor()
-    plain = decryptor.update(ciphertext) + decryptor.finalize()
+    plain = aes_cbc.decrypt(DS2_KEY, iv, ciphertext)
     if len(plain) < 4:
         raise ValueError("Decrypted DS2 entry shorter than its length prefix")
     data_len = struct.unpack_from("<I", plain, 0)[0]
@@ -1234,8 +1222,7 @@ def _decrypt(iv: bytes, ciphertext: bytes) -> bytearray:
 
 def _encrypt(iv: bytes, data: bytearray) -> bytes:
     plain = struct.pack("<I", len(data)) + bytes(data) + _make_padding(len(data))
-    encryptor = Cipher(algorithms.AES(DS2_KEY), modes.CBC(iv)).encryptor()
-    return encryptor.update(plain) + encryptor.finalize()
+    return aes_cbc.encrypt(DS2_KEY, iv, plain)
 
 
 def _md5(data: bytes) -> bytes:
@@ -1928,13 +1915,6 @@ class Character:
             or self._find_item(item_id, KEY_ITEMS_START, KEY_ITEMS_END)
         ) is not None
 
-    def _find_item_anywhere(self, item_id: int) -> InventoryItem | None:
-        """Find an item in either list, so entries written to the wrong list
-        by older versions can still be edited and removed."""
-        return self._find_item(item_id, INVENTORY_START, INVENTORY_END) or (
-            self._find_item(item_id, KEY_ITEMS_START, KEY_ITEMS_END)
-        )
-
     def add_item(
         self,
         item_id: int,
@@ -2331,17 +2311,6 @@ class Character:
             INVENTORY_SLOT_SIZE
         )
         return moved
-
-    def delete_item(self, item_id: int) -> bool:
-        """Zero out the first matching item slot in either list. Returns
-        False if not found."""
-        existing = self._find_item_anywhere(item_id)
-        if existing is None:
-            return False
-        self._data[existing.offset : existing.offset + INVENTORY_SLOT_SIZE] = bytes(
-            INVENTORY_SLOT_SIZE
-        )
-        return True
 
 
 class DS2Save:

@@ -138,7 +138,7 @@ class ItemPickupsDialog:
         type_combo = ctk.CTkComboBox(
             filter_frame,
             variable=type_var,
-            values=[_ALL] + ITEM_TYPES,
+            values=[_ALL, *ITEM_TYPES],
             state="readonly",
             width=210,
             command=lambda _v: _refresh(),
@@ -211,7 +211,7 @@ class ItemPickupsDialog:
 
         def _on_scope_changed():
             regions = sorted({_region(p) for p in pickups if _in_scope(p)} - {""})
-            region_combo.configure(values=[_ALL] + regions)
+            region_combo.configure(values=[_ALL, *regions])
             if region_var.get() not in regions:
                 region_var.set(_ALL)
             _refresh()
