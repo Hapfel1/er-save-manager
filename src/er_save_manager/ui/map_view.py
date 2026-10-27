@@ -630,7 +630,7 @@ class _MapIcons:
     def __init__(self, maps_dir: Path, rects: dict[str, list[int]]):
         atlas = Image.open(maps_dir / "icons.png").convert("RGBA")
         self._sprites = {
-            name: atlas.crop((x, y, x + w, y + h))
+            name: self._centered(atlas.crop((x, y, x + w, y + h)))
             for name, (x, y, w, h) in rects.items()
         }
         self._markers = {i: self._sprites[f"marker_{i:02d}"] for i in MARKER_ICONS}
@@ -649,10 +649,36 @@ class _MapIcons:
         return gray
 
     @staticmethod
-    def _fit(img: Image.Image, size: int) -> Image.Image:
+    def _centered(img: Image.Image) -> Image.Image:
+        """img at its size with the visible part moved to the middle; some
+        atlas rects leave more empty space on one side."""
+        box = img.getchannel("A").getbbox()
+        if box is None:
+            return img
+        out = Image.new("RGBA", img.size)
+        out.paste(
+            img.crop(box),
+            ((img.width - box[2] + box[0]) // 2, (img.height - box[3] + box[1]) // 2),
+        )
+        return out
+
+    @staticmethod
+    def _round_like(value: float, like: int) -> int:
+        """Nearest positive integer to value with the parity of like. Tk
+        centers an even-sized image on a pixel edge and an odd-sized one on
+        a pixel center, so an icon and its selection ring only share a
+        center when their sizes have the same parity."""
+        p = like % 2
+        return max(p or 2, 2 * round((value - p) / 2) + p)
+
+    @classmethod
+    def _fit(cls, img: Image.Image, size: int) -> Image.Image:
         scale = size / max(img.width, img.height)
         return img.resize(
-            (max(1, round(img.width * scale)), max(1, round(img.height * scale))),
+            (
+                cls._round_like(img.width * scale, size),
+                cls._round_like(img.height * scale, size),
+            ),
             Image.LANCZOS,
         )
 
@@ -681,10 +707,21 @@ class _MapIcons:
     def beacon(self, height: int) -> ImageTk.PhotoImage:
         key = ("b", height)
         if key not in self._photos:
-            w = max(1, round(self._beacon.width * height / self._beacon.height))
+            w = self._round_like(
+                self._beacon.width * height / self._beacon.height, height
+            )
             img = self._beacon.resize((w, height), Image.LANCZOS)
             self._photos[key] = ImageTk.PhotoImage(img)
         return self._photos[key]
+
+    def beacon_middle(self, height: int) -> int:
+        """Pixels from the beacon's tip up to the middle of its visible part
+        (alpha >= 128); the beam fades out toward the sprite's top. Whole
+        pixels, so Tk rounds the ring's position like the beacon's."""
+        alpha = self._beacon.getchannel("A").point(lambda a: 255 if a >= 128 else 0)
+        _, top, _, bottom = alpha.getbbox()
+        h = self._beacon.height
+        return round((h - (top + bottom) / 2) * height / h)
 
     def bloodstain(self, size: int, empty: bool = False) -> ImageTk.PhotoImage:
         """empty: gray, for a bloodstain that holds no runes."""
@@ -898,18 +935,18 @@ class _MapIcons:
         halo's edge toward the transparent black around it, and a tight
         canvas cuts the tail off into a visible square on bright map art."""
         n = round(size * 3)
-        c = n / 2
-        halo = size * 0.65
+
+        def box(radius: float) -> tuple[int, int, int, int]:
+            # Whole-pixel box with as many pixels on each side of the middle;
+            # fractional ellipse coordinates round to one side
+            a = round(n / 2 - radius)
+            return (a, a, n - 1 - a, n - 1 - a)
+
         alpha = Image.new("L", (n, n))
-        ImageDraw.Draw(alpha).ellipse(
-            (c - halo, c - halo, c + halo, c + halo), fill=180
-        )
+        ImageDraw.Draw(alpha).ellipse(box(size * 0.65), fill=180)
         img = Image.new("RGBA", (n, n), (255, 200, 90, 0))
         img.putalpha(alpha.filter(ImageFilter.GaussianBlur(size * 0.28)))
-        core = size * 0.32
-        ImageDraw.Draw(img).ellipse(
-            (c - core, c - core, c + core, c + core), fill=(255, 236, 170, 255)
-        )
+        ImageDraw.Draw(img).ellipse(box(size * 0.32), fill=(255, 236, 170, 255))
         return _MapIcons._dimmed(img) if dim else img
 
     @staticmethod
@@ -948,8 +985,9 @@ class _MapIcons:
 
     def select_ring(self, icon_size: int) -> ImageTk.PhotoImage:
         """The game's map selection ring, sized so its rim (at 0.49 of the
-        sprite's half width) clears an icon of icon_size by 3 px."""
-        size = round((icon_size / 2 + 3) / 0.49 * 2)
+        sprite's half width) clears an icon of icon_size by 3 px, with the
+        parity of icon_size (see _round_like)."""
+        size = self._round_like((icon_size / 2 + 3) / 0.49 * 2, icon_size)
         key = ("r", size)
         if key not in self._photos:
             img = self._select_ring.resize((size, size), Image.LANCZOS)
@@ -3587,11 +3625,11 @@ class MapWindow:
             selected = m is self._selected_marker
             if m.kind == BEACON:
                 # The pillar's tip marks the position; the ring surrounds the
-                # whole pillar.
+                # visible pillar.
                 if selected:
                     c.create_image(
                         sx,
-                        sy - _BEACON_HEIGHT / 2,
+                        sy - self._icons.beacon_middle(_BEACON_HEIGHT),
                         image=self._icons.select_ring(_BEACON_HEIGHT),
                         tags=(tag, "select_ring"),
                     )
