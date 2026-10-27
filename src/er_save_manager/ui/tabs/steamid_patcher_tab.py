@@ -391,9 +391,7 @@ class SteamIDPatcherTab:
             )
             return
 
-        new_steamid_str, error = to_steamid64(
-            self.new_steamid_var.get(), "New SteamID"
-        )
+        new_steamid_str, error = to_steamid64(self.new_steamid_var.get(), "New SteamID")
         if error:
             CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
             return
