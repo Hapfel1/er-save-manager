@@ -231,10 +231,11 @@ class DSREquipAdapter:
 
     # ---- writing -----------------------------------------------------------------
 
-    def apply(self, staged: dict) -> None:
-        """Write staged picks into the character data. Raises ValueError,
-        before writing anything, when a picked entry changed since the panel
-        loaded."""
+    def check(self, staged: dict) -> tuple[list, list]:
+        """Raise ValueError when the staged picks cannot be written: a picked
+        entry changed since it was picked, does not fit its slot, or the
+        attunement or inventory has no room. Returns the resolved slots and
+        spells for apply()."""
         resolved = []
         for slot_key, choice in staged.items():
             slot = None
@@ -246,8 +247,8 @@ class DSREquipAdapter:
                 item = self.char.read_item(slot)
                 if item.is_empty or item.item_id != item_id:
                     raise ValueError(
-                        f"{choice.name} moved in the inventory. Reload the "
-                        "character and pick it again."
+                        f"{choice.name} changed in the inventory after it was "
+                        "picked. Pick it again on the Equipment page."
                     )
                 if not (self.accepts(slot_key, item) or self._is_placeholder(item)):
                     raise ValueError(f"{choice.name} does not fit this slot.")
@@ -274,6 +275,12 @@ class DSREquipAdapter:
         )
         if new_entries > free:
             raise ValueError("The inventory is full; no room for a bare armor entry.")
+        return resolved, spells
+
+    def apply(self, staged: dict) -> None:
+        """Write staged picks into the character data. Raises ValueError,
+        before writing anything, when check() fails."""
+        resolved, spells = self.check(staged)
         for slot_key, slot in resolved:
             if isinstance(slot, tuple):
                 slot = self._create_bare_armor(slot[1])

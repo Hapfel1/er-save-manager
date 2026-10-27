@@ -19,6 +19,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write
@@ -216,11 +217,28 @@ class DSRNPCTab:
         )
 
     def _set_npcs(self, rows: list[int], killed: bool) -> None:
+        # NPCs without a dead flag cannot be killed; they are left out before
+        # anything changes so the other rows still apply.
+        if killed:
+            skipped = [self._npcs[i]["name"] for i in rows if not self._npcs[i]["dead"]]
+            rows = [i for i in rows if self._npcs[i]["dead"]]
+        else:
+            skipped = []
+        if not rows:
+            CTkMessageBox.showerror(
+                "Unavailable",
+                f"{', '.join(skipped)} {'has' if len(skipped) == 1 else 'have'} "
+                "no death state.",
+                parent=self.parent,
+            )
+            return
+        note = f" Skipped (no death state): {', '.join(skipped)}." if skipped else ""
         self._write(
             lambda char: [char.set_npc_state(self._npcs[i], not killed) for i in rows],
             "npcs_killed" if killed else "npcs_revived",
             self._npcs[rows[0]]["name"] if len(rows) == 1 else f"{len(rows)} NPCs",
             "killed" if killed else "revived",
+            note,
         )
 
     def _open_quests(self) -> None:
@@ -233,12 +251,23 @@ class DSRNPCTab:
         if char is None or save_path is None:
             notify(self.parent, "Load a character first.", "warning")
             return
-        if _game_blocks_write(self.parent):
+        if _game_blocks_write(self.parent) or not save_writable():
             return
         slot = self._current_slot
 
         def commit(_description: str) -> None:
-            _backup_and_save(save, save_path, f"quest_progress_slot_{slot + 1}")
+            if self._get_dsr_save() is not save:
+                raise RuntimeError(
+                    "The save was reloaded. Close this window and open it again."
+                )
+            try:
+                _backup_and_save(save, save_path, f"quest_progress_slot_{slot + 1}")
+            except Exception as exc:
+                write_failed(exc, self.parent)
+                raise RuntimeError(
+                    "The save was reloaded from disk. Close this window and "
+                    "open it again."
+                ) from exc
             self._update_states()
 
         QuestProgressDialog.open(
@@ -254,8 +283,8 @@ class DSRNPCTab:
             apply_all=False,
         )
 
-    def _write(self, change, op: str, what: str, verb: str) -> None:
-        if _game_blocks_write(self.parent):
+    def _write(self, change, op: str, what: str, verb: str, note: str = "") -> None:
+        if _game_blocks_write(self.parent) or not save_writable():
             return
         save = self._get_dsr_save()
         save_path = self._get_save_path()
@@ -271,7 +300,7 @@ class DSRNPCTab:
         try:
             _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return
         self._update_states()
-        self._show_toast(f"{what} {verb}. Backup created.")
+        self._show_toast(f"{what} {verb}. Backup created.{note}")

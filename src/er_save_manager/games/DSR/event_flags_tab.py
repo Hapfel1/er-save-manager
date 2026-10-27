@@ -19,7 +19,7 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
-from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 
@@ -196,7 +196,7 @@ class DSREventFlagsTab:
             notify(self.parent, "Select a flag row to toggle.", "warning")
             return
         save, save_path, char = self._get_char()
-        if char is None:
+        if char is None or not save_writable():
             return
         fid, entry = self._npc_iid_map[sel[0]]
         new_val = not char.get_flag(fid)
@@ -205,14 +205,15 @@ class DSREventFlagsTab:
             _backup_and_save(
                 save, save_path, f"npc_flag_{fid}_slot_{self._current_slot + 1}"
             )
-            state = "ON" if new_val else "OFF"
-            self._npc_tree.set(sel[0], "state", state)
-            self._npc_sel_label.configure(
-                text=f"Flag {fid}  -  {entry['label']}  -  Now: {state}"
-            )
-            self._show_toast(f"Flag {fid} ({entry['label']}) -> {state}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
+            return
+        state = "ON" if new_val else "OFF"
+        self._npc_tree.set(sel[0], "state", state)
+        self._npc_sel_label.configure(
+            text=f"Flag {fid}  -  {entry['label']}  -  Now: {state}"
+        )
+        self._show_toast(f"Flag {fid} ({entry['label']}) -> {state}.")
 
     # --- World Flags ---------------------------------------------------------- #
 
@@ -355,7 +356,7 @@ class DSREventFlagsTab:
             return
 
         save, save_path, char = self._get_char()
-        if char is None:
+        if char is None or not save_writable():
             return
         new_val = not char.get_flag(flag_id)
         char.set_flag(flag_id, new_val)
@@ -363,20 +364,21 @@ class DSREventFlagsTab:
             _backup_and_save(
                 save, save_path, f"flag_{flag_id}_slot_{self._current_slot + 1}"
             )
-            badge.configure(
-                text="ON" if new_val else "OFF",
-                text_color=_state_color(new_val),
-            )
-            self._show_toast(f"{name.lstrip('* ')} -> {'ON' if new_val else 'OFF'}.")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
+            return
+        badge.configure(
+            text="ON" if new_val else "OFF",
+            text_color=_state_color(new_val),
+        )
+        self._show_toast(f"{name.lstrip('* ')} -> {'ON' if new_val else 'OFF'}.")
 
     def _toggle_gesture(self, flag_id: int, entry: dict, badge: ctk.CTkLabel) -> None:
         if _game_blocks_write(self.parent):
             return
 
         save, save_path, char = self._get_char()
-        if char is None:
+        if char is None or not save_writable():
             return
         new_val = not char.get_flag(flag_id)
         char.set_flag(flag_id, new_val)
@@ -384,15 +386,14 @@ class DSREventFlagsTab:
             _backup_and_save(
                 save, save_path, f"gesture_{flag_id}_slot_{self._current_slot + 1}"
             )
-            badge.configure(
-                text="AVAILABLE" if new_val else "TAUGHT",
-                text_color=_state_color(not new_val),
-            )
-            self._show_toast(
-                f"{entry['name']} -> {'AVAILABLE' if new_val else 'TAUGHT'}."
-            )
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
+            return
+        badge.configure(
+            text="AVAILABLE" if new_val else "TAUGHT",
+            text_color=_state_color(not new_val),
+        )
+        self._show_toast(f"{entry['name']} -> {'AVAILABLE' if new_val else 'TAUGHT'}.")
 
     # --- Flag Lookup ---------------------------------------------------------- #
 
@@ -475,17 +476,24 @@ class DSREventFlagsTab:
             # sets it.
             self._lookup_result_var.set("Flag 0 is reserved by the game.")
             return
+        if not save_writable():
+            return
         try:
             char.set_flag(fid, value)
+        except Exception as exc:
+            self._lookup_result_var.set(f"Error: {exc}")
+            return
+        try:
             _backup_and_save(
                 save, save_path, f"flag_{fid}_slot_{self._current_slot + 1}"
             )
-            self._lookup_result_var.set(
-                f"Flag {fid}  ->  set to {'ON (1)' if value else 'OFF (0)'}. Backup created."
-            )
-            self._show_toast(f"Flag {fid} -> {'ON' if value else 'OFF'}.")
         except Exception as exc:
-            self._lookup_result_var.set(f"Error: {exc}")
+            write_failed(exc, self.parent)
+            return
+        self._lookup_result_var.set(
+            f"Flag {fid}  ->  set to {'ON (1)' if value else 'OFF (0)'}. Backup created."
+        )
+        self._show_toast(f"Flag {fid} -> {'ON' if value else 'OFF'}.")
 
     # --- Refresh / helpers ---------------------------------------------------- #
 

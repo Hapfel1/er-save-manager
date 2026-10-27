@@ -36,6 +36,7 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.editors.ds_equipment import AttunementSection, EquipmentPanel
 from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
+from er_save_manager.validation.names import name_problem
 
 
 def _game_blocks_write(parent) -> bool:
@@ -94,7 +95,6 @@ class DSREditorTab:
         self._name_var = tk.StringVar()
         self._class_var = tk.StringVar(value=_CLASSES[0])
         self._covenant_var = tk.StringVar(value=_COVENANTS[0])
-        self._ng_var = tk.StringVar(value="0")
         self._playtime_var = tk.StringVar(value="--")
         self._offering_vars = {c: tk.StringVar() for c in COVENANT_OFFERING_ORDER}
         self.inventory = None
@@ -113,10 +113,8 @@ class DSREditorTab:
                     "name": self._name_var,
                     "class": self._class_var,
                     "covenant": self._covenant_var,
-                    "ng": self._ng_var,
                 }
             ),
-            {"ng": "NG+"},
         )
         self._covenant_tracker = FieldTracker(
             var_state(self._offering_vars),
@@ -278,7 +276,6 @@ class DSREditorTab:
             ("Name:", self._name_var, "entry", None),
             ("Class:", self._class_var, "combo", _CLASSES),
             ("Covenant:", self._covenant_var, "combo", _COVENANTS),
-            ("NG+:", self._ng_var, "combo", [str(i) for i in range(8)]),
         ]
         for i, (label, var, kind, values) in enumerate(rows, start=1):
             ctk.CTkLabel(cf, text=label).grid(
@@ -307,7 +304,8 @@ class DSREditorTab:
 
         ctk.CTkLabel(
             frame,
-            text=f"Name supports up to {NAME_MAX_CHARS} characters. Both name copies in the save are updated.",
+            text=f"Name supports up to {NAME_MAX_CHARS} characters. Both name copies "
+            "in the save are updated. NG+ is set on the World State tab.",
             font=("Inter", 10),
             text_color=("gray40", "gray70"),
         ).pack(anchor="w", padx=15, pady=(4, 0))
@@ -476,7 +474,6 @@ class DSREditorTab:
         self._class_var.set(_CLASSES[cls] if cls < len(_CLASSES) else str(cls))
         cov = int(char.covenant)
         self._covenant_var.set(_COVENANTS[cov] if cov < len(_COVENANTS) else str(cov))
-        self._ng_var.set(str(char.ng_plus))
         self._identity_tracker.mark_clean()
 
     def _fill_covenants(self, char) -> None:
@@ -579,6 +576,10 @@ class DSREditorTab:
         save, slot = self._get_dsr_save(), self._current_slot
         if adapter is None or save is None:
             raise StageError("No character loaded.")
+        try:
+            adapter.check(staged)
+        except ValueError as exc:
+            raise StageError(str(exc)) from None
 
         def commit() -> None:
             adapter.apply(staged)
@@ -642,9 +643,10 @@ class DSREditorTab:
         if char is None:
             raise StageError("No character loaded.")
         slot = self._current_slot
-        name = self._name_var.get()
-        if len(name) > NAME_MAX_CHARS:
-            raise StageError(f"The name can be at most {NAME_MAX_CHARS} characters.")
+        name = self._name_var.get().strip(" ")
+        problem = name_problem(name, NAME_MAX_CHARS)
+        if problem:
+            raise StageError(problem)
         new_class = (
             _CLASSES.index(self._class_var.get())
             if self._class_var.get() in _CLASSES
@@ -662,7 +664,6 @@ class DSREditorTab:
             )
         try:
             covenant = type(char.covenant)(_COVENANTS.index(self._covenant_var.get()))
-            ng = int(self._ng_var.get())
         except ValueError as exc:
             raise StageError(str(exc)) from None
 
@@ -674,8 +675,6 @@ class DSREditorTab:
                 now = [char.get_stat(key) for key in STAT_KEYS]
                 char.level = max(1, calc_level_from_stats(new_class, *now))
             char.covenant = covenant
-            if ng != char.ng_plus:
-                char.ng_plus = ng
             _sync_dir_name_level(save, slot, char.name, char.level)
 
         return commit
