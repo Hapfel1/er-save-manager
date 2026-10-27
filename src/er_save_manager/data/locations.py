@@ -13,7 +13,8 @@ Tile types:
   - pin: a point picked on the world map (floor_points.pin_location)
 
 map_bytes = bytes([d0, d1, d2, d3]) where map_id_str = m{d3}_{d2}_{d1}_{d0:02d}
-region_id = 0 means no region unlock needed for this map.
+region_id is 0 on every row and unused: the game adds a map's play region
+to the Regions list when the player enters it, so teleports write none.
 
 Data lives in locations.json as rows of
 [map_id_str, name, tile_type, region_id, is_dlc, safe_coords], plus the
@@ -33,7 +34,7 @@ class MapLocation:
     name: str
     map_bytes: bytes  # [d0, d1, d2, d3] little-endian
     tile_type: str  # "dungeon", "small", "medium", "big"
-    region_id: int = 0  # unlock ID to add to Regions; 0 = not required
+    region_id: int = 0  # unused, always 0
     is_dlc: bool = False
     safe_coords: tuple[float, float, float] | None = None
     flag_id: int = 0  # grace unlock event flag (graces only)

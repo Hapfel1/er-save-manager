@@ -55,6 +55,7 @@ from pathlib import Path
 
 from er_save_manager.data.locations import (
     CONVERGENCE_LOCATIONS,
+    LOCATIONS,
     MapLocation,
     get_name_for_map_id,
 )
@@ -63,6 +64,7 @@ from er_save_manager.data.world_map import (
     MAP_REALM_OF_SHADOW,
     global_to_map,
     map_to_global,
+    parse_map_id,
 )
 
 CELL = 2.0
@@ -385,9 +387,69 @@ def floors_near(
     return out
 
 
+def known_map(map_id_str: str, convergence: bool) -> bool:
+    """The map has floor data or a location entry."""
+    if map_id_str in (CONVERGENCE_LOCATIONS if convergence else LOCATIONS):
+        return True
+    names = (
+        ("floor_vanilla.bin", "floor_convergence.bin")
+        if convergence
+        else ("floor_vanilla.bin",)
+    )
+    return any((f := _file(n)) is not None and map_id_str in f.index for n in names)
+
+
+def nearest_floor(
+    map_id_str: str, x: float, y: float, z: float, convergence: bool, radius: float
+) -> tuple[float, str, float, float, float] | None:
+    """(distance, map id, x, y, z) of the floor point or anchor nearest in 3D to
+    a position in the map's own frame, searched within radius horizontally.
+
+    Overworld positions past the tile edge also search the neighbouring small
+    tiles; a hit there is returned in that tile's frame and map id.
+    """
+    area, tx, tz, lod = parse_map_id(map_id_str)
+    frames = [(map_id_str, x, z)]
+    if area in (60, 61) and lod == 0:
+        gx, gz = tx * 256 + 128 + x, tz * 256 + 128 + z
+        frames = [
+            (f"m{area}_{nx:02d}_{nz:02d}_00", gx - nx * 256 - 128, gz - nz * 256 - 128)
+            for nx in range(int((gx - radius) // 256), int((gx + radius) // 256) + 1)
+            for nz in range(int((gz - radius) // 256), int((gz + radius) // 256) + 1)
+        ]
+    best = None
+    for map_id, lx, lz in frames:
+        rec = _record(map_id, convergence)
+        if rec is None:
+            continue
+        cands = [
+            (px, py, pz) for px, py, pz, *_ in _points_near(rec, lx, lz, radius, None)
+        ]
+        cands += [
+            (ax, ay, az)
+            for ax, ay, az, *_ in rec.anchors
+            if math.hypot(ax - lx, az - lz) <= radius
+        ]
+        for px, py, pz in cands:
+            d = math.sqrt((px - lx) ** 2 + (py - y) ** 2 + (pz - lz) ** 2)
+            if best is None or d < best[0]:
+                best = (d, map_id, px, py, pz)
+    return best
+
+
+def warp_point(map_id_str: str, convergence: bool) -> tuple[float, float, float] | None:
+    """Spawn position for a map: its location warp point, else its first anchor."""
+    loc = (CONVERGENCE_LOCATIONS if convergence else LOCATIONS).get(map_id_str)
+    if loc is not None and loc.safe_coords is not None:
+        return loc.safe_coords
+    rec = _record(map_id_str, convergence)
+    if rec is not None and rec.anchors:
+        return rec.anchors[0][:3]
+    return None
+
+
 def pin_location(point: FloorPoint) -> MapLocation:
-    """Teleport location for a floor point, with the region unlock and DLC
-    marker of its map."""
+    """Teleport location for a floor point, with the DLC marker of its map."""
     base = CONVERGENCE_LOCATIONS.get(point.map_id_str)
     d3, d2, d1, d0 = (int(v) for v in point.map_id_str[1:].split("_"))
     return MapLocation(

@@ -472,15 +472,17 @@ class GesturesRegionsTab:
                     parent=dialog,
                 )
 
-            slot.unlocked_regions.region_ids = selected
-            slot.unlocked_regions.count = len(selected)
+            from er_save_manager.editors.map_unlock import set_regions
 
-            from er_save_manager.parser.slot_rebuild import rebuild_slot
-
-            rebuilt = rebuild_slot(slot)
-            save_file._raw_data[slot.data_start : slot.data_start + len(rebuilt)] = (
-                rebuilt
-            )
+            try:
+                set_regions(save_file, self.current_slot, selected)
+            except ValueError as e:
+                CTkMessageBox.showerror(
+                    "Regions Not Saved",
+                    f"Could not write the region list: {e}.",
+                    parent=dialog,
+                )
+                return
             save_file.recalculate_checksums()
             save_file.save(save_path)
             self.reload_save()
