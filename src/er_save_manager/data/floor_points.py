@@ -449,8 +449,7 @@ def warp_point(map_id_str: str, convergence: bool) -> tuple[float, float, float]
 
 
 def pin_location(point: FloorPoint) -> MapLocation:
-    """Teleport location for a floor point, with the region unlock and DLC
-    marker of its map."""
+    """Teleport location for a floor point, with the DLC marker of its map."""
     base = CONVERGENCE_LOCATIONS.get(point.map_id_str)
     d3, d2, d1, d0 = (int(v) for v in point.map_id_str[1:].split("_"))
     return MapLocation(

@@ -125,7 +125,6 @@ class WorldStateEditor:
         """
         Teleport character to a map by its string ID (e.g. "m60_42_36_00").
         Uses safe_coords from the location database if available, otherwise keeps the current coordinates.
-        Also adds the region unlock ID from the location database if not already present.
         """
         loc = LOCATIONS.get(map_id_str)
         if loc is None:
@@ -144,9 +143,6 @@ class WorldStateEditor:
 
             self._write_map_id_raw(MapId(loc.map_bytes), zero_coords=False)
             self._write_coordinates(coords)
-
-            if loc.region_id:
-                self._ensure_region_unlocked(loc.region_id)
 
             return True, f"Teleported to {loc.name}"
         except Exception as e:
@@ -218,16 +214,5 @@ class WorldStateEditor:
             slot.player_coordinates.coordinates.x = coords.x
             slot.player_coordinates.coordinates.y = coords.y
             slot.player_coordinates.coordinates.z = coords.z
-        except AttributeError:
-            pass
-
-    def _ensure_region_unlocked(self, region_id: int) -> None:
-        """Add region_id to the Regions list if not already present."""
-        slot = self._slot
-        try:
-            regions = slot.unlocked_regions
-            if region_id not in regions.region_ids:
-                regions.region_ids.append(region_id)
-                regions.count = len(regions.region_ids)
         except AttributeError:
             pass
