@@ -186,7 +186,7 @@ from datetime import datetime
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 # AES-128-CBC key (same key as DS2/ER Seamless Coop)
 _NR_KEY = bytes(
@@ -1217,11 +1217,7 @@ class NightreignSave:
                 )
             out[entry.data_offset : entry.data_offset + entry.size] = enc
         del out[self.declared_end :]
-        target = Path(path)
-        tmp_path = target.with_suffix(target.suffix + ".tmp")
-        tmp_path.write_bytes(out)
-        tmp_path.replace(target)
-        record_write(target)
+        atomic_write(path, out, loaded=True)
 
     def get_active_slots(self) -> list[NightreignSlot]:
         """Return only slots that contain a character."""

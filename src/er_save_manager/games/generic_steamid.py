@@ -25,7 +25,7 @@ import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 # Steam64 ID base constant - all valid IDs are above this
 _STEAM64_BASE = 0x0110000100000000
@@ -143,10 +143,7 @@ def patch_steamid_generic(
             error=f"SteamID {old_steamid} not found in file",
         )
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(data)
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, data)
 
     return PatchResult(
         success=True,

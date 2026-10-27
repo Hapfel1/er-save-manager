@@ -28,6 +28,64 @@ _NAME_CHARS = 36
 Change = tuple[str, str, str]
 
 
+# Window-wide handlers for save writes outside Apply All, set by the main
+# window through register_save_hooks.
+_hooks: dict[str, Callable] = {}
+
+
+def register_save_hooks(
+    *,
+    write_failed: Callable[[BaseException, object], None],
+    file_writable: Callable[[], bool],
+    guard: Callable[[str], bool],
+) -> None:
+    """Install the main window's handlers behind write_failed, save_writable
+    and guard_before_write."""
+    _hooks["write_failed"] = write_failed
+    _hooks["file_writable"] = file_writable
+    _hooks["guard"] = guard
+
+
+def guard_before_write(action: str) -> bool:
+    """Ask about unapplied edits before an operation that writes or copies
+    the save file outside Apply All (character management, presets,
+    regions, extension copy).
+
+    Such operations read or write the file on disk; without the guard they
+    skip the edits, and Apply All later writes them onto whatever the
+    operation left in their slot. Returns False when the user cancelled or
+    applying failed; action completes "Apply them before you ...".
+    """
+    handler = _hooks.get("guard")
+    return True if handler is None else bool(handler(action))
+
+
+def write_failed(exc: BaseException, parent=None) -> None:
+    """Report a failed write of the loaded save and reload it from disk.
+
+    Call it from the except branch of any tab that changed the in-memory
+    save and then failed to write it: the in-memory save holds the change
+    the file does not, and the next write would carry it along.
+    """
+    handler = _hooks.get("write_failed")
+    if handler is not None:
+        handler(exc, parent)
+        return
+    from er_save_manager.ui.messagebox import CTkMessageBox
+
+    CTkMessageBox.showerror("Save Not Written", str(exc), parent=parent)
+
+
+def save_writable() -> bool:
+    """Check the loaded save before a tab changes it in memory.
+
+    False, after telling the user (Reload / Cancel), when the file changed
+    on disk since it was loaded or is read-only.
+    """
+    handler = _hooks.get("file_writable")
+    return True if handler is None else bool(handler())
+
+
 class StageError(Exception):
     """Input of a page is invalid; raised before the page changes the save."""
 
@@ -264,8 +322,10 @@ class PendingBar(ctk.CTkFrame):
     changed fields, as shown in the bar. write() writes the in-memory
     save to it.
     blocks_write() returns True (after telling the user) when the game runs.
+    file_writable() returns False (after asking the user) when the save
+    changed on disk since it was loaded or cannot be written.
     after_apply() reloads the character into every tab.
-    reload_from_disk() restores the in-memory save after a failed apply.
+    A failed write goes to write_failed(), which reloads the save from disk.
     """
 
     def __init__(
@@ -276,8 +336,8 @@ class PendingBar(ctk.CTkFrame):
         backup: Callable[[int, str], None],
         write: Callable[[], None],
         blocks_write: Callable[[], bool],
+        file_writable: Callable[[], bool],
         after_apply: Callable[[], None],
-        reload_from_disk: Callable[[], None],
         show_toast: Callable[..., None],
         on_visibility: Callable[[bool], None],
     ) -> None:
@@ -287,8 +347,8 @@ class PendingBar(ctk.CTkFrame):
         self._backup = backup
         self._write = write
         self._blocks_write = blocks_write
+        self._file_writable = file_writable
         self._after_apply = after_apply
-        self._reload_from_disk = reload_from_disk
         self._show_toast = show_toast
         self._on_visibility = on_visibility
         self._shown = False
@@ -439,7 +499,7 @@ class PendingBar(ctk.CTkFrame):
             return False
         from er_save_manager.ui.messagebox import CTkMessageBox
 
-        if self._blocks_write():
+        if self._blocks_write() or not self._file_writable():
             return False
         self._busy = True
         try:
@@ -472,12 +532,7 @@ class PendingBar(ctk.CTkFrame):
                     notes += commit() or []
                 self._write()
             except Exception as exc:
-                CTkMessageBox.showerror(
-                    "Apply Failed",
-                    f"The save was not written:\n{exc}\n\nIt is reloaded from disk.",
-                    parent=self,
-                )
-                self._reload_from_disk()
+                write_failed(exc, self)
                 return False
             self._after_apply()
             self._update()
@@ -508,23 +563,36 @@ class PendingBar(ctk.CTkFrame):
         ):
             self.discard_all()
 
-    def guard(self, action: str) -> bool:
+    def guard(
+        self, action: str, *, apply: bool = True, discard: str = "Discard"
+    ) -> bool:
         """Ask before an action that would drop unapplied edits.
 
         Returns True when the action may go ahead (applied, discarded or
         nothing pending), False when the user cancelled or applying failed.
+        apply=False offers only discard (button text discard) and Cancel, for
+        actions where applying would overwrite newer data on disk.
         """
         if not self.dirty():
             return True
         from er_save_manager.ui.messagebox import CTkMessageBox
 
+        head = (
+            f"Slot {self._get_slot() + 1} has unapplied changes:\n\n"
+            f"{self._change_lines()}\n\n"
+        )
+        if apply:
+            question = f"Apply them before you {action}?"
+            buttons = [("Apply", "apply"), ("Discard", "discard"), ("Cancel", None)]
+        else:
+            question = f"Discard them and {action}?"
+            buttons = [(discard, "discard"), ("Cancel", None)]
         choice = CTkMessageBox._create_dialog(
             self.winfo_toplevel(),
             "Unapplied Changes",
-            f"Slot {self._get_slot() + 1} has unapplied changes:\n\n"
-            f"{self._change_lines()}\n\nApply them before you {action}?",
+            head + question,
             icon_type="question",
-            buttons=[("Apply", "apply"), ("Discard", "discard"), ("Cancel", None)],
+            buttons=buttons,
         )
         if choice == "apply":
             return self.apply_all()

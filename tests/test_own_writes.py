@@ -1,49 +1,77 @@
-"""
-Tests for er_save_manager.own_writes, which lets the external-modification
-watcher ignore saves written by the tool itself.
-"""
+"""Tests for the loaded-save check in own_writes.atomic_write."""
 
 from __future__ import annotations
 
 import os
 
-from er_save_manager.backup.manager import _atomic_write_bytes
-from er_save_manager.games.generic_steamid import (
-    detect_steamid_in_file,
-    patch_steamid_generic,
-)
-from er_save_manager.own_writes import is_own_write
+import pytest
+
+from er_save_manager import own_writes
 
 
-def test_untouched_file_is_not_own_write(sanitized_save_copy):
-    assert is_own_write(sanitized_save_copy) is False
+@pytest.fixture(autouse=True)
+def _forget_loaded():
+    yield
+    own_writes.record_load(None, None)
 
 
-def test_save_to_file_is_own_write(sanitized_save, sanitized_save_copy):
-    sanitized_save.to_file(sanitized_save_copy)
-    assert is_own_write(sanitized_save_copy) is True
+def _load(path):
+    own_writes.record_load(path, own_writes.file_signature(path))
 
 
-def test_backup_restore_write_is_own_write(sanitized_save_copy):
-    data = sanitized_save_copy.read_bytes()
-    _atomic_write_bytes(sanitized_save_copy, data)
-    assert is_own_write(sanitized_save_copy) is True
+def test_loaded_write_after_own_write(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    _load(save)
+    own_writes.atomic_write(save, b"bb", loaded=True)
+    own_writes.atomic_write(save, b"ccc", loaded=True)
+    assert save.read_bytes() == b"ccc"
 
 
-def test_steamid_patch_is_own_write(sanitized_save_copy):
-    old = detect_steamid_in_file(sanitized_save_copy)
-    assert old is not None
-    result = patch_steamid_generic(sanitized_save_copy, old + 1, old)
-    assert result.success
-    assert is_own_write(sanitized_save_copy) is True
+def test_loaded_write_refused_after_external_change(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    _load(save)
+    save.write_bytes(b"changed")
+    with pytest.raises(own_writes.SaveChangedError):
+        own_writes.atomic_write(save, b"x", loaded=True)
+    assert save.read_bytes() == b"changed"
+    assert isinstance(own_writes.write_problem(save), own_writes.SaveChangedError)
 
 
-def test_external_write_after_own_write_is_detected(
-    sanitized_save, sanitized_save_copy
-):
-    sanitized_save.to_file(sanitized_save_copy)
-    st = os.stat(sanitized_save_copy)
-    with open(sanitized_save_copy, "r+b") as f:
-        f.write(b"\x01")
-    os.utime(sanitized_save_copy, ns=(st.st_atime_ns, st.st_mtime_ns + 1_000_000))
-    assert is_own_write(sanitized_save_copy) is False
+def test_unchecked_write_ignores_loaded_state(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    _load(save)
+    own_writes.atomic_write(save, b"patched")
+    with pytest.raises(own_writes.SaveChangedError):
+        own_writes.atomic_write(save, b"x", loaded=True)
+
+
+def test_other_path_not_checked(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    _load(save)
+    other = tmp_path / "ER0000.co2"
+    own_writes.atomic_write(other, b"x", loaded=True)
+    assert other.read_bytes() == b"x"
+
+
+def test_deleted_save(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    _load(save)
+    save.unlink()
+    problem = own_writes.write_problem(save)
+    assert isinstance(problem, own_writes.SaveWriteError)
+    assert not isinstance(problem, own_writes.SaveChangedError)
+
+
+@pytest.mark.skipif(os.name == "nt" or os.geteuid() == 0, reason="POSIX mode bits")
+def test_read_only_save(tmp_path):
+    save = tmp_path / "ER0000.sl2"
+    save.write_bytes(b"a")
+    save.chmod(0o444)
+    with pytest.raises(own_writes.SaveReadOnlyError):
+        own_writes.atomic_write(save, b"x")
+    assert save.read_bytes() == b"a"

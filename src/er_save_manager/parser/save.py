@@ -8,13 +8,11 @@ Based on ER-Save-Lib Rust implementation.
 from __future__ import annotations
 
 import logging
-import os
 import struct
 from dataclasses import dataclass, field
 from io import BytesIO
-from pathlib import Path
 
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 from er_save_manager.parser.user_data_10 import UserData10
 from er_save_manager.parser.user_data_x import UserDataX
 
@@ -359,19 +357,7 @@ class Save:
         self._refresh_player_data_hashes()
         self._sync_profile_summaries(edited)
 
-        target = Path(filepath)
-        tmp_path = target.with_name(f"{target.name}.tmp{os.getpid()}")
-
-        try:
-            with open(tmp_path, "wb") as f:
-                f.write(self._raw_data)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(tmp_path, target)
-        except BaseException:
-            tmp_path.unlink(missing_ok=True)
-            raise
-        record_write(target)
+        atomic_write(filepath, self._raw_data, loaded=True)
 
     def get_active_slots(self) -> list[int]:
         """

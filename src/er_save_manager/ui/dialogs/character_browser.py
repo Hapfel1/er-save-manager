@@ -24,6 +24,7 @@ from er_save_manager.ui.dialogs.community_dialogs import (
     show_submission_link,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.progress_dialog import ProgressDialog
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
@@ -1208,6 +1209,8 @@ class CharacterBrowser:
 
     def import_to_slot(self):
         """Import selected character to chosen slot."""
+        if not guard_before_write("import the character"):
+            return
         if not self.current_character:
             notify(self.dialog, "Select a character to import", "warning")
             return

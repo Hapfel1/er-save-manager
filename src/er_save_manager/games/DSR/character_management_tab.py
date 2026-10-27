@@ -16,6 +16,7 @@ from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -365,6 +366,8 @@ class DSRCharacterManagementTab:
         return True
 
     def _copy_character(self) -> None:
+        if not guard_before_write("copy the character"):
+            return
         if not self._check_game_not_running():
             return
 
@@ -428,6 +431,8 @@ class DSRCharacterManagementTab:
             )
 
     def _swap_characters(self) -> None:
+        if not guard_before_write("swap the characters"):
+            return
         if not self._check_game_not_running():
             return
 
@@ -480,6 +485,8 @@ class DSRCharacterManagementTab:
             )
 
     def _delete_character(self) -> None:
+        if not guard_before_write("delete the character"):
+            return
         if not self._check_game_not_running():
             return
 
@@ -525,6 +532,8 @@ class DSRCharacterManagementTab:
             )
 
     def _export_character(self) -> None:
+        if not guard_before_write("export the character"):
+            return
         save = self._get_save()
         if not save:
             notify(self.parent, "Load a save file first.", "warning")
@@ -560,6 +569,8 @@ class DSRCharacterManagementTab:
             )
 
     def _import_character(self) -> None:
+        if not guard_before_write("import a character"):
+            return
         if not self._check_game_not_running():
             return
 
@@ -613,6 +624,8 @@ class DSRCharacterManagementTab:
             )
 
     def _transfer_character(self) -> None:
+        if not guard_before_write("transfer the character"):
+            return
         if not self._check_game_not_running():
             return
 

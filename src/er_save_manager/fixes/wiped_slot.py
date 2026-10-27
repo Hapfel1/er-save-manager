@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from er_save_manager.own_writes import atomic_write
+
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
 
@@ -141,7 +143,5 @@ def extract_copy(source: RecoverySource, save_path: str | Path) -> Path:
     target = save_path.with_name(
         f"{save_path.stem} (Previous Version {stamp}){save_path.suffix}"
     )
-    tmp = target.with_name(target.name + ".tmp")
-    tmp.write_bytes(source.data)
-    tmp.replace(target)
+    atomic_write(target, source.data)
     return target

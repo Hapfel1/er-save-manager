@@ -16,7 +16,7 @@ import struct
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 _AC6_KEY = bytes(
     [
@@ -169,10 +169,7 @@ def patch_steamid_ac6(save_path: Path, new_steamid: int) -> tuple[bool, str]:
             "No 'Steam' section found in any entry. File may not be a valid AC6 save.",
         )
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(bytes(raw))
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, raw)
     return True, (
         f"Patched {entries_patched} entry/entries\n"
         f"Old SteamID: {old_steamid}\n"

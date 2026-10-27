@@ -184,7 +184,7 @@ from enum import IntEnum
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 # --- Constants --------------------------------------------------------------- #
 
@@ -1561,11 +1561,7 @@ class DSRSave:
         raw[sys_off : sys_off + 16] = sys_new_iv
         raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE] = sys_ciphertext
 
-        target = Path(path)
-        tmp_path = target.with_suffix(target.suffix + ".tmp")
-        tmp_path.write_bytes(raw)
-        tmp_path.replace(target)
-        record_write(target)
+        atomic_write(path, raw, loaded=True)
 
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """

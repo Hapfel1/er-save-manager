@@ -24,7 +24,7 @@ import struct
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 _KEYS = {
     "dark_souls_2": bytes.fromhex("599f9b699640a55236ee2d70835ec744"),
@@ -132,8 +132,5 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
     )
     raw[offset : offset + size] = _encrypt(iv, dec, key)
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(bytes(raw))
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, raw)
     return True, f"Old SteamID: {old_steam64}\nNew SteamID: {new_steam64}"

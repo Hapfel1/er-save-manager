@@ -23,7 +23,7 @@ import struct
 from pathlib import Path
 
 from er_save_manager import aes_cbc
-from er_save_manager.own_writes import record_write
+from er_save_manager.own_writes import atomic_write
 
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
 _IV_SIZE = 16
@@ -143,10 +143,7 @@ def patch_steamid_ds3(save_path: Path, new_steam64: int) -> tuple[bool, str]:
             raw[offset : offset + size] = _encrypt_entry(iv, dec)
             slots_patched += 1
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(bytes(raw))
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, raw)
     return True, (
         f"Patched USER_DATA_010 + {slots_patched} character slot(s)\n"
         f"Old SteamID: {old_steam64} (Steam32: {old_steam32})\n"

@@ -11,6 +11,7 @@ first entry size are fixed per game:
   Dark Souls II SOTFS   23       0x1AB0
   Dark Souls Remastered 11       0x60030
   Armored Core VI       11       0xC0030
+  Sekiro                12       0x100010
 
 PlayStation exports are matched by magic (ER), exact length (NR, same
 rule as the NR parser) or userdataNNNN name plus size (DS3).
@@ -30,6 +31,7 @@ _BND4_SIGNATURES: dict[tuple[int, int], str] = {
     (23, 0x1AB0): "dark_souls_2",
     (11, 0x60030): "dark_souls_remastered",
     (11, 0xC0030): "armored_core_6",
+    (12, 0x100010): "sekiro",
 }
 
 _ER_PS_MAGIC = bytes.fromhex("cb019c2c")
@@ -41,7 +43,7 @@ _FIRST_ENTRY_SIZE_OFFSET = 0x40 + 0x8
 
 
 # Games whose own saves are always recognized; checks against any other game
-# (Sekiro, unknown signature) cannot tell a mismatch from its own file.
+# (unknown signature) cannot tell a mismatch from its own file.
 KNOWN_GAMES = frozenset(_BND4_SIGNATURES.values())
 
 

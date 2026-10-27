@@ -21,7 +21,7 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from er_save_manager import VersionChecker, __version__
+from er_save_manager import VersionChecker, __version__, own_writes
 from er_save_manager.games.extension_copy import (
     SUPPORTED_GAMES as SUPPORTED_EXTENSION_GAMES,
 )
@@ -29,7 +29,7 @@ from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
-from er_save_manager.ui import palette, popups
+from er_save_manager.ui import error_report, palette, popups
 from er_save_manager.ui.character_pages import CharacterPagesTab
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
@@ -40,7 +40,12 @@ from er_save_manager.ui.editors import (
     StatsEditor,
 )
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import CharacterBar, PendingBar, PendingPage
+from er_save_manager.ui.pending import (
+    CharacterBar,
+    PendingBar,
+    PendingPage,
+    register_save_hooks,
+)
 from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.tabs import (
     AdvancedToolsTab,
@@ -116,6 +121,7 @@ class SaveManagerGUI:
 
     def __init__(self, root):
         self.root = root
+        error_report.install(root)
         self.root.title("Elden Ring Save Manager")
         self.root.geometry("1200x1000")
 
@@ -975,14 +981,19 @@ class SaveManagerGUI:
         ]
 
         self.character_bar = CharacterBar(self.root, self._on_character_selected)
+        register_save_hooks(
+            write_failed=self._write_failed,
+            file_writable=self._pending_file_writable,
+            guard=lambda action: (self._guard_bypass or self.pending_bar.guard(action)),
+        )
         self.pending_bar = PendingBar(
             self.root,
             get_slot=lambda: self.character_bar.index,
             backup=self._pending_backup,
             write=self._pending_write,
             blocks_write=self._pending_blocks_write,
+            file_writable=self._pending_file_writable,
             after_apply=self._after_apply,
-            reload_from_disk=self._reload_after_failed_apply,
             show_toast=self.show_toast,
             on_visibility=self._show_pending_bar,
         )
@@ -1375,6 +1386,54 @@ class SaveManagerGUI:
         if profile is None or not profile.process_name:
             return False
         return game_blocks_write(self.root, profile.process_name, profile.name)
+
+    def _pending_file_writable(self) -> bool:
+        """False, after telling the user, when writing the in-memory save
+        back would overwrite a newer file or cannot be done."""
+        if self.save_path is None:
+            return True
+        problem = own_writes.write_problem(self.save_path)
+        if problem is None:
+            return True
+        self.save_write_blocked(problem)
+        return False
+
+    def _write_failed(self, exc: BaseException, parent=None) -> None:
+        """Handler of pending.write_failed: the in-memory save holds a
+        change the file does not, so it is re-read from disk."""
+        dropped = " Unapplied changes are dropped." if self.pending_bar.dirty() else ""
+        CTkMessageBox.showerror(
+            "Save Not Written",
+            f"The change was not written:\n{exc}\n\n"
+            f"The save is reloaded from disk.{dropped}",
+            parent=parent or self.root,
+        )
+        self._reload_after_failed_apply()
+
+    def save_write_blocked(self, exc: OSError) -> None:
+        """Tell the user why the loaded save was not written. A changed or
+        read-only file offers Reload (drops unapplied edits) or Cancel."""
+        if not isinstance(
+            exc, (own_writes.SaveChangedError, own_writes.SaveReadOnlyError)
+        ):
+            CTkMessageBox.showerror("Save Not Written", str(exc), parent=self.root)
+            return
+        if isinstance(exc, own_writes.SaveChangedError):
+            title = "Save Changed on Disk"
+            hint = "Reload it to edit the newer save. Unapplied changes are dropped."
+        else:
+            title = "Save Is Read-Only"
+            hint = "Reload drops unapplied changes."
+        choice = CTkMessageBox._create_dialog(
+            self.root,
+            title,
+            f"Nothing was written.\n\n{exc}\n\n{hint}",
+            icon_type="warning",
+            buttons=[("Reload", "reload"), ("Cancel", None)],
+        )
+        if choice == "reload":
+            self.pending_bar.discard_all()
+            self._reload_after_failed_apply()
 
     def _after_apply(self) -> None:
         """Reload the character into every tab after Apply All; names and
@@ -3002,6 +3061,7 @@ class SaveManagerGUI:
 
         self.save_path = Path(save_path)
         self.save_file = None
+        own_writes.record_load(None, None)
         self._update_watched_mtime()
         self._start_file_watcher()
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
@@ -3089,6 +3149,7 @@ class SaveManagerGUI:
             if verbose:
                 self._verbose_log(f"Loading save: {save_path}")
 
+            signature = own_writes.file_signature(save_path)
             save_file = Save.from_file(save_path)
 
             if verbose:
@@ -3101,6 +3162,7 @@ class SaveManagerGUI:
                 save_path,
                 silent,
                 toast_message,
+                signature,
             )
         except Exception as e:
             error_msg = str(e)
@@ -3211,6 +3273,7 @@ class SaveManagerGUI:
         if not self._confirm_vanilla_save(save_path):
             return
 
+        signature = own_writes.file_signature(save_path)
         try:
             self.dsr_save = DSRSave.from_file(save_path)
         except Exception as e:
@@ -3218,6 +3281,7 @@ class SaveManagerGUI:
                 "Load Failed", f"Failed to load DSR save:\n{e}", parent=self.root
             )
             return
+        own_writes.record_load(save_path, signature)
         self._repair_dsr_item_levels(Path(save_path))
 
         self.save_path = Path(save_path)
@@ -3301,6 +3365,7 @@ class SaveManagerGUI:
         if not self._confirm_vanilla_save(save_path):
             return
 
+        signature = own_writes.file_signature(save_path)
         try:
             self.ds3_save = DS3Save.from_file(save_path)
         except Exception as e:
@@ -3308,6 +3373,7 @@ class SaveManagerGUI:
                 "Load Failed", f"Failed to load DS3 save:\n{e}", parent=self.root
             )
             return
+        own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
         self.save_file = None
@@ -3360,6 +3426,7 @@ class SaveManagerGUI:
         if not self._confirm_vanilla_save(save_path):
             return
 
+        signature = own_writes.file_signature(save_path)
         try:
             self.ds2_save = DS2Save.from_file(save_path)
         except Exception as e:
@@ -3367,6 +3434,7 @@ class SaveManagerGUI:
                 "Load Failed", f"Failed to load DS2 save:\n{e}", parent=self.root
             )
             return
+        own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
         self.save_file = None
@@ -3418,6 +3486,7 @@ class SaveManagerGUI:
         if not self._confirm_vanilla_save(save_path):
             return
 
+        signature = own_writes.file_signature(save_path)
         try:
             self._nr_save = NightreignSave.from_file(save_path)
         except Exception as e:
@@ -3425,6 +3494,7 @@ class SaveManagerGUI:
                 "Load Failed", f"Failed to load Nightreign save:\n{e}", parent=self.root
             )
             return
+        own_writes.record_load(save_path, signature)
 
         self.save_path = Path(save_path)
         self.save_file = None
@@ -3479,11 +3549,13 @@ class SaveManagerGUI:
         save_path,
         silent=False,
         toast_message="Save file loaded successfully.",
+        signature=None,
     ):
         """Finalize save loading on main thread"""
         self._flush_pending_tabs()
         self.save_file = save_file
         self.save_path = Path(save_path)
+        own_writes.record_load(save_path, signature)
         self._update_watched_mtime()
         self._start_file_watcher()
 
@@ -3727,19 +3799,31 @@ class SaveManagerGUI:
         ds.finish(dialog, window)
 
     def _reload_changed_save(self) -> None:
-        """Reload the save after an external change, keeping open popups."""
+        """Reload the save after an external change, keeping open popups.
+
+        Unapplied edits can only be discarded here: applying them would
+        overwrite the newer file.
+        """
+        if not self.pending_bar.guard(
+            "reload the changed save", apply=False, discard="Reload"
+        ):
+            return
         self._reopen_popups_after_reload(popups.open_popups(self.root))
-        if self.active_game in (
-            "elden_ring",
-            "dark_souls_remastered",
-            "dark_souls_3",
-            "dark_souls_2",
-        ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
-            self.load_save(toast_message="Save file reloaded")
-        else:
-            # SteamID-only games have no parser; load_save would treat
-            # the file as an Elden Ring save.
-            self._load_non_er_save(str(self.save_path))
+        self._guard_bypass = True
+        try:
+            if self.active_game in (
+                "elden_ring",
+                "dark_souls_remastered",
+                "dark_souls_3",
+                "dark_souls_2",
+            ) or (self.active_game == "nightreign" and _NR_AVAILABLE):
+                self.load_save(toast_message="Save file reloaded")
+            else:
+                # SteamID-only games have no parser; load_save would treat
+                # the file as an Elden Ring save.
+                self._load_non_er_save(str(self.save_path))
+        finally:
+            self._guard_bypass = False
 
     def _reopen_popups_after_reload(self, windows) -> None:
         """Rebuild open data popups once the reload has replaced the save."""

@@ -14,7 +14,8 @@ import hashlib
 import struct
 from pathlib import Path
 
-from er_save_manager.own_writes import record_write
+from er_save_manager.games.save_identify import identify_game
+from er_save_manager.own_writes import atomic_write
 
 _BND4_MAGIC = b"BND4\x00\x00\x00\x00"
 _MINIMAL_LENGTH = 0x00A603B0
@@ -40,7 +41,11 @@ def detect_steamid_sekiro(save_path: Path) -> int | None:
     """Read Steam64 from the settings block at fixed offset 0xA003D4."""
     try:
         data = save_path.read_bytes()
-        if len(data) < _MINIMAL_LENGTH or data[:8] != _BND4_MAGIC:
+        if (
+            len(data) < _MINIMAL_LENGTH
+            or data[:8] != _BND4_MAGIC
+            or identify_game(save_path) != "sekiro"
+        ):
             return None
         steamid = struct.unpack_from("<Q", data, _SETTINGS_STEAM_ID)[0]
         if 0x0110000100000000 <= steamid <= 0x01100001FFFFFFFF:
@@ -61,8 +66,12 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     except OSError as e:
         return False, f"Could not read file: {e}"
 
-    if len(data) < _MINIMAL_LENGTH or data[:8] != _BND4_MAGIC:
-        return False, "Not a valid Sekiro SL2 file"
+    if (
+        len(data) < _MINIMAL_LENGTH
+        or data[:8] != _BND4_MAGIC
+        or identify_game(save_path) != "sekiro"
+    ):
+        return False, f"{save_path.name} is not a Sekiro save file."
 
     old_steam64 = struct.unpack_from("<Q", data, _SETTINGS_STEAM_ID)[0]
     if old_steam64 == new_steam64:
@@ -94,10 +103,7 @@ def patch_steamid_sekiro(save_path: Path, new_steam64: int) -> tuple[bool, str]:
     )
     data[_SETTINGS_CHECKSUM : _SETTINGS_CHECKSUM + 16] = new_settings_checksum
 
-    tmp_path = save_path.with_suffix(save_path.suffix + ".tmp")
-    tmp_path.write_bytes(bytes(data))
-    tmp_path.replace(save_path)
-    record_write(save_path)
+    atomic_write(save_path, data)
     return True, (
         f"Patched {slots_patched} save slot(s) + settings block\n"
         f"Old SteamID: {old_steam64}\n"
