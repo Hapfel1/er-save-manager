@@ -28,6 +28,8 @@ from er_save_manager.ui.utils import (
 )
 
 _CAT_WEAPON = 0x00000000
+# Spirit ash upgrade levels are +0 to +10.
+_ASH_UPGRADE_CAP = 10
 _DELETE_COLOR = ("#dc2626", "#b91c1c")
 
 
@@ -232,6 +234,45 @@ def _item_name(
 
 _ROW_RE = re.compile(
     r"^\s*\[(?P<tag>[HS]K?)\]\s*(?P<name>.*?)\s*\|\s*Qty:\s*(?P<qty>\d+)(?P<rest>.*)$"
+)
+
+
+def _parse_whole(text, field: str) -> int:
+    """Parse a whole number typed into a field; ValueError names the field."""
+    text = str(text).strip()
+    if not re.fullmatch(r"[+-]?\d+", text):
+        raise ValueError(f"{field} must be a whole number, got '{text}'.")
+    return int(text)
+
+
+def _list_lines(lines: list[str], limit: int = 10) -> str:
+    text = "\n".join(lines[:limit])
+    if len(lines) > limit:
+        text += f"\n...and {len(lines) - limit} more."
+    return text
+
+
+def _equipped_handles(slot) -> set[int]:
+    """Handles of everything the character has equipped: arms, ammo, armor,
+    talismans, quick items, pouch and the Great Rune."""
+    from dataclasses import fields
+
+    handles: set[int] = set()
+    equip = getattr(slot, "equipped_items_gaitem_handle", None)
+    if equip is not None:
+        handles.update(getattr(equip, f.name) for f in fields(equip))
+    items = getattr(slot, "equipped_items", None)
+    if items is not None:
+        handles.update(e.gaitem_handle for e in items.quick_items)
+        handles.update(e.gaitem_handle for e in items.pouch_items)
+        handles.add(items.great_rune)
+    handles.difference_update({0, 0xFFFFFFFF})
+    return handles
+
+
+_EQUIPPED_WARNING = (
+    "Its equipment slot keeps pointing at the removed item. Unequip it in "
+    "game first to be safe."
 )
 
 
@@ -729,9 +770,10 @@ class InventoryEditor:
         self._all_rows: list[tuple[str, int | None, str | None]] = []
         self._item_data: list[tuple[int, str, int] | None] = []
 
-        self.inv_quantity_var: ctk.IntVar | None = None
+        self.inv_quantity_var: ctk.StringVar | None = None
         self._quantity_entry: ctk.CTkEntry | None = None
         self._current_max_num: int = 1
+        self._current_upgrade_cap: int = 0
         self.inv_upgrade_var: ctk.StringVar | None = None
         self.inv_affinity_var: ctk.StringVar | None = None
         self.inv_location_var: ctk.StringVar | None = None
@@ -981,7 +1023,7 @@ class InventoryEditor:
         ctk.CTkLabel(opts, text="Quantity:", anchor="w").grid(
             row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=4
         )
-        self.inv_quantity_var = ctk.IntVar(value=1)
+        self.inv_quantity_var = ctk.StringVar(value="1")
         self._quantity_entry = ctk.CTkEntry(
             opts, textvariable=self.inv_quantity_var, width=70
         )
@@ -1415,7 +1457,7 @@ class InventoryEditor:
             max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
             is_ammo = is_weapon and max_arrow > 1
             if (is_weapon and not is_ammo) or is_armor or is_gem:
-                self.inv_quantity_var.set(1)
+                self.inv_quantity_var.set("1")
                 self._quantity_entry.configure(state="disabled")
                 self._current_max_num = 1
             else:
@@ -1423,7 +1465,7 @@ class InventoryEditor:
                     max_arrow if is_ammo else getattr(self.selected_item, "max_num", 1)
                 )
                 self._current_max_num = max_num
-                self.inv_quantity_var.set(1)
+                self.inv_quantity_var.set("1")
                 self._quantity_entry.configure(
                     state="normal" if max_num > 1 else "disabled"
                 )
@@ -1431,7 +1473,7 @@ class InventoryEditor:
         if self._upgrade_combo:
             if is_upgradable:
                 if is_ashes:
-                    cap = 10
+                    cap = _ASH_UPGRADE_CAP
                 else:
                     save_path = self.get_save_path() or ""
                     is_convergence_save = ".cnv" in str(save_path).lower()
@@ -1455,9 +1497,11 @@ class InventoryEditor:
                     values=[str(i) for i in range(cap + 1)], state="normal"
                 )
                 self.inv_upgrade_var.set("0")
+                self._current_upgrade_cap = cap
             else:
                 self._upgrade_combo.configure(values=["0"], state="disabled")
                 self.inv_upgrade_var.set("0")
+                self._current_upgrade_cap = 0
 
         save_path = self.get_save_path() or ""
         is_convergence_save = ".cnv" in str(save_path).lower()
@@ -2142,7 +2186,7 @@ class InventoryEditor:
             if not ok:
                 return False, err
 
-        item_for_qty = db.get_item_by_id(full_id)
+        item_for_qty, _level = self._db_item_for(full_id)
         if item_for_qty is not None:
             max_qty = self._max_qty_for_location(item_for_qty, location)
             if qty < 1 or qty > max_qty:
@@ -2206,6 +2250,11 @@ class InventoryEditor:
         return True, ""
 
     def _get_current_item_info(self) -> dict:
+        """Read the add controls for the selected item.
+
+        Raises ValueError, naming the field, for a quantity or upgrade that is
+        not a whole number or is outside the item's range.
+        """
         full_id = self.selected_item.full_id
         cat = full_id & 0xF0000000
         is_weapon = cat == 0x00000000
@@ -2213,28 +2262,27 @@ class InventoryEditor:
         is_gem = cat == 0x80000000
         is_ashes = "Ashes" in self.selected_item.category_name
 
-        try:
-            qty = int(self.inv_quantity_var.get())
-            upg = int(self.inv_upgrade_var.get()) if (is_weapon or is_ashes) else 0
-        except (ValueError, tk.TclError):
-            qty = 1
-            upg = 0
-
+        name = self.selected_item.name
         location = self.inv_location_var.get()
-
-        if is_weapon or is_armor or is_gem:
-            max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
-            is_ammo = is_weapon and max_arrow > 1
-            if not is_ammo:
-                qty = 1
-            else:
-                max_qty = self._max_qty_for_location(self.selected_item, location)
-                qty = max(1, min(qty, max_qty))
-        else:
-            max_qty = self._max_qty_for_location(self.selected_item, location)
-            qty = max(1, min(qty, max_qty))
-
         max_qty_for_item = self._max_qty_for_location(self.selected_item, location)
+
+        max_arrow = getattr(self.selected_item, "max_arrow_quantity", 1)
+        is_ammo = is_weapon and max_arrow > 1
+        if (is_weapon or is_armor or is_gem) and not is_ammo:
+            qty = 1
+        else:
+            qty = _parse_whole(self.inv_quantity_var.get(), "Quantity")
+            if not 1 <= qty <= max_qty_for_item:
+                raise ValueError(
+                    f"Quantity must be 1-{max_qty_for_item} for {name} in {location}."
+                )
+
+        upg = 0
+        if is_weapon or is_ashes:
+            upg = _parse_whole(self.inv_upgrade_var.get(), "Upgrade")
+            cap = self._current_upgrade_cap
+            if not 0 <= upg <= cap:
+                raise ValueError(f"Upgrade must be 0-{cap} for {name}.")
 
         if is_ashes and upg > 0:
             cat_bits = full_id & 0xF0000000
@@ -2275,12 +2323,151 @@ class InventoryEditor:
             "base_name": self.selected_item.name,
         }
 
+    def _db_item_for(self, full_id: int):
+        """Return (database item, spirit ash level) for a full item id.
+
+        Weapon ids carry affinity and upgrade in the low four digits, so the
+        lookup uses the base weapon. A spirit ash id is the base ash id plus
+        its upgrade level; the level returned can exceed the +10 cap, so
+        callers can name the bad level. Ash base ids are 1000 apart.
+        """
+        from er_save_manager.data.item_database import get_item_database
+
+        db = get_item_database()
+        is_cnv = self._is_cnv_save()
+        cat = full_id & 0xF0000000
+        if cat == 0x00000000:
+            base = (full_id & 0x0FFFFFFF) // 10000 * 10000
+            return db.get_item_by_id(base, is_cnv), 0
+        item = db.get_item_by_id(full_id, is_cnv)
+        if item is not None or cat != 0x40000000:
+            return item, 0
+        for level in range(1, 100):
+            base_item = db.get_item_by_id(full_id - level, is_cnv)
+            if base_item is not None and "Ashes" in base_item.category_name:
+                return base_item, level
+        return None, 0
+
+    def _check_loadout_entry(self, entry) -> tuple[dict | None, str]:
+        """Re-check one stored loadout entry against the item database.
+
+        Returns (entry rebuilt from the database, "") or (None, reason). The
+        stack cap, reinforcement and names come from the database, never from
+        the entry. Unknown ids pass only while the custom ID dev option is on.
+        """
+        from er_save_manager.data.item_database import get_item_database
+
+        if not isinstance(entry, dict):
+            return None, f"not an item entry: {entry!r:.40}"
+
+        def whole(key, default):
+            value = entry.get(key, default)
+            if value is None:
+                value = default
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"{key} must be a whole number, got {value!r:.20}")
+            return value
+
+        try:
+            full_id = whole("full_id", None)
+            qty = whole("qty", 1)
+            upg = whole("upg", 0)
+            aow_id = whole("aow_id", 0)
+            stored_max = whole("max_qty", 1)
+        except ValueError as e:
+            return None, str(e)
+        if not 0 < full_id <= 0xFFFFFFFF:
+            return None, f"full_id {full_id} is not an item id"
+        location = entry.get("location", "held")
+        if location not in ("held", "storage"):
+            return None, f"location must be held or storage, got {location!r:.20}"
+
+        cat = full_id & 0xF0000000
+        item, level = self._db_item_for(full_id)
+        if item is None:
+            if not self._dev_option("custom_item_adder"):
+                return None, f"unknown item id 0x{full_id:08X}"
+            if not 1 <= qty <= max(1, stored_max):
+                return None, f"quantity {qty} is above its max stack"
+            return dict(entry, qty=qty, upg=upg, aow_id=aow_id), ""
+
+        is_ashes = "Ashes" in item.category_name
+        if is_ashes:
+            level += upg
+            if upg < 0 or level > _ASH_UPGRADE_CAP:
+                return None, f"Spirit Ash upgrade must be 0-{_ASH_UPGRADE_CAP}"
+            full_id = item.full_id + level
+            upg = 0
+        elif cat == 0x00000000:
+            if full_id % 100:
+                return None, "full_id carries an upgrade level; use upg"
+            if aow_id:
+                gem = get_item_database().get_item_by_id(aow_id, self._is_cnv_save())
+                if gem is None or (aow_id & 0xF0000000) != 0x80000000:
+                    return None, f"unknown Ash of War id 0x{aow_id:08X}"
+            ok, err = self._validate_weapon(
+                get_item_database(), full_id & 0x0FFFFFFF, upg, aow_id
+            )
+            if not ok:
+                return None, err
+        elif upg or aow_id:
+            return None, "only weapons and Spirit Ashes take an upgrade"
+
+        max_qty = self._max_qty_for_location(item, location)
+        if not 1 <= qty <= max_qty:
+            return None, f"quantity {qty} is outside 1-{max_qty} for {location}"
+
+        shown = level if is_ashes else upg
+        return {
+            "full_id": full_id,
+            "qty": qty,
+            "upg": upg,
+            "location": location,
+            "aow_id": aow_id if cat == 0x00000000 else 0,
+            "is_ashes": is_ashes,
+            "reinforcement": "ash"
+            if is_ashes
+            else getattr(item, "reinforcement", "standard"),
+            "convergence": self._is_cnv_save(),
+            "max_qty": max_qty,
+            "name_label": f"{item.name} +{shown}" if shown else item.name,
+            "base_name": item.name,
+        }, ""
+
+    def _check_loadout(self, entries: list) -> tuple[list[dict], list[str]]:
+        """Split loadout entries into usable ones and "label: reason" lines."""
+        kept: list[dict] = []
+        dropped: list[str] = []
+        for i, entry in enumerate(entries, 1):
+            checked, reason = self._check_loadout_entry(entry)
+            if checked is not None:
+                kept.append(checked)
+                continue
+            label = entry.get("name_label") if isinstance(entry, dict) else None
+            dropped.append(
+                f"{label if isinstance(label, str) else f'Entry {i}'}: {reason}"
+            )
+        return kept, dropped
+
+    def _read_add_fields(self) -> dict | None:
+        """_get_current_item_info, or None after showing the field error."""
+        try:
+            return self._get_current_item_info()
+        except ValueError as e:
+            CTkMessageBox.showerror("Add Item", str(e), parent=self.parent)
+            return None
+
     def _process_single_add(self, save_file, slot_idx, slot, item_info: dict) -> dict:
         full_id = item_info["full_id"]
         qty = item_info["qty"]
         upg = item_info["upg"]
         location = item_info["location"]
-        max_qty = item_info.get("max_qty", 1)
+        db_item, _level = self._db_item_for(full_id)
+        max_qty = (
+            self._max_qty_for_location(db_item, location)
+            if db_item is not None
+            else item_info.get("max_qty", 1)
+        )
         name_label = item_info.get("base_name", "item")
 
         from er_save_manager.parser.inventory_ops import (
@@ -2354,7 +2541,9 @@ class InventoryEditor:
             notify(self.parent, "Select an item from the browser first.", "warning")
             return
 
-        item_info = self._get_current_item_info()
+        item_info = self._read_add_fields()
+        if item_info is None:
+            return
         self.loadout.append(item_info)
         self.loadout_changed()
         show_toast(
@@ -2438,7 +2627,9 @@ class InventoryEditor:
             return
 
         slot_idx = self.get_char_slot()
-        item_info = self._get_current_item_info()
+        item_info = self._read_add_fields()
+        if item_info is None:
+            return
 
         resolved_location = self._resolve_add_location(
             save_file, slot_idx, item_info["location"]
@@ -2489,6 +2680,20 @@ class InventoryEditor:
         if not items:
             return
 
+        try:
+            target_qty = _parse_whole(self.inv_quantity_var.get(), "Quantity")
+            target_upg = _parse_whole(self.inv_upgrade_var.get(), "Upgrade")
+        except ValueError as e:
+            CTkMessageBox.showerror("Batch Add", str(e), parent=parent_window)
+            return
+        if target_qty < 1 or target_upg < 0:
+            CTkMessageBox.showerror(
+                "Batch Add",
+                "Quantity must be at least 1 and Upgrade at least 0.",
+                parent=parent_window,
+            )
+            return
+
         is_loadout = self.loadout_mode_var.get()
         action_name = "add to Loadout" if is_loadout else "add to Inventory"
 
@@ -2521,11 +2726,7 @@ class InventoryEditor:
             for item in items:
                 location = self.inv_location_var.get()
                 max_qty = self._max_qty_for_location(item, location)
-                try:
-                    target_qty = int(self.inv_quantity_var.get())
-                except (ValueError, tk.TclError):
-                    target_qty = 1
-                item_qty = max(1, min(target_qty, max_qty))
+                item_qty = min(target_qty, max_qty)
                 item_info = {
                     "full_id": item.full_id,
                     "qty": item_qty,
@@ -2565,23 +2766,15 @@ class InventoryEditor:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "batch_add_category")
 
-            target_upg = 0
-            with contextlib.suppress(ValueError):
-                target_upg = int(self.inv_upgrade_var.get())
-
-            target_qty = 1
-            with contextlib.suppress(ValueError):
-                target_qty = max(1, int(self.inv_quantity_var.get()))
-
             is_cnv = self._is_cnv_save()
             success = 0
-            errors = []
+            skipped: dict[str, int] = {}
             for item in items:
                 location = self._resolve_add_location(
                     save_file, slot_idx, self.inv_location_var.get()
                 )
                 max_qty = self._max_qty_for_location(item, location)
-                item_qty = max(1, min(target_qty, max_qty))
+                item_qty = min(target_qty, max_qty)
                 item_upg = 0
                 if target_upg > 0 and (
                     item.category == 0x00000000
@@ -2613,8 +2806,12 @@ class InventoryEditor:
                     self._process_single_add(save_file, slot_idx, slot, item_info)
                     success += 1
                 except Exception as e:
-                    if "already in the inventory" not in str(e):
-                        errors.append(f"{item.name}: {e}")
+                    reason = str(e)
+                    if "already present" in reason:
+                        reason = "already in the inventory"
+                    elif "exceeds the max stack" in reason:
+                        reason = "stack already at its max"
+                    skipped[reason] = skipped.get(reason, 0) + 1
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -2625,11 +2822,23 @@ class InventoryEditor:
             if self._on_inventory_changed:
                 self._on_inventory_changed()
 
-            show_toast(
-                self.parent.winfo_toplevel(),
-                f"Batch added {success} items from {cat}.",
-                type="success",
-            )
+            if skipped:
+                lines = [
+                    f"{n} x {reason}"
+                    for reason, n in sorted(skipped.items(), key=lambda kv: -kv[1])
+                ]
+                CTkMessageBox.showwarning(
+                    "Batch Add",
+                    f"Added {success} items from {cat}. Skipped "
+                    f"{sum(skipped.values())}:\n{_list_lines(lines)}",
+                    parent=parent_window,
+                )
+            else:
+                show_toast(
+                    self.parent.winfo_toplevel(),
+                    f"Batch added {success} items from {cat}.",
+                    type="success",
+                )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Batch Add Failed", f"Batch Add Failed:\n{e}", parent=parent_window
@@ -2647,15 +2856,31 @@ class InventoryEditor:
             if sel:
                 item_label = self.inventory_tree.set(sel[0], "item")
 
-        if not CTkMessageBox.askyesno(
-            "Confirm Remove",
-            f"Remove this item from {location}?\n\n{item_label}",
-            parent=self.parent,
-        ):
-            return
-
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
+        equipped = False
+        with contextlib.suppress(Exception):
+            equipped = gaitem_handle in _equipped_handles(
+                save_file.characters[slot_idx]
+            )
+
+        if equipped:
+            confirmed = CTkMessageBox._create_dialog(
+                self.parent,
+                "Remove Equipped Item",
+                f"{item_label} is equipped. Remove it from {location}?\n\n"
+                + _EQUIPPED_WARNING,
+                icon_type="warning",
+                buttons=[("Remove", True), ("Cancel", False)],
+            )
+        else:
+            confirmed = CTkMessageBox.askyesno(
+                "Confirm Remove",
+                f"Remove this item from {location}?\n\n{item_label}",
+                parent=self.parent,
+            )
+        if not confirmed:
+            return
 
         try:
             self.ensure_mutable()
@@ -2742,6 +2967,13 @@ class InventoryEditor:
         else:
             confirm_msg = (
                 f"Batch remove all {len(matches)} items from '{cat}' in {location}?"
+            )
+
+        equipped = _equipped_handles(slot)
+        n_equipped = sum(1 for row in matches if len(row) > 3 and row[3] in equipped)
+        if n_equipped:
+            confirm_msg += (
+                f"\n\n{n_equipped} of them are equipped. " + _EQUIPPED_WARNING
             )
 
         if not CTkMessageBox.askyesno(
@@ -3030,6 +3262,9 @@ class InventoryEditor:
                 self._create_backup(save_file, slot_idx, "set_upgrade")
                 g.item_id = base_id + new_upg
                 self._patch_gaitem(save_file, slot_idx, slot, i)
+                _bump_matchmaking_level(
+                    save_file, slot_idx, full_id, new_upg, reinforcement
+                )
                 save_file.recalculate_checksums()
                 if self.get_save_path():
                     save_file.to_file(Path(self.get_save_path()))
@@ -3308,6 +3543,9 @@ class InventoryEditor:
                 base_id = (full_id & 0x0FFFFFFF) // 100 * 100
                 g.item_id = base_id + new_upg
                 self._patch_gaitem(save_file, slot_idx, slot, gaitem_idx)
+                _bump_matchmaking_level(
+                    save_file, slot_idx, full_id, new_upg, item.reinforcement
+                )
                 updated += 1
 
             if updated == 0:
@@ -4054,10 +4292,26 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         editor.loadout.clear()
         editor.loadout_changed()
 
-    def _replace_items(self, data: list, source: str) -> None:
+    def _replace_items(self, data, source: str) -> None:
         """Replace the open loadout's items with imported ones, after asking
-        when that would drop existing items."""
+        when that would drop existing items. Entries that fail the item
+        database check are dropped and listed."""
         editor = self.editor
+        if not isinstance(data, list):
+            CTkMessageBox.showerror(
+                "Import Loadout",
+                f"The loadout from {source} is not a list of items.",
+                parent=self,
+            )
+            return
+        data, dropped = editor._check_loadout(data)
+        if not data:
+            CTkMessageBox.showerror(
+                "Import Loadout",
+                f"No usable items in {source}:\n{_list_lines(dropped)}",
+                parent=self,
+            )
+            return
         if editor.loadout and not CTkMessageBox.askyesno(
             "Replace Items",
             f"Replace the {len(editor.loadout)} items in "
@@ -4069,7 +4323,15 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             return
         editor.loadout = data
         editor.loadout_changed()
-        show_toast(self, f"Imported {len(data)} items.", type="success")
+        if dropped:
+            CTkMessageBox.showwarning(
+                "Import Loadout",
+                f"Imported {len(data)} items. Left out {len(dropped)}:\n"
+                f"{_list_lines(dropped)}",
+                parent=self,
+            )
+        else:
+            show_toast(self, f"Imported {len(data)} items.", type="success")
 
     def save_json(self):
         if not self.editor.loadout:
@@ -4097,8 +4359,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 "JSON Load Failed", f"Failed to load JSON:\n{e}", parent=self
             )
             return
-        if isinstance(data, list):
-            self._replace_items(data, "the file")
+        self._replace_items(data, "the file")
 
     def export_code(self):
         if not self.editor.loadout:
@@ -4175,14 +4436,27 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         except Exception:
             notify(self, "Load a character first.", "warning")
             return
-        count = len(editor.loadout)
+        entries, dropped = editor._check_loadout(editor.loadout)
+        if not entries:
+            CTkMessageBox.showerror(
+                "Add Loadout to Inventory",
+                f"No usable items in this loadout:\n{_list_lines(dropped)}",
+                parent=self,
+            )
+            return
+        count = len(entries)
+        skip_note = (
+            f"\n\nLeft out ({len(dropped)}):\n{_list_lines(dropped, 5)}"
+            if dropped
+            else ""
+        )
         if not CTkMessageBox.askyesno(
             "Add Loadout to Inventory",
             f"Add the {count} item{'s' if count != 1 else ''} of loadout "
             f"'{editor.loadout_display_name()}' to {character} "
             f"(slot {slot_idx + 1})?\n\n"
             "Items already in the inventory are kept; nothing is removed. "
-            "A backup of the save is made first.",
+            f"A backup of the save is made first.{skip_note}",
             parent=self,
         ):
             return
@@ -4194,7 +4468,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             success_count = 0
             errors = []
 
-            for item_info in editor.loadout:
+            for item_info in entries:
                 try:
                     location = editor._resolve_add_location(
                         save_file, slot_idx, item_info.get("location", "held")
@@ -4217,13 +4491,11 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             if editor._on_inventory_changed:
                 editor._on_inventory_changed()
 
+            errors = dropped + errors
             if errors:
-                err_text = "\n".join(errors[:5])
-                if len(errors) > 5:
-                    err_text += f"\n...and {len(errors) - 5} more."
                 CTkMessageBox.showwarning(
-                    "Partial Success",
-                    f"Added {success_count} items.\nErrors:\n{err_text}",
+                    "Loadout Partly Added",
+                    f"Added {success_count} items. Not added:\n{_list_lines(errors)}",
                     parent=self,
                 )
             else:
