@@ -30,6 +30,13 @@ GESTURE_SLOT_EMPTY = 0xFFFFFFFE
 WHEEL_SLOTS = 6
 
 
+# Gesture rows created per staged build step (prebuild_rows)
+_PREBUILD_ROWS = 9
+# Unlocked Regions check boxes built before the dialog shows, then per turn
+_REGION_FIRST = 16
+_REGION_BATCH = 10
+
+
 class GesturesRegionsTab:
     """Tab for viewing and unlocking gestures"""
 
@@ -61,6 +68,8 @@ class GesturesRegionsTab:
         self.gesture_states = {}
         self._initial_unlocked: set[int] = set()
         self.gestures_inner_frame = None
+        # Gesture check boxes in gesture_states order
+        self._gesture_boxes: list[ctk.CTkCheckBox] = []
         self._wheel_vars: list[tk.StringVar] = []
         self._wheel_combos: list[ctk.CTkComboBox] = []
         self._wheel_names: dict[str, int] = {}
@@ -203,24 +212,14 @@ class GesturesRegionsTab:
             }
 
         # The gesture list is the same for every character: keep the shown
-        # rows and set their check state instead of rebuilding them.
+        # rows (or the ones prebuild_rows made) and set their check state
+        # instead of rebuilding them.
         if list(self.gesture_states) != all_gestures:
             self._clear_gesture_rows()
             for gesture_id in all_gestures:
-                name = get_gesture_name(gesture_id)
-                dlc = " [DLC]" if is_dlc_gesture(gesture_id) else ""
-                cut = " [CUT]" if is_cut_content(gesture_id) else ""
-
-                var = tk.BooleanVar(value=False)
-                self.gesture_states[gesture_id] = var
-
-                checkbox = ctk.CTkCheckBox(
-                    self.gestures_inner_frame,
-                    text=f"{name}{dlc}{cut}",
-                    variable=var,
-                    onvalue=True,
-                    offvalue=False,
-                )
+                self._add_gesture_row(gesture_id)
+        for checkbox in self._gesture_boxes:
+            if not checkbox.winfo_manager():
                 checkbox.pack(anchor="w", pady=4, padx=8)
         for gesture_id, var in self.gesture_states.items():
             var.set(gesture_id in unlocked_gesture_ids)
@@ -229,10 +228,41 @@ class GesturesRegionsTab:
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
         self._load_wheel(slot)
 
+    def prebuild_rows(self):
+        """Create the gesture rows before any character is loaded,
+        _PREBUILD_ROWS per step of the staged tab build. They are packed by
+        the first load_slot, which then only sets their check state."""
+        gestures = sorted(get_all_unlockable_gestures(include_cut_content=False))
+        for start in range(0, len(gestures), _PREBUILD_ROWS):
+            if list(self.gesture_states) != gestures[:start]:
+                # load_slot rebuilt or cleared the rows meanwhile
+                return
+            for gesture_id in gestures[start : start + _PREBUILD_ROWS]:
+                self._add_gesture_row(gesture_id)
+            yield
+
+    def _add_gesture_row(self, gesture_id: int) -> None:
+        """Unpacked check box row for one gesture."""
+        name = get_gesture_name(gesture_id)
+        dlc = " [DLC]" if is_dlc_gesture(gesture_id) else ""
+        cut = " [CUT]" if is_cut_content(gesture_id) else ""
+        var = tk.BooleanVar(value=False)
+        self.gesture_states[gesture_id] = var
+        self._gesture_boxes.append(
+            ctk.CTkCheckBox(
+                self.gestures_inner_frame,
+                text=f"{name}{dlc}{cut}",
+                variable=var,
+                onvalue=True,
+                offvalue=False,
+            )
+        )
+
     def _clear_gesture_rows(self) -> None:
         for widget in self.gestures_inner_frame.winfo_children():
             widget.destroy()
         self.gesture_states.clear()
+        self._gesture_boxes.clear()
 
     def gesture_changes(self) -> int:
         selected = {gid for gid, var in self.gesture_states.items() if var.get()}
@@ -428,25 +458,33 @@ class GesturesRegionsTab:
         known_ids = set(REGIONS.keys())
         unknown_ids = [rid for rid in current_ids if rid not in known_ids]
 
+        # Every variable now, since Apply writes region_vars; the check boxes
+        # for the rows in view now and the rest in later event loop turns
+        rows: list[tuple[str, tk.BooleanVar]] = []
         for region_id, region_name in sorted(REGIONS.items(), key=lambda x: x[0]):
             var = tk.BooleanVar(value=(region_id in current_ids))
             region_vars[region_id] = var
-            ctk.CTkCheckBox(
-                list_frame,
-                text=f"{region_id}: {region_name}",
-                variable=var,
-                font=ds.FONT,
-            ).pack(anchor="w", padx=8, pady=2)
-
+            rows.append((f"{region_id}: {region_name}", var))
         for region_id in unknown_ids:
             var = tk.BooleanVar(value=True)
             region_vars[region_id] = var
-            ctk.CTkCheckBox(
-                list_frame,
-                text=f"{region_id}: (unknown)",
-                variable=var,
-                font=ds.FONT,
-            ).pack(anchor="w", padx=8, pady=2)
+            rows.append((f"{region_id}: (unknown)", var))
+
+        def add_rows(start: int, count: int) -> None:
+            if not dialog.winfo_exists():
+                return
+            for text, var in rows[start : start + count]:
+                ctk.CTkCheckBox(list_frame, text=text, variable=var, font=ds.FONT).pack(
+                    anchor="w", padx=8, pady=2
+                )
+            if start + count < len(rows):
+                # Tk runs due timers before the idle callbacks that repaint,
+                # so the timer is armed from an idle callback
+                dialog.after_idle(
+                    lambda: dialog.after(1, add_rows, start + count, _REGION_BATCH)
+                )
+
+        add_rows(0, _REGION_FIRST)
 
         def apply_regions():
             selected = sorted(rid for rid, var in region_vars.items() if var.get())

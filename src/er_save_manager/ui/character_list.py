@@ -137,12 +137,17 @@ class CharacterList:
         self._slots: list[int] = []
         # (columns, row count, status shown) of the cards on screen
         self._layout: tuple | None = None
+        # Pending after() job that adds the next card, see show()
+        self._build_job = None
         self.frame._parent_canvas.bind("<Configure>", self._fit, add="+")
 
     def pack(self, **kwargs) -> None:
         self.frame.pack(**kwargs)
 
     def clear(self) -> None:
+        if self._build_job is not None:
+            self.frame.after_cancel(self._build_job)
+            self._build_job = None
         for child in self.frame.winfo_children():
             child.destroy()
         self._cards.clear()
@@ -190,33 +195,54 @@ class CharacterList:
         if "_status" in cells:
             cells["_status"].configure(text="Status")
         self._cells.append(cells)
-        for n, row in enumerate(rows):
-            card = ctk.CTkFrame(self.frame, fg_color=ds.CARD_ROW, corner_radius=8)
-            card.pack(fill=tk.X, padx=4, pady=3)
-            cells = self._grid_line(
-                card,
-                layout[2],
-                font=ds.BOLD,
-                name_color=ds.ROW_TEXT,
-                value_color=ds.MUTED,
-            )
-            for key in ("_name", "_status"):
-                if key in cells:
-                    add_tooltip(cells[key], "")
-            self._fill_line(cells, row)
-            for widget in (card, *cells.values()):
-                widget.bind("<Button-1>", lambda _e, n=n: self.select(self._slots[n]))
-                if self._on_double:
-                    widget.bind(
-                        "<Double-Button-1>",
-                        lambda _e, n=n: self._on_double(self._slots[n]),
-                    )
-            self._cells.append(cells)
-            self._cards.append((row.slot, card))
-            self._slots.append(row.slot)
-        self._layout = layout
+        # The first card now, the others one per event loop turn: building
+        # every card (about ten CTkLabels each) at once froze the window
+        self._add_card(0, rows[0], layout[2])
         self.select(rows[0].slot)
+        if len(rows) > 1:
+            self._build_job = self.frame.after(1, self._add_cards, rows, 1, layout)
+        else:
+            self._layout = layout
         self.frame.after_idle(self._fit)
+
+    def _add_cards(self, rows: list[CharacterRow], n: int, layout: tuple) -> None:
+        self._build_job = None
+        if not self.frame.winfo_exists():
+            return
+        self._add_card(n, rows[n], layout[2])
+        if n + 1 < len(rows):
+            self._build_job = self.frame.after(1, self._add_cards, rows, n + 1, layout)
+        else:
+            self._layout = layout
+
+    def _add_card(self, n: int, row: CharacterRow, status: bool) -> None:
+        card = ctk.CTkFrame(self.frame, fg_color=ds.CARD_ROW, corner_radius=8)
+        card.pack(fill=tk.X, padx=4, pady=3)
+        cells = self._grid_line(
+            card,
+            status,
+            font=ds.BOLD,
+            name_color=ds.ROW_TEXT,
+            value_color=ds.MUTED,
+        )
+        for key in ("_name", "_status"):
+            if key in cells:
+                add_tooltip(cells[key], "")
+        self._fill_line(cells, row)
+        for widget in (card, *cells.values()):
+            widget.bind("<Button-1>", lambda _e, n=n: self.select(self._slots[n]))
+            if self._on_double:
+                widget.bind(
+                    "<Double-Button-1>",
+                    lambda _e, n=n: self._on_double(self._slots[n]),
+                )
+        # Columns _fit hid before this card existed
+        for key in self._hidden:
+            cells[key].grid_remove()
+        ds.select_card_row(card, row.slot == self.selected)
+        self._cells.append(cells)
+        self._cards.append((row.slot, card))
+        self._slots.append(row.slot)
 
     def _fill_line(self, cells: dict[str, ctk.CTkLabel], row: CharacterRow) -> None:
         """Texts of one character card."""

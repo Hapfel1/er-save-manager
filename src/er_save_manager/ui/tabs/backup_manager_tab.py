@@ -65,6 +65,12 @@ def get_star_image(locked: bool) -> ctk.CTkImage:
     return image
 
 
+# Backup rows built when the list fills (about its visible height), then per
+# later event loop turn
+_FIRST_ROWS = 8
+_BATCH_ROWS = 6
+
+
 class BackupManagerTab:
     """Tab for backup management across all supported games."""
 
@@ -435,7 +441,13 @@ class BackupManagerTab:
                 return sorted(by_date, key=lambda b: not b.favorite)
             return sorted(backups, key=lambda b: b.timestamp, reverse=True)
 
+        # Pending after() job that adds the next rows, see refresh_list()
+        build_job = [None]
+
         def refresh_list():
+            if build_job[0] is not None:
+                dialog.after_cancel(build_job[0])
+                build_job[0] = None
             for w in scrollable_frame.winfo_children():
                 w.destroy()
             backup_items.clear()
@@ -451,7 +463,7 @@ class BackupManagerTab:
                 ).pack(pady=20)
                 return
 
-            for backup in backups:
+            def add_item(backup) -> None:
                 ts = backup.timestamp[:19].replace("T", " ") if backup.timestamp else ""
                 size_mb = f"{backup.file_size / (1024 * 1024):.1f} MB"
 
@@ -555,6 +567,23 @@ class BackupManagerTab:
                 for grandchild in content_frame.winfo_children():
                     grandchild.bind("<Button-1>", make_select(backup.filename))
 
+            def add_items(start: int, count: int) -> None:
+                """Rows for backups[start:start + count], then the next batch on
+                a later event loop turn: the rows in view show at once."""
+                build_job[0] = None
+                if not dialog.winfo_exists():
+                    return
+                for backup in backups[start : start + count]:
+                    add_item(backup)
+                if start + count < len(backups):
+                    # Tk runs due timers before the idle callbacks that
+                    # repaint, so the timer is armed from an idle callback
+                    build_job[0] = dialog.after_idle(arm, start + count)
+
+            def arm(start: int) -> None:
+                build_job[0] = dialog.after(1, add_items, start, _BATCH_ROWS)
+
+            add_items(0, _FIRST_ROWS)
             self.update_backup_stats()
 
         def ask_backup_label():

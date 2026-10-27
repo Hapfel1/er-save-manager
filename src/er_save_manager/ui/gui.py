@@ -1638,7 +1638,9 @@ class SaveManagerGUI:
             self.load_save,
             self.show_toast,
         )
-        self._build_tab("Gestures", self.gestures_tab.setup_ui)
+        self._build_tab(
+            "Gestures", self.gestures_tab.setup_ui, self.gestures_tab.prebuild_rows
+        )
         register = self._pending_register("Gestures")
         register(
             PendingPage(
