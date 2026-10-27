@@ -32,6 +32,9 @@ WHEEL_SLOTS = 6
 
 # Gesture rows created per staged build step (prebuild_rows)
 _PREBUILD_ROWS = 9
+# Unlocked Regions check boxes built before the dialog shows, then per turn
+_REGION_FIRST = 16
+_REGION_BATCH = 10
 
 
 class GesturesRegionsTab:
@@ -455,25 +458,33 @@ class GesturesRegionsTab:
         known_ids = set(REGIONS.keys())
         unknown_ids = [rid for rid in current_ids if rid not in known_ids]
 
+        # Every variable now, since Apply writes region_vars; the check boxes
+        # for the rows in view now and the rest in later event loop turns
+        rows: list[tuple[str, tk.BooleanVar]] = []
         for region_id, region_name in sorted(REGIONS.items(), key=lambda x: x[0]):
             var = tk.BooleanVar(value=(region_id in current_ids))
             region_vars[region_id] = var
-            ctk.CTkCheckBox(
-                list_frame,
-                text=f"{region_id}: {region_name}",
-                variable=var,
-                font=ds.FONT,
-            ).pack(anchor="w", padx=8, pady=2)
-
+            rows.append((f"{region_id}: {region_name}", var))
         for region_id in unknown_ids:
             var = tk.BooleanVar(value=True)
             region_vars[region_id] = var
-            ctk.CTkCheckBox(
-                list_frame,
-                text=f"{region_id}: (unknown)",
-                variable=var,
-                font=ds.FONT,
-            ).pack(anchor="w", padx=8, pady=2)
+            rows.append((f"{region_id}: (unknown)", var))
+
+        def add_rows(start: int, count: int) -> None:
+            if not dialog.winfo_exists():
+                return
+            for text, var in rows[start : start + count]:
+                ctk.CTkCheckBox(list_frame, text=text, variable=var, font=ds.FONT).pack(
+                    anchor="w", padx=8, pady=2
+                )
+            if start + count < len(rows):
+                # Tk runs due timers before the idle callbacks that repaint,
+                # so the timer is armed from an idle callback
+                dialog.after_idle(
+                    lambda: dialog.after(1, add_rows, start + count, _REGION_BATCH)
+                )
+
+        add_rows(0, _REGION_FIRST)
 
         def apply_regions():
             selected = sorted(rid for rid, var in region_vars.items() if var.get())
