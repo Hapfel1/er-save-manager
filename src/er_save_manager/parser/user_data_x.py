@@ -212,64 +212,6 @@ class UserDataX:
     rest: bytes = b""
 
     @classmethod
-    def _find_gesture_start(
-        cls, f: BytesIO, start_pos: int, max_pos: int
-    ) -> int | None:
-        original_pos = f.tell()
-
-        # Search range: -1KB to +2KB
-        search_start = max(start_pos - 1000, 0)
-        search_end = min(start_pos + 2000, max_pos - 512)
-
-        best_match = None
-        best_score = 0
-
-        for offset in range(search_start, search_end, 4):
-            f.seek(offset)
-            chunk = f.read(256)
-            if len(chunk) < 256:
-                continue
-
-            score = 0
-
-            # Pattern 1: VERY high 0xFF density (bitmask gestures)
-            ff_count = chunk.count(0xFF)
-            if ff_count > 220:  # Very strict - need 85%+ 0xFF
-                score = 100
-            elif ff_count > 180:  # Medium match
-                score = 50
-
-            # Pattern 2: Gesture ID validation (must be consecutive and valid)
-            consecutive_valid = 0
-            max_consecutive = 0
-            for i in range(0, 64, 4):
-                if i + 4 <= len(chunk):
-                    val = struct.unpack("<I", chunk[i : i + 4])[0]
-                    # Very strict gesture ID ranges
-                    if val == 0 or val == 0xFFFFFFFE or (3000000 <= val <= 9000000):
-                        consecutive_valid += 1
-                        max_consecutive = max(max_consecutive, consecutive_valid)
-                    else:
-                        consecutive_valid = 0
-
-            if max_consecutive >= 12:  # Need 12+ consecutive valid IDs
-                score = max(score, 80)
-            elif max_consecutive >= 8:
-                score = max(score, 40)
-
-            if score > best_score:
-                best_score = score
-                best_match = offset
-
-        f.seek(original_pos)
-
-        if best_score >= 80 and best_match is not None:
-            return best_match
-
-        # No strong pattern - assume no mystery structure
-        return start_pos
-
-    @classmethod
     def read(
         cls, f: BytesIO, is_ps: bool, slot_start_offset: int, slot_size: int
     ) -> UserDataX:
@@ -459,38 +401,11 @@ class UserDataX:
         """NG+ cycle (GameDataMan ClearCount), 0 on the first playthrough."""
         return self.unk_gamedataman_0x120_or_gamedataman_0x130
 
-    def get_slot_map_id(self):
-        """
-        Get the MapId object.
-
-        Returns:
-            MapId object or None
-        """
-        if hasattr(self, "map_id"):
-            return self.map_id
-        return None
-
-    def get_horse_data(self):
-        """
-        Get the horse/Torrent data.
-
-        Returns:
-            RideGameData object or None
-        """
-        if hasattr(self, "horse"):
-            return self.horse
-        return None
-
     def has_torrent_bug(self) -> bool:
         """Check if Torrent has the infinite loading bug (HP=0 with State=Active)"""
         if not hasattr(self, "horse") or self.horse is None:
             return False
         return self.horse.has_bug()
-
-    def fix_torrent_bug(self):
-        """Fix Torrent infinite loading bug by setting State to Dead"""
-        if hasattr(self, "horse") and self.horse is not None:
-            self.horse.fix_bug()
 
     def has_weather_corruption(self) -> bool:
         """
@@ -509,15 +424,14 @@ class UserDataX:
         if weather.timer > 100000:
             return True
 
-        # Check if AreaId is 0 but character has a real map location
-        # This indicates desync between map position and weather data
-        if weather.area_id == 0:
-            if hasattr(self, "map_id") and self.map_id is not None:
-                if self.map_id.data != b"\x00\x00\x00\x00":
-                    # Character is in game world but weather shows no area = corruption
-                    return True
-
-        return False
+        # AreaId 0 while the character has a real map location: the weather
+        # data is out of sync with the map position
+        return (
+            weather.area_id == 0
+            and hasattr(self, "map_id")
+            and self.map_id is not None
+            and self.map_id.data != b"\x00\x00\x00\x00"
+        )
 
     def has_time_corruption(self, seconds_played: int | None = None) -> bool:
         """
@@ -555,11 +469,11 @@ class UserDataX:
         if self.steam_id == 0:
             return True
 
-        if correct_steam_id is not None and correct_steam_id != 0:
-            if self.steam_id != correct_steam_id:
-                return True
-
-        return False
+        return (
+            correct_steam_id is not None
+            and correct_steam_id != 0
+            and self.steam_id != correct_steam_id
+        )
 
     def has_dlc_flag(self) -> bool:
         """
@@ -688,8 +602,7 @@ class UserDataX:
                 from .event_flags import CorruptionDetector
 
                 event_issues = CorruptionDetector.detect_all(self.event_flags)
-                for issue in event_issues:
-                    issues.append(f"eventflag:{issue}")
+                issues.extend(f"eventflag:{issue}" for issue in event_issues)
             except Exception:
                 pass
 

@@ -14,16 +14,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from supabase import Client, create_client
+from er_save_manager import supabase_api
 
 logger = logging.getLogger(__name__)
 
 
 class PresetMetrics:
     """Manage preset ratings and downloads via Supabase."""
-
-    SUPABASE_URL = "https://rnsrvcfjzsgrgiwvsbub.supabase.co"
-    SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuc3J2Y2ZqenNncmdpd3ZzYnViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjM5ODgsImV4cCI6MjA4NTAzOTk4OH0.W54LjC-aJs5RgWSQ0O2-UhY6S2kGco9Ra6AgvgJfXHo"
 
     def __init__(self, settings_path: Path):
         """
@@ -35,15 +32,6 @@ class PresetMetrics:
         self.settings_path = settings_path
 
         self.user_id = self._get_or_create_user_id()
-
-        # No authentication needed - anon key is sufficient for RLS policies
-        try:
-            self.supabase: Client = create_client(
-                self.SUPABASE_URL, self.SUPABASE_ANON_KEY
-            )
-        except Exception as e:
-            logger.warning(f"Failed to initialize Supabase client: {e}")
-            self.supabase = None
 
         # Cache of user actions (preset_id -> list of action_types)
         self.user_actions: dict[str, list[str]] = self._load_user_actions()
@@ -57,19 +45,6 @@ class PresetMetrics:
             self._save_settings(settings)
 
         return settings["user_id"]
-
-    def _authenticate_anonymous(self):
-        """Authenticate anonymously with Supabase."""
-        try:
-            self.supabase.auth.sign_up({"email": "anon@local", "password": "anon"})
-        except Exception:
-            # If signup fails (user already exists), try signing in
-            try:
-                self.supabase.auth.sign_in_with_password(
-                    {"email": "anon@local", "password": "anon"}
-                )
-            except Exception as e2:
-                logger.warning(f"Anonymous authentication failed: {e2}")
 
     def _load_settings(self) -> dict[str, Any]:
         """Load settings from file."""
@@ -172,18 +147,9 @@ class PresetMetrics:
             - thumbs_down: int
             - downloads: int
         """
-        if not self.supabase:
-            return {}
-
         try:
-            query = self.supabase.table("preset_metrics").select("*")
-
-            if preset_ids:
-                query = query.in_("preset_id", preset_ids)
-
-            response = query.execute()
-
-            metrics_list = response.data if hasattr(response, "data") else response
+            id_filter = ("preset_id", preset_ids) if preset_ids else None
+            metrics_list = supabase_api.select("preset_metrics", in_=id_filter)
             return {
                 item["preset_id"]: {
                     "thumbs_up": item.get("thumbs_up", 0),
@@ -208,9 +174,6 @@ class PresetMetrics:
         Returns:
             Updated metrics dict or None if failed
         """
-        if not self.supabase:
-            return None
-
         if action_type == "thumbs_up" and self.has_liked(preset_id):
             logger.debug(f"Already liked preset {preset_id}")
             return None
@@ -220,16 +183,14 @@ class PresetMetrics:
             return None
 
         try:
-            response = self.supabase.rpc(
+            result = supabase_api.rpc(
                 "record_action",
                 {
                     "p_preset_id": preset_id,
                     "p_action_type": action_type,
                     "p_user_id": self.user_id,
                 },
-            ).execute()
-
-            result = response.data if hasattr(response, "data") else response
+            )
 
             self._save_user_action(preset_id, action_type)
 

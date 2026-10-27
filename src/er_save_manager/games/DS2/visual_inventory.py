@@ -110,7 +110,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
             ctk.CTkComboBox(
                 top,
                 variable=self._panel.filter_category_var,
-                values=["All"] + list(self._category_labels().values()),
+                values=["All", *list(self._category_labels().values())],
                 state="readonly",
                 width=150,
                 command=lambda _v: self._panel._apply_filter(),

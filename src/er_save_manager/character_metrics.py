@@ -14,16 +14,13 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from supabase import Client, create_client
+from er_save_manager import supabase_api
 
 logger = logging.getLogger(__name__)
 
 
 class CharacterMetrics:
     """Manage character ratings and downloads via Supabase."""
-
-    SUPABASE_URL = "https://rnsrvcfjzsgrgiwvsbub.supabase.co"
-    SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuc3J2Y2ZqenNncmdpd3ZzYnViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NjM5ODgsImV4cCI6MjA4NTAzOTk4OH0.W54LjC-aJs5RgWSQ0O2-UhY6S2kGco9Ra6AgvgJfXHo"
 
     def __init__(self, settings_path: Path):
         """
@@ -35,15 +32,6 @@ class CharacterMetrics:
         self.settings_path = settings_path
 
         self.user_id = self._get_or_create_user_id()
-
-        # No authentication needed - anon key is sufficient for RLS policies
-        try:
-            self.supabase: Client = create_client(
-                self.SUPABASE_URL, self.SUPABASE_ANON_KEY
-            )
-        except Exception as e:
-            logger.warning(f"Failed to initialize Supabase client: {e}")
-            self.supabase = None
 
         # Cache of user actions (character_id -> list of action_types)
         self.user_actions: dict[str, list[str]] = self._load_user_actions()
@@ -160,19 +148,12 @@ class CharacterMetrics:
             - likes: int
             - downloads: int
         """
-        if not self.supabase:
-            return {}
-
         try:
             metrics = {}
 
-            query = self.supabase.table("character_metrics").select("*")
+            id_filter = ("character_id", character_ids) if character_ids else None
 
-            if character_ids:
-                query = query.in_("character_id", character_ids)
-
-            response = query.execute()
-            metrics_list = response.data if hasattr(response, "data") else response
+            metrics_list = supabase_api.select("character_metrics", in_=id_filter)
 
             for item in metrics_list:
                 metrics[item["character_id"]] = {
@@ -182,18 +163,8 @@ class CharacterMetrics:
 
             # Count likes and downloads from character_actions table
             # (since character_metrics.likes is not being updated by triggers)
-            actions_query = self.supabase.table("character_actions").select(
-                "character_id, action_type"
-            )
-
-            if character_ids:
-                actions_query = actions_query.in_("character_id", character_ids)
-
-            actions_response = actions_query.execute()
-            actions_list = (
-                actions_response.data
-                if hasattr(actions_response, "data")
-                else actions_response
+            actions_list = supabase_api.select(
+                "character_actions", "character_id, action_type", in_=id_filter
             )
 
             action_counts: dict[str, dict[str, int]] = {}
@@ -235,10 +206,6 @@ class CharacterMetrics:
         Returns:
             Updated metrics dict or None if failed
         """
-        if not self.supabase:
-            logger.debug("[Metrics] Supabase not initialized")
-            return None
-
         # For likes: check if already liked (can only like once)
         if action_type == "like" and self.has_liked(character_id):
             logger.debug(f"Already liked character {character_id}")
@@ -252,16 +219,14 @@ class CharacterMetrics:
                 f"[Metrics] Recording action: character_id={character_id}, action_type={action_type}"
             )
 
-            response = self.supabase.rpc(
+            result = supabase_api.rpc(
                 "record_character_action",
                 {
                     "p_character_id": character_id,
                     "p_action_type": action_type,
                     "p_user_id": self.user_id,
                 },
-            ).execute()
-
-            result = response.data if hasattr(response, "data") else response
+            )
 
             self._save_user_action(character_id, action_type)
 

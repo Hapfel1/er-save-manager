@@ -69,8 +69,3 @@ class DS3Save:
             if slot is not None:
                 self._parser.set_slot(i, slot.get_raw())
         self._parser.save_to_file(path)
-
-    def get_character(self, slot: int) -> DS3Slot | None:
-        if not 0 <= slot < self.CHARACTER_SLOTS:
-            raise IndexError(f"Slot {slot} out of range (0-9)")
-        return self.characters[slot]

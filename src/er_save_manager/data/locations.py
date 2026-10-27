@@ -98,12 +98,3 @@ def get_all_locations(convergence: bool = False) -> list[MapLocation]:
 
 def get_grace_locations(convergence: bool = False) -> list[MapLocation]:
     return list(CONVERGENCE_GRACES if convergence else GRACES)
-
-
-def get_locations_by_type(tile_type: str) -> list[MapLocation]:
-    """Filter by tile_type: dungeon, small, medium, big"""
-    return [loc for loc in LOCATIONS.values() if loc.tile_type == tile_type]
-
-
-def get_dlc_locations() -> list[MapLocation]:
-    return [loc for loc in LOCATIONS.values() if loc.is_dlc]

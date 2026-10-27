@@ -142,14 +142,6 @@ def get_gesture_name(gesture_id: int) -> str:
     return f"Unknown ({gesture_id})"
 
 
-def get_gesture_category(gesture_id: int) -> str:
-    """Get gesture category from ID"""
-    gesture = GESTURES_ALL.get(gesture_id)
-    if gesture:
-        return gesture["category"]
-    return "Unknown"
-
-
 def is_cut_content(gesture_id: int) -> bool:
     """Check if gesture is cut content"""
     gesture = GESTURES_ALL.get(gesture_id)
@@ -178,8 +170,3 @@ def get_all_unlockable_gestures(include_cut_content: bool = False) -> list[int]:
             continue
         gestures.append(gesture_id)
     return sorted(gestures)
-
-
-def get_gestures_by_category(category: str) -> list[int]:
-    """Get all gesture IDs in a category"""
-    return GESTURE_CATEGORIES.get(category, [])

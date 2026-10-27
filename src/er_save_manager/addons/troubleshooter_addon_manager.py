@@ -5,7 +5,6 @@ Handles installation and updates of the standalone troubleshooter
 
 import json
 import os
-import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -222,14 +221,4 @@ class TroubleshooterAddon:
             print(msg)
             if show_error:
                 show_error(msg)
-            return False
-
-    def uninstall(self) -> bool:
-        """Uninstall the troubleshooter"""
-        try:
-            if self.addon_dir.exists():
-                shutil.rmtree(self.addon_dir)
-            return True
-        except Exception as e:
-            print(f"Failed to uninstall: {e}")
             return False

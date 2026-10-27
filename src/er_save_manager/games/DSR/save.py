@@ -183,8 +183,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
 
-from Crypto.Cipher import AES
-
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 # --- Constants --------------------------------------------------------------- #
@@ -278,7 +277,7 @@ OFF_EQ_ID_RING2 = 0x034C
 # All 20 equip slots: index k at OFF_EQ_LH1 + 4 * k, its cached id at
 # OFF_EQ_ID_LH1 + 4 * k.
 EQUIP_SLOT_COUNT = 20
-EQUIP_HANDS = range(0, 4)
+EQUIP_HANDS = range(4)
 EQUIP_AMMO = range(4, 8)
 EQUIP_ARMOR = range(8, 12)
 EQUIP_HAIR = 12
@@ -648,11 +647,11 @@ class DSRInfusion(IntEnum):
 
 
 def _decrypt(iv: bytes, ciphertext: bytes) -> bytes:
-    return AES.new(AES_KEY, AES.MODE_CBC, iv).decrypt(ciphertext)
+    return aes_cbc.decrypt(AES_KEY, iv, ciphertext)
 
 
 def _encrypt(iv: bytes, plaintext: bytes) -> bytes:
-    return AES.new(AES_KEY, AES.MODE_CBC, iv).encrypt(plaintext)
+    return aes_cbc.encrypt(AES_KEY, iv, plaintext)
 
 
 def _md5(data: bytes) -> bytes:
@@ -1541,12 +1540,6 @@ class DSRSave:
         sys_iv = bytes(self._raw[sys_off : sys_off + 16])
         sys_ciphertext = bytes(self._raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE])
         self.system_data = bytearray(_decrypt(sys_iv, sys_ciphertext))
-
-    def get_character(self, slot: int) -> DSRCharacter | None:
-        """Return the character in slot 0-9, or None if empty."""
-        if not 0 <= slot < CHARACTER_SLOTS:
-            raise IndexError(f"Slot {slot} out of range (0-9)")
-        return self.characters[slot]
 
     def save_to_file(self, path: str | Path) -> None:
         """Re-encrypt modified characters and write the file."""

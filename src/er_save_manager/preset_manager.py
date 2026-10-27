@@ -1,5 +1,6 @@
 """Preset manager for community character presets."""
 
+import contextlib
 import json
 import logging
 import os
@@ -219,28 +220,6 @@ class PresetManager:
 
         return None
 
-    def apply_preset_to_character(self, preset_data: dict, character_presets_module):
-        """
-        Apply preset appearance data to character using CharacterPresets.
-
-        Args:
-            preset_data: Preset data dict with 'appearance' key
-            character_presets_module: CharacterPresets instance
-
-        Returns:
-            True if successful
-        """
-        try:
-            appearance = preset_data["appearance"]
-
-            character_presets_module.from_dict(appearance)
-
-            return True
-
-        except Exception as e:
-            logger.warning(f"Failed to apply preset: {e}")
-            return False
-
     def download_image(self, preset_id: str, url: str, suffix: str = "") -> Path | None:
         """
         Download full-size image from URL and save to cache with suffix.
@@ -253,10 +232,7 @@ class PresetManager:
             cache_dir = self.full_images_dir / preset_id
             cache_dir.mkdir(parents=True, exist_ok=True)
 
-            if not url.startswith("http"):
-                full_url = self.base_url + url
-            else:
-                full_url = url
+            full_url = self.base_url + url if not url.startswith("http") else url
 
             ext = Path(url).suffix or ".png"
             filename = f"{preset_id}{suffix}{ext}"
@@ -285,46 +261,6 @@ class PresetManager:
         # Create a stable JSON string for hashing
         stable_json = json.dumps(data, sort_keys=True, separators=(",", ":"))
         return hashlib.md5(stable_json.encode()).hexdigest()
-
-    def validate_preset_in_index(
-        self, preset_id: str, preset_info: dict
-    ) -> tuple[bool, str]:
-        """
-        Validate cached preset against index metadata.
-
-        Returns:
-            (is_valid: bool, reason: str)
-        """
-        cached = self.get_cached_preset(preset_id)
-        if not cached:
-            return False, "Not cached"
-
-        preset_path = self.cache_dir / f"{preset_id}.json"
-        try:
-            with open(preset_path, encoding="utf-8") as f:
-                metadata = json.load(f)
-
-            if "preset_info_hash" in metadata:
-                stored_info_hash = metadata["preset_info_hash"]
-                current_info_hash = self._compute_data_hash(preset_info)
-
-                if stored_info_hash != current_info_hash:
-                    return False, "Preset metadata changed in index"
-
-            return True, "Valid"
-        except Exception as e:
-            logger.warning(f"Error validating preset {preset_id}: {e}")
-            return False, f"Validation error: {e}"
-
-    def clear_cache(self):
-        """Clear all cached presets."""
-        import shutil
-
-        if self.cache_dir.exists():
-            shutil.rmtree(self.cache_dir)
-            self.cache_dir.mkdir(parents=True)
-            self.thumbnails_dir.mkdir(exist_ok=True)
-            self.full_images_dir.mkdir(exist_ok=True)
 
     def _download_and_create_thumbnail(
         self, preset_id: str, image_url: str
@@ -423,33 +359,8 @@ class PresetManager:
 
                 for dir_path in self.full_images_dir.iterdir():
                     if dir_path.is_dir() and not any(dir_path.iterdir()):
-                        try:
+                        with contextlib.suppress(Exception):
                             dir_path.rmdir()
-                        except Exception:
-                            pass
 
         except Exception as e:
             logger.warning(f"Cache cleanup error: {e}")
-
-    def get_cache_size(self) -> dict:
-        """
-        Get current cache size information.
-
-        Returns:
-            Dict with 'thumbnails_mb', 'full_images_mb', 'total_mb'
-        """
-        try:
-            thumbnails_size = sum(
-                f.stat().st_size for f in self.thumbnails_dir.rglob("*") if f.is_file()
-            )
-            full_images_size = sum(
-                f.stat().st_size for f in self.full_images_dir.rglob("*") if f.is_file()
-            )
-
-            return {
-                "thumbnails_mb": thumbnails_size / (1024 * 1024),
-                "full_images_mb": full_images_size / (1024 * 1024),
-                "total_mb": (thumbnails_size + full_images_size) / (1024 * 1024),
-            }
-        except Exception:
-            return {"thumbnails_mb": 0, "full_images_mb": 0, "total_mb": 0}

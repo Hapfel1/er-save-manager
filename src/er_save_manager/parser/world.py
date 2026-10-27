@@ -111,8 +111,6 @@ class Regions:
         )
         return obj
 
-        return obj
-
     def write(self, f: BytesIO):
         """Write Regions to stream"""
         f.write(struct.pack("<I", self.count))
@@ -1084,10 +1082,6 @@ class WorldAreaWeather:
         f.write(struct.pack("<I", self.timer))
         f.write(struct.pack("<I", self.padding))
 
-    def is_corrupted(self) -> bool:
-        """Check if weather is corrupted (AreaId == 0)"""
-        return self.area_id == 0
-
 
 # ============================================================================
 # WORLD AREA TIME
@@ -1116,18 +1110,6 @@ class WorldAreaTime:
         f.write(struct.pack("<I", self.hour))
         f.write(struct.pack("<I", self.minute))
         f.write(struct.pack("<I", self.second))
-
-    def is_zero(self) -> bool:
-        """Check if time is 00:00:00 (potentially corrupted)"""
-        return self.hour == 0 and self.minute == 0 and self.second == 0
-
-    @classmethod
-    def from_seconds(cls, total_seconds: int) -> WorldAreaTime:
-        """Create WorldAreaTime from total seconds"""
-        hours = total_seconds // 3600
-        minutes = (total_seconds % 3600) // 60
-        secs = total_seconds % 60
-        return cls(hours, minutes, secs)
 
     def __str__(self):
         return f"{self.hour:02d}:{self.minute:02d}:{self.second:02d}"

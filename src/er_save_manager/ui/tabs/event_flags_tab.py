@@ -130,8 +130,8 @@ class EventFlagsTab:
 
         subcats = get_subcategories(category, include_convergence=self._is_cnv_save())
         if subcats:
-            self.subcat_combo.configure(values=["All"] + subcats, state="readonly")
-            if self.subcategory_var.get() not in subcats + ["All"]:
+            self.subcat_combo.configure(values=["All", *subcats], state="readonly")
+            if self.subcategory_var.get() not in [*subcats, "All"]:
                 self.subcategory_var.set("All")
         else:
             self.subcat_combo.configure(values=[], state="disabled")
@@ -276,7 +276,7 @@ class EventFlagsTab:
         cat_combo = ctk.CTkComboBox(
             cat_inner,
             variable=self.category_var,
-            values=[""] + CATEGORIES,
+            values=["", *CATEGORIES],
             state="readonly",
             width=260,
             command=self.on_category_changed,
@@ -443,7 +443,7 @@ class EventFlagsTab:
         # Update subcategories, hiding Convergence-only ones for other saves
         subcats = get_subcategories(category, include_convergence=self._is_cnv_save())
         if subcats:
-            self.subcat_combo.configure(values=["All"] + subcats, state="readonly")
+            self.subcat_combo.configure(values=["All", *subcats], state="readonly")
             self.subcategory_var.set("All")
             self.on_subcategory_changed()
         else:
@@ -1115,7 +1115,7 @@ class EventFlagsTab:
             ctk.CTkComboBox(
                 filter_frame,
                 variable=region_filter_var,
-                values=["All"] + BOSS_CATEGORIES,
+                values=["All", *BOSS_CATEGORIES],
                 state="readonly",
                 width=260,
                 font=ds.FONT,
@@ -1272,7 +1272,7 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for _boss_name, (flags, var) in boss_vars.items():
+            for flags, var in boss_vars.values():
                 if var.get():  # user explicitly selected this boss
                     is_defeated_now = self.current_event_flags.get_flag(flags[0])
                     if is_defeated_now:
@@ -1367,7 +1367,7 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for _boss_name, (flags, _var) in boss_vars.items():
+            for flags, _var in boss_vars.values():
                 for flag_id in flags:
                     self.current_event_flags.set_flag(flag_id, False)
                 count += 1
@@ -1446,7 +1446,7 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for _boss_name, (flags, var) in boss_vars.items():
+            for flags, var in boss_vars.values():
                 if var.get():  # user explicitly selected this boss
                     is_defeated_now = self.current_event_flags.get_flag(flags[0])
                     if not is_defeated_now:
@@ -1542,7 +1542,7 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for _boss_name, (flags, _var) in boss_vars.items():
+            for flags, _var in boss_vars.values():
                 for flag_id in flags:
                     self.current_event_flags.set_flag(flag_id, True)
                 count += 1

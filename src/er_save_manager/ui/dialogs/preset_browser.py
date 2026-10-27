@@ -413,9 +413,6 @@ class EnhancedPresetBrowser:
             fill=ctk.X, pady=(0, 12)
         )
 
-    def _open_github_login(self):
-        open_url("https://github.com/login")
-
     def _make_ctk_image(self, img: Image.Image, size: tuple[int, int]) -> ctk.CTkImage:
         try:
             return ctk.CTkImage(light_image=img, dark_image=img, size=size)
@@ -990,8 +987,7 @@ class EnhancedPresetBrowser:
                 "success",
             )
 
-            # Keep browser open - don't close the dialog
-            # self.dialog.destroy()
+            # Browser stays open after applying
             if (
                 hasattr(self.appearance_tab, "reload_save")
                 and self.appearance_tab.reload_save

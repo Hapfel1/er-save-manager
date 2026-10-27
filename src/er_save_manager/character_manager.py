@@ -136,7 +136,7 @@ class CharacterManager:
 
     def _resolve_url(self, url: str) -> str:
         """Resolve relative URLs against base_url; leave absolute URLs unchanged."""
-        if url.startswith("http://") or url.startswith("https://"):
+        if url.startswith(("http://", "https://")):
             return url
         return self.base_url + url
 
@@ -213,16 +213,18 @@ class CharacterManager:
 
             full_url = self._resolve_url(erc_url)
 
-            with urllib.request.urlopen(
-                full_url, timeout=30, context=self.ssl_context
-            ) as response:
-                with open(output_path, "wb") as f:
-                    chunk_size = 8192
-                    while True:
-                        chunk = response.read(chunk_size)
-                        if not chunk:
-                            break
-                        f.write(chunk)
+            with (
+                urllib.request.urlopen(
+                    full_url, timeout=30, context=self.ssl_context
+                ) as response,
+                open(output_path, "wb") as f,
+            ):
+                chunk_size = 8192
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    f.write(chunk)
 
             logger.debug(
                 f"[Character Manager] Downloaded {character_id} to {output_path}"
@@ -265,11 +267,13 @@ class CharacterManager:
             thumbnail_path = self.thumbnails_dir / f"{character_id}{ext}"
             full_url = self._resolve_url(url)
             try:
-                with urllib.request.urlopen(
-                    full_url, timeout=10, context=self.ssl_context
-                ) as response:
-                    with open(thumbnail_path, "wb") as f:
-                        f.write(response.read())
+                with (
+                    urllib.request.urlopen(
+                        full_url, timeout=10, context=self.ssl_context
+                    ) as response,
+                    open(thumbnail_path, "wb") as f,
+                ):
+                    f.write(response.read())
                 logger.debug(f"[Character Manager] Cached thumbnail for {character_id}")
                 return thumbnail_path
             except Exception:
@@ -314,11 +318,13 @@ class CharacterManager:
             screenshot_path = self.cache_dir / f"{character_id}{suffix}{ext}"
             full_url = self._resolve_url(url)
             try:
-                with urllib.request.urlopen(
-                    full_url, timeout=15, context=self.ssl_context
-                ) as response:
-                    with open(screenshot_path, "wb") as f:
-                        f.write(response.read())
+                with (
+                    urllib.request.urlopen(
+                        full_url, timeout=15, context=self.ssl_context
+                    ) as response,
+                    open(screenshot_path, "wb") as f,
+                ):
+                    f.write(response.read())
                 screenshot_path.touch()
                 logger.debug(
                     f"[Character Manager] Downloaded screenshot to {screenshot_path}"
@@ -345,18 +351,6 @@ class CharacterManager:
             f"[Character Manager] Failed to download screenshot {character_id}{suffix}"
         )
         return None
-
-    def clear_cache(self):
-        """Clear all cached data (metadata and thumbnails)."""
-        logger.debug("[Character Manager] Clearing cache")
-
-        if self.cache_dir.exists():
-            import shutil
-
-            shutil.rmtree(self.cache_dir)
-            self.cache_dir.mkdir(parents=True, exist_ok=True)
-            self.thumbnails_dir.mkdir(exist_ok=True)
-            self.metadata_dir.mkdir(exist_ok=True)
 
     def _cleanup_cache(self):
         """
@@ -411,39 +405,3 @@ class CharacterManager:
 
         except Exception as e:
             logger.warning(f"[Character Cache] Cleanup failed: {e}")
-
-    def get_cache_size(self) -> dict:
-        """
-        Get current cache size information.
-
-        Returns:
-            Dict with 'thumbnails_mb', 'metadata_mb', 'screenshots_mb', 'total_mb'
-        """
-        try:
-            thumbnails_size = sum(
-                f.stat().st_size for f in self.thumbnails_dir.glob("*") if f.is_file()
-            )
-            metadata_size = sum(
-                f.stat().st_size for f in self.metadata_dir.glob("*") if f.is_file()
-            )
-
-            # Screenshots are in root cache dir
-            screenshots_size = 0
-            for f in self.cache_dir.glob("*"):
-                if f.is_file() and f.name not in ["index_cache.json"]:
-                    screenshots_size += f.stat().st_size
-
-            return {
-                "thumbnails_mb": thumbnails_size / (1024 * 1024),
-                "metadata_mb": metadata_size / (1024 * 1024),
-                "screenshots_mb": screenshots_size / (1024 * 1024),
-                "total_mb": (thumbnails_size + metadata_size + screenshots_size)
-                / (1024 * 1024),
-            }
-        except Exception:
-            return {
-                "thumbnails_mb": 0,
-                "metadata_mb": 0,
-                "screenshots_mb": 0,
-                "total_mb": 0,
-            }

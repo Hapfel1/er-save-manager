@@ -205,9 +205,8 @@ class GameProcessMonitor:
                             backup_path = self._create_backup_for_game(
                                 game_key, save_path
                             )
-                            if backup_path:
-                                if self._on_backup_created:
-                                    self._on_backup_created(game_key, backup_path)
+                            if backup_path and self._on_backup_created:
+                                self._on_backup_created(game_key, backup_path)
 
                         # Reset the interval timer for this session regardless of
                         # whether an on-launch backup was created above.

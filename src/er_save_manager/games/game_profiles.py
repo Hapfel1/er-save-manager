@@ -197,13 +197,11 @@ def _find_windows(profile: GameProfile) -> list[Path]:
     if profile.has_steamid_subfolder:
         for subfolder in base.iterdir():
             if _steamid_subfolder_matches(subfolder, profile):
-                for candidate in subfolder.glob(profile.save_glob):
-                    if candidate.is_file():
-                        results.append(candidate)
+                results.extend(
+                    c for c in subfolder.glob(profile.save_glob) if c.is_file()
+                )
     else:
-        for candidate in base.glob(profile.save_glob):
-            if candidate.is_file():
-                results.append(candidate)
+        results.extend(c for c in base.glob(profile.save_glob) if c.is_file())
     return results
 
 
@@ -212,7 +210,7 @@ def _find_linux(profile: GameProfile) -> list[Path]:
     results = []
 
     if profile.documents_subdir:
-        user_rel_parts = ["Documents"] + profile.documents_subdir.split("/")
+        user_rel_parts = ["Documents", *profile.documents_subdir.split("/")]
     else:
         user_rel_parts = ["AppData", "Roaming", profile.appdata_subdir]
 
@@ -238,13 +236,11 @@ def _find_linux(profile: GameProfile) -> list[Path]:
         if profile.has_steamid_subfolder:
             for subfolder in game_dir.iterdir():
                 if _steamid_subfolder_matches(subfolder, profile):
-                    for candidate in subfolder.glob(profile.save_glob):
-                        if candidate.is_file():
-                            results.append(candidate)
+                    results.extend(
+                        c for c in subfolder.glob(profile.save_glob) if c.is_file()
+                    )
         else:
-            for candidate in game_dir.glob(profile.save_glob):
-                if candidate.is_file():
-                    results.append(candidate)
+            results.extend(c for c in game_dir.glob(profile.save_glob) if c.is_file())
 
     return results
 

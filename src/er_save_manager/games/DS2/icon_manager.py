@@ -98,11 +98,6 @@ def get_icon(item_id: int, category: str | None = None) -> PILImage.Image | None
     return None
 
 
-def coverage_stats() -> dict[str, int]:
-    _ensure_loaded()
-    return {"total_icons": len(_available) if _available else 0, "cached": len(_cache)}
-
-
 def fit_size(img: PILImage.Image, max_dim: int) -> tuple[int, int]:
     """(width, height) that fits img within a max_dim square, aspect intact.
 

@@ -5,6 +5,7 @@ Patches SteamID in save files for all supported FromSoftware games.
 
 from __future__ import annotations
 
+import contextlib
 import tkinter as tk
 from pathlib import Path
 
@@ -251,10 +252,8 @@ class SteamIDPatcherTab:
             try:
                 self.parent.after(0, lambda: self.current_steamid_var.set(text))
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     self.current_steamid_var.set(text)
-                except Exception:
-                    pass
 
         if profile.key == "elden_ring":
             self.update_steamid_display()
@@ -366,7 +365,7 @@ class SteamIDPatcherTab:
                 try:
                     self._patch_generic(profile, new_steamid)
                 finally:
-                    try:
+                    with contextlib.suppress(Exception):
                         self.parent.after(
                             0,
                             lambda: (
@@ -377,8 +376,6 @@ class SteamIDPatcherTab:
                                 else None
                             ),
                         )
-                    except Exception:
-                        pass
 
             threading.Thread(target=_run, daemon=True).start()
 
@@ -592,13 +589,6 @@ class SteamIDPatcherTab:
                     "Patch Failed", f"SteamID patch failed:\n{err}", parent=self.parent
                 ),
             )
-
-    def _pick_save_path(self, paths: list[Path]) -> Path | None:
-        """Show dialog to pick from multiple save files."""
-        from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
-
-        chosen = SaveSelectorDialog.show(self.parent, paths, lambda _p: None)
-        return Path(chosen) if chosen else None
 
     def parse_steam_url(self):
         url = self.steam_url_var.get().strip()

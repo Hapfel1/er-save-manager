@@ -100,11 +100,3 @@ REGIONS: dict[int, str] = {
     1800001: "Stranded Graveyard",
     1900000: "Stone Platform",
 }
-
-
-def get_region_name(region_id: int) -> str:
-    return REGIONS.get(region_id, f"Region {region_id}")
-
-
-def is_dlc_region(region_id: int) -> bool:
-    return 6900000 <= region_id <= 6999999

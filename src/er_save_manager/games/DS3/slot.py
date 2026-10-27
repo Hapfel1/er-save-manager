@@ -196,7 +196,7 @@ _EQUIP_IDS_REL = 0x264
 _EQUIP_HANDLES_REL = 0x2BC
 _EQUIP_ID_MASK = 0x0FFFFFFF
 # Equip slot groups by slot number. Slots 10, 11 and 16 are unidentified.
-EQUIP_HANDS = range(0, 6)
+EQUIP_HANDS = range(6)
 EQUIP_AMMO = range(6, 10)
 EQUIP_ARMOR = range(12, 16)
 EQUIP_RINGS = range(17, 21)
@@ -415,7 +415,7 @@ class DS3Slot:
         # 0x18, 0x28 and 0x30 chain inside the player data section, which
         # ends where the event flags start; 0x38 onward are contiguous.
         chained = [pgd, pairs[2], pairs[3]]
-        outer = [(player_off, player_size)] + pairs[4:]
+        outer = [(player_off, player_size), *pairs[4:]]
         if player_off != pgd[0]:
             raise LayoutError("slot section directory is not consistent")
         for (a_off, a_size), (b_off, _) in [*pairwise(chained), *pairwise(outer)]:
@@ -543,13 +543,6 @@ class DS3Slot:
         error = self.inventory_error
         if error:
             raise LayoutError(error)
-
-    def _invalidate(self) -> None:
-        self._gaitem_end = None
-        self._gaitem_cache = None
-        self._layout = None
-        self._layout_error = None
-        self._inventory_error = None
 
     def _shift_cached(self, at: int, delta: int) -> None:
         """Move cached offsets at or after at by delta, matching an insert of
@@ -685,12 +678,6 @@ class DS3Slot:
             self.set_flag(_LAP_FLAG_BASE + n, n == lap)
 
     # --- Event flags ------------------------------------------------------- #
-
-    @staticmethod
-    def flag_supported(flag_id: int) -> bool:
-        return (
-            0 <= flag_id < _GLOBAL_FLAG_LIMIT or flag_id // 10000 in _EVENT_FLAG_BLOCKS
-        )
 
     def _flag_pos(self, flag_id: int) -> tuple[int, int]:
         if 0 <= flag_id < _GLOBAL_FLAG_LIMIT:
@@ -852,7 +839,7 @@ class DS3Slot:
         start = next(
             (i + 1 for i in range(GAITEM_SLOT_COUNT - 1, -1, -1) if handles[i]), 0
         )
-        order = list(range(start, GAITEM_SLOT_COUNT)) + list(range(0, start))
+        order = list(range(start, GAITEM_SLOT_COUNT)) + list(range(start))
         pos = next((i for i in order if not handles[i]), None)
         if pos is None:
             raise ValueError("Gaitem table is full")

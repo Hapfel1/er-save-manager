@@ -1579,34 +1579,3 @@ class CSMenuSystemSaveLoad:
             if not preset.is_empty():
                 active.append((idx, preset))
         return active
-
-    def copy_preset(self, source_idx: int, dest_idx: int) -> bool:
-        """Copy preset from one slot to another"""
-        if source_idx < 0 or source_idx >= 15:
-            return False
-        if dest_idx < 0 or dest_idx >= 15:
-            return False
-
-        source = self.presets[source_idx]
-        if source.is_empty():
-            return False
-
-        # Deep copy all fields
-        self.presets[dest_idx] = FacePreset.read(
-            BytesIO(
-                BytesIO(
-                    lambda: (dest := BytesIO(), source.write(dest), dest.getvalue())[
-                        2
-                    ]()
-                )
-            )
-        )
-
-        return True
-
-    def clear_preset(self, idx: int) -> None:
-        """Clear a preset slot"""
-        if idx < 0 or idx >= 15:
-            return
-
-        self.presets[idx] = FacePreset()

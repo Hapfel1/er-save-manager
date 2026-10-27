@@ -76,9 +76,7 @@ _SEAMLESS_CATS = {"Seamless Co-op Items"}
 def _cat_allowed(cat: str, is_cnv: bool, is_co2: bool) -> bool:
     if cat.startswith("Convergence ") and not is_cnv:
         return False
-    if cat in _SEAMLESS_CATS and not is_co2:
-        return False
-    return True
+    return not (cat in _SEAMLESS_CATS and not is_co2)
 
 
 _SLOT_CATS: dict[str, list[str]] = {
@@ -412,7 +410,7 @@ class _ItemPickerDialog(ctk.CTkToplevel):
 
         filt_row = ctk.CTkFrame(main, fg_color="transparent")
         filt_row.pack(fill=ctk.X, pady=(0, 8))
-        categories = ["All"] + sorted({i[3] for i in owned_items})
+        categories = ["All", *sorted({i[3] for i in owned_items})]
         self._cat_var = ctk.StringVar(value="All")
         self._sort_var = ctk.StringVar(value="Name (A-Z)")
         for label, var, values, width in (
@@ -747,7 +745,7 @@ class _VisualItemPickerDialog(ctk.CTkToplevel):
         filt_row = ctk.CTkFrame(self, fg_color="transparent")
         filt_row.pack(fill=ctk.X, padx=10, pady=(0, 4))
         ctk.CTkLabel(filt_row, text="Category:").pack(side=ctk.LEFT, padx=(0, 6))
-        categories = ["All"] + sorted({i[3] for i in owned_items})
+        categories = ["All", *sorted({i[3] for i in owned_items})]
         self._cat_var = ctk.StringVar(value="All")
         ctk.CTkComboBox(
             filt_row,

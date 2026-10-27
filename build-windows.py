@@ -62,118 +62,14 @@ def find_compiled_extension_packages() -> set[str]:
     return packages
 
 
-# Include necessary files without including source code
+# Include necessary files without including source code. Package data
+# (data/, fixes/, games/*/data/) is not listed: er_save_manager is kept out
+# of library.zip (file_dependent_packages below), so cx_Freeze copies its
+# data files into lib/er_save_manager/, where Path(__file__) lookups find them.
 include_files = [
     ("src/resources/", "resources/"),
     ("resources/", "resources/"),
-    ("src/er_save_manager/data/items/", "er_save_manager/data/items/"),
     ("resources/app.manifest", "app.manifest"),
-    ("src/er_save_manager/data/icons.db", "er_save_manager/data/icons.db"),
-    (
-        "src/er_save_manager/data/event_flags.json",
-        "er_save_manager/data/event_flags.json",
-    ),
-    (
-        "src/er_save_manager/data/item_pickups.csv",
-        "er_save_manager/data/item_pickups.csv",
-    ),
-    (
-        "src/er_save_manager/data/item_pickups_convergence.csv",
-        "er_save_manager/data/item_pickups_convergence.csv",
-    ),
-    (
-        "src/er_save_manager/data/boss_locations.json",
-        "er_save_manager/data/boss_locations.json",
-    ),
-    (
-        "src/er_save_manager/data/boss_locations_convergence.json",
-        "er_save_manager/data/boss_locations_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/merchants.json",
-        "er_save_manager/data/merchants.json",
-    ),
-    (
-        "src/er_save_manager/data/merchants_convergence.json",
-        "er_save_manager/data/merchants_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/map_objects.json",
-        "er_save_manager/data/map_objects.json",
-    ),
-    (
-        "src/er_save_manager/data/map_objects_convergence.json",
-        "er_save_manager/data/map_objects_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/npc_locations.json",
-        "er_save_manager/data/npc_locations.json",
-    ),
-    (
-        "src/er_save_manager/data/npc_locations_convergence.json",
-        "er_save_manager/data/npc_locations_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/shop_stock.csv",
-        "er_save_manager/data/shop_stock.csv",
-    ),
-    (
-        "src/er_save_manager/data/shop_stock_convergence.csv",
-        "er_save_manager/data/shop_stock_convergence.csv",
-    ),
-    (
-        "src/er_save_manager/data/locations.json",
-        "er_save_manager/data/locations.json",
-    ),
-    (
-        "src/er_save_manager/data/grace_entities.json",
-        "er_save_manager/data/grace_entities.json",
-    ),
-    (
-        "src/er_save_manager/data/locations_convergence.json",
-        "er_save_manager/data/locations_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/grace_regions.json",
-        "er_save_manager/data/grace_regions.json",
-    ),
-    (
-        "src/er_save_manager/data/grace_pieces.json",
-        "er_save_manager/data/grace_pieces.json",
-    ),
-    (
-        "src/er_save_manager/data/grace_bosses.json",
-        "er_save_manager/data/grace_bosses.json",
-    ),
-    (
-        "src/er_save_manager/data/floor_vanilla.bin",
-        "er_save_manager/data/floor_vanilla.bin",
-    ),
-    (
-        "src/er_save_manager/data/floor_convergence.bin",
-        "er_save_manager/data/floor_convergence.bin",
-    ),
-    (
-        "src/er_save_manager/data/world_map_conversion_convergence.json",
-        "er_save_manager/data/world_map_conversion_convergence.json",
-    ),
-    (
-        "src/er_save_manager/data/blood_messages.json",
-        "er_save_manager/data/blood_messages.json",
-    ),
-    (
-        "src/er_save_manager/data/quest_flags.json",
-        "er_save_manager/data/quest_flags.json",
-    ),
-    ("src/er_save_manager/fixes/CSNetMan.bin", "er_save_manager/fixes/CSNetMan.bin"),
-    (
-        "src/er_save_manager/fixes/EventFlagBits.bin",
-        "er_save_manager/fixes/EventFlagBits.bin",
-    ),
-    ("src/er_save_manager/games/DSR/data/", "er_save_manager/games/DSR/data/"),
-    ("src/er_save_manager/games/DS3/data/", "er_save_manager/games/DS3/data/"),
-    ("src/er_save_manager/games/NR/data/", "er_save_manager/games/NR/data/"),
-    ("src/er_save_manager/games/DS2/data/", "er_save_manager/games/DS2/data/"),
 ]
 
 # Explicitly pull OpenSSL DLLs into the root folder to prevent PATH conflicts
@@ -225,8 +121,9 @@ build_exe_options = {
     # Exclude unused heavy dependencies found in environment, plus the
     # tests package as a guardrail (it ships save-file fixtures and must
     # never end up in a build; not imported by run_gui.py, but excluded
-    # explicitly in case that ever changes)
-    "excludes": ["unittest", "pydoc", "tests"],
+    # explicitly in case that ever changes). PIL._avif is unused (icons are
+    # WebP, maps JPEG) and Pillow falls back cleanly without it
+    "excludes": ["unittest", "pydoc", "tests", "PIL._avif"],
     # Output dir for built executables and dependencies
     "build_exe": f"dist/windows-{VERSION}/er-save-manager_{VERSION}",
     # Optimize .pyc files (2 strips docstrings)

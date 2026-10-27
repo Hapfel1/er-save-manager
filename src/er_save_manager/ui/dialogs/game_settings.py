@@ -1,5 +1,6 @@
 """Game settings editor (USER_DATA_10 Settings, shared by all characters)."""
 
+import contextlib
 import tkinter as tk
 from io import BytesIO
 
@@ -141,10 +142,8 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
             )
 
         for field, var in vars.items():
-            try:
+            with contextlib.suppress(Exception):
                 setattr(settings, field, var.get())
-            except Exception:
-                pass
 
         # Settings follow the checksum (PC only), version and steam_id
         ud10_base = save_file._user_data_10_offset

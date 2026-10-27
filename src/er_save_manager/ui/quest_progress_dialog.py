@@ -4,6 +4,7 @@ View and modify NPC quest progress via event flags.
 Each quest step shows its completion state and can be applied individually.
 """
 
+import contextlib
 import tkinter as tk
 
 import customtkinter as ctk
@@ -246,10 +247,8 @@ class QuestProgressDialog:
             )
 
         def _safe_set_flag(flag_id, value):
-            try:
+            with contextlib.suppress(ValueError, KeyError):
                 event_flag_accessor.set_flag(flag_id, value)
-            except (ValueError, KeyError):
-                pass
 
         def _apply_step(index, npc_name):
             """Apply a quest step's flags, after the steps in between when
@@ -352,14 +351,12 @@ class QuestProgressDialog:
                 return
 
             if save_path and save_path.is_file():
-                try:
+                with contextlib.suppress(Exception):
                     BackupManager(save_path).create_backup(
                         description=f"before_quest_edit_slot_{slot_idx + 1}",
                         operation="quest_progress_edit",
                         save=save_file,
                     )
-                except Exception:
-                    pass
 
             # Write event flags buffer back to raw data
             slot = save_file.character_slots[slot_idx]

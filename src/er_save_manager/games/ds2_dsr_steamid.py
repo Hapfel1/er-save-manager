@@ -23,6 +23,7 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager import aes_cbc
 from er_save_manager.own_writes import record_write
 
 _KEYS = {
@@ -50,24 +51,14 @@ def _key_for(game_key: str) -> bytes:
 
 
 def _decrypt(raw_entry: bytes, key: bytes) -> tuple[bytes, bytes, bytearray]:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
     md5 = raw_entry[:_MD5_SIZE]
     iv = raw_entry[_MD5_SIZE : _MD5_SIZE + _IV_SIZE]
     payload = raw_entry[_MD5_SIZE + _IV_SIZE :]
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    dec = cipher.decryptor()
-    return md5, iv, bytearray(dec.update(payload) + dec.finalize())
+    return md5, iv, bytearray(aes_cbc.decrypt(key, iv, payload))
 
 
 def _encrypt(iv: bytes, decrypted: bytearray, key: bytes) -> bytes:
-    from cryptography.hazmat.backends import default_backend
-    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-    enc = cipher.encryptor()
-    encrypted = enc.update(bytes(decrypted)) + enc.finalize()
+    encrypted = aes_cbc.encrypt(key, iv, bytes(decrypted))
     md5 = hashlib.md5(iv + encrypted).digest()
     return md5 + iv + encrypted
 
@@ -112,11 +103,6 @@ def patch_steamid(save_path: Path, new_steam64: int, game_key: str) -> tuple[boo
     Rewrite the owner SteamID in entry 0, re-encrypt it with its IV and
     recompute its MD5. Writes in-place.
     """
-    try:
-        from cryptography.hazmat.primitives.ciphers import Cipher  # noqa: F401
-    except ImportError:
-        return False, "cryptography package required. Run: uv add cryptography"
-
     try:
         key = _key_for(game_key)
     except ValueError as e:

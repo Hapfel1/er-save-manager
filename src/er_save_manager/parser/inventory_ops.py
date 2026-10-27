@@ -703,9 +703,10 @@ def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
                 if stored_base == want_base:
                     match = True
         elif cat_bits == _CAT_GEM:
-            if g_prefix == _PREFIX_GEM:
-                if g.item_id == base_id or g.item_id == full_item_id:
-                    match = True
+            if g_prefix == _PREFIX_GEM and (
+                g.item_id == base_id or g.item_id == full_item_id
+            ):
+                match = True
         else:
             if _category(g.item_id) == cat_bits and g.item_id == full_item_id:
                 match = True
