@@ -23,6 +23,7 @@ from er_save_manager.games.DSR import catalog
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
+from er_save_manager.ui.pending import save_writable, write_failed
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import game_blocks_write, raise_existing_window
@@ -571,6 +572,8 @@ class DSRInventoryTab:
         char = self.current_character()
         if save is None or save_path is None or char is None:
             return None, None, None
+        if not save_writable():
+            return None, None, None
         return save, save_path, char
 
     def _finish(self, save, save_path, op: str, message: str, changed: int) -> bool:
@@ -580,7 +583,7 @@ class DSRInventoryTab:
         try:
             _backup_and_save(save, save_path, f"{op}_slot_{self._current_slot + 1}")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return False
         self._reload_inventory()
         self._show_toast(message)
@@ -928,6 +931,14 @@ class DSRInventoryTab:
                     skipped.append(f"{item['name']} (already has an Estus Flask)")
                     continue
                 has_estus = True
+            if item["spell"]:
+                # A spell is one entry of quantity 1; spawning it again does
+                # not add casts.
+                if (item["type"], catalog.item_id_at(item, 0)) in held:
+                    skipped.append(f"{item['name']} (already held)")
+                    continue
+                held.add((item["type"], catalog.item_id_at(item, 0)))
+                lim = catalog.Limits(1, 0, lim.durability)
             level = max(0, min(upgrade, lim.max_upgrade))
             capped += lim.max_upgrade > 0 and level != upgrade
             qty = max(1, min(quantity, lim.max_quantity))

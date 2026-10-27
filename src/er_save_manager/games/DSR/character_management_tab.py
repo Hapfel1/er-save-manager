@@ -16,7 +16,11 @@ from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import guard_before_write
+from er_save_manager.ui.pending import (
+    guard_before_write,
+    save_writable,
+    write_failed,
+)
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import bind_mousewheel, pick_file
 
@@ -355,6 +359,18 @@ class DSRCharacterManagementTab:
             ],
         )
 
+    def _write_loaded(self, save, save_path) -> bool:
+        """Write the loaded save after an operation changed it in memory. A
+        failed write is reported and the save reloaded from disk."""
+        if not save_path:
+            return True
+        try:
+            save.save_to_file(Path(save_path))
+        except Exception as exc:
+            write_failed(exc, self.parent)
+            return False
+        return True
+
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
             CTkMessageBox.showerror(
@@ -368,7 +384,7 @@ class DSRCharacterManagementTab:
     def _copy_character(self) -> None:
         if not guard_before_write("copy the character"):
             return
-        if not self._check_game_not_running():
+        if not self._check_game_not_running() or not save_writable():
             return
 
         save = self._get_save()
@@ -414,26 +430,26 @@ class DSRCharacterManagementTab:
                 )
 
             character_ops.copy_slot(save, from_slot, to_slot)
-
-            if save_path:
-                save.save_to_file(Path(save_path))
-            if self._reload:
-                self._reload()
-            self._show_toast(
-                f"Character '{from_char.name}' copied to Slot {to_slot + 1}. "
-                "In-game, this slot may still show the old character until "
-                "you load it once.",
-                duration=4500,
-            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Copy Failed", f"Copy failed:\n{str(e)}", parent=self.parent
             )
+            return
+        if not self._write_loaded(save, save_path):
+            return
+        if self._reload:
+            self._reload()
+        self._show_toast(
+            f"Character '{from_char.name}' copied to Slot {to_slot + 1}. "
+            "In-game, this slot may still show the old character until "
+            "you load it once.",
+            duration=4500,
+        )
 
     def _swap_characters(self) -> None:
         if not guard_before_write("swap the characters"):
             return
-        if not self._check_game_not_running():
+        if not self._check_game_not_running() or not save_writable():
             return
 
         save = self._get_save()
@@ -471,23 +487,23 @@ class DSRCharacterManagementTab:
                 )
 
             character_ops.swap_slots(save, slot_a, slot_b)
-
-            if save_path:
-                save.save_to_file(Path(save_path))
-            if self._reload:
-                self._reload()
-            self._show_toast(
-                f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}.", duration=2500
-            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Swap Failed", f"Swap failed:\n{str(e)}", parent=self.parent
             )
+            return
+        if not self._write_loaded(save, save_path):
+            return
+        if self._reload:
+            self._reload()
+        self._show_toast(
+            f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}.", duration=2500
+        )
 
     def _delete_character(self) -> None:
         if not guard_before_write("delete the character"):
             return
-        if not self._check_game_not_running():
+        if not self._check_game_not_running() or not save_writable():
             return
 
         save = self._get_save()
@@ -520,16 +536,16 @@ class DSRCharacterManagementTab:
                 )
 
             character_ops.delete_slot(save, slot)
-
-            if save_path:
-                save.save_to_file(Path(save_path))
-            if self._reload:
-                self._reload()
-            self._show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
         except Exception as e:
             CTkMessageBox.showerror(
                 "Delete Failed", f"Delete failed:\n{str(e)}", parent=self.parent
             )
+            return
+        if not self._write_loaded(save, save_path):
+            return
+        if self._reload:
+            self._reload()
+        self._show_toast(f"Character deleted from Slot {slot + 1}", duration=2500)
 
     def _export_character(self) -> None:
         if not guard_before_write("export the character"):
@@ -571,7 +587,7 @@ class DSRCharacterManagementTab:
     def _import_character(self) -> None:
         if not guard_before_write("import a character"):
             return
-        if not self._check_game_not_running():
+        if not self._check_game_not_running() or not save_writable():
             return
 
         save = self._get_save()
@@ -610,18 +626,16 @@ class DSRCharacterManagementTab:
                 )
 
             character_ops.import_character(save, to_slot, Path(import_path))
-
-            if save_path:
-                save.save_to_file(Path(save_path))
-            if self._reload:
-                self._reload()
-            self._show_toast(
-                f"Character imported to Slot {to_slot + 1}.", duration=2500
-            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Import Failed", f"Import failed:\n{str(e)}", parent=self.parent
             )
+            return
+        if not self._write_loaded(save, save_path):
+            return
+        if self._reload:
+            self._reload()
+        self._show_toast(f"Character imported to Slot {to_slot + 1}.", duration=2500)
 
     def _transfer_character(self) -> None:
         if not guard_before_write("transfer the character"):

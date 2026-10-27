@@ -18,7 +18,14 @@ import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
+from er_save_manager.ui.pending import (
+    FieldTracker,
+    PendingPage,
+    StageError,
+    save_writable,
+    var_state,
+    write_failed,
+)
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
@@ -267,8 +274,6 @@ class DSRWorldStateTab:
         unvisited = sum(
             1 for i in rows if char.bonfire_level(self._bonfires[i]["entity"]) is None
         )
-        for i in changed:
-            char.set_bonfire_lit(self._bonfires[i]["entity"], lit)
         if not changed:
             if unvisited:
                 CTkMessageBox.showinfo(
@@ -277,10 +282,14 @@ class DSRWorldStateTab:
             else:
                 self._show_toast("Nothing to change, already set.")
             return
+        if not save_writable():
+            return
+        for i in changed:
+            char.set_bonfire_lit(self._bonfires[i]["entity"], lit)
         try:
             _backup_and_save(save, save_path, f"bonfires_slot_{self._current_slot + 1}")
         except Exception as exc:
-            CTkMessageBox.showerror("Save Failed", str(exc), parent=self.parent)
+            write_failed(exc, self.parent)
             return
         self._refresh_display()
         skipped = (
