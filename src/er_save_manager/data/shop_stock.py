@@ -14,7 +14,9 @@ Convergence). Columns:
     quantity    sellQuantity
     item        kind:id (kind is goods, weapon, armor, talisman or gem)
     price       rune cost
-    merchant    NPC whose talk script opens the shop range holding the row
+    merchant    NPC whose talk script opens the shop range holding the row;
+                "Walking Mausoleum" for the mausoleums' remembrance
+                duplication (its talk parts have no NPC name)
     map         where that NPC stands (mAA_BB_CC_DD)
     grace_flag  event flag of the nearest Site of Grace, 0 if unknown
     dlc         1 if the map is a Shadow of the Erdtree map
