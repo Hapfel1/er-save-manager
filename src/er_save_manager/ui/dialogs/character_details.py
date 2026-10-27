@@ -14,6 +14,58 @@ from er_save_manager.ui.toast import notify
 
 _WRAP = 600
 
+# Event flag issue names from CorruptionDetector.detect_all
+_EVENT_FLAG_LABELS = {
+    "ranni_softlock": "Ranni quest soft-lock",
+    "radahn_alive_warp": "Radahn warp sickness (Radahn alive)",
+    "radahn_dead_warp": "Radahn warp sickness (Radahn defeated)",
+    "morgott_warp": "Morgott warp sickness",
+    "radagon_warp": "Radagon / Elden Beast warp sickness",
+    "sealing_tree_warp": "Sealing Tree warp sickness (DLC)",
+    "romina_missing": "Romina missing (Sealing Tree burned before her defeat)",
+    "unte_golem_stuck": "Ruins of Unte golem stuck",
+    "erdtree_pre_giant": "Invalid Erdtree state (before the Fire Giant)",
+    "erdtree_pre_maliketh": "Invalid Erdtree state (after the Fire Giant, before Maliketh)",
+    "erdtree_post_maliketh": "Invalid Erdtree state (after Maliketh)",
+}
+
+
+def _fields(value: str) -> dict[str, str]:
+    """Parse "Name = value,Name = value" into a dict."""
+    out = {}
+    for part in value.split(","):
+        name, sep, val = part.partition("=")
+        if sep:
+            out[name.strip()] = val.strip()
+    return out
+
+
+def issue_label(issue: str) -> str:
+    """Readable text for a "key:value" issue string."""
+    key, _, value = issue.partition(":")
+    fields = _fields(value)
+    if key == "torrent_bug":
+        return (
+            f"Torrent has {fields.get('HP', '?')} HP but is not marked dead"
+            f" (state {fields.get('State', '?')}), causes an infinite loading screen"
+        )
+    if key == "weather_corruption":
+        return (
+            "Weather data does not match the location"
+            f" (weather area {fields.get('AreaId', '?')},"
+            f" map area {value.rpartition('Should be')[2].strip() or '?'})"
+        )
+    if key == "time_corruption":
+        return f"Time of day out of range ({fields.get('Time', '?')})"
+    if key == "steamid_corruption":
+        steam_id = fields.get("SteamId", "?")
+        if steam_id == "0":
+            return "Character SteamID is 0"
+        return f"Character SteamID {steam_id} does not match the save file SteamID"
+    if key == "eventflag":
+        return _EVENT_FLAG_LABELS.get(value, f"Event flag issue: {value}")
+    return value or key
+
 
 @dataclass
 class CharacterScan:
@@ -27,12 +79,15 @@ class CharacterScan:
     has_dlc_flag: bool
     has_invalid_dlc: bool
     has_tarnished_pack_flag: bool
+    # Names of checks that raised, so their result is unknown
+    failed_checks: list[str]
 
     @property
     def issue_texts(self) -> list[str]:
-        texts = [issue.split(":", 1)[-1] for issue in self.issues]
+        texts = [issue_label(issue) for issue in self.issues]
         if self.deep_scan_available:
             texts.insert(0, "Torn write detected")
+        texts.extend(f"Check failed: {name}" for name in self.failed_checks)
         return texts
 
 
@@ -41,6 +96,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
     slot = save_file.characters[slot_idx]
     has_corruption = False
     issues_detected = []
+    failed_checks = []
     try:
         correct_steam_id = None
         if save_file.user_data_10_parsed and hasattr(
@@ -59,7 +115,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
                 ]
             issues_detected = corruption_issues
     except Exception:
-        pass
+        failed_checks.append("Torrent, weather, time, SteamID and event flags")
 
     has_dlc_flag = False
     has_invalid_dlc = False
@@ -69,7 +125,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
         has_invalid_dlc = slot.has_invalid_dlc()
         has_tarnished_pack_flag = slot.has_tarnished_pack_flag()
     except Exception:
-        pass
+        failed_checks.append("DLC flags")
 
     # Checksum check - PS saves have no per-slot checksums
     if not getattr(save_file, "is_ps", False):
@@ -80,7 +136,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
             if not valid:
                 issues_detected.append("checksum:Invalid slot checksum")
         except Exception:
-            pass
+            failed_checks.append("Slot checksum")
 
     # Deep scan check
     deep_scan_available = False
@@ -94,7 +150,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
             deep_scan_result.steamid_found and deep_scan_result.delta != 0
         )
     except Exception:
-        pass
+        failed_checks.append("Torn write")
 
     # Inventory counter check
     has_inv_counter_issue = False
@@ -107,7 +163,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
                 "inventory_counters:Corrupted inventory item counters (can prevent key item pickups or cause crashes)"
             )
     except Exception:
-        pass
+        failed_checks.append("Inventory counters")
 
     # NetMan chunk chain check (a torn write is handled by the deep scan)
     if not deep_scan_available:
@@ -120,7 +176,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
                     " 'save corrupted' message or crashes on load"
                 )
         except Exception:
-            pass
+            failed_checks.append("Network data (CSNetMan)")
 
     # Structural checks with a well-defined, safe correction
     try:
@@ -138,7 +194,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
                 "storage_inventory_counters:Corrupted storage box item counters"
             )
     except Exception:
-        pass
+        failed_checks.append("Inventory handles and storage counters")
 
     return CharacterScan(
         issues_detected,
@@ -147,6 +203,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
         has_dlc_flag,
         has_invalid_dlc,
         has_tarnished_pack_flag,
+        failed_checks,
     )
 
 
@@ -213,6 +270,7 @@ class CharacterDetailsDialog:
         has_dlc_flag = scan.has_dlc_flag
         has_invalid_dlc = scan.has_invalid_dlc
         has_tarnished_pack_flag = scan.has_tarnished_pack_flag
+        failed_checks = list(scan.failed_checks)
         has_dlc_section = (
             has_dlc_flag
             or has_tarnished_pack_flag
@@ -238,7 +296,7 @@ class CharacterDetailsDialog:
                     structural_notes.append(f"{fix.name}: {result.description}")
                     structural_notes.extend(f"    {d}" for d in result.details)
         except Exception:
-            pass
+            failed_checks.append("Structural notes")
 
         dialog = ds.create(parent, f"Character Details - {name}")
 
@@ -276,6 +334,13 @@ class CharacterDetailsDialog:
             ds.header(
                 main_frame,
                 f"{name}: {count} issue{'s' if count != 1 else ''} found",
+                icon="⚠",
+            )
+        elif failed_checks:
+            count = len(failed_checks)
+            ds.header(
+                main_frame,
+                f"{name}: {count} check{'s' if count != 1 else ''} failed",
                 icon="⚠",
             )
         else:
@@ -367,7 +432,7 @@ class CharacterDetailsDialog:
             elif issues_detected:
                 bullets(
                     section(body, "Issues"),
-                    [issue.split(":", 1)[-1] for issue in issues_detected],
+                    [issue_label(issue) for issue in issues_detected],
                     ds.WARNING,
                 )
                 if any("dlc_location" in issue for issue in issues_detected):
@@ -439,6 +504,19 @@ class CharacterDetailsDialog:
                     font=ds.SMALL,
                     text_color=ds.MUTED,
                 ).pack(anchor="w", pady=(10, 0))
+
+            if failed_checks:
+                box = section(body, "Checks that failed")
+                bullets(box, failed_checks, ds.WARNING)
+                ctk.CTkLabel(
+                    box,
+                    text="These checks stopped with an error, so the slot "
+                    "may have issues that are not listed.",
+                    font=ds.SMALL,
+                    text_color=ds.MUTED,
+                    wraplength=_WRAP - 24,
+                    justify="left",
+                ).pack(anchor="w", padx=12, pady=(0, 8))
 
         ds.content(main_frame, build, max_height=440, width=_WRAP, pady=(4, 0))
 
