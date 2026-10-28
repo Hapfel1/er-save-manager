@@ -44,6 +44,10 @@ def test_equipped_ids_map_every_slot_kind():
 
 def test_unknown_header_blocks_nothing():
     assert _character(header=0).equipped_item_ids() == set()
+    # An attuned spell counts as equipped
+    character = _character()
+    struct.pack_into("<I", character.raw(), EQUIPMENT_OFFSET + 0x7C, HEAL)
+    assert HEAL in character.equipped_item_ids()
 
 
 def test_equip_writes_ids_and_inventory_positions():
@@ -182,12 +186,6 @@ def test_ring_slots_count_toward_attunement():
     # 2 slots + 1 from the ring: the 3-slot spell fits and fills them.
     assert equipped.no_slots == ["Heal", "Heal"]
     assert spells == [AFFINITY, 0xFFFFFFFF, 0xFFFFFFFF]
-
-
-def test_attuned_spell_counts_as_equipped():
-    character = _character()
-    struct.pack_into("<I", character.raw(), EQUIPMENT_OFFSET + 0x7C, HEAL)
-    assert HEAL in character.equipped_item_ids()
 
 
 def test_owned_copies_only_cover_their_share():

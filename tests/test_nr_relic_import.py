@@ -12,45 +12,37 @@ from er_save_manager.games.NR.relic_ops import (
 E = 0xFFFFFFFF
 # Grand Luminous Scene, three normal effects.
 GRAND = {"id": 1007222, "effects": [7060100, 7090100, 7001702], "curses": [E, E, E]}
+BAD_ROWS = [
+    dict(GRAND, effects=[-1, 7090100, 7001702]),
+    dict(GRAND, curses=[2**32, E, E]),
+    dict(GRAND, id=99999999),
+    dict(GRAND, id=-5),
+    dict(GRAND, id=1007222.9),
+    dict(GRAND, id="1007222"),
+    dict(GRAND, id=True),
+    dict(GRAND, effects="123"),
+    dict(GRAND, effects=[7060100, 7090100, 7001702, 7000000]),
+    {"effects": GRAND["effects"]},
+    [1, 2, 3],
+    5,
+]
 
 
-def test_valid_row_is_kept():
-    relics, skipped, warnings = sort_import_rows([GRAND])
-    assert relics == [(GRAND["id"], GRAND["effects"], GRAND["curses"])]
-    assert skipped == warnings == []
-
-
-@pytest.mark.parametrize(
-    "row",
-    [
-        dict(GRAND, effects=[-1, 7090100, 7001702]),
-        dict(GRAND, curses=[2**32, E, E]),
-        dict(GRAND, id=99999999),
-        dict(GRAND, id=-5),
-        dict(GRAND, id=1007222.9),
-        dict(GRAND, id="1007222"),
-        dict(GRAND, id=True),
-        dict(GRAND, effects="123"),
-        dict(GRAND, effects=[7060100, 7090100, 7001702, 7000000]),
-        {"effects": GRAND["effects"]},
-        [1, 2, 3],
-        5,
-    ],
-)
-def test_bad_rows_are_skipped_and_listed(row):
-    relics, skipped, _warnings = sort_import_rows([row, GRAND])
-    assert len(relics) == 1
-    assert len(skipped) == 1 and skipped[0].startswith("Row 1: ")
-
-
-def test_unknown_relic_id_in_range_is_skipped():
-    _relics, skipped, _warnings = sort_import_rows([{"id": 123456}])
-    assert skipped == ["Row 1: Unknown relic ID 123456."]
-
-
-def test_unknown_effect_only_warns():
-    row = dict(GRAND, effects=[7060100, 7090100, 123])
-    relics, skipped, warnings = sort_import_rows([row])
+def test_import_rows():
+    assert sort_import_rows([GRAND]) == (
+        [(GRAND["id"], GRAND["effects"], GRAND["curses"])],
+        [],
+        [],
+    )
+    for row in BAD_ROWS:
+        relics, skipped, _ = sort_import_rows([row, GRAND])
+        assert len(relics) == 1, row
+        assert len(skipped) == 1 and skipped[0].startswith("Row 1: "), row
+    assert sort_import_rows([{"id": 123456}])[1] == ["Row 1: Unknown relic ID 123456."]
+    # An unknown effect only warns
+    relics, skipped, warnings = sort_import_rows(
+        [dict(GRAND, effects=[7060100, 7090100, 123])]
+    )
     assert len(relics) == 1 and skipped == [] and warnings
 
 

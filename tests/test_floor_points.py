@@ -46,9 +46,12 @@ def test_leyndell_click_takes_the_city_before_the_sewers():
     assert maps.index("m11_05_00_00") < maps.index("m35_00_00_00")
 
 
-def test_open_sea_has_no_floor():
+def test_sea_has_no_floor():
     # south of Caelid, on the sea surface sheet
     mx, my = _overworld(47, 37, -100.0, -60.0)
+    assert floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=8) == []
+    # m60_41_45: coarse sea bed at y -51
+    mx, my = _overworld(41, 45, -3.0, -3.0)
     assert floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=8) == []
 
 
@@ -66,12 +69,6 @@ def test_coarse_land_tiles_are_kept():
     mx, my = _overworld(53, 38, -1.0, -1.0)
     floors = floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=6)
     assert any(p.map_id_str == "m60_53_38_00" for p in floors)
-
-
-def test_sea_bed_west_of_liurnia_has_no_floor():
-    # m60_41_45: coarse sea bed at y -51
-    mx, my = _overworld(41, 45, -3.0, -3.0)
-    assert floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=8) == []
 
 
 def test_forge_of_the_giants_bowl_keeps_only_the_rim():
@@ -109,10 +106,14 @@ def test_arena_points_carry_the_boss_flag():
     floors = floors_near(no, mx, my, False, radius=6)
     pin = next(p for p in floors if p.map_id_str == "m10_00_00_00")
     assert pin.arena_flag == 10000800
-    loc = pin_location(pin)
-    assert loc.tile_type == "pin"
-    assert closed_gate(loc, False, lambda f: False).boss == "Godrick the Grafted"
-    assert closed_gate(loc, False, lambda f: True) is None
+    for loc, kind in (
+        (pin_location(pin), "pin"),
+        (bloodstain_location(pin), "bloodstain"),
+    ):
+        assert loc.tile_type == kind
+        assert loc.safe_coords == (pin.x, pin.y, pin.z)
+        assert closed_gate(loc, False, lambda f: False).boss == "Godrick the Grafted"
+        assert closed_gate(loc, False, lambda f: True) is None
 
 
 def test_pin_location_takes_the_map_region():
@@ -149,25 +150,9 @@ def test_grace_warp_points_are_anchors():
     assert (pin.x, pin.y, pin.z) == pytest.approx(grace.safe_coords, abs=0.01)
 
 
-def test_bloodstain_location_keeps_the_saved_position_and_arena():
-    no, mx, my = location_map_point("m10_00_00_00", -235.6, 348.3, False)
-    pin = next(
-        p
-        for p in floors_near(no, mx, my, False, radius=6)
-        if p.map_id_str == "m10_00_00_00"
-    )
-    loc = bloodstain_location(pin)
-    assert loc.tile_type == "bloodstain"
-    assert loc.safe_coords == (pin.x, pin.y, pin.z)
-    assert closed_gate(loc, False, lambda f: False).boss == "Godrick the Grafted"
-
-
-def test_tile_point_on_floor_is_kept():
+def test_tile_floor():
     point = (9.3, 236.2, 43.8)  # m60_33_40_00 tile warp point
     assert tile_floor("m60_33_40_00", point, False) == point
-
-
-def test_tile_point_in_the_air_moves_to_the_tile_grace():
     # m61_49_39_00 stored point lies past the tile edge (z 188.8), above a
     # gorge with floor at y -572
     point = (-14.0, 68.4, 188.8)

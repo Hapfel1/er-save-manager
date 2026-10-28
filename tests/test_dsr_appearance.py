@@ -65,6 +65,7 @@ def test_game_tables():
 def test_face_bytes_round_trip_through_coefficients():
     face = bytes(range(0, 200, 2))
     assert app.coeffs_to_face(app.face_to_coeffs(face)) == face
+    assert app.coeffs_to_face([500.0] * 50 + [-500.0] * 50) == b"\xff" * 50 + bytes(50)
 
 
 def test_control_reaches_target_and_keeps_other_block():
@@ -98,12 +99,6 @@ def test_age_moves_both_blocks():
     assert moved[app.GEO_SIZE :] != coeffs[app.GEO_SIZE :]
 
 
-def test_bytes_clamp():
-    assert (
-        app.coeffs_to_face([500.0] * 50 + [-500.0] * 50) == b"\xff" * 50 + b"\x00" * 50
-    )
-
-
 def test_json_round_trip_and_apply():
     src = _character()
     src.physique, src.face_type, src.hair_type, src.color_preset = 2, 5, 6, 7
@@ -114,9 +109,8 @@ def test_json_round_trip_and_apply():
     assert app.Appearance.from_character(dst) == app.Appearance.from_character(src)
 
 
-@pytest.mark.parametrize(
-    "field,value",
-    [
+def test_json_rejects_bad_values():
+    for field, value in (
         ("format", "er_appearance"),
         ("version", 2),
         ("physique", 9),
@@ -124,13 +118,11 @@ def test_json_round_trip_and_apply():
         ("body_type", 2),
         ("hair_rgba", [0.5, 0.5, 1.5, 1.0]),
         ("face_data", "00"),
-    ],
-)
-def test_json_rejects_bad_values(field, value):
-    data = app.Appearance.from_character(_character()).to_json()
-    data[field] = value
-    with pytest.raises(ValueError):
-        app.Appearance.from_json(data)
+    ):
+        data = app.Appearance.from_character(_character()).to_json()
+        data[field] = value
+        with pytest.raises(ValueError):
+            app.Appearance.from_json(data)
 
 
 def _save_with(char: DSRCharacter, entry: bytes) -> DSRSave:
@@ -160,10 +152,7 @@ def test_dir_sync_writes_colors_and_face():
     )
     assert struct.unpack_from("<I", got, DIR_HAIR_ITEM_OFFSET)[0] == 1000
 
-
-def test_dir_sync_leaves_empty_template():
-    char = _character()
-    char.slot_index = 3
+    # The empty template is left as it is
     save = _save_with(char, _DIR_EMPTY_TEMPLATE)
     _sync_dir_appearance(save, 3, char)
     off = _dir_entry_offset(3)
@@ -172,13 +161,15 @@ def test_dir_sync_leaves_empty_template():
     )
 
 
-@pytest.mark.parametrize(
-    ("body_type", "hair_type", "item_id"),
-    [(1, 0, 1000), (1, 7, 1700), (0, 0, 3000), (0, 7, 3700)],
-)
-def test_apply_sets_equipped_hair(body_type, hair_type, item_id):
-    char = _character()
-    a = app.Appearance.from_character(char)
-    a.body_type, a.hair_type = body_type, hair_type
-    a.apply_to(char)
-    assert char.hair_item_id == item_id
+def test_apply_sets_equipped_hair():
+    for body_type, hair_type, item_id in (
+        (1, 0, 1000),
+        (1, 7, 1700),
+        (0, 0, 3000),
+        (0, 7, 3700),
+    ):
+        char = _character()
+        a = app.Appearance.from_character(char)
+        a.body_type, a.hair_type = body_type, hair_type
+        a.apply_to(char)
+        assert char.hair_item_id == item_id

@@ -19,14 +19,14 @@ TABLES = {
 }
 
 
-@pytest.mark.parametrize("game", TABLES)
-def test_tables_load_with_labels_and_flags(game):
-    table = load_quest_table(TABLES[game])
-    assert table
-    for steps in table.values():
-        for step in steps:
-            assert step["description"].strip()
-            assert any(f["value"] == 1 for f in step["flags"])
+def test_tables_load_with_labels_and_flags():
+    for path in TABLES.values():
+        table = load_quest_table(path)
+        assert table, path
+        for steps in table.values():
+            for step in steps:
+                assert step["description"].strip()
+                assert any(f["value"] == 1 for f in step["flags"])
 
 
 # DS3 NPCs freed through common_func 20006003: states up to these stay set
@@ -41,27 +41,24 @@ CUMULATIVE = {
 }
 
 
-@pytest.mark.parametrize("game", ["DS3", "DSR"])
-def test_steps_cover_the_whole_range(game):
+def test_steps_cover_the_whole_range():
     """A step sets its state and clears the rest of the NPC's range, the way
     the game's events move a quest on."""
-    for npc, steps in load_quest_table(TABLES[game]).items():
-        ranges = set()
-        for step in steps:
-            on = [f["id"] for f in step["flags"] if f["value"] == 1]
-            assert len(on) == 1
-            if on[0] <= CUMULATIVE.get(npc, -1):
-                assert all(f["id"] > on[0] for f in step["flags"] if not f["value"])
-                continue
-            ids = sorted(f["id"] for f in step["flags"])
-            assert ids == list(range(ids[0], ids[-1] + 1))
-            ranges.add((ids[0], ids[-1]))
-        assert len(ranges) <= 1
-
-
-def test_ds3_ranges_sit_below_the_alive_flag():
-    """Quest range = alive_flag - 15 .. alive_flag - 1, alive_flag at x15 or x35
-    (Old Woman of Londor 1575, range 1560-1574)."""
+    for game in ("DS3", "DSR"):
+        for npc, steps in load_quest_table(TABLES[game]).items():
+            ranges = set()
+            for step in steps:
+                on = [f["id"] for f in step["flags"] if f["value"] == 1]
+                assert len(on) == 1
+                if on[0] <= CUMULATIVE.get(npc, -1):
+                    assert all(f["id"] > on[0] for f in step["flags"] if not f["value"])
+                    continue
+                ids = sorted(f["id"] for f in step["flags"])
+                assert ids == list(range(ids[0], ids[-1] + 1))
+                ranges.add((ids[0], ids[-1]))
+            assert len(ranges) <= 1, npc
+    # DS3 range = alive_flag - 15 .. alive_flag - 1, alive_flag at x15 or x35
+    # (Old Woman of Londor 1575, range 1560-1574)
     for steps in load_quest_table(TABLES["DS3"]).values():
         ids = [f["id"] for step in steps for f in step["flags"]]
         assert min(ids) % 20 in (0, 15) and max(ids) - min(ids) < 15
@@ -110,12 +107,9 @@ def _is_complete(state):
 
 
 def test_steps_up_to_applies_the_steps_in_between():
-    state = {1201: 1}
-    chain = steps_up_to(RESCUE_STEPS, 2, _is_complete(state))
+    chain = steps_up_to(RESCUE_STEPS, 2, _is_complete({1201: 1}))
     assert chain == RESCUE_STEPS[1:]
     assert steps_up_to(RESCUE_STEPS, 0, _is_complete({})) == RESCUE_STEPS[:1]
-
-
-def test_steps_that_only_clear_flags_are_not_tracked():
+    # Steps that only clear flags are not tracked
     assert not is_tracked(_step((10, 0), (11, 0)))
     assert is_tracked(_step((10, 0), (11, 1)))

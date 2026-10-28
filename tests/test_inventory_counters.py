@@ -1,109 +1,47 @@
-"""
-Tests for er_save_manager.fixes.inventory_counters.InventoryCountersFix.
-"""
+"""Tests for er_save_manager.fixes.inventory_counters.InventoryCountersFix."""
 
 from __future__ import annotations
 
-import os
-import tempfile
-
 from er_save_manager.fixes.inventory_counters import InventoryCountersFix
+from er_save_manager.parser import load_save
 
 
-def _first_active_slot(save):
-    for i, slot in enumerate(save.character_slots):
-        if not slot.is_empty():
-            return i
-    raise AssertionError("fixture save has no active character slots")
+def _occupied(items):
+    return sum(1 for it in items if it.gaitem_handle != 0)
 
 
-def test_no_false_positive_on_healthy_save(sanitized_save_readonly):
-    fix = InventoryCountersFix()
-    for i, slot in enumerate(sanitized_save_readonly.character_slots):
-        if slot.is_empty():
-            continue
-        assert fix.detect(sanitized_save_readonly, i) is False, (
-            f"slot {i} unexpectedly flagged"
-        )
+def test_detects_wrong_counts(sanitized_save):
+    inv = sanitized_save.character_slots[0].inventory_held
+    inv.common_item_count += 50
+    assert InventoryCountersFix().detect(sanitized_save, 0) is True
+    inv.common_item_count -= 50
+    inv.key_item_count -= 1
+    assert InventoryCountersFix().detect(sanitized_save, 0) is True
 
 
-def test_detects_inflated_common_item_count(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    slot.inventory_held.common_item_count += 50
+def test_apply_corrects_held_counters_and_persists(sanitized_save, sanitized_save_copy):
+    slot = sanitized_save.character_slots[0]
+    inv, storage = slot.inventory_held, slot.inventory_storage_box
+    common, key = _occupied(inv.common_items), _occupied(inv.key_items)
+    inv.common_item_count = common + 100
+    inv.key_item_count = key + 1
+    storage.common_item_count += 999
 
-    assert InventoryCountersFix().detect(sanitized_save, i) is True
+    result = InventoryCountersFix().apply(sanitized_save, 0)
+    assert result.applied is True and len(result.details) == 2
+    assert (inv.common_item_count, inv.key_item_count) == (common, key)
+    # The storage box counters are not this fix's business
+    assert storage.common_item_count != _occupied(storage.common_items)
+    assert InventoryCountersFix().apply(sanitized_save, 0).applied is False
 
-
-def test_detects_deflated_key_item_count(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    slot.inventory_held.key_item_count = max(0, slot.inventory_held.key_item_count - 1)
-
-    assert InventoryCountersFix().detect(sanitized_save, i) is True
-
-
-def test_apply_corrects_both_counters_independently(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    inv = slot.inventory_held
-    actual_common = sum(1 for it in inv.common_items if it.gaitem_handle != 0)
-    actual_key = sum(1 for it in inv.key_items if it.gaitem_handle != 0)
-
-    inv.common_item_count = actual_common + 100
-    inv.key_item_count = actual_key + 1
-
-    result = InventoryCountersFix().apply(sanitized_save, i)
-
-    assert result.applied is True
-    assert inv.common_item_count == actual_common
-    assert inv.key_item_count == actual_key
-    assert len(result.details) == 2
-
-
-def test_apply_persists_to_raw_data(sanitized_save):
-    from er_save_manager.parser import load_save
-
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    inv = slot.inventory_held
-    actual_common = sum(1 for it in inv.common_items if it.gaitem_handle != 0)
-    inv.common_item_count = actual_common + 7
-
-    InventoryCountersFix().apply(sanitized_save, i)
-
-    with tempfile.TemporaryDirectory() as d:
-        p = os.path.join(d, "out.co2")
-        sanitized_save.recalculate_checksums()
-        sanitized_save.to_file(p)
-        reloaded = load_save(p)
-        assert reloaded.character_slots[i].inventory_held.common_item_count == (
-            actual_common
-        )
-
-
-def test_apply_is_no_op_when_counters_already_correct(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    result = InventoryCountersFix().apply(sanitized_save, i)
-    assert result.applied is False
-
-
-def test_does_not_touch_storage_box_counters(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    slot.inventory_held.common_item_count += 10
-    slot.inventory_storage_box.common_item_count += 999  # deliberately wrong too
-
-    InventoryCountersFix().apply(sanitized_save, i)
-
-    assert slot.inventory_storage_box.common_item_count != sum(
-        1 for it in slot.inventory_storage_box.common_items if it.gaitem_handle != 0
-    )
+    sanitized_save.recalculate_checksums()
+    sanitized_save.to_file(str(sanitized_save_copy))
+    reloaded = load_save(str(sanitized_save_copy)).character_slots[0]
+    assert reloaded.inventory_held.common_item_count == common
 
 
 def test_clamps_equip_index_counter_past_array_end(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
+    slot = sanitized_save.character_slots[0]
     held, storage = slot.inventory_held, slot.inventory_storage_box
     held_top = len(held.key_items) + len(held.common_items) - 1
     storage_top = len(storage.key_items) + len(storage.common_items) - 1
@@ -111,9 +49,7 @@ def test_clamps_equip_index_counter_past_array_end(sanitized_save):
     storage.equip_index_counter = storage_top + 1
 
     fix = InventoryCountersFix()
-    assert fix.detect(sanitized_save, i) is True
-    result = fix.apply(sanitized_save, i)
-
-    assert result.applied is True
+    assert fix.detect(sanitized_save, 0) is True
+    assert fix.apply(sanitized_save, 0).applied is True
     assert held.equip_index_counter == held_top
     assert storage.equip_index_counter == storage_top

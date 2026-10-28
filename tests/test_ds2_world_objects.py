@@ -84,6 +84,10 @@ def test_treasures_of_visited_maps_only():
     view = WorldObjects(data, ANCHOR, MAPS)
     found = {t.instance_id: t.taken for t in view.treasures()}
     assert found == {10026000: False, CHEST: True, PICKUP: True}
+    # No chain at all: no objects
+    view = WorldObjects(bytearray(ANCHOR + 0x8000), ANCHOR, MAPS)
+    assert view.treasures() == []
+    assert view.object_state(CHEST) is None
 
 
 def test_respawn_writes_every_copy_and_closes_the_chest():
@@ -118,13 +122,6 @@ def test_set_object_state_writes_block_and_live_list():
     assert not view.set_object_state(99999999, 30)
 
 
-def test_no_chain_means_no_objects():
-    data = bytearray(ANCHOR + 0x8000)
-    view = WorldObjects(data, ANCHOR, MAPS)
-    assert view.treasures() == []
-    assert view.object_state(CHEST) is None
-
-
 def test_door_open_and_close():
     data, _ = _save()
     flags = EventFlags(data, ANCHOR, MAPS)
@@ -141,11 +138,7 @@ def test_door_open_and_close():
     assert set_doors([door], False, flags, objects) == 1
     assert door_status(door, flags, objects) is DoorStatus.CLOSED
 
-
-def test_missing_door_is_not_written():
-    data, _ = _save()
-    flags = EventFlags(data, ANCHOR, MAPS)
-    objects = WorldObjects(data, ANCHOR, MAPS)
+    # A door whose object is not in the save is not written
     door = Door(M10_10, 110000072, 10100416, 30, "Soldier Key door", None)
     assert door_status(door, flags, objects) is DoorStatus.MISSING
     assert set_doors([door], True, flags, objects) == 0

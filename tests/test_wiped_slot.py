@@ -1,4 +1,4 @@
-"""Wiped character slot detection."""
+"""Wiped character slot detection and recovery sources."""
 
 import shutil
 import sys
@@ -15,48 +15,27 @@ from er_save_manager.fixes.wiped_slot import (
 from er_save_manager.parser import Save
 
 
-def _used_slot(save):
-    return next(i for i, s in enumerate(save.character_slots) if not s.is_empty())
+def test_zeroed_slot_is_wiped_only_while_active(sanitized_save):
+    assert not any(is_wiped_slot(sanitized_save, i) for i in range(10))
+    off = sanitized_save.slot_data_offset(0)
+    sanitized_save._raw_data[off : off + SLOT_SIZE] = bytes(SLOT_SIZE)
+    assert is_wiped_slot(sanitized_save, 0)
+    sanitized_save.user_data_10_parsed.profile_summary.active_profiles[0] = False
+    assert not is_wiped_slot(sanitized_save, 0)
 
 
-def _wipe(save, slot_index):
-    off = save.slot_data_offset(slot_index)
-    save._raw_data[off : off + SLOT_SIZE] = bytes(SLOT_SIZE)
-
-
-def test_intact_slots_are_not_wiped(sanitized_save_readonly):
-    assert not any(is_wiped_slot(sanitized_save_readonly, i) for i in range(10))
-
-
-def test_zeroed_active_slot_is_wiped(sanitized_save):
-    i = _used_slot(sanitized_save)
-    _wipe(sanitized_save, i)
-    assert is_wiped_slot(sanitized_save, i)
-
-
-def test_zeroed_inactive_slot_is_not_wiped(sanitized_save):
-    i = _used_slot(sanitized_save)
-    _wipe(sanitized_save, i)
-    sanitized_save.user_data_10_parsed.profile_summary.active_profiles[i] = False
-    assert not is_wiped_slot(sanitized_save, i)
-
-
-def test_game_backup_reports_the_character(sanitized_save_path, tmp_path):
+def test_game_backup_reports_the_character(sanitized_save_path, tmp_path, monkeypatch):
     save_path = tmp_path / sanitized_save_path.name
     shutil.copy(sanitized_save_path, save_path)
     shutil.copy(sanitized_save_path, tmp_path / (save_path.name + ".bak"))
-    save = Save.from_file(str(save_path))
-    i = _used_slot(save)
-    pgd = save.character_slots[i].player_game_data
+    pgd = Save.from_file(str(save_path)).character_slots[0].player_game_data
 
-    (source,) = find_game_backups(save_path, i)
+    (source,) = find_game_backups(save_path, 0)
     assert source.path.name == save_path.name + ".bak"
     assert source.character == (pgd.character_name, pgd.level)
 
-
-def test_shadow_copies_only_on_windows(sanitized_save_path, monkeypatch):
     monkeypatch.setattr(sys, "platform", "linux")
-    assert find_shadow_copies(sanitized_save_path, 0) == []
+    assert find_shadow_copies(save_path, 0) == []
 
 
 def test_extract_copy_writes_next_to_save(tmp_path):

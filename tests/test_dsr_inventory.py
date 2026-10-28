@@ -32,12 +32,10 @@ def _by_name(name: str) -> dict:
     return next(i for i in catalog.items() if i["name"] == name)
 
 
-def test_every_listed_item_has_an_icon():
+def test_catalog():
     missing = [i["name"] for i in catalog.items() if get_icon(i["icon_id"]) is None]
     assert not missing, missing[:5]
 
-
-def test_weapon_ids_levels_and_infusions():
     fire = _by_name("Fire Longsword")
     assert fire["id"] == 201800 and fire["max_upgrade"] == 10
     assert catalog.lookup(0, 201805) == (fire, 5)
@@ -46,9 +44,6 @@ def test_weapon_ids_levels_and_infusions():
     assert labels[0] == "Normal" and "Chaos" in labels
     flame = _by_name("Pyromancy Flame")
     assert flame["level_step"] == 100 and catalog.item_id_at(flame, 5) == 1330500
-
-
-def test_catalysts_and_talismans_have_no_upgrades():
     for name in (
         "Sorcerer's Catalyst",
         "Manus Catalyst",
@@ -57,9 +52,6 @@ def test_catalysts_and_talismans_have_no_upgrades():
     ):
         assert _by_name(name)["max_upgrade"] == 0, name
     assert catalog.lookup(0, 1300005) is None
-
-
-def test_seamless_goods_and_estus():
     blossom = next(i for i in catalog.items() if i["id"] == 389007)
     assert blossom["seamless"] and blossom["max_quantity"] == 5
     assert catalog.is_single(_by_name("Estus Flask"))
@@ -161,25 +153,21 @@ def _flag_character() -> tuple[DSRCharacter, int]:
     return char, record + FLAG_RECORD_TO_BASE
 
 
-def test_ng_cycle_sits_before_the_flag_array():
-    from er_save_manager.games.DSR.save import NG_CYCLE_FROM_FLAGS
-
-    char, base = _flag_character()
-    struct.pack_into("<II", char._data, base - NG_CYCLE_FROM_FLAGS, 2, 2)
-    assert char.ng_plus == 2
-    char.ng_plus = 3
-    assert struct.unpack_from("<II", char._data, base - NG_CYCLE_FROM_FLAGS) == (3, 2)
-
-
-def test_play_time_and_hp_fields():
+def test_ng_cycle_play_time_and_hp_fields():
     from er_save_manager.games.DSR.save import (
+        NG_CYCLE_FROM_FLAGS,
         OFF_HP_BASE,
         OFF_HP_CURRENT,
         OFF_HP_MAX,
         OFF_PLAY_MS,
     )
 
-    char = _character()
+    char, base = _flag_character()
+    # The NG cycle sits before the flag array
+    struct.pack_into("<II", char._data, base - NG_CYCLE_FROM_FLAGS, 2, 2)
+    assert char.ng_plus == 2
+    char.ng_plus = 3
+    assert struct.unpack_from("<II", char._data, base - NG_CYCLE_FROM_FLAGS) == (3, 2)
     struct.pack_into("<I", char._data, OFF_PLAY_MS, 41_135_500)
     assert char.play_seconds == 41_135.5
     char.set_stat("vit", 30)

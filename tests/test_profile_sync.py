@@ -21,18 +21,20 @@ def _active_slots(save):
     return [i for i, slot in enumerate(save.character_slots) if not slot.is_empty()]
 
 
-def test_rebuild_keeps_fields_the_slot_does_not_hold(sanitized_save):
-    for idx in _active_slots(sanitized_save):
-        profile = _profile(sanitized_save, idx)
+def test_rebuild_keeps_fields_the_slot_does_not_hold(sanitized_save_readonly):
+    for idx in _active_slots(sanitized_save_readonly):
+        profile = _profile(sanitized_save_readonly, idx)
         rebuilt = profile_from_slot(
-            sanitized_save._raw_data, sanitized_save.character_slots[idx], profile
+            sanitized_save_readonly._raw_data,
+            sanitized_save_readonly.character_slots[idx],
+            profile,
         )
         assert len(rebuilt) == PROFILE_SIZE
         assert (
             rebuilt[_PLACE_NAME : _PLACE_NAME + 4]
             == profile[_PLACE_NAME : _PLACE_NAME + 4]
         )
-        slot = sanitized_save.character_slots[idx]
+        slot = sanitized_save_readonly.character_slots[idx]
         assert (
             struct.unpack_from("<I", rebuilt, _LEVEL)[0] == slot.player_game_data.level
         )

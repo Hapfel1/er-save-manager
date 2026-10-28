@@ -80,56 +80,60 @@ def _split(value: str | None) -> list[str]:
     return [x for x in (value or "").split("|") if x]
 
 
-def _cases(views):
-    for section, game, patterns, prefix in views:
-        for tag, row in _rows(patterns):
-            if int(row["ID"]) >= 0:
-                yield pytest.param(section, game, prefix, row, id=f"{section}:{tag}")
-
-
-@pytest.mark.parametrize(("section", "game", "prefix", "row"), _cases(WEAPON_VIEWS))
-def test_weapon_row_matches_params(
-    section: str, game: str, prefix: str, row: dict
-) -> None:
+def _weapon_problems(section: str, game: str, prefix: str, row: dict) -> list[str]:
     param = PARAMS[section]["weapons"].get(row["ID"])
-    assert param is not None, (
-        f"{row['Name']} is not in the param fixture; regenerate it"
-    )
+    if param is None:
+        return ["not in the param fixture; regenerate it"]
     affinities = AFFINITIES[game]
     # Base rows keep the vanilla affinities in allowed_affinities
     aff_col = "convergence_affinities" if prefix else "allowed_affinities"
-
-    assert int(row[f"{prefix}wepType"]) == param["wepType"]
-    assert row[f"{prefix}wepTypeCol"] == PARAMS["wepTypeColumns"].get(
-        str(param["wepType"]), ""
-    ), "wepTypeCol must name the EquipParamGem canMountWep column for this wepType"
-    assert (row[f"{prefix}aow_allowed"] == "1") == param["mountable"]
-    assert int(row["maxArrowQuantity"]) == param["maxArrowQuantity"]
-    assert UPGRADE_CAP[game][row[f"{prefix}reinforcement"]] == param["maxUpgrade"]
-
     listed = _split(row[aff_col])
-    if param["infusable"]:
-        assert listed == [affinities[i] for i in param["affinityRows"]]
-    else:
-        assert listed in ([], ["Standard"])
+    checks = {
+        "wepType": int(row[f"{prefix}wepType"]) == param["wepType"],
+        # wepTypeCol names the EquipParamGem canMountWep column for this wepType
+        "wepTypeCol": row[f"{prefix}wepTypeCol"]
+        == PARAMS["wepTypeColumns"].get(str(param["wepType"]), ""),
+        "aow_allowed": (row[f"{prefix}aow_allowed"] == "1") == param["mountable"],
+        "maxArrowQuantity": int(row["maxArrowQuantity"]) == param["maxArrowQuantity"],
+        "reinforcement": UPGRADE_CAP[game][row[f"{prefix}reinforcement"]]
+        == param["maxUpgrade"],
+        "affinities": listed == [affinities[i] for i in param["affinityRows"]]
+        if param["infusable"]
+        else listed in ([], ["Standard"]),
+    }
+    return [name for name, ok in checks.items() if not ok]
 
 
-@pytest.mark.parametrize(("section", "game", "prefix", "row"), _cases(GEM_VIEWS))
-def test_gem_row_matches_params(
-    section: str, game: str, prefix: str, row: dict
-) -> None:
+def _gem_problems(section: str, game: str, prefix: str, row: dict) -> list[str]:
     param = PARAMS[section]["gems"].get(row["ID"])
-    assert param is not None, (
-        f"{row['Name']} is not in the param fixture; regenerate it"
-    )
+    if param is None:
+        return ["not in the param fixture; regenerate it"]
     affinities = AFFINITIES[game]
     aff_col = "convergence_affinities" if prefix else "allowedAffinities"
-
-    assert sorted(_split(row[f"{prefix}compatibleWepTypes"])) == param["mount"]
-    assert _split(row[aff_col]) == [affinities[i] for i in param["affinities"]]
+    checks = {
+        "compatibleWepTypes": sorted(_split(row[f"{prefix}compatibleWepTypes"]))
+        == param["mount"],
+        "affinities": _split(row[aff_col])
+        == [affinities[i] for i in param["affinities"]],
+    }
     if section != "convergence":
         default = row[f"{prefix}defaultAffinity"] or "Standard"
-        assert default == affinities[param["default"]]
+        checks["defaultAffinity"] = default == affinities[param["default"]]
+    return [name for name, ok in checks.items() if not ok]
+
+
+@pytest.mark.parametrize(
+    ("views", "problems"),
+    [(WEAPON_VIEWS, _weapon_problems), (GEM_VIEWS, _gem_problems)],
+    ids=["weapons", "gems"],
+)
+def test_rows_match_params(views, problems) -> None:
+    wrong = {}
+    for section, game, patterns, prefix in views:
+        for tag, row in _rows(patterns):
+            if int(row["ID"]) >= 0 and (bad := problems(section, game, prefix, row)):
+                wrong[f"{section}:{tag} {row['Name']}"] = bad
+    assert not wrong
 
 
 @pytest.fixture(scope="module")
@@ -155,18 +159,18 @@ def _weapons_and_gems(db, is_cnv: bool):
     return weapons, gems
 
 
-@pytest.mark.parametrize("is_cnv", [False, True], ids=["vanilla", "convergence"])
-def test_every_mountable_weapon_has_an_ash_of_war(item_db, is_cnv: bool) -> None:
+def test_every_mountable_weapon_has_an_ash_of_war(item_db) -> None:
     """An empty Ash of War picker means a wepTypeCol no gem uses."""
-    weapons, gems = _weapons_and_gems(item_db, is_cnv)
-    columns = {c for g in gems.values() for c in g.compatible_wep_types}
-    missing = [
-        w.name
-        for w in weapons.values()
-        if w.aow_allowed and w.reinforcement == "standard"
-        and w.wep_type_col not in columns
-    ]  # fmt: skip
-    assert not missing
+    for is_cnv in (False, True):
+        weapons, gems = _weapons_and_gems(item_db, is_cnv)
+        columns = {c for g in gems.values() for c in g.compatible_wep_types}
+        missing = [
+            w.name
+            for w in weapons.values()
+            if w.aow_allowed and w.reinforcement == "standard"
+            and w.wep_type_col not in columns
+        ]  # fmt: skip
+        assert not missing, is_cnv
 
 
 def test_convergence_view_of_base_rows(item_db) -> None:

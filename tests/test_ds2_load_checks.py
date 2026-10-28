@@ -43,39 +43,24 @@ def _entry_bytes(raw: bytes, index: int) -> bytes:
     return raw[offset : offset + size]
 
 
-@pytest.mark.parametrize("cut", [1, 16, 100])
-def test_cut_off_file_is_rejected(tmp_path, cut):
+def test_cut_off_file_is_rejected(tmp_path):
     path, raw = _build(tmp_path)
-    path.write_bytes(raw[:-cut])
-    with pytest.raises(ValueError, match="cut off"):
-        DS2Container.from_file(path)
-
-
-def test_whole_file_has_no_damage(tmp_path):
-    path, _ = _build(tmp_path)
     save = DS2Save.from_file(path)
-    assert save.container.damaged_entries() == []
-    assert save.damaged_slots() == []
+    assert save.container.damaged_entries() == [] and save.damaged_slots() == []
+    for cut in (1, 16, 100):
+        path.write_bytes(raw[:-cut])
+        with pytest.raises(ValueError, match="cut off"):
+            DS2Container.from_file(path)
 
 
-def test_damaged_profile_entry_locks_its_slot_only(tmp_path):
-    path, _ = _build(tmp_path, damage=(ds2.PROFILE_ENTRY_START + 1,))
+def test_damaged_entries_lock_their_slot_only(tmp_path):
+    path, _ = _build(
+        tmp_path, damage=(ds2.PROFILE_ENTRY_START + 1, ds2.BIG_ENTRY_START + 3, 21)
+    )
     save = DS2Save.from_file(path)
-    assert save.damaged_slots() == [1]
+    assert save.damaged_slots() == [1, 3]
     assert save.slot_lock_reason(1)
     assert save.slot_lock_reason(0) is None
-    assert save.damaged_shared_entries() == []
-
-
-def test_damaged_big_entry_locks_its_slot(tmp_path):
-    path, _ = _build(tmp_path, damage=(ds2.BIG_ENTRY_START + 3,))
-    assert DS2Save.from_file(path).damaged_slots() == [3]
-
-
-def test_damaged_shared_entry_is_listed_apart(tmp_path):
-    path, _ = _build(tmp_path, damage=(21,))
-    save = DS2Save.from_file(path)
-    assert save.damaged_slots() == []
     assert save.damaged_shared_entries() == [21]
 
 
@@ -109,12 +94,9 @@ def test_damaged_slot_cannot_be_copied_or_swapped(tmp_path):
         DS2CharacterOperations.swap_slots(save, 0, 1, force=True)
 
 
-@pytest.mark.parametrize("text, value", [("0", 0), (" 42 ", 42), ("007", 7)])
-def test_parse_whole_accepts_ascii_digits(text, value):
-    assert parse_whole(text) == value
-
-
-@pytest.mark.parametrize("text", ["", " ", "1_000", "-1", "+3", "1.5", "٣", "１"])
-def test_parse_whole_rejects_other_text(text):
-    with pytest.raises(ValueError):
-        parse_whole(text)
+def test_parse_whole_accepts_only_ascii_digits():
+    for text, value in (("0", 0), (" 42 ", 42), ("007", 7)):
+        assert parse_whole(text) == value
+    for text in ("", " ", "1_000", "-1", "+3", "1.5", "٣", "１"):
+        with pytest.raises(ValueError):
+            parse_whole(text)

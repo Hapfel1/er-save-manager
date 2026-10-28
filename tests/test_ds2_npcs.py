@@ -49,17 +49,12 @@ def _states(data: bytearray) -> dict[str, object]:
     return {s.entry.name: s for s in view.states()}
 
 
-def test_neighbouring_npcs_read_separately():
+def test_revive_keeps_the_neighbour_sharing_a_flag_byte():
     data = _data()
     _kill_rosabeth(data)
     states = _states(data)
     assert states["Rosabeth of Melfia"].dead
     assert not states["Stone Trader Chloanne"].dead
-
-
-def test_revive_keeps_the_neighbour_sharing_a_flag_byte():
-    data = _data()
-    _kill_rosabeth(data)
     _kill_chloanne(data)
     NpcStates(data, ANCHOR, RECORDS).revive(["Rosabeth of Melfia"])
     states = _states(data)
@@ -72,16 +67,12 @@ def test_revive_keeps_the_neighbour_sharing_a_flag_byte():
     assert data[RECORDS[EARTHEN_PEAK] + KILL_COUNTS_IN_RECORD + 7] == 1
 
 
-def test_kill_count_alone_reads_as_dead_and_revive_clears_it():
+def test_kill_count_or_location_flag_alone_reads_as_dead():
     data = _data()
     data[RECORDS[SHADED_WOODS] + KILL_COUNTS_IN_RECORD + 4] = 1
     assert _states(data)["Rosabeth of Melfia"].dead
     assert NpcStates(data, ANCHOR, RECORDS).revive(["Rosabeth of Melfia"]) == 1
     assert not any(data)
-
-
-def test_location_flag_alone_reads_as_dead():
-    data = _data()
     _set_flag(data, 104261)
     assert _states(data)["Stone Trader Chloanne"].dead
 

@@ -34,35 +34,26 @@ def test_intensity_is_ascetic_count_plus_one():
     assert bonfires.intensities()[CARDINAL_TOWER] == 2
 
 
-def test_set_intensity_lights_and_writes_the_ascetic_array():
+def test_set_intensity():
     data = _data()
     bonfires = Bonfires(data)
     assert bonfires.set_intensity([CARDINAL_TOWER], 4) == 1
     assert _byte(data, 0x200, CARDINAL_TOWER) == 1
     assert _byte(data, 0x300, CARDINAL_TOWER) == 3
     assert bonfires.set_intensity([CARDINAL_TOWER], 4) == 0
+    # Unlighting keeps the intensity
+    assert bonfires.set_lit([CARDINAL_TOWER], False) == 1
+    assert bonfires.intensities()[CARDINAL_TOWER] == 4
+    with pytest.raises(ValueError):
+        bonfires.set_intensity([CARDINAL_TOWER], 9)
 
-
-def test_set_intensity_resets_an_old_editor_level():
+    # An old editor wrote the level into the lit byte
     data = _data()
     data[ARRAY + 0x200 + IDS.index(CARDINAL_TOWER)] = 3
     bonfires = Bonfires(data)
     assert bonfires.lit()[CARDINAL_TOWER] is True
     assert bonfires.set_intensity([CARDINAL_TOWER], 1) == 1
     assert _byte(data, 0x200, CARDINAL_TOWER) == 1
-
-
-def test_unlighting_keeps_intensity():
-    data = _data()
-    bonfires = Bonfires(data)
-    bonfires.set_intensity([CARDINAL_TOWER], 3)
-    assert bonfires.set_lit([CARDINAL_TOWER], False) == 1
-    assert bonfires.intensities()[CARDINAL_TOWER] == 3
-
-
-def test_set_intensity_rejects_out_of_range():
-    with pytest.raises(ValueError):
-        Bonfires(_data()).set_intensity([CARDINAL_TOWER], 9)
 
 
 def test_ng_plus_cycle_adds_to_intensity():
@@ -75,11 +66,7 @@ def test_ng_plus_cycle_adds_to_intensity():
     assert _byte(data, 0x300, CARDINAL_TOWER) == 3
     with pytest.raises(ValueError):
         bonfires.set_intensity([CARDINAL_TOWER], 1)
-
-
-def test_intensity_stops_at_eight():
-    data = _data()
-    data[ARRAY + 0x300 + IDS.index(CARDINAL_TOWER)] = 5
+    # Intensity stops at eight
     assert Bonfires(data, cycle=6).intensities()[CARDINAL_TOWER] == 8
 
 
@@ -96,22 +83,16 @@ def _rested_data() -> bytearray:
     return data
 
 
-def test_last_rested_reads_the_bonfire_id():
-    assert Bonfires(_rested_data()).last_rested == CARDINAL_TOWER
-
-
-def test_set_last_rested_writes_map_and_bonfire_and_lights_it():
+def test_last_rested():
     data = _rested_data()
     bonfires = Bonfires(data, bonfire_maps=MAPS)
+    assert bonfires.last_rested == CARDINAL_TOWER
     assert bonfires.set_last_rested(MAJULA)
     assert struct.unpack_from("<3I", data, ARRAY + 0xC00) == (0x0A040000, MAJULA, 0)
     assert bonfires.last_rested == MAJULA
     assert bonfires.lit()[MAJULA] is True
     assert not bonfires.set_last_rested(MAJULA)
-
-
-def test_set_last_rested_needs_the_bonfire_map():
-    bonfires = Bonfires(_rested_data(), bonfire_maps=MAPS)
+    # A bonfire without a known map cannot be set
     assert not bonfires.can_set_last_rested(2650)
     with pytest.raises(ValueError):
         bonfires.set_last_rested(2650)

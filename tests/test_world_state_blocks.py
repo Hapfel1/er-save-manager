@@ -40,13 +40,9 @@ def test_fixture_blocks_decode_byte_identical(sanitized_save_readonly):
     assert decoded > 0
 
 
-def test_chr_entry_fields():
-    entry = WorldChrEntry((1 << 30) | (4311 << 16) | (9002 << 2) | 3)
-    assert entry.part_name == "c4311_9002"
-    assert entry.state == 3
-
-
 def test_chr_record_layout():
+    entry = WorldChrEntry((1 << 30) | (4311 << 16) | (9002 << 2) | 3)
+    assert (entry.part_name, entry.state) == ("c4311_9002", 3)
     chr_data = WorldAreaChrData(
         version=0x21042700,
         records=[
@@ -67,14 +63,9 @@ def test_chr_record_layout():
     assert decoded.records[0].entries[0].part_name == "c4311_9002"
 
 
-def test_geom_entry_fields():
-    entry = WorldGeomEntry((9000 << 15) | 2, 10099691)
-    assert entry.part_name == "AEG099_691_9000"
-    assert entry.aeg_id == 99691
-    assert entry.state == 2
-
-
 def test_geom_round_trip_and_rejects_bad_size():
+    entry = WorldGeomEntry((9000 << 15) | 2, 10099691)
+    assert (entry.part_name, entry.aeg_id, entry.state) == ("AEG099_691_9000", 99691, 2)
     geom = WorldGeomData(
         magic=b"FOEG",
         version=0x21042600,

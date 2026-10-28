@@ -20,36 +20,26 @@ def codes(relic):
     return {i.code for i in rr.check(*relic)}
 
 
-@pytest.mark.parametrize("relic", [GRAND, DEEP, FIXED])
-def test_game_relics_pass_and_keep_their_order(relic):
-    assert rr.check(*relic) == []
-    assert rr.canonical(relic[1], relic[2]) == (relic[1], relic[2])
-
-
-def test_canonical_restores_game_order_with_curse_rows():
-    rid, effects, curses = DEEP
-    shuffled = (effects[::-1], curses[::-1])
-    assert rr.canonical(*shuffled) == (effects, curses)
-
-
-def test_two_hero_effects_share_a_compatibility_group():
-    rid = GRAND[0]
-    heroes = sorted(
-        e for e in rr.rollable_effects(rid) if rr._effect_info(e)[0] == 900
-    )[:2]
-    assert codes((rid, [*heroes, GRAND[1][2]], [E, E, E])) == {"compat"}
-
-
-def test_effect_count_follows_slot_count():
-    rid, effects, curses = GRAND
-    assert codes((rid, effects[:2], curses)) == {"count"}
+def test_game_relics_pass_and_keep_their_order():
+    for relic in (GRAND, DEEP, FIXED):
+        assert rr.check(*relic) == []
+        assert rr.canonical(relic[1], relic[2]) == (relic[1], relic[2])
+    _rid, effects, curses = DEEP
+    # Curse rows move with their effects
+    assert rr.canonical(effects[::-1], curses[::-1]) == (effects, curses)
 
 
 def test_normal_relic_rules():
-    rid, effects, _ = GRAND
+    rid, effects, curses = GRAND
+    heroes = sorted(
+        e for e in rr.rollable_effects(rid) if rr._effect_info(e)[0] == 900
+    )[:2]
+    # Two hero effects share compatibility group 900
+    assert codes((rid, [*heroes, effects[2]], curses)) == {"compat"}
+    assert codes((rid, effects[:2], curses)) == {"count"}
     assert codes((rid, effects, [6830400, E, E])) == {"curse"}
     deep_only = DEEP[1][2]
-    assert codes((rid, [effects[0], effects[1], deep_only], [E, E, E])) == {"pool"}
+    assert codes((rid, [effects[0], effects[1], deep_only], curses)) == {"pool"}
 
 
 def test_deep_curse_pairing():
@@ -59,14 +49,11 @@ def test_deep_curse_pairing():
     assert codes((rid, effects, [other_curse, E, curses[2]])) == {"pairing"}
 
 
-def test_fixed_relic_effects():
+def test_fixed_and_placeholder_relics():
     rid = FIXED[0]
     assert rr.relic_kind(rid) == "fixed"
     assert prepare_relic(rid, [E, E, E], [E, E, E]) == (FIXED[1], FIXED[2])
     assert codes((rid, [10000, 7000502, E], [E, E, E])) == {"fixed"}
-
-
-def test_placeholder_relic_is_unobtainable():
     assert rr.relic_kind(30000) == "unobtainable"
     with pytest.raises(ValueError):
         validate_relic(30000, [E, E, E], [E, E, E])
