@@ -69,7 +69,7 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
                 ("Camera Auto Wall Recovery", "camera_auto_wall_recovery", 0, 1),
                 ("Reset Camera Y Axis", "reset_camera_y_axis", 0, 1),
                 ("Camera Auto Rotation", "camera_auto_rotation", 0, 1),
-                ("Controller Vibration", "controller_vibration", 0, 1),
+                ("Controller Vibration", "controller_vibration", 0, 10),
                 ("Toggle Auto Lock-On", "toggle_auto_lockon", 0, 1),
                 ("Manual Attack Aim", "manual_attack_aim", 0, 1),
                 ("Autotarget", "autotarget", 0, 1),
