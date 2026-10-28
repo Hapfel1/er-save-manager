@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import threading
 import tkinter as tk
+import unicodedata
+from collections import Counter
 from collections.abc import Callable
 from concurrent.futures import Future
 from dataclasses import dataclass
-from functools import cache
+from functools import cache, lru_cache
 from pathlib import Path
 
 import customtkinter as ctk
@@ -392,6 +395,24 @@ def _short_name(name: str) -> str:
     """Name tag text: the part before a title ("Sir Gideon Ofnir, the
     All-Knowing" -> "Sir Gideon Ofnir")."""
     return name.split(", ")[0]
+
+
+@lru_cache(maxsize=16384)
+def _fold(text: str) -> str:
+    """Lowercase search form without accents or punctuation: "Kalé" matches
+    kale, "Godrick's" godricks, "Mt. Gelmir" mt gelmir."""
+    text = unicodedata.normalize("NFKD", text.casefold().replace("'", ""))
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    return " ".join(re.sub(r"[^0-9a-z_]+", " ", text).split())
+
+
+def _matches(words: list[str], text: str) -> bool:
+    """Every query word appears in the folded text, in any order. A number
+    matches whole numbers only, so 1 does not find Golden Rune [10]."""
+    padded = f" {text} "
+    return all(
+        f" {word} " in padded if word.isdigit() else word in text for word in words
+    )
 
 
 def _place_merchants(convergence: bool) -> list[_Pin]:
@@ -1317,6 +1338,13 @@ class MapWindow:
             if p
         ]
         self._tiles = {p.loc.map_id_str: p for p in self._placed if p.rect is not None}
+        # (map, point, grace flag) -> (region, grace) of a pin, see _pin_place
+        self._pin_places: dict[tuple, tuple[str, str]] = {}
+        self._graces_by_flag = {
+            g.loc.flag_id: g.loc
+            for g in self._placed
+            if g.loc.tile_type == "grace" and g.loc.flag_id
+        }
         self._graces_by_map: dict[int, list[_Placed]] = {}
         for g in self._placed:
             if g.loc.tile_type == "grace" and g.point is not None:
@@ -1805,7 +1833,7 @@ class MapWindow:
 
     def _build_location_list(self, left):
         pad = {"padx": 10}
-        ctk.CTkLabel(left, text="Locations", font=ds.BOLD, anchor="w").pack(
+        ctk.CTkLabel(left, text="Search", font=ds.BOLD, anchor="w").pack(
             fill=tk.X, pady=(12, 4), **pad
         )
         self._search_var = tk.StringVar()
@@ -1929,8 +1957,9 @@ class MapWindow:
         )
 
     def _pin_rows(self, kind: str) -> list[tuple[str, str, _Pin]]:
-        """(group, label, pin) rows of the Bosses, NPCs or Items list.
-        Bosses group by region, items by their nearest grace's region."""
+        """(group, label, pin) rows of the Bosses, NPCs, Merchants or Items
+        list. Bosses group by region, NPCs and items by their nearest grace's
+        region, merchants are ungrouped."""
         if kind == _FILTER_BOSSES:
             # Remembrance and Great Rune bosses also get a group of their own
             rows = [
@@ -1952,10 +1981,15 @@ class MapWindow:
             return [("", p.merchant.name, p) for p in self._merchant_pins]
         if kind == _FILTER_NPCS:
             rows = []
+            # An NPC with two parts at one grace is listed once
+            seen = set()
             for p in self._npc_pins(all_maps=True):
+                place = self._pin_place(p)
                 for spot in p.npcs:
-                    state = " (dead)" if spot.dead else ""
-                    rows.append(("", spot.name + state, p))
+                    label = spot.name + (" (dead)" if spot.dead else "")
+                    if (label, place) not in seen:
+                        seen.add((label, place))
+                        rows.append((place[0] or "Other", label, p))
             return rows
         regions = {
             g.loc.flag_id: g.loc.name.partition(" - ")[0]
@@ -1967,6 +2001,77 @@ class MapWindow:
             for p in self._pickup_pins
             if self._pickup_kinds[p.pickup.flag_id] in self._pickup_types
         ]
+
+    def _pin_place(self, pin: _Pin) -> tuple[str, str]:
+        """(region, grace name) of the pin's grace: the stored nearest grace
+        of a merchant or pickup, else the nearest grace on its map."""
+        flag = (
+            pin.merchant.grace_flag
+            if pin.merchant is not None
+            else pin.pickup.grace_flag
+            if pin.pickup is not None
+            else 0
+        )
+        key = (pin.map_no, pin.point, flag)
+        place = self._pin_places.get(key)
+        if place is None:
+            grace = self._graces_by_flag.get(flag)
+            if grace is None:
+                near = self._nearest_grace(pin.map_no, pin.point)
+                grace = near.loc if near else None
+            region = pin.boss.region if pin.boss is not None else ""
+            if grace is not None:
+                place = (region or self._grace_region(grace), self._grace_short(grace))
+            else:
+                place = (region, "")
+            self._pin_places[key] = place
+        return place
+
+    def _pin_search_text(
+        self, group: str, label: str, pin: _Pin, stock: bool = False
+    ) -> str:
+        """Folded text a search matches for one list row: label, group,
+        region and grace, plus a boss's drop, an item's source and, with
+        stock, a merchant's lineup."""
+        parts = [group, label, *self._pin_place(pin)]
+        if pin.boss is not None:
+            parts.append(pin.boss.face)
+        elif pin.merchant is not None and stock:
+            parts.extend(i.name for i in pin.merchant.lineup)
+        elif pin.pickup is not None:
+            parts.append(SOURCE_LABELS.get(pin.pickup.source, ""))
+        return _fold(" ".join(parts))
+
+    def _unique_labels(
+        self, rows: list[tuple[str, str, _Pin]], grouped: bool
+    ) -> list[tuple[str, str, _Pin]]:
+        """Rows whose label repeats in its group (in the whole list when not
+        grouped) get the region of their grace, then the grace too when the
+        region is shown already or still repeats."""
+
+        def key(row):
+            return (row[0] if grouped else "", row[1])
+
+        counts = Counter(key(r) for r in rows)
+        out = []
+        for group, label, pin in rows:
+            if counts[key((group, label, pin))] > 1:
+                region, _grace = self._pin_place(pin)
+                if region and not (grouped and group):
+                    label = f"{label} ({region})"
+            out.append((group, label, pin))
+        counts = Counter(key(r) for r in out)
+        final = []
+        for (group, label, pin), (_g, base, _p) in zip(out, rows, strict=True):
+            if counts[key((group, label, pin))] > 1:
+                region, grace = self._pin_place(pin)
+                if grace:
+                    if label == base:
+                        label = f"{base} ({grace})"
+                    else:
+                        label = f"{base} ({region}, {grace})"
+            final.append((group, label, pin))
+        return final
 
     def _pin_list_icon(self, pin: _Pin):
         if pin.obj is not None:
@@ -2002,12 +2107,16 @@ class MapWindow:
         taken = bool(self._pickup_collected(pin.pickup))
         return self._icons.glow(_PICKUP_MAX, taken)
 
-    def _fill_pin_list(self, kind: str, query: str):
+    def _fill_pin_list(self, kind: str, words: list[str]):
         rows = [
             r
-            for r in self._pin_rows(kind)
+            for r in self._unique_labels(self._pin_rows(kind), grouped=True)
             if (not self._this_map_var.get() or r[2].map_no == self._map_no)
-            and (not query or query in r[1].lower() or query in r[0].lower())
+            # A search lists each Remembrance boss once, under its region
+            and not (words and r[0] == _MAJOR_GROUP)
+            and _matches(
+                words, self._pin_search_text(*r, stock=kind == _FILTER_MERCHANTS)
+            )
         ]
         rows.sort(key=lambda r: (r[0] != _MAJOR_GROUP, r[0].lower(), r[1].lower()))
         self._list_rows = [r[2] for r in rows]
@@ -2020,7 +2129,7 @@ class MapWindow:
                 parent = groups.get(group)
                 if parent is None:
                     parent = groups[group] = f"r:{group}"
-                    tree.insert("", "end", iid=parent, text=group, open=bool(query))
+                    tree.insert("", "end", iid=parent, text=group, open=bool(words))
             tree.insert(
                 parent,
                 "end",
@@ -2040,13 +2149,13 @@ class MapWindow:
         if self._list_job is not None:
             self._win.after_cancel(self._list_job)
             self._list_job = None
-        query = self._search_var.get().strip().lower()
+        words = _fold(self._search_var.get()).split()
         kind = self._filter_var.get()
         if kind in _PIN_FILTERS:
-            self._fill_pin_list(kind, query)
+            self._fill_pin_list(kind, words)
             return
         if kind == _FILTER_DONE:
-            self._fill_done_list(query)
+            self._fill_done_list(words)
             return
         wanted = {
             _FILTER_GRACES: ("grace",),
@@ -2058,7 +2167,7 @@ class MapWindow:
             for p in self._placed
             if (wanted is None or p.loc.tile_type in wanted)
             and (not self._this_map_var.get() or p.map_no == self._map_no)
-            and (not query or query in p.loc.name.lower() or query in p.loc.map_id_str)
+            and _matches(words, _fold(f"{p.loc.name} {p.loc.map_id_str}"))
         ]
         rows.sort(key=lambda p: p.loc.name.lower())
         self._list_rows = rows
@@ -2075,7 +2184,7 @@ class MapWindow:
                 parent = groups.get(region)
                 if parent is None:
                     parent = groups[region] = f"r:{region}"
-                    tree.insert("", "end", iid=parent, text=region, open=bool(query))
+                    tree.insert("", "end", iid=parent, text=region, open=bool(words))
             if not sep:
                 name = region
             if p.loc.tile_type == "grace":
@@ -2086,26 +2195,26 @@ class MapWindow:
                 image = ""
             tree.insert(parent, "end", iid=str(n), text=f" {name}", image=image)
         if kind == _FILTER_ALL:
-            self._add_pin_groups(query)
+            self._add_pin_groups(words)
 
-    def _add_pin_groups(self, query: str):
+    def _add_pin_groups(self, words: list[str]):
         """All also lists bosses, NPCs, merchants and items, each under a
         group row that opens while searching."""
         tree = self._loc_list
         for kind in _PIN_FILTERS:
+            pin_rows = [r for r in self._pin_rows(kind) if r[0] != _MAJOR_GROUP]
             rows = [
                 r
-                for r in self._pin_rows(kind)
-                if r[0] != _MAJOR_GROUP
-                and (not self._this_map_var.get() or r[2].map_no == self._map_no)
-                and (not query or query in r[1].lower() or query in r[0].lower())
+                for r in self._unique_labels(pin_rows, grouped=False)
+                if (not self._this_map_var.get() or r[2].map_no == self._map_no)
+                and _matches(words, self._pin_search_text(*r))
             ]
             if not rows:
                 continue
             rows.sort(key=lambda r: r[1].lower())
             group = f"r:all:{kind}"
             tree.insert(
-                "", "end", iid=group, text=f"{kind} ({len(rows)})", open=bool(query)
+                "", "end", iid=group, text=f"{kind} ({len(rows)})", open=bool(words)
             )
             for _region, label, pin in rows:
                 tree.insert(
@@ -3210,7 +3319,7 @@ class MapWindow:
             self._item_photos[key] = ImageTk.PhotoImage(_bar_image(pct))
         return self._item_photos[key]
 
-    def _fill_done_list(self, query: str):
+    def _fill_done_list(self, words: list[str]):
         tree = self._loc_list
         tree.delete(*tree.get_children())
         comp = self._completion()
@@ -3220,7 +3329,7 @@ class MapWindow:
                 "", "end", iid="r:none", text="Load a character to see completion"
             )
             return
-        regions = sorted(r for r in comp if not query or query in r.lower())
+        regions = sorted(r for r in comp if _matches(words, _fold(r)))
         self._list_rows = regions
         for n, region in enumerate(regions):
             pct = self._percent(comp[region])

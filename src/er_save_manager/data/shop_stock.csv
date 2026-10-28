@@ -561,28 +561,28 @@ row,flag,quantity,item,price,merchant,map,grace_flag,dlc,name
 102724,370240,1,goods:2002908,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Lord of Frenzied Flame
 102725,370250,1,goods:2002909,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of the Mother of Fingers
 102726,370260,1,goods:2002910,0,Walking Mausoleum,m60_09_11_02,76226,0,Remembrance of Putrescence
-102800,380000,1,goods:2950,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Grafted
-102801,380010,1,goods:2951,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Starscourge
-102802,380020,1,goods:2952,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Omen King
-102803,380030,1,goods:2953,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Blasphemous
-102804,380040,1,goods:2954,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Rot Goddess
-102805,380050,1,goods:2959,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Full Moon Queen
-102806,380060,1,goods:2955,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Blood Lord
-102807,380070,1,goods:2002907,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of a God and a Lord
-102808,380080,1,goods:2002901,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Impaler
-102810,380100,1,goods:2956,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Black Blade
-102811,380110,1,goods:2957,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of Hoarah Loux
-102812,380120,1,goods:2958,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Dragonlord
-102813,380130,1,goods:2960,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Lichdragon
-102814,380140,1,goods:2961,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Fire Giant
-102815,380150,1,goods:2962,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Regal Ancestor
-102816,380160,1,goods:2963,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Elden Remembrance
-102817,380170,1,goods:2964,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Naturalborn
-102818,380180,1,goods:2002900,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Wild Boar Rider
-102820,380200,1,goods:2002902,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Shadow Sunflower
-102821,380210,1,goods:2002903,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Twin Moon Knight
-102822,380220,1,goods:2002904,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Saint of the Bud
-102823,380230,1,goods:2002905,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Dancing Lion
-102824,380240,1,goods:2002908,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Lord of Frenzied Flame
-102825,380250,1,goods:2002909,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of the Mother of Fingers
-102826,380260,1,goods:2002910,0,Wandering Mausoleum Corpse,m61_50_45_00,76906,1,Remembrance of Putrescence
+102800,380000,1,goods:2950,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Grafted
+102801,380010,1,goods:2951,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Starscourge
+102802,380020,1,goods:2952,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Omen King
+102803,380030,1,goods:2953,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Blasphemous
+102804,380040,1,goods:2954,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Rot Goddess
+102805,380050,1,goods:2959,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Full Moon Queen
+102806,380060,1,goods:2955,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Blood Lord
+102807,380070,1,goods:2002907,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of a God and a Lord
+102808,380080,1,goods:2002901,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Impaler
+102810,380100,1,goods:2956,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Black Blade
+102811,380110,1,goods:2957,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of Hoarah Loux
+102812,380120,1,goods:2958,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Dragonlord
+102813,380130,1,goods:2960,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Lichdragon
+102814,380140,1,goods:2961,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Fire Giant
+102815,380150,1,goods:2962,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Regal Ancestor
+102816,380160,1,goods:2963,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Elden Remembrance
+102817,380170,1,goods:2964,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Naturalborn
+102818,380180,1,goods:2002900,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Wild Boar Rider
+102820,380200,1,goods:2002902,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Shadow Sunflower
+102821,380210,1,goods:2002903,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Twin Moon Knight
+102822,380220,1,goods:2002904,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Saint of the Bud
+102823,380230,1,goods:2002905,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Dancing Lion
+102824,380240,1,goods:2002908,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Lord of Frenzied Flame
+102825,380250,1,goods:2002909,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of the Mother of Fingers
+102826,380260,1,goods:2002910,0,Remembrance Duplication Corpse,m61_50_45_00,76906,1,Remembrance of Putrescence
