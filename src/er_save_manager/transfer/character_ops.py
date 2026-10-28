@@ -775,7 +775,7 @@ class CharacterOperations:
 
         body_type = None
         if profile and profile.body_type is not None:
-            body_type = "Type A" if profile.body_type == 0 else "Type B"
+            body_type = "Type A" if profile.body_type == 1 else "Type B"
 
         metadata = {
             "name": player_data.character_name,

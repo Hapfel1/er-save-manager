@@ -219,11 +219,11 @@ buffer: it is never read by the game and absorbs size changes of the blocks befo
 | 0x90 | 4 | unk0x90 | character type, 0 |
 | 0x94 | 32 | character_name | UTF-16LE, 16 characters |
 | 0xB4 | 2 | terminator | |
-| 0xB6 | 1 | body_type | body type |
+| 0xB6 | 1 | body_type | 0 Type B, 1 Type A |
 | 0xB7 | 1 | archetype | starting class |
 | 0xB8 | 1 | unk0xb8 | "appearance", 0 |
 | 0xB9 | 1 | unk0xb9 | |
-| 0xBA | 1 | voice_type | |
+| 0xBA | 1 | voice_type | 0-5: Young 1, Young 2, Mature 1, Mature 2, Aged 1, Aged 2 |
 | 0xBB | 1 | gift | starting keepsake |
 | 0xBC | 1 | unk0xbc | |
 | 0xBD | 1 | memory_stone_count | Memory Stones used, 0-8 |

@@ -1254,7 +1254,7 @@ class FacePreset:
             return table[i] if 0 <= i < len(table) else default
 
         base = data.get("base", {})
-        body_type = 1 if base.get("body_type", "A") == "B" else 0
+        body_type = 0 if base.get("body_type", "A") == "B" else 1
 
         preset = cls()
         preset.magic = b"FACE"
@@ -1331,7 +1331,7 @@ class FacePreset:
         )
         preset.unk0xb1 = bytes([128, 128])
         preset.pad = bytes(10)
-        preset.unk0x28 = 1 if body_type == 1 else 3
+        preset.unk0x28 = 1 if body_type == 0 else 3
 
         our_unk0x00 = [0] * 20
         our_unk0x00[8] = 0x01
@@ -1364,7 +1364,7 @@ class FacePreset:
         preset.brow_white_hairs = 0
 
         fh = data.get("facial_hair", {})
-        beard_list = _BEARD_F if body_type == 1 else _BEARD_M
+        beard_list = _BEARD_F if body_type == 0 else _BEARD_M
         preset.beard_model = _idx(beard_list, int(fh.get("beard", 1)))
         preset.stubble = int(fh.get("stubble", 0))
         preset.beard_color_r = preset.hair_color_r
