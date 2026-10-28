@@ -110,6 +110,7 @@ class GameProcessMonitor:
 
     def __init__(self):
         self._running = False
+        self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._on_backup_created: Callable[[str, Path], None] | None = None
         # Timestamp of the last interval backup per game key, reset on each launch
@@ -129,11 +130,13 @@ class GameProcessMonitor:
         if self._running:
             return
         self._running = True
+        self._stop_event.clear()
         self._thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self._thread.start()
 
     def stop(self) -> None:
         self._running = False
+        self._stop_event.set()
         if self._thread:
             self._thread.join(timeout=2.0)
             self._thread = None
@@ -278,7 +281,7 @@ class GameProcessMonitor:
             except Exception as e:
                 print(f"Process monitor error: {e}")
 
-            time.sleep(self.CHECK_INTERVAL)
+            self._stop_event.wait(self.CHECK_INTERVAL)
 
 
 def show_auto_backup_first_run_dialog(
