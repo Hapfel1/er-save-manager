@@ -348,6 +348,14 @@ If fix causes issues:
 3. Verify game files in Steam
 4. Run the [Troubleshooter](troubleshooting-tab.md)
 
+### Save won't open
+
+- **Incomplete Save File**: an Elden Ring save cut off inside its last block (regulation data)
+  opens after a prompt, since every character is still whole. The file keeps its length when
+  written. A file cut off anywhere earlier is refused
+- A file from another game, or a file that is not a save, is refused on load with a message
+  naming the problem
+
 ### Fix applied but issue persists
 
 **Possible causes:**

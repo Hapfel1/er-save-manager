@@ -262,7 +262,7 @@ Created before every character edit:
 
 ### Apply All
 
-The **Character** bar under the file row picks the character for every tab that edits one, and the first character is loaded when a save opens. All edits are staged until they are applied. The unapplied-changes bar lists every page with edits, across all tabs:
+The **Character** bar under the file row picks the character for every tab that edits one, and the first character is loaded when a save opens. All edits are staged until they are applied. The unapplied-changes bar lists every page with edits, across all tabs. It names the changed fields (for example "3 unapplied changes: Name, Vigor, Mind"); **Review** opens every change with its old and new value and a **Show** link to its page.
 
 1. Review the list in the bar
 2. Click **Apply All**

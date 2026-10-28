@@ -18,7 +18,8 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Equipment Editor**: Edit your current equipped items, save and share loadouts
 - **Appearance Editor**: View, export and import Presets, edit eye overrides (Frenzied Flame, Bloody Finger, Dragon Communion eyes)
 - **Community Preset Browser**: Browse, download, and contribute character appearance presets with likes and download tracking
-- **World State / Teleportation**: 875 known safe locations to warp to as well as custom coordinate teleportation. Interactive world map for teleporting, unlocking graces, areas and whole maps, and editing map markers and beacons, with the Convergence map on Convergence saves
+- **World State / Teleportation**: 875 known safe locations to warp to as well as custom coordinate teleportation. Interactive world map for teleporting to any spot, unlocking graces, areas and whole maps, and editing map markers and beacons, with the Convergence map on Convergence saves
+- **World Map Progress**: Item pickups, NPCs, bosses, merchants, quest routes, summoning pools, imp seals and paintings on the map, with respawn, revive, kill, restock and completion per region
 - **Message Manager**: List, protect and delete the character's own and cached messages
 - **Item History**: Legendary trophy progress and every item type the character has picked up
 - **SteamID Patcher**: Transfer saves between Steam accounts
@@ -38,9 +39,9 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Online Ban Warning**: Per-game warning before editing vanilla saves, listing which edits can get you banned online
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS (Dark Souls Remastered: Backup Manager only, its saves hold no SteamID)
 - **DSR**: Stats Editing, Covenants, Equipment and Attunement, Appearance, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Supports SeamlessCoop
-- **DS3**: Stats Editing, Equipment and Attunement, Appearance, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Bonfires, Gestures, NG+, Supports Convergence, Cinders and SeamlessCoop
+- **DS3**: Stats Editing, Equipment and Attunement, Appearance, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Quest Progress, Bonfires, Gestures, NG+, PS4 saves, Supports Convergence, Cinders and SeamlessCoop
 - **Nightreign**: Relic spawning and editing with game icons and the game's roll rules, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
-- **DS2**: Stats Editing, Equipment and Attunement, Appearance, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Boss Editing, NPC Revival, Supports SeamlessCoop
+- **DS2**: Stats Editing, Equipment and Attunement, Appearance, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Doors, Item Pickup Respawn, Event Flags, Boss Editing, NPC Revival, Quest Progress, Supports SeamlessCoop
 
 ### Work in Progress
 
@@ -179,9 +180,13 @@ Automatically detects issues with your game installation, your save file and any
 - Display of current location
 - 875 known locations to teleport to, including every Site of Grace
 - Interactive world map (Lands Between, Underground, Realm of Shadow) for teleporting, with the Convergence map, graces and locations on Convergence saves
-- Lock and unlock graces, unlock a map area or a whole map with its map pieces and play regions
+- Teleport to any spot picked on the map (snapped to the floor, with a choice between stacked floors), or to a pickup, boss, NPC or the bloodstain
+- Lock and unlock graces, unlock a map area or a whole map, picking which map pieces and graces
+- Warnings before teleports into boss arenas, to graces that only appear after their boss, into the DLC without owning it and into the Ashen Capital early on vanilla saves
+- Map layers for item pickups, NPCs, bosses, merchants, quest steps, summoning pools, imp seals and paintings, read from the character's flags: respawn or collect pickups, revive or calm NPCs, kill or respawn bosses, restock merchants, move a quest to a step
+- Completion per region, exportable as a text file
 - Map markers and beacons: place, move, delete, export, import and copy to another character
-- Custom Coordinate Teleportation
+- Custom Coordinate Teleportation, checked against the game's map data with a snap to the nearest floor
 - "Move Bloodstain to Player" function
 - Message Manager: list, protect and delete own and cached messages
 - Item History: Legendary trophy progress and every item type the character has picked up
@@ -190,6 +195,7 @@ Automatically detects issues with your game installation, your save file and any
 
 - Transfer saves between Steam accounts
 - Patch the SteamID of the save file using ID or custom profile link resolution
+- Accepts SteamID64, SteamID3, SteamID2 and Steam32 IDs
 
 ### Event Flags
 
@@ -213,7 +219,7 @@ Automatically detects issues with your game installation, your save file and any
 
 ### NPC Quest Tracker
 
-- Check NPC quest progress
+- Check NPC quest progress, including the Shadow of the Erdtree NPCs
 - Modify steps, reset progress
 
 ### Gestures
@@ -236,6 +242,7 @@ Automatically detects issues with your game installation, your save file and any
 - One-click restore with confirmation
 - Function for Auto-Backup Creation on Game Launch and at an interval while the game runs
 - Lock backups to keep them from being pruned
+- Restore a save that was deleted or moved from its backup folder
 
 ### Backup Manager and SteamID Patcher for other Fromsoftware Games
 
@@ -257,6 +264,7 @@ Automatically detects issues with your game installation, your save file and any
 - Event Flags (NPC states, world flags, flag lookup)
 - Boss Revival
 - NPC Revival (kill or revive, quest progress kept)
+- Quest Progress: set each NPC's quest state the way the game's events do
 - Bonfire Lighting (light/unlight, keeps kindling)
 - NG+ cycle editing
 - Item Spawning that stores items the way the game does, with item data, upgrade caps and icons read from the game files
@@ -281,6 +289,9 @@ Automatically detects issues with your game installation, your save file and any
 - Equipped items are protected from removal, cut content is hidden by default and confirmed before spawning
 - Boss Revival (all bosses including DLC)
 - NPC Revival (revive or kill)
+- Quest Progress: set each NPC's quest state the way the game's events do
+- Matchmaking weapon level shown in Stats and kept in step with upgrade edits
+- PS4 saves (decrypted `userdata` folders), including transfer between PS4 and PC
 - Bonfires (light/unlight by area)
 - Gestures (unlock/lock)
 - NG+ cycle editing
@@ -312,7 +323,10 @@ Automatically detects issues with your game installation, your save file and any
 - Character Management
 - Bonfire Editing (light/unlight, bonfire intensity including the NG+ cycle)
 - Boss Editing: check boss states, repair bosses killed in another world that block Bonfire Ascetic use, respawn, kill and set defeat counts
+- Boss respawn also resets the spawn-once enemies of group fights, so the fight can be won again
 - NPC Revival and calming hostile NPCs
+- Quest Progress: set or undo each NPC's quest steps
+- World Flags: open or close doors, respawn item pickups and chests, read and set event flags
 - Last rested bonfire
 - Seamless Co-op names up to 31 characters
 

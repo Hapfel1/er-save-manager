@@ -1,6 +1,6 @@
 # Dark Souls II
 
-Save editing for Dark Souls II: Scholar of the First Sin: stats, equipment and attunement, inventory with visual item picker and editor, appearance, Souls Planner build import, bonfires, bosses and NPCs.
+Save editing for Dark Souls II: Scholar of the First Sin: stats, equipment and attunement, inventory with visual item picker and editor, appearance, Souls Planner build import, bonfires, doors, item pickup respawn, event flags, bosses, NPCs and quest progress.
 
 ## Overview
 
@@ -11,6 +11,7 @@ DS2 support uses these tabs:
 - Character Editor (Stats, Equipment and Inventory sub-tabs)
 - Appearance
 - World State (bonfires)
+- World Flags (doors, item pickups, event flags)
 - NPCs & Bosses
 - SteamID Patcher
 - Backup Manager (top-level button)
@@ -22,7 +23,7 @@ DS2 support uses these tabs:
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
 
-Edits are staged until they are applied. The unapplied-changes bar lists the pages with edits: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
+Edits are staged until they are applied. The unapplied-changes bar names the changed fields, and **Review** lists each one with its old and new value: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -93,17 +94,37 @@ Light or unlight bonfires, set their intensity (1 to 8), or **Unlock All Bonfire
 
 ---
 
+## World Flags
+
+Each page has an **Area** filter. A backup is made before every write.
+
+- **Doors** - every door, gate and bridge the game opens with a key, lever or event, with its
+  state. **Open Selected** sets the door's event flag and its open state, as the game does when it
+  is unlocked; the key is not used up. **Close Selected** returns both to their initial values.
+  **Partly open** means only one of the two is set.
+- **Item Pickups** - the item pickups and chest contents of every area the character has entered
+  (the game records an area's pickups on its first visit), taken or in place. **Respawn Selected**
+  and **Respawn All in Area** put taken pickups back and close their chests, so they can be picked
+  up again. Enemy drops are not listed.
+- **Event Flags** - the named flags (doors and fog gates) by area, with **Set Selected** and
+  **Clear Selected**. Any other flag can be read with the **Flag id** field: **Check** shows its
+  state, **Set** and **Clear** change it.
+
+---
+
 ## NPCs & Bosses
 
 ### NPCs
 
 Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NPC's dead and hostile flags and the kill counts that keep a killed NPC from spawning; **Calm** clears only the hostile flags. Quest progress is left as it is.
 
-**Quest Progress** lists each NPC's quest steps (moves to Majula, places they can appear, rescues, rewards) and shows which are done. **Apply** sets one step. A backup is made first.
+**Quest Progress** lists each NPC's quest steps (moves to Majula, places they can appear, rescues, rewards) and shows which are done. **Apply** sets one step; **Undo** clears an applied step. DS2 steps do not depend on each other, so each one is set on its own. A backup is made first.
 
 ### Bosses
 
 Lists each boss with its state, defeat count and the Ascetic bonfire of its area. **Respawn Selected** returns defeated bosses to their arenas, **Kill Selected** marks them defeated and **Set Defeats** sets the defeat count. **Repair Selected** and **Repair All Invalid** fix boss records that block Bonfire Ascetic use, such as bosses killed in another player's world.
+
+Some fights include enemies that only spawn a limited number of times (for example in the Prowling Magus and Congregation fight). Respawn also resets their kill counts, so they return with the boss; a boss whose adds are counted as killed while the boss is alive is listed as invalid, and Repair resets them.
 
 ---
 

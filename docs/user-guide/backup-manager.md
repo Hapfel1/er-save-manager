@@ -110,9 +110,14 @@ Replaces current save with selected backup.
 
 **Before restore:**
 
-- Current save automatically backed up
+- Current save automatically backed up (skipped when the save file no longer exists)
 - Shows characters that will be replaced
 - Requires confirmation
+- Refused while the game is running
+- The backup being restored is never pruned by the backup limit
+
+**Deleted save:** if the loaded save was deleted or moved, the editor shows a notice, and the
+Backup Manager still opens from its backup folder; restoring a backup recreates the file.
 
 **After restore:**
 
@@ -172,6 +177,17 @@ A Dark Souls III PS4 save is a folder of `userdata` files. Its backups go to `us
 - Check file permissions
 - Restore from earlier backup
 
+### "Backup list is empty but backup files exist"
+
+The backup list is stored in `metadata.json` in the backup folder. When it is unreadable or has
+broken entries, the list is rebuilt from the backup files in the folder and the problem is written
+to `errors.log` (see [Settings](settings.md#how-settings-are-saved)).
+
+### "Auto-backup failed"
+
+A failed auto-backup (save missing, backup folder not writable) shows an error notice naming the
+game and is written to `errors.log`.
+
 ### "Out of disk space"
 
 **Cause:** Too many backups
@@ -182,6 +198,8 @@ A Dark Souls III PS4 save is a folder of `userdata` files. Its backups go to `us
 - Reduce retention count
 - Move backups to external drive
 - Delete unnecessary backups
+
+Backups are written to a temporary file first, so a backup cut short by a full disk is removed instead of listed as valid.
 
 ---
 

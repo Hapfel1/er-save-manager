@@ -24,7 +24,7 @@ DSR saves hold no SteamID, so there is no SteamID Patcher.
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
 
-Edits are staged until they are applied. The unapplied-changes bar lists the pages with edits: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
+Edits are staged until they are applied. The unapplied-changes bar names the changed fields, and **Review** lists each one with its old and new value: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -78,6 +78,7 @@ The item spawner is on the left and the character's inventory on the right. The 
 - **Visual Picker** shows the spawn list as an icon grid.
 - **Editing**: quantity, upgrade level and infusion, removal and **Repair All**. Select several items (Ctrl or Shift click) to edit them in one go; each item is capped at its own limits. Equipped items cannot be removed.
 - **Visual Editor** shows the inventory as an icon grid with the same editing options.
+- **Catalysts and talismans** cannot be upgraded (only the Pyromancy Flame can). A save where an earlier version of this editor gave a catalyst or talisman an upgrade level, which the game shows as `?WikiName?`, is repaired on load after a backup, and a dialog lists the repaired characters.
 - **Cut content** (for example the Mage Smith Coat and the Elite Cleric Helm and Armor) is hidden by default, shown by **Cut content** or by searching for it by name, and asks for confirmation before spawning. A character keeps a single Estus Flask.
 - **SeamlessCoop items** are offered only when a SeamlessCoop `.co2` save is loaded.
 

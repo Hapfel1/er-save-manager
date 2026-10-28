@@ -89,6 +89,25 @@ The Settings tab provides control over:
 
 **Platform:** Linux only
 
+### Warning Dialogs
+
+Warnings with a **Don't show this warning again** checkbox each have a setting here, on by default.
+Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults** turns them all back on.
+
+| Setting | Game | Warns about |
+|---------|------|-------------|
+| Show warning before teleporting to a map pin | Elden Ring | a spot picked on the world map can be under the ground or out of bounds |
+| Show warning before teleporting to custom coordinates | Elden Ring | an invalid map ID or position can break the save |
+| Show warning before teleporting into the DLC without owning it | Elden Ring | the game is stuck loading without Shadow of the Erdtree |
+| Show ban warning before teleporting to the Ashen Capital early | Elden Ring | vanilla saves in the Ashen Capital with Maliketh alive can get banned online |
+| Show warning before teleporting past a living boss | Elden Ring | graces that only appear after their boss, and boss arenas |
+| Show warning before teleporting to the bloodstain | Elden Ring | dying again at the death spot loses the runes |
+| Show warning before respawning a reward on the world map | Elden Ring | boss, enemy and NPC rewards are not placed back on the map |
+| Show warning before spawning cut content | Dark Souls III, Remastered | cut items are likely to be flagged online |
+| Show ban warning before adding an unsafe item | Dark Souls II | unsafe items can get the account soft-banned online |
+| Show warning before writing into an empty slot | Dark Souls III, Remastered, Nightreign | a slot never created in game stays blank |
+| Show warning before applying a relic with unknown effects | Nightreign | effects from mod data or an older game version |
+
 ### Update Notifications
 
 **Setting:** Show update notifications on startup
@@ -106,6 +125,12 @@ The Settings tab provides control over:
 **Setting:** Notify when save file is modified externally
 
 **What it does:** shows a dialog when another program (for example the game) modifies the loaded save, so the editor can reload it instead of writing over the newer file.
+
+**Setting:** Reload automatically when save file is modified externally (off by default)
+
+**What it does:** reloads the save without asking when the editor window regains focus after another program changed it. The Save File Modified dialog has the same choice as **Always reload automatically**. With unapplied edits, the editor still asks first, since reloading discards them.
+
+A save that changed on disk since it was loaded is never written over: **Apply All** and the tabs that write directly offer **Reload** instead. A deleted or moved save shows a notice once.
 
 ---
 
@@ -251,6 +276,8 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 - Persists between sessions
 - Survives app updates
 
+**Error log:** unexpected errors are shown in an Unexpected Error dialog and appended to `errors.log` in the same folder (moved to `errors.log.1` past 1 MB). Attach it when reporting a bug.
+
 ### Settings File Structure
 
 ```json
@@ -275,6 +302,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
   "skip_game_running_check": false,
   "verbose_logging": false,
   "external_file_change_notification": true,
+  "external_file_change_auto_reload": false,
   "ui_scale": 1.0
 }
 ```
