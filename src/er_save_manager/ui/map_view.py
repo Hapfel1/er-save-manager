@@ -79,6 +79,7 @@ from er_save_manager.ui.utils import (
     center_window,
     patch_combo_scroll,
     pick_file,
+    raise_after_ctk_refocus,
     style_window_frame,
 )
 
@@ -1217,6 +1218,7 @@ class MapWindow:
         self._build_ui()
         self._refresh_marker_panel()
         self._win.after(60, self._initial_view)
+        raise_after_ctk_refocus(self._win)
 
     # ------------------------------------------------------------------
     # Public

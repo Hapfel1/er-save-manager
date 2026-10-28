@@ -48,6 +48,16 @@ def raise_existing_window(window) -> bool:
     return True
 
 
+def raise_after_ctk_refocus(window, delay_ms: int = 150) -> None:
+    """Raise a new popup again once CTkToplevel's Windows refocus has run.
+
+    On Windows, CTkToplevel.__init__ refocuses the widget that had focus
+    before it (in the main window) 10 ms later, which activates the main
+    window. A popup that is not transient to it then ends up behind it.
+    """
+    window.after(delay_ms, lambda: raise_existing_window(window))
+
+
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
     """Call callback() once writes to var pause for delay_ms.
 
