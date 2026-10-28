@@ -19,8 +19,9 @@ from er_save_manager.data.grace_data import (
     grace_from_last_rested,
     last_rested_grace_value,
 )
+from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, StageError
+from er_save_manager.ui.pending import FieldTracker, StageCancelled, StageError
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -60,6 +61,15 @@ def _range_error(text: str, limit: int) -> str:
     return ""
 
 
+def class_minimum_message(class_name: str, violations: list[str]) -> str:
+    """Warning text for stats below a starting class minimum."""
+    return (
+        f"The following stats are below the minimum for {class_name}:\n\n"
+        + "\n".join(violations)
+        + "\n\nHow the game handles stats below the class minimum is untested."
+    )
+
+
 def _sync_memory_stones(save_file, slot_idx: int, slot, count: int) -> str | None:
     """Set the held Memory Stone quantity to count; return a note on failure."""
     from er_save_manager.parser import inventory_ops
@@ -85,6 +95,17 @@ def _sync_memory_stones(save_file, slot_idx: int, slot, count: int) -> str | Non
     return None
 
 
+# Attribute order of the class data and the UI
+_ATTR_ORDER = (
+    "vigor",
+    "mind",
+    "endurance",
+    "strength",
+    "dexterity",
+    "intelligence",
+    "faith",
+    "arcane",
+)
 _ATTR_KEYS = frozenset(
     {
         "vigor",
@@ -126,6 +147,11 @@ class StatsEditor:
         self.stat_vars = {}
         self._attr_error_labels: dict[str, ctk.CTkLabel] = {}
         self._attr_entries: dict[str, ctk.CTkEntry] = {}
+        # Attributes below the class minimum: warned at Apply All, not blocked.
+        self._attr_below_min: set[str] = set()
+        # (archetype, attribute values) the class minimum warning last
+        # covered: the loaded state or the state confirmed at Apply All.
+        self._class_min_ack: tuple | None = None
         self.level_var = None
         self.calculated_level_var = None
         self.level_warning_var = None
@@ -159,6 +185,7 @@ class StatsEditor:
         self.tracker = FieldTracker(
             self._tracked_state,
             {
+                "level": "Level",
                 "great_rune_on": "Great Rune active",
                 "great_rune": "Active Great Rune",
                 "grace": "Last rested grace",
@@ -291,6 +318,7 @@ class StatsEditor:
         )
 
         self.level_var = tk.StringVar(value="0")
+        # Read-only: Apply All writes the level calculated from the attributes.
         ctk.CTkEntry(
             other_frame,
             textvariable=self.level_var,
@@ -299,6 +327,7 @@ class StatsEditor:
             text_color=("black", "white"),
             border_color=("gray70", "gray40"),
             border_width=1,
+            state="disabled",
         ).grid(row=content_row, column=1, padx=5, pady=5)
 
         ctk.CTkLabel(
@@ -550,6 +579,7 @@ class StatsEditor:
         # Errors belong to the edits that load or discard replaces.
         for label in self._attr_error_labels.values():
             label.configure(text="")
+        self._attr_below_min.clear()
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -620,11 +650,13 @@ class StatsEditor:
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
+        self._class_min_ack = self._class_min_state()
         self.tracker.mark_clean()
 
     def _tracked_state(self) -> dict:
         """Every field Apply All writes, as shown."""
         variables = {key: self.stat_vars[key] for key in _ATTR_KEYS} | {
+            "level": self.calculated_level_var,
             "runes": self.runes_var,
             "great_rune_on": self.great_rune_on_var,
             "great_rune": self.great_rune_id_var,
@@ -698,21 +730,8 @@ class StatsEditor:
     def calculate_character_level(self):
         """Calculate expected character level from attributes based on starting class"""
         try:
-            archetype = 9  # Default to Wretch
-
-            save_file = self.get_save_file()
-            if save_file:
-                slot_idx = self.get_char_slot()
-                try:
-                    slot = save_file.characters[slot_idx]
-                    if (
-                        slot
-                        and hasattr(slot, "player_game_data")
-                        and slot.player_game_data
-                    ):
-                        archetype = slot.player_game_data.archetype
-                except Exception:
-                    pass
+            # The class picked in the Identity tab, written by its Apply All
+            archetype = self._current_archetype
 
             vigor, mind, endurance, strength, dexterity, intelligence, faith, arcane = (
                 int(self.stat_vars[key].get().strip())
@@ -759,7 +778,7 @@ class StatsEditor:
 
             if current_level != calculated_level:
                 self.level_warning_var.set(
-                    f"⚠ Mismatch. Recommend {calculated_level} (based on {class_name})"
+                    f"Apply All saves {calculated_level} (calculated for {class_name})"
                 )
             else:
                 self.level_warning_var.set("")
@@ -768,59 +787,65 @@ class StatsEditor:
             self.calculated_level_var.set("0")
             self.level_warning_var.set("")
 
-    def on_archetype_changed(self, archetype_id: int) -> None:
-        """Called when the user changes the starting class in the Info tab.
+    def on_archetype_changed(self, archetype_id: int):
+        """Called when the user changes the starting class in the Identity tab.
 
-        Updates internal archetype tracking, recalculates level, and warns if
-        any current stat falls below the new class minimum.
+        Recalculates the level and warns if any current stat falls below the
+        new class minimum. Returns confirm_class_minimum for the Identity
+        tab's Apply All.
         """
-        save_file = self.get_save_file()
-        is_convergence = (
-            save_file.is_convergence
-            if save_file and hasattr(save_file, "is_convergence")
-            else False
-        )
         self._current_archetype = archetype_id
-        class_data = get_class_data(archetype_id, is_convergence)
-        if not class_data:
-            return
-
-        stat_keys = [
-            "vigor",
-            "mind",
-            "endurance",
-            "strength",
-            "dexterity",
-            "intelligence",
-            "faith",
-            "arcane",
-        ]
-        violations: list[str] = []
-        for key in stat_keys:
-            stat_min = class_data.get(key, 1)
-            try:
-                current = int(self._attr_entries[key].get().strip())
-            except (ValueError, AttributeError):
-                current = 0
-            if current < stat_min:
-                label = key.capitalize()
-                violations.append(f"{label}: current {current}, minimum {stat_min}")
-
-        # Re-validate all entries so error labels update immediately.
-        for key in stat_keys:
+        for key in _ATTR_KEYS:
             self._on_attr_change(key)
-
-        self.calculate_character_level()
-
+        class_name, violations = self._class_min_violations()
         if violations:
-            violation_text = "\n".join(violations)
             CTkMessageBox.showwarning(
                 "Class Minimum Conflict",
-                f"The following stats are below the minimum for {class_data['name']}:\n\n"
-                f"{violation_text}\n\n"
-                f"Raise these stats to at least the minimum before applying.",
+                class_minimum_message(class_name, violations),
                 parent=self.parent,
             )
+        return self.confirm_class_minimum
+
+    def _class_min_violations(self) -> tuple[str, list[str]]:
+        """Class name and the attributes below its minimum, as text lines."""
+        save_file = self.get_save_file()
+        class_data = get_class_data(
+            self._current_archetype, bool(getattr(save_file, "is_convergence", False))
+        )
+        if not class_data:
+            return "", []
+        violations = []
+        for key in _ATTR_ORDER:
+            try:
+                current = int(self.stat_vars[key].get().strip())
+            except ValueError:
+                continue
+            if current < class_data.get(key, 1):
+                violations.append(
+                    f"{key.capitalize()}: current {current}, minimum {class_data[key]}"
+                )
+        return class_data["name"], violations
+
+    def _class_min_state(self) -> tuple:
+        return (
+            self._current_archetype,
+            tuple(self.stat_vars[key].get().strip() for key in _ATTR_ORDER),
+        )
+
+    def confirm_class_minimum(self) -> None:
+        """Ask before writing stats below the class minimum; raises
+        StageCancelled on No. Asks once per class and attribute values."""
+        state = self._class_min_state()
+        if state == self._class_min_ack:
+            return
+        class_name, violations = self._class_min_violations()
+        if violations and not CTkMessageBox.askyesno(
+            "Class Minimum Conflict",
+            class_minimum_message(class_name, violations) + "\n\nApply the changes?",
+            parent=self.parent,
+        ):
+            raise StageCancelled()
+        self._class_min_ack = state
 
     def _on_attr_change(self, key: str) -> None:
         # Validate against class base minimum and 99 cap.
@@ -834,20 +859,30 @@ class StatsEditor:
         stat_min = class_data.get(key, 1) if class_data else 1
 
         raw = self._attr_entries[key].get().strip()
+        below_min = False
         if not raw:
             msg = "cannot be empty"
         else:
             try:
                 val = int(raw)
-                if val < stat_min:
+                if val < 1:
+                    msg = "min 1"
+                elif val < stat_min:
                     msg = f"min {stat_min}"
+                    below_min = True
                 elif val > 99:
                     msg = "max 99"
                 else:
                     msg = ""
             except ValueError:
                 msg = f"min {stat_min} - 99"
-        self._attr_error_labels[key].configure(text=msg)
+        if below_min:
+            self._attr_below_min.add(key)
+        else:
+            self._attr_below_min.discard(key)
+        self._attr_error_labels[key].configure(
+            text=msg, text_color=palette.WARNING_TEXT if below_min else "red"
+        )
         self.calculate_character_level()
 
     def _on_range_change(self, key: str) -> None:
@@ -947,7 +982,10 @@ class StatsEditor:
             if _range_error(var.get(), limit):
                 self._on_range_change(key)
                 raise StageError("Fix the values marked in red before applying.")
-        if any(self._attr_error_labels[k].cget("text") for k in _ATTR_KEYS):
+        if any(
+            self._attr_error_labels[k].cget("text")
+            for k in _ATTR_KEYS - self._attr_below_min
+        ):
             raise StageError("Fix the attributes marked in red before applying.")
 
         try:
@@ -959,7 +997,7 @@ class StatsEditor:
                 f"Runes must be a whole number between 0 and {MAX_RUNES:,}."
             )
 
-        # Silently correct level to match attributes
+        # Level is read-only and always follows the attributes
         calculated_level = (
             int(self.calculated_level_var.get())
             if self.calculated_level_var.get()
@@ -991,6 +1029,7 @@ class StatsEditor:
         last_grace = self._selected_last_grace(
             bool(getattr(save_file, "is_convergence", False))
         )
+        self.confirm_class_minimum()
 
         def commit() -> list[str]:
             from io import BytesIO
@@ -1026,7 +1065,12 @@ class StatsEditor:
                 max(char.runes_memory + runes_gained, floor),
             )
 
-            char.great_rune_on = great_rune_on
+            # An unowned Great Rune is not equipped, so its active flag
+            # keeps the stored value.
+            rune_index = _find_equip_index(slot, rune_handle)
+            rune_owned = not rune_handle or rune_index != 0xFFFFFFFF
+            if rune_owned:
+                char.great_rune_on = great_rune_on
 
             # Matchmaking weapon level - clamp to inventory floor
             value = mm_value
@@ -1088,11 +1132,15 @@ class StatsEditor:
 
             # Great rune ID and last grace require full slot rebuild
             # (both live outside PlayerGameData)
-            rune_index = _find_equip_index(slot, rune_handle)
-            if rune_handle and rune_index == 0xFFFFFFFF:
+            if not rune_owned:
+                flag_note = (
+                    " and Great Rune active was left unchanged"
+                    if great_rune_on != char.great_rune_on
+                    else ""
+                )
                 notes.append(
                     f"{rune_name} is not in the held inventory, so it was not "
-                    "equipped. The other changes are still saved."
+                    f"equipped{flag_note}. The other changes are still saved."
                 )
             else:
                 slot.equipped_items.great_rune = rune_handle
