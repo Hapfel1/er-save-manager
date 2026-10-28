@@ -1175,6 +1175,8 @@ class MapWindow:
         self._active_npc: str | None = None
         # id(quest step) -> (map number, map x, map y) of the shown quest
         self._step_maps: dict[int, tuple[int, float, float]] = {}
+        # Step picked in the quest list, ringed on the map
+        self._picked_step: QuestStep | None = None
         self._on_set_pickup: Callable[[int, bool], None] | None = None
         self._item_photos: dict[tuple[str, int], ImageTk.PhotoImage | None] = {}
         self._hover_tile: _Placed | None = None
@@ -2928,8 +2930,18 @@ class MapWindow:
                 c.create_line(*prev, sx, sy, fill=_ROUTE_COLOR, width=2, dash=(6, 4))
             prev = (sx, sy)
             done = self._step_done(step)
+            if step is self._picked_step:
+                c.create_image(
+                    sx - off,
+                    sy - off,
+                    image=self._icons.select_ring(_STEP_SIZE),
+                    tags="select_ring",
+                )
             item = c.create_image(
-                sx - off, sy - off, image=self._icons.step(n, _STEP_SIZE, done)
+                sx - off,
+                sy - off,
+                image=self._icons.step(n, _STEP_SIZE, done),
+                tags="picked_step" if step is self._picked_step else (),
             )
             self._items[item] = ("step", (pin, step))
             # Where the route leaves for (or comes from) another map
@@ -2953,6 +2965,8 @@ class MapWindow:
                 )
                 c.tag_lower(box, label)
                 self._items[label] = ("step", (pin, step))
+        # Above a later step pin at the same spot
+        c.tag_raise("picked_step")
 
     def _object_done(self, obj: MapObject) -> bool | None:
         """Pool activated / imp seal opened; None without a character."""
@@ -4344,6 +4358,7 @@ class MapWindow:
         route = self._route(pin)
         moves = {id(st): n for n, (st, *_rest) in enumerate(route, start=1)}
         self._step_maps = {id(st): (m, x, y) for st, m, x, y in route}
+        self._picked_step = None
         # Steps on another map than the NPC's marker say which
         here = pin.map_no
         for n, st in enumerate(steps):
@@ -4395,12 +4410,18 @@ class MapWindow:
             return
         step = self._detail_rows[int(sel[0])]
         self._step_var.set(f"Location: {step.location}" if step.location else "")
+        self._picked_step = step
         spot = self._step_maps.get(id(step))
         if spot is not None and spot[0] != self._map_no:
             # The step is on another map: show it there
             self._show_map(spot[0])
             self._center_on(spot[1], spot[2], max(self._zoom, self._fit_zoom() * 4))
-            self._schedule_render()
+        elif spot is not None:
+            sx, sy = self._to_screen(spot[1], spot[2])
+            w, h = self._canvas_size()
+            if not (0 <= sx - _STEP_OFFSET <= w and 0 <= sy - _STEP_OFFSET <= h):
+                self._center_on(spot[1], spot[2])
+        self._schedule_render()
         movable = bool(step.places) and self._on_set_flags is not None
         self._move_btn.configure(state="normal" if movable else "disabled")
 
