@@ -49,7 +49,7 @@ import math
 import struct
 import sys
 from array import array
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from pathlib import Path
 
@@ -73,6 +73,14 @@ VERSION = 2
 HSTEP = 0.25
 FLOOR_GAP = 2.0  # neighbouring points closer than this in height are one floor
 SAME_SPOT = 4.0  # floors listed for a click: at most this much farther than the nearest
+
+# Map areas under the ground: the underground rivers (m12), Stone Coffin
+# Fissure (m22), Finger Birthing Grounds (m25), catacombs, caves, tunnels,
+# the Shunning-Grounds, and the DLC catacombs, gaols, forges and caves.
+# Divine Towers (m34) and the Ruin-Strewn Precipice (m39) stand above it.
+_BELOW_GROUND = frozenset({12, 22, 25, 30, 31, 32, 35, 40, 41, 42, 43})
+# Leyndell, Ashen Capital shares the Royal Capital's footprint
+_ASHEN = "m11_05"
 
 _HEAD = struct.Struct("<4sHH")
 _INDEX = struct.Struct("<BBBBII")
@@ -323,12 +331,15 @@ def _anchors_near(
 def floors_near(
     map_no: int, mx: float, my: float, convergence: bool, radius: float = 12.0
 ) -> list[FloorPoint]:
-    """One teleport point per floor near a world map position, nearest first.
-    Floors more than SAME_SPOT farther than the nearest one are left out.
+    """One teleport point per floor near a world map position. Floors more
+    than SAME_SPOT farther than the nearest one are left out.
 
     Overworld maps (Lands Between, Realm of Shadow) search the small tiles
     around the point; every map also searches the legacy maps placed there
-    (dungeons, catacombs, the underground).
+    (dungeons, catacombs, the underground). On overworld maps the surface
+    comes first: overworld tile floors top first, then legacy dungeons, the
+    Ashen Capital, and the maps under the ground (_BELOW_GROUND), each
+    nearest first. Other maps list floors nearest first.
     """
     found: list[tuple[float, FloorPoint]] = []
     if map_no in (MAP_LANDS_BETWEEN, MAP_REALM_OF_SHADOW):
@@ -384,7 +395,21 @@ def floors_near(
         ):
             continue
         out.append(p)
+    if map_no in (MAP_LANDS_BETWEEN, MAP_REALM_OF_SHADOW):
+        out.sort(key=_surface_rank)
     return out
+
+
+def _surface_rank(p: FloorPoint) -> tuple[int, float]:
+    """Sort key for floors_near on an overworld map. Heights of different
+    legacy maps are in their own frames, so only overworld tiles (one shared
+    frame) sort by height; the stable sort keeps the rest nearest first."""
+    area = parse_map_id(p.map_id_str)[0]
+    if area in (60, 61):
+        return 0, -p.y
+    if area in _BELOW_GROUND:
+        return 3, 0.0
+    return (2 if p.map_id_str.startswith(_ASHEN) else 1), 0.0
 
 
 def known_map(map_id_str: str, convergence: bool) -> bool:
@@ -467,6 +492,44 @@ def _nearest_floor(
     return best
 
 
+def tile_floor(
+    map_id_str: str,
+    point: tuple[float, float, float],
+    convergence: bool,
+    tolerance: float = 4.0,
+) -> tuple[float, float, float] | None:
+    """Teleport position for an overworld tile's stored point: the point
+    itself when floor lies within tolerance of it, else the tile's nearest
+    other grace or location warp point, else the top floor nearest to it
+    horizontally inside the tile (the point clamped into the tile first).
+    None when the tile has no floor."""
+    x, y, z = point
+    hit = _nearest_floor(map_id_str, x, y, z, convergence, tolerance)
+    if hit is not None and hit[0] <= tolerance:
+        return point
+    rec = _record(map_id_str, convergence)
+    if rec is None:
+        return None
+    lx, lz = (min(max(v, -127.0), 127.0) for v in (x, z))
+    # The stored point is itself an anchor; only other warp points count
+    anchors = [a[:3] for a in rec.anchors if math.dist(a[:3], point) > tolerance]
+    if anchors:
+        return min(anchors, key=lambda a: math.hypot(a[0] - x, a[2] - z))
+    radius = 8.0
+    while radius < 400.0:
+        pts = _points_near(rec, lx, lz, radius, None)
+        if pts:
+            floors = sorted(
+                (math.hypot(px - lx, pz - lz), -py, px, py, pz)
+                for px, py, pz, *_ in _floors(pts, lx, lz)
+            )
+            near = [f for f in floors if f[0] <= floors[0][0] + SAME_SPOT]
+            _d, _y, px, py, pz = min(near, key=lambda f: f[1])
+            return px, py, pz
+        radius *= 2
+    return None
+
+
 def warp_point(map_id_str: str, convergence: bool) -> tuple[float, float, float] | None:
     """Spawn position for a map: its location warp point, else its first anchor."""
     loc = (CONVERGENCE_LOCATIONS if convergence else LOCATIONS).get(map_id_str)
@@ -476,6 +539,15 @@ def warp_point(map_id_str: str, convergence: bool) -> tuple[float, float, float]
     if rec is not None and rec.anchors:
         return rec.anchors[0][:3]
     return None
+
+
+def bloodstain_location(point: FloorPoint) -> MapLocation:
+    """Teleport location for the character's bloodstain at point."""
+    return replace(
+        pin_location(point),
+        name=f"bloodstain ({point.x:.0f}, {point.y:.0f}, {point.z:.0f})",
+        tile_type="bloodstain",
+    )
 
 
 def pin_location(point: FloorPoint) -> MapLocation:

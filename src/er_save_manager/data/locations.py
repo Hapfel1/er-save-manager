@@ -11,6 +11,7 @@ Tile types:
   - medium (_01): Medium overworld tiles (contain some enemies/graces spanning multiple small tiles)
   - big (_02): Big overworld tiles (span entire region, contain cross-tile enemies and Sites of Grace)
   - pin: a point picked on the world map (floor_points.pin_location)
+  - bloodstain: the character's bloodstain (floor_points.bloodstain_location)
 
 map_bytes = bytes([d0, d1, d2, d3]) where map_id_str = m{d3}_{d2}_{d1}_{d0:02d}
 region_id is 0 on every row and unused: the game adds a map's play region

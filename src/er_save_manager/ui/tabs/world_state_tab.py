@@ -7,13 +7,19 @@ import string
 import struct
 import threading
 import tkinter as tk
+from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.data.floor_points import known_map, nearest_floor, warp_point
+from er_save_manager.data.floor_points import (
+    known_map,
+    nearest_floor,
+    tile_floor,
+    warp_point,
+)
 from er_save_manager.data.locations import (
     MapLocation,
     get_all_locations,
@@ -37,12 +43,14 @@ from er_save_manager.ui.boss_gate import closed_gate, confirm_teleport, filter_u
 from er_save_manager.ui.dialogs.message_manager import MessageManagerDialog
 from er_save_manager.ui.dialogs.teleport_warnings import (
     confirm_ashen_teleport,
+    confirm_bloodstain_teleport,
     confirm_custom_teleport,
     confirm_dlc_teleport,
     confirm_pin_teleport,
 )
 from er_save_manager.ui.dialogs.vanilla_save_warning import is_vanilla_save
 from er_save_manager.ui.map_view import (
+    Bloodstain,
     count_phrase,
     current_window,
     open_map_window,
@@ -548,9 +556,15 @@ class WorldStateTab:
             info["map_id_str"], coords.x, coords.z, self._convergence
         )
 
-    def _bloodstain_map_point(self) -> tuple[int, float, float, str, int] | None:
-        """Map position and label of the character's bloodstain, None when
-        there is none (BloodStain 0x30 is 0 while one exists)."""
+    def _bloodstain_runes(self) -> int:
+        save = self.get_save_file()
+        bs = getattr(save.character_slots[self.slot_var.get() - 1], "blood_stain", None)
+        return max(bs.runes, 0) if bs is not None else 0
+
+    def _bloodstain_map_point(self) -> Bloodstain | None:
+        """Map position, label and saved position of the character's
+        bloodstain, None when there is none (BloodStain 0x30 is 0 while one
+        exists)."""
         if not self.editor:
             return None
         save = self.get_save_file()
@@ -567,7 +581,8 @@ class WorldStateTab:
         blood = self.editor.get_bloodstain_location() or {}
         runes = max(bs.runes, 0)
         label = f"{blood.get('map_name', map_id)}, {runes:,} runes"
-        return (*point, label, runes)
+        c = bs.coordinates
+        return (*point, label, runes, map_id, (c.x, c.y, c.z))
 
     def _map_slot_selected(self, value: str):
         """Character picked in the map window: switch the main window's
@@ -1194,6 +1209,20 @@ class WorldStateTab:
 
         if loc.tile_type == "pin" and not confirm_pin_teleport(self._dialog_parent()):
             return
+
+        if loc.tile_type == "small" and loc.safe_coords is not None:
+            floor = tile_floor(
+                loc.map_id_str, loc.safe_coords, self._convergence, FLOOR_TOLERANCE
+            )
+            if floor is not None:
+                loc = replace(loc, safe_coords=floor)
+
+        if loc.tile_type == "bloodstain":
+            runes = self._bloodstain_runes()
+            if runes > 0 and not confirm_bloodstain_teleport(
+                self._dialog_parent(), runes
+            ):
+                return
 
         if not confirm_teleport(
             loc, self._convergence, self._grace_state, self._dialog_parent()

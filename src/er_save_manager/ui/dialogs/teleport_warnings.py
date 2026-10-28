@@ -8,6 +8,7 @@ DLC_SETTING = "show_dlc_teleport_warning"
 CUSTOM_SETTING = "show_custom_teleport_warning"
 ASHEN_SETTING = "show_ashen_teleport_warning"
 BOSS_GATE_SETTING = "show_boss_gate_teleport_warning"
+BLOODSTAIN_SETTING = "show_bloodstain_teleport_warning"
 
 
 def confirm_pin_teleport(parent) -> bool:
@@ -22,6 +23,23 @@ def confirm_pin_teleport(parent) -> bool:
             "ground, inside a wall or out of bounds.",
             "A backup is made before the teleport. If the character ends up "
             "stuck, restore it in the Backup Manager.",
+        ],
+        confirm_text="Teleport",
+    )
+
+
+def confirm_bloodstain_teleport(parent, runes: int) -> bool:
+    return confirm_warning(
+        parent,
+        BLOODSTAIN_SETTING,
+        "Teleport to Bloodstain",
+        "Death spot",
+        [
+            "The character arrives where it last died. If that spot kills it "
+            "again (a fall, lava, a poison swamp or the enemy that killed it), "
+            f"the bloodstain and its {runes:,} runes are lost for good.",
+            "A backup is made before the teleport. If the character dies, "
+            "restore it in the Backup Manager.",
         ],
         confirm_text="Teleport",
     )

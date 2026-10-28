@@ -3,7 +3,12 @@
 import pytest
 
 from er_save_manager.data import floor_points
-from er_save_manager.data.floor_points import floors_near, pin_location
+from er_save_manager.data.floor_points import (
+    bloodstain_location,
+    floors_near,
+    pin_location,
+    tile_floor,
+)
 from er_save_manager.data.locations import get_grace_locations
 from er_save_manager.data.world_map import (
     MAP_LANDS_BETWEEN,
@@ -24,6 +29,21 @@ def test_bridge_has_two_floors():
     floors = floors_near(MAP_LANDS_BETWEEN, mx, my, False, radius=6)
     heights = sorted(round(p.y) for p in floors if p.map_id_str == "m60_43_37_00")
     assert heights == [65, 92]
+
+
+def test_overworld_click_takes_the_top_floor_first():
+    # m60_34_42: ground at y 238 and a ledge at y 400 within 4 units
+    floors = floors_near(MAP_LANDS_BETWEEN, 1680, 5776, False, radius=18)
+    assert round(floors[0].y) == 400
+    assert any(round(p.y) == 238 for p in floors)
+
+
+def test_leyndell_click_takes_the_city_before_the_sewers():
+    # the Subterranean Shunning-Grounds (m35) lie nearer under this spot
+    floors = floors_near(MAP_LANDS_BETWEEN, 4400, 3536, False, radius=18)
+    maps = [p.map_id_str for p in floors]
+    assert maps[0] == "m11_00_00_00"
+    assert maps.index("m11_05_00_00") < maps.index("m35_00_00_00")
 
 
 def test_open_sea_has_no_floor():
@@ -127,3 +147,30 @@ def test_grace_warp_points_are_anchors():
     )
     pin = floors_near(no, mx, my, True, radius=2)[0]
     assert (pin.x, pin.y, pin.z) == pytest.approx(grace.safe_coords, abs=0.01)
+
+
+def test_bloodstain_location_keeps_the_saved_position_and_arena():
+    no, mx, my = location_map_point("m10_00_00_00", -235.6, 348.3, False)
+    pin = next(
+        p
+        for p in floors_near(no, mx, my, False, radius=6)
+        if p.map_id_str == "m10_00_00_00"
+    )
+    loc = bloodstain_location(pin)
+    assert loc.tile_type == "bloodstain"
+    assert loc.safe_coords == (pin.x, pin.y, pin.z)
+    assert closed_gate(loc, False, lambda f: False).boss == "Godrick the Grafted"
+
+
+def test_tile_point_on_floor_is_kept():
+    point = (9.3, 236.2, 43.8)  # m60_33_40_00 tile warp point
+    assert tile_floor("m60_33_40_00", point, False) == point
+
+
+def test_tile_point_in_the_air_moves_to_the_tile_grace():
+    # m61_49_39_00 stored point lies past the tile edge (z 188.8), above a
+    # gorge with floor at y -572
+    point = (-14.0, 68.4, 188.8)
+    assert tile_floor("m61_49_39_00", point, False) == pytest.approx(
+        (93.779, 78.643, -94.08), abs=0.01
+    )

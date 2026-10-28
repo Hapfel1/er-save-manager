@@ -102,6 +102,7 @@ class Settings:
             "show_custom_teleport_warning": True,
             "show_ashen_teleport_warning": True,
             "show_boss_gate_teleport_warning": True,
+            "show_bloodstain_teleport_warning": True,
             "show_reward_respawn_warning": True,
             "show_cut_content_warning": True,
             "show_unsafe_item_warning": True,
