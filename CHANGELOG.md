@@ -3,6 +3,48 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.4.0
+**Released:** October 28, 2026
+
+### Elden Ring
+
+- World map shows item pickups, NPCs, bosses, merchants, quest routes, summoning pools, imp seals and paintings, with respawn, revive, kill and restock ([db912a5](https://github.com/Hapfel1/er-save-manager/commit/db912a518de5c68685d6a941b617ee7e436a11e8))
+- Teleport to any spot on the world map, or to a pickup, boss, NPC or the bloodstain ([4cb70ce](https://github.com/Hapfel1/er-save-manager/commit/4cb70ce454423ccdea329ce26d2f89eec4d03249), [99145ca](https://github.com/Hapfel1/er-save-manager/commit/99145ca7b813d7c684280dd82a717cf69c3fd07d))
+- Completion per region, exportable as a text file ([db912a5](https://github.com/Hapfel1/er-save-manager/commit/db912a518de5c68685d6a941b617ee7e436a11e8))
+- Pick which map pieces and graces an unlock covers ([471d331](https://github.com/Hapfel1/er-save-manager/commit/471d33158ed71c9ab37e1b0030d95ec1f13b1353))
+- Warnings before teleports into boss arenas, to graces that only appear after their boss and into the Ashen Capital early ([a78bf0e](https://github.com/Hapfel1/er-save-manager/commit/a78bf0ee9e8c78f7333b29d592d20eedb22a7697), [83bf6fd](https://github.com/Hapfel1/er-save-manager/commit/83bf6fd5957519ada3e41e5b7d4cc2dff32ba6c1), [d206356](https://github.com/Hapfel1/er-save-manager/commit/d206356c25ff239dd4def8b06e331da4ab0cb66e))
+- Custom coordinates are checked against the game's map data ([3900dae](https://github.com/Hapfel1/er-save-manager/commit/3900daeee8279bd476d3c2316da7dbfa114adbbd))
+- Convergence 3.0.4 support ([ff3fa6f](https://github.com/Hapfel1/er-save-manager/commit/ff3fa6fe94f94e7502b511ba970d40a57b7cf245))
+
+### Dark Souls III
+
+- PS4 saves (decrypted userdata folders) ([39a4c64](https://github.com/Hapfel1/er-save-manager/commit/39a4c6464b5ea7f0c3216ced452b7c8b392c06ff))
+- Quest progress and the missing NPCs ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d), [8f92266](https://github.com/Hapfel1/er-save-manager/commit/8f92266beae864a908b2b5cc111f530196db89a5))
+- Matchmaking weapon level follows upgrade edits ([0219338](https://github.com/Hapfel1/er-save-manager/commit/02193380b001dfaa5a10e1db05a842eba37861ef), [b43a4fe](https://github.com/Hapfel1/er-save-manager/commit/b43a4fe4b6899034d9a28e5c6bc7f60d5f94c0be), [c8bcc4b](https://github.com/Hapfel1/er-save-manager/commit/c8bcc4bee6ab5c193c17fd831ae60bf5f846d38a))
+
+### Dark Souls II
+
+- World Flags tab: doors, item pickup respawn and event flags ([952c375](https://github.com/Hapfel1/er-save-manager/commit/952c375150a045a44a927da97dc4eea96c65ee3e))
+- Quest progress and the missing NPCs ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d), [5da0771](https://github.com/Hapfel1/er-save-manager/commit/5da077158d3809293bf665f649e02e8991cda6ec))
+- Fixed respawned group fights that could not be won ([017f94c](https://github.com/Hapfel1/er-save-manager/commit/017f94cd0ecb640cade94e074c8c001252d7505c))
+
+### Dark Souls Remastered
+
+- Quest progress ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d))
+- Fixed catalysts and talismans getting upgrade levels; affected saves are repaired on load ([e8c639a](https://github.com/Hapfel1/er-save-manager/commit/e8c639a354406cccfd7701b068d35f3779df118c))
+
+### General
+
+- Review window listing every unapplied change ([48c7365](https://github.com/Hapfel1/er-save-manager/commit/48c73657661a62b411331cd476d2366e0da87bb9))
+- Optional auto-reload when the save changes outside the tool ([a8b74c9](https://github.com/Hapfel1/er-save-manager/commit/a8b74c95fb6408a7fa00016cc80ea138a67a02a8))
+- SteamID field accepts every Steam ID format ([27244ca](https://github.com/Hapfel1/er-save-manager/commit/27244caec41d90e1957cae0a229ac8b87e8e3ee7))
+- Notices show as toasts; warnings can be turned off in Settings ([d206356](https://github.com/Hapfel1/er-save-manager/commit/d206356c25ff239dd4def8b06e331da4ab0cb66e), [586feaa](https://github.com/Hapfel1/er-save-manager/commit/586feaa3f47019ad30335484884c1e233feea52b))
+- Saves changed or deleted while open are no longer written over, and can be restored from the Backup Manager ([58cba50](https://github.com/Hapfel1/er-save-manager/commit/58cba5087ba0f4640aa203fefb754f3ecea38df5), [b9d2110](https://github.com/Hapfel1/er-save-manager/commit/b9d2110cb339e8ea7eaa6b596ff855ce730662af))
+- More input checks and backup fixes in all games ([9ef4e74](https://github.com/Hapfel1/er-save-manager/commit/9ef4e742ba0d8cd0a2a6cfe30f0108b520acbdfc), [f3c65ec](https://github.com/Hapfel1/er-save-manager/commit/f3c65ecd0ae13e1dd1db1155ee530302927bd38b), [c2e746e](https://github.com/Hapfel1/er-save-manager/commit/c2e746eaf728706d793beab4730ff6bd83a96555), [dccfaec](https://github.com/Hapfel1/er-save-manager/commit/dccfaec9536993aaa141a6301464af7a34ba29d8), [c8c0377](https://github.com/Hapfel1/er-save-manager/commit/c8c0377ea8382ecc9e27064558c367b4f37149f3), [619d065](https://github.com/Hapfel1/er-save-manager/commit/619d0659f934bf5afb6c9064b68d95633732471f), [8066110](https://github.com/Hapfel1/er-save-manager/commit/8066110925806842c1f8e4c71e8a9970205c738b))
+- Unexpected errors are shown and written to errors.log ([0fe1ed4](https://github.com/Hapfel1/er-save-manager/commit/0fe1ed4365c6f9625fc9392c4a393e5f0b219e45))
+
+---
+
 ## 📦 Release 2.3.0
 **Released:** October 19, 2026
 

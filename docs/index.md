@@ -48,7 +48,8 @@
 - **Community Preset Browser** - Browse and download appearance presets
 - **Inventory Editor** - Edit your inventory, spawn in items, import builds
 - **Equipment Editor** - Edit equipped items, save and share loadouts
-- **World State / Teleportation** - Known locations, custom coordinates and an interactive map with grace and map unlocks, map markers and the Convergence map
+- **World State / Teleportation** - Known locations, custom coordinates and an interactive map: teleport to any spot, grace and map unlocks, map markers, the Convergence map
+- **World Map Progress** - Item pickups, NPCs, bosses, merchants, quest routes, summoning pools, imp seals and paintings on the map, with respawn, revive, kill, restock and completion per region
 - **Message Manager and Item History** - Own and cached messages, Legendary trophy progress and picked-up items
 - **SteamID Patcher** - Transfer saves between Steam accounts
 - **Event Flags Editor** - View and toggle 948+ documented event flags
@@ -62,9 +63,9 @@
 ### :material-controller: Other FromSoftware Games
 
 - [Nightreign](user-guide/nightreign.md) - Relics and Loadouts tabs with game icons, relic checks against the game's roll rules, Murk and Sovereign Sigils, character management
-- [Dark Souls III](user-guide/dark-souls-3.md) - Stats, equipment and attunement, appearance, character management, boss and NPC revival, item spawning, world state
-- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, covenants, equipment and attunement, appearance, character management, event flags, boss and NPC revival, item spawning
-- [Dark Souls II SotFS](user-guide/dark-souls-2.md) - Stats, equipment and attunement, appearance, item spawning, character management, bonfire editing, boss and NPC editing
+- [Dark Souls III](user-guide/dark-souls-3.md) - Stats, equipment and attunement, appearance, character management, boss and NPC revival, quest progress, item spawning, world state, PS4 saves
+- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, covenants, equipment and attunement, appearance, character management, event flags, boss and NPC revival, quest progress, item spawning
+- [Dark Souls II SotFS](user-guide/dark-souls-2.md) - Stats, equipment and attunement, appearance, item spawning, character management, bonfire editing, doors, item pickup respawn, event flags, boss and NPC editing, quest progress
 - Backup Manager for all of the above plus Armored Core 6 and Sekiro; [SteamID Patcher](user-guide/steamid-patcher.md) for all of them except Dark Souls Remastered
 
 ### :material-wrench: Work in Progress

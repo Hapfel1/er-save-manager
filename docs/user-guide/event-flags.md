@@ -128,6 +128,16 @@ The **Character** bar under the file row picks the character; its flags load as 
 - Unlock all gestures
 - Mark all bosses defeated
 
+### Sites of Grace and Quest Progress
+
+- **Sites of Grace...** lists every grace by region with its state. Graces that only appear after
+  a boss show that boss under **Appears after**; unlocking one while the boss is alive asks
+  first, since the game would not have spawned the grace yet
+- **Quest Progress...** lists each NPC's quest steps and marks the ones done. **Apply** sets one
+  step; **Apply All Steps to Here** re-applies every step up to the furthest one done. A backup is made
+  first. The world map shows the same steps along the NPC's route (see
+  [World State](world-state.md#progress-layers))
+
 ### Applying Changes
 
 **Steps:**

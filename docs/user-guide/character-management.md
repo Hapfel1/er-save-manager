@@ -46,6 +46,8 @@ The operations pick their own slots, so the **Character** bar is not used on thi
 
 - Displays buttons related to the selected operation
 
+Slot lists mark characters deleted in game with **(deleted)**. The game only clears the slot's active flag on delete, so the character data stays until the slot is reused; operations on such a slot work as on any other.
+
 ---
 
 ## Copy Character

@@ -32,7 +32,7 @@ Auto-Find does not find PS4 saves; use **Browse**. The **PS4 Save?** button in t
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
 
-Edits are staged until they are applied. The unapplied-changes bar lists the pages with edits: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
+Edits are staged until they are applied. The unapplied-changes bar names the changed fields, and **Review** lists each one with its old and new value: **Apply All** writes all of them in one save write with one backup, **Discard** drops them. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -57,6 +57,8 @@ Transfer and `.ds3c` export/import also move characters between a PS4 folder and
 ### Stats
 
 Edit the nine attributes and Souls. Level follows the attributes automatically (every DS3 class has level = attribute total - 89). Attributes cannot go below the starting class's base values unless the loaded character is already below them.
+
+**Weapon level** (read-only) is the highest upgrade level the character has reached, which the game uses for matchmaking; weapons that cap at +5 count each level twice. Upgrading a weapon in the inventory raises it, and downgrading the weapon that set it lowers it to the highest weapon left, so editor upgrades do not move the character into another matchmaking range.
 
 ### Identity
 
@@ -112,7 +114,9 @@ If a character's inventory was damaged by an earlier version of this editor, inv
 
 Revive a dead or hostile NPC, or mark one dead. Only the NPC's alive/hostile/dead state changes; quest progress is left as it is, so an NPC whose questline already moved on stays where it left off.
 
-**Quest Progress** lists each NPC's quest states with the current one marked. **Apply** moves the NPC to that state the way the game's events do, clearing the NPC's other states. Greirat, Orbeck, Cornyx, Irina and Karla keep earlier states set, as the game does for them; Apply clears only their later ones. A backup is made first.
+The list includes the Firelink Shrine Handmaid, Rosaria, the Tower Giant, the Caged Hollow and the Dying Corvian.
+
+**Quest Progress** lists each NPC's quest states with the current one marked. **Apply** moves the NPC to that state the way the game's events do, including the states between the current one and the chosen one, and clears the NPC's other states. Greirat, Orbeck, Cornyx, Irina and Karla keep their early states set, as the game does for them. A backup is made first.
 
 ### Bosses
 

@@ -1,6 +1,6 @@
 # World State & Teleportation
 
-View character location and teleport to any of 875 known safe locations, a custom coordinate, or a point on the world map. The world map also edits the character's map markers and beacons.
+View character location and teleport to any of 875 known safe locations, a custom coordinate, or any spot on the world map. The world map also shows the character's progress (item pickups, NPCs, bosses, merchants, quests) and edits map markers and beacons.
 
 ## Overview
 
@@ -8,11 +8,14 @@ The World State tab displays character location information and provides telepor
 
 - View current map and coordinates
 - Teleport to a known location (searchable list of 875 locations)
-- Teleport by clicking a tile, grace or dungeon on the world map
-- Custom coordinate teleportation
+- Teleport to any spot picked on the world map, or to a grace, dungeon, tile, pickup, boss, NPC or the bloodstain
+- Custom coordinate teleportation, checked against the game's map data
+- Warnings before teleports that can break the character (boss arenas, graces that are not spawned yet, DLC without ownership)
 - Move bloodstain to player's current position
 - Add, move, delete, export, import and copy map markers
 - Unlock graces, map areas or a whole map, with their map pieces and play regions
+- Item pickups, NPCs, bosses, merchants, quest steps, summoning pools, imp seals and paintings on the map, with respawn, revive, kill and restock
+- Completion per region, exportable as a text file
 - Convergence saves get the Convergence world map with its own grace positions
 - Legendary trophy progress and item history
 - List, protect and delete the character's messages
@@ -48,7 +51,7 @@ The World State tab displays character location information and provides telepor
 **Known Locations:**
 
 - Search bar to filter by name or Map ID
-- Scrollable list of all matching locations, tagged `[DLC]` where applicable
+- Scrollable list of all matching locations, tagged `[DLC]` where applicable and `[Boss Alive]` for graces that only appear after their boss
 - **Teleport to Selected Location** button
 
 **Custom Coordinates Entry:**
@@ -104,7 +107,11 @@ The World State tab displays character location information and provides telepor
 
 **DLC locations:** Selecting a location flagged `[DLC]` on a character without Shadow of the Erdtree access shows a warning before teleporting, since it will cause an infinite loading screen if the DLC isn't owned.
 
-Teleporting to a known location also adds that location's region unlock ID if the character doesn't already have it, so the map isn't left partially fogged after warping in.
+**Graces behind a boss:** about 50 graces only appear once their boss is defeated (the boss's grace in the arena). Teleporting to one while the boss is alive puts the character in the boss arena, so the editor asks first.
+
+**Ashen Capital:** on a vanilla save, teleporting into Leyndell, Ashen Capital while Maliketh is alive asks first, since that world state can get the account banned online.
+
+Each of these warnings can be turned off in the dialog or in [Settings](settings.md#warning-dialogs).
 
 ---
 
@@ -117,32 +124,72 @@ the map shows the Convergence map art, graces and locations instead.
 - Scroll to zoom, drag with the left mouse button to pan (right or middle button pans too)
 - Sites of Grace and dungeons use the game's map icons (legacy dungeons, catacombs and caves are
   drawn at their place on the map); locked graces are grayed out. The blue dot is the character
-- Hovering an overworld tile outlines it; hovering any icon or tile shows its name and, for graces,
-  whether it is unlocked
-- The list on the left searches every grace, dungeon and tile by name or map ID; selecting an
-  entry switches to its map, centers on it and selects it
+- Hovering any icon or tile shows its name and, for graces, whether it is unlocked
+- The list on the left searches graces, dungeons, tiles, bosses, NPCs, merchants and items. Words
+  match in any order, ignoring case and accents, and also match a pin's region and nearest grace,
+  a boss's drop, an item's source and a merchant's stock. Repeated names get their region or
+  grace added. Selecting an entry switches to its map, centers on it and selects it
+- The selected entry gets a name tag; every other marker fades while it is selected
 - **Character** at the top left switches the character (the same as the Character bar)
 - The bloodstain shows where the character last died, with its runes; **Move Bloodstain to
   Player** in the right panel moves it to the character's position
 - The legend under the location list explains the icons
-- The checkboxes at the top hide graces, dungeons or markers, turn tile selection off, or show the
-  outline of every teleport tile (**Grid**). Tile selection is off while adding markers or beacons
+- The checkboxes at the top turn the layers on and off: grid of teleport tiles, graces,
+  dungeons, markers, NPC name tags (**Names**), plain dots instead of icons (**Dots**) and the
+  progress layers below
 - **Progress** (on by default) shades the areas of map fragments the character has not picked up
   with the game's unrevealed map art, so the map looks like it does for that character in game.
   The locations underneath stay visible and clickable, and the shading updates after an unlock
 - Open it with **Open World Map** on the World Map card in the Teleportation column, or **Edit
   Markers on Map** in the left column
 
+### Progress Layers
+
+Each layer reads the selected character's event flags. Every write asks first and makes a backup.
+
+- **Pickups** - item pickups as golden glows, gray once collected. **Types** filters them by item
+  type (bell bearings and paintings have their own type). World pickups get **Respawn** and
+  **Mark Collected**; boss, enemy and NPC rewards can be marked collected or respawned too, but a
+  respawned reward is not placed back in the world
+- **NPCs** - where each NPC currently stands, tinted when hostile or dead, with **Calm** and
+  **Revive**. A marker shared by several NPCs opens a picker. Selecting an NPC also shows its quest
+  steps as numbered pins along a dashed route; **Move Here** applies the quest up to that step
+- **Bosses** - each boss with its reward as the icon (Remembrance and Great Rune bosses larger);
+  **Kill** and **Respawn** (a respawn also moves the character to Roundtable Hold).
+  **Remembrance Only** hides the other bosses
+- **Merchants** - the full stock at each merchant; **Restock**, **Sold Out** and **Restock All**
+- **Pools**, **Imp Seals**, **Paintings** - summoning pools (vanilla saves only), imp seals (the
+  ones needing two keys marked) and painting vistas
+- **Done %** in the list shows the completion of each region; selecting a region lists what is
+  left. **Export Progress** writes the progress of any set of regions to a text file, optionally
+  with the finished entries
+
+On a Convergence save the layers use the Convergence data, including the mod's own bosses.
+
 ### Teleporting from the Map
 
 1. Pick the character in the **Character** bar
 2. Click **Open World Map**
-3. Click a tile, grace or dungeon, or pick it from the list
+3. Click a spot, grace, dungeon, pickup, boss, NPC or the bloodstain, or pick it from the list
 4. Click **Teleport Here**
+
+**Click** at the top picks what a click on empty map selects:
+
+- **Pins** (default): the nearest walkable floor under the click. Where several floors lie under
+  the click (a bridge and the ground below, castle levels), the side panel lists them under
+  **Floors here** to pick one. A click with no floor near selects the tile
+- **Tiles**: the overworld tile under the click; hovering a tile outlines it
+
+A pin comes from the game's navigation mesh, not from a known safe spot, and can leave the
+character under the ground, inside a wall or out of bounds, so a pin teleport asks first. Pins
+inside a boss arena warn while that boss is alive. Pickups, bosses, NPCs and other markers
+teleport to the floor nearest to them. The bloodstain teleports to its exact saved position,
+after a warning when it holds runes.
 
 ### Locking and Unlocking Graces and Map Areas
 
-Select a Site of Grace on the map. The panel shows whether it is unlocked; **Unlock** / **Lock**
+Select a Site of Grace on the map. The panel shows whether it is unlocked and, for graces that
+only appear after a boss, which boss (**Appears after**); **Unlock** / **Lock**
 sets its event flag (the same as the Sites of Grace dialog in the Event Flags tab), makes a backup
 and saves the file. Unlocking a grace also adds its play region, so the area shows as discovered.
 
@@ -151,7 +198,8 @@ and saves the file. Unlocking a grace also adds its play region, so the area sho
   Realm of Shadow) and lists every map piece of it, so any set of pieces can be picked
 
 Both open a dialog first: untick **Map pieces** to unlock only graces, or untick the graces to
-reveal only map pieces. Each grace belongs to one map piece, and only the graces of the picked
+reveal only map pieces. Graces whose boss is still alive are asked about separately: **Yes**
+includes them, **No** skips them. Each grace belongs to one map piece, and only the graces of the picked
 pieces are unlocked (all of the area or map when none or every piece is picked), with their play
 regions. Revealing pieces also clears the fog of war over them (all fog of the map when every piece
 is picked), extends the part of the map the map menu shows, and makes the Underground or Realm of
@@ -212,6 +260,15 @@ Directly modify character's position coordinates in save file. Intended for prec
 5. Click **Teleport**
 6. Automatic backup created
 7. Coordinates written to save
+
+**Checks before writing:**
+
+- The line under the Map ID shows the map's name while typing; a map ID the game data does not
+  know gets a warning
+- A position with no floor within 4 units offers to move it to the nearest floor within 32 units.
+  Past the edge of an overworld tile, this can change the map ID to the neighbouring tile
+- Coordinates 0, 0, 0 on another map use that map's warp point (or the game's default spawn
+  when it has none); on the same map they keep the current position
 
 **Result:** Character teleports to specified coordinates on next game load
 
@@ -284,11 +341,12 @@ Map ID: `[M, AA, BB, CC]`
 
 - Verifies values are numbers
 - Ensures Map ID bytes are 0-255
-- Warns about DLC locations without DLC access
+- Checks the map ID and the position against the game's map data
+- Warns about DLC locations without DLC access, boss arenas and graces whose boss is alive
 
-**No guarantee teleport will work for custom coordinates:**
+**No guarantee teleport will work for custom coordinates or map pins:**
 
-- Invalid custom coordinates may cause:
+- An invalid position may cause:
   - Infinite loading screen
   - Fall through world
   - Stuck state

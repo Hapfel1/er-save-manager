@@ -49,9 +49,16 @@ https://steamcommunity.com/id/username
 
 ### Method 3 - Manual Entry
 
-Enter the 17-digit SteamID64 directly into the SteamID field and proceed to patching.
+Enter the SteamID into the SteamID field and proceed to patching. Every Steam ID format is accepted and converted to SteamID64 in the field:
 
-The ID must be exactly 17 digits, no spaces. Example: `76561198012345678`
+| Format | Example |
+|--------|---------|
+| SteamID64 | `76561198012345678` |
+| SteamID3 | `[U:1:52079950]` |
+| SteamID2 | `STEAM_0:0:26039975` |
+| Steam32 (account ID) | `52079950` |
+
+The URL field accepts the same formats. A patch to the SteamID the save already holds does nothing and makes no backup.
 
 ---
 
