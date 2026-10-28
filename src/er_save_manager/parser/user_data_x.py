@@ -251,11 +251,10 @@ class UserDataX:
 
         # Read Gaitem map (VARIABLE LENGTH!)
         gaitem_count = 0x13FE if obj.version <= 81 else 0x1400  # 5118 or 5120
-        obj.gaitem_map = []
-        obj.gaitem_offsets = []  # absolute offset of each gaitem entry relative to slot data start
-        for _ in range(gaitem_count):
-            obj.gaitem_offsets.append(f.tell() - data_start)
-            obj.gaitem_map.append(Gaitem.read(f))
+        map_start = f.tell() - data_start
+        obj.gaitem_map, offsets = Gaitem.read_map(f, gaitem_count)
+        # Offset of each gaitem entry relative to slot data start
+        obj.gaitem_offsets = [map_start + off for off in offsets]
 
         # Read player game data (432 bytes)
         obj.player_game_data_offset = f.tell()

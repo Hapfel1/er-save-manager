@@ -290,6 +290,42 @@ class Gaitem:
 
         return obj
 
+    @classmethod
+    def read_map(cls, f: BytesIO, count: int) -> tuple[list[Gaitem], list[int]]:
+        """Read count consecutive entries in one block.
+
+        Returns the entries and each entry's offset from the first one; the
+        stream is left right after the last entry.
+        """
+        start = f.tell()
+        data = f.read(count * 21)  # 21 = largest entry size
+        base = _GAITEM_BASE.unpack_from
+        weapon = _GAITEM_WEAPON_EXTRA.unpack_from
+        armor = _GAITEM_ARMOR_EXTRA.unpack_from
+        items, offsets = [], []
+        pos = 0
+        for _ in range(count):
+            offsets.append(pos)
+            handle, item_id = base(data, pos)
+            pos += 8
+            obj = cls(handle, item_id)
+            handle_type = handle & 0xF0000000
+            if handle != 0 and handle_type != 0xC0000000:
+                if handle_type == 0x80000000:
+                    (
+                        obj.unk0x10,
+                        obj.unk0x14,
+                        obj.gem_gaitem_handle,
+                        obj.unk0x1c,
+                    ) = weapon(data, pos)
+                    pos += 13
+                else:
+                    obj.unk0x10, obj.unk0x14 = armor(data, pos)
+                    pos += 8
+            items.append(obj)
+        f.seek(start + pos)
+        return items, offsets
+
     def write(self, f: BytesIO):
         """Write Gaitem to stream with conditional field writing"""
         # Always write base 8 bytes
