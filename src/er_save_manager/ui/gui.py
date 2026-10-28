@@ -1409,9 +1409,10 @@ class SaveManagerGUI:
         """Handler of pending.write_failed: the in-memory save holds a
         change the file does not, so it is re-read from disk."""
         dropped = " Unapplied changes are dropped." if self.pending_bar.dirty() else ""
+        reason = (exc.strerror if isinstance(exc, OSError) else None) or exc
         CTkMessageBox.showerror(
             "Save Not Written",
-            f"The change was not written:\n{exc}\n\n"
+            f"The change was not written:\n{reason}\n\n"
             f"The save is reloaded from disk.{dropped}",
             parent=parent or self.root,
         )
@@ -1423,7 +1424,9 @@ class SaveManagerGUI:
         if not isinstance(
             exc, (own_writes.SaveChangedError, own_writes.SaveReadOnlyError)
         ):
-            CTkMessageBox.showerror("Save Not Written", str(exc), parent=self.root)
+            CTkMessageBox.showerror(
+                "Save Not Written", str(exc.strerror or exc), parent=self.root
+            )
             return
         if isinstance(exc, own_writes.SaveChangedError):
             title = "Save Changed on Disk"
