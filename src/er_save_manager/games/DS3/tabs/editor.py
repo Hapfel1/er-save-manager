@@ -41,7 +41,7 @@ from er_save_manager.ui.utils import (
 )
 from er_save_manager.validation.names import name_problem
 
-# NG+ field text for a character whose NG+ counter cannot be located
+# NG+ text for a character whose NG+ counter cannot be located
 _NG_UNKNOWN = "--"
 
 
@@ -74,7 +74,8 @@ class DS3EditorTab:
         self._current_slot = -1
         self._stat_vars: dict[str, tk.StringVar] = {}
         self._name_var = tk.StringVar()
-        self._ng_var = tk.StringVar(value="0")
+        # NG+ is shown here and edited in World State only.
+        self._ng_var = tk.StringVar(value=_NG_UNKNOWN)
         self._class_var = tk.StringVar()
         # Game data source (vanilla or a mod), shared with the Inventory tab;
         # it selects the class table.
@@ -97,9 +98,7 @@ class DS3EditorTab:
         self._stats_tracker = FieldTracker(
             self._stats_state, self._stat_labels, self._show_stat
         )
-        self._identity_tracker = FieldTracker(
-            var_state({"name": self._name_var, "ng": self._ng_var}), {"ng": "NG+"}
-        )
+        self._identity_tracker = FieldTracker(var_state({"name": self._name_var}))
 
     def setup_ui(self) -> None:
         for _ in self.setup_steps():
@@ -303,14 +302,17 @@ class DS3EditorTab:
             row=1, column=1, padx=5, pady=5, sticky="w"
         )
         ctk.CTkLabel(cf, text="NG+:").grid(row=2, column=0, sticky="w", padx=5, pady=5)
-        self._ng_combo = ctk.CTkComboBox(
-            cf,
-            variable=self._ng_var,
-            values=[str(i) for i in range(8)],
-            state="readonly",
-            width=200,
-        )
-        self._ng_combo.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        ng_row = ctk.CTkFrame(cf, fg_color="transparent")
+        ng_row.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(
+            ng_row, textvariable=self._ng_var, font=("Inter", 11, "bold")
+        ).pack(side="left")
+        ctk.CTkLabel(
+            ng_row,
+            text="Change it in World State.",
+            font=("Inter", 10),
+            text_color=("gray40", "gray70"),
+        ).pack(side="left", padx=(10, 0))
 
         ctk.CTkLabel(
             frame,
@@ -347,8 +349,7 @@ class DS3EditorTab:
         for var in self._stat_vars.values():
             var.set("")
         self._name_var.set("")
-        self._ng_var.set("0")
-        self._set_ng_editable(True)
+        self._ng_var.set(_NG_UNKNOWN)
         self._class_var.set("")
         if hasattr(self, "_class_note"):
             self._set_class_note([])
@@ -398,15 +399,8 @@ class DS3EditorTab:
     def _fill_identity(self, char) -> None:
         self._name_var.set(char.name)
         # NG+ sits behind the slot's offset chain; a broken chain hides it.
-        broken = bool(char.layout_error)
-        self._ng_var.set(_NG_UNKNOWN if broken else str(char.ng_plus))
-        self._set_ng_editable(not broken)
+        self._ng_var.set(_NG_UNKNOWN if char.layout_error else f"NG+{char.ng_plus}")
         self._identity_tracker.mark_clean()
-
-    def _set_ng_editable(self, editable: bool) -> None:
-        combo = getattr(self, "_ng_combo", None)
-        if combo is not None:
-            combo.configure(state="readonly" if editable else "disabled")
 
     def _stats_state(self) -> dict:
         state = var_state(
@@ -600,10 +594,15 @@ class DS3EditorTab:
         return self._loaded_level + sum(stats.values()) - self._loaded_sum
 
     def _auto_recalc_level(self) -> None:
+        """Show the level the attributes give; the loaded level while any
+        attribute is not a number from 1 to MAX_STAT."""
         try:
             stats = {k: int(self._stat_vars[k].get()) for k in catalog.STAT_KEYS}
         except ValueError:
-            return  # user mid-typing, skip
+            stats = None
+        if stats is None or not all(1 <= v <= MAX_STAT for v in stats.values()):
+            self._stat_vars["level"].set(str(self._loaded_level))
+            return
         self._stat_vars["level"].set(str(self._derived_level(stats)))
 
     # --- Pending changes ----------------------------------------------------- #
@@ -711,13 +710,9 @@ class DS3EditorTab:
         problem = name_problem(name, NAME_MAX_CHARS)
         if problem:
             raise StageError(problem)
-        # None: NG+ is not shown (broken offset chain) and stays as stored.
-        ng = None if char.layout_error else int(self._ng_var.get())
 
         def commit() -> None:
             char.name = name
-            if ng is not None and ng != char.ng_plus:
-                char.ng_plus = ng
             _sync_dir_name_level(save, slot, char.name, char.level)
 
         return commit

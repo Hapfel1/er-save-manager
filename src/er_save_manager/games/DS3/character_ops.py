@@ -21,7 +21,7 @@ import struct
 from pathlib import Path
 
 from .save import DS3Save
-from .slot import DS3Slot
+from .slot import DS3Slot, LayoutError
 
 _ERC_MAGIC = b"DS3C"
 _ERC_VERSION = 1
@@ -136,6 +136,22 @@ def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
     _write_dir_entry(save, slot_index, entry)
 
 
+def _sync_dir_from_slot(save: DS3Save, slot_index: int) -> None:
+    """Fill a slot's directory entry from the character slot alone: name,
+    level, appearance block and equipped item ids. Fields whose offsets do
+    not resolve on this slot are left as they are."""
+    char = save.characters[slot_index]
+    _sync_dir_name_level(save, slot_index, char.name, char.level)
+    try:
+        _sync_dir_face(save, slot_index, char.face_block)
+    except LayoutError:
+        pass
+    try:
+        sync_dir_equipment(save, slot_index)
+    except LayoutError:
+        pass
+
+
 def _check_bounds(slot_index: int) -> None:
     if not 0 <= slot_index < DS3Save.CHARACTER_SLOTS:
         raise IndexError(
@@ -242,12 +258,11 @@ def transfer_slot(
     if new_steam64 is not None:
         _patch_slot_steamid(data, new_steam64)
 
-    char = DS3Slot(to_slot, data)
-    target_save.characters[to_slot] = char
+    target_save.characters[to_slot] = DS3Slot(to_slot, data)
     if source_save.has_directory:
         _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
     else:
-        _sync_dir_name_level(target_save, to_slot, char.name, char.level)
+        _sync_dir_from_slot(target_save, to_slot)
 
 
 def export_character(save: DS3Save, slot_index: int, output_path: str | Path) -> None:
@@ -272,42 +287,58 @@ def export_character(save: DS3Save, slot_index: int, output_path: str | Path) ->
         f.write(checksum)
 
 
+_ERC_HEADER = struct.Struct("<4sII")
+_ERC_CHECKSUM_SIZE = 16
+
+
+def read_character_file(
+    save: DS3Save, slot_index: int, input_path: str | Path
+) -> bytearray:
+    """Slot data of a .ds3c file, checked against the file's checksum and the
+    plaintext size of slot_index in save. Raises ValueError with a message
+    for the user."""
+    _check_bounds(slot_index)
+    _check_available(save, slot_index)
+    raw = Path(input_path).read_bytes()
+    if raw[:4] != _ERC_MAGIC:
+        raise ValueError("Not a Dark Souls III character file (.ds3c).")
+    if len(raw) < _ERC_HEADER.size:
+        raise ValueError("The character file is cut off.")
+    _, version, size = _ERC_HEADER.unpack_from(raw)
+    if version != _ERC_VERSION:
+        raise ValueError(f"Unsupported .ds3c version {version}.")
+    end = _ERC_HEADER.size + size
+    if len(raw) < end + _ERC_CHECKSUM_SIZE:
+        raise ValueError("The character file is cut off.")
+    if hashlib.md5(raw[:end]).digest() != raw[end : end + _ERC_CHECKSUM_SIZE]:
+        raise ValueError("The character file is damaged (checksum mismatch).")
+    expected_size = save._parser.get_slot_plaintext_size(slot_index)
+    if size != expected_size:
+        raise ValueError(
+            f"The character data is {size:,} bytes, a slot in this save holds "
+            f"{expected_size:,}."
+        )
+    return bytearray(raw[_ERC_HEADER.size : end])
+
+
 def import_character(save: DS3Save, slot_index: int, input_path: str | Path) -> str:
     """Import a character from a .ds3c file into a slot. Returns the character name."""
     _check_bounds(slot_index)
     _check_available(save, slot_index)
+    return place_character(
+        save, slot_index, read_character_file(save, slot_index, input_path)
+    )
 
-    with open(input_path, "rb") as f:
-        magic = f.read(4)
-        if magic != _ERC_MAGIC:
-            raise ValueError("Invalid .ds3c file: bad magic")
 
-        version = struct.unpack("<I", f.read(4))[0]
-        if version != _ERC_VERSION:
-            raise ValueError(f"Unsupported .ds3c version: {version}")
-
-        size = struct.unpack("<I", f.read(4))[0]
-        data = f.read(size)
-        checksum_expected = f.read(16)
-
-    with open(input_path, "rb") as f:
-        checksum_actual = hashlib.md5(f.read()[:-16]).digest()
-
-    if checksum_actual != checksum_expected:
-        raise ValueError("Checksum mismatch - file may be corrupted")
-
-    expected_size = save._parser.get_slot_plaintext_size(slot_index)
-    if len(data) != expected_size:
-        raise ValueError(
-            f"Slot data size mismatch: expected {expected_size} bytes, got {len(data)}"
-        )
-
-    data = bytearray(data)
+def place_character(save: DS3Save, slot_index: int, data: bytearray) -> str:
+    """Write slot data from read_character_file() into a slot. Returns the
+    character name."""
+    _check_bounds(slot_index)
+    _check_available(save, slot_index)
     new_steam64 = _target_steam64(save)
     if new_steam64 is not None:
         _patch_slot_steamid(data, new_steam64)
 
-    char = DS3Slot(slot_index, data)
-    save.characters[slot_index] = char
-    _sync_dir_name_level(save, slot_index, char.name, char.level)
-    return char.name
+    save.characters[slot_index] = DS3Slot(slot_index, data)
+    _sync_dir_from_slot(save, slot_index)
+    return save.characters[slot_index].name

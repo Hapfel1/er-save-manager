@@ -1236,7 +1236,9 @@ class DS3Slot:
             _write_u32(self._data, entry.offset + 8, entry.quantity)
             return entry
         if position is None:
-            raise ValueError("No free inventory slot")
+            raise ValueError(
+                "No free storage box slot" if to_storage else "No free inventory slot"
+            )
 
         if kind in (ID_WEAPON, ID_ARMOR):
             handle = self._alloc_gaitem(item_id, handle_type, durability)
