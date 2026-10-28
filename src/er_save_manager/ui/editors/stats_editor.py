@@ -19,9 +19,8 @@ from er_save_manager.data.grace_data import (
     grace_from_last_rested,
     last_rested_grace_value,
 )
-from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
-from er_save_manager.ui.pending import FieldTracker, StageCancelled, StageError
+from er_save_manager.ui.pending import FieldTracker, StageError
 from er_save_manager.ui.utils import (
     bind_mousewheel,
     patch_combo_scroll,
@@ -62,11 +61,11 @@ def _range_error(text: str, limit: int) -> str:
 
 
 def class_minimum_message(class_name: str, violations: list[str]) -> str:
-    """Warning text for stats below a starting class minimum."""
+    """Text for stats below a starting class minimum."""
     return (
         f"The following stats are below the minimum for {class_name}:\n\n"
         + "\n".join(violations)
-        + "\n\nHow the game handles stats below the class minimum is untested."
+        + "\n\nRaise these stats to at least the minimum before applying."
     )
 
 
@@ -147,17 +146,16 @@ class StatsEditor:
         self.stat_vars = {}
         self._attr_error_labels: dict[str, ctk.CTkLabel] = {}
         self._attr_entries: dict[str, ctk.CTkEntry] = {}
-        # Attributes below the class minimum: warned at Apply All, not blocked.
-        self._attr_below_min: set[str] = set()
-        # (archetype, attribute values) the class minimum warning last
-        # covered: the loaded state or the state confirmed at Apply All.
-        self._class_min_ack: tuple | None = None
         self.level_var = None
         self.calculated_level_var = None
         self.level_warning_var = None
 
         self._logger = logging.getLogger(__name__)
         self._current_archetype: int = 9  # tracks archetype for per-stat minimums
+        # Class and attribute text as loaded. A stored attribute below its class
+        # minimum is blocked only once the class or that attribute changes.
+        self._loaded_archetype: int = 9
+        self._loaded_attrs: dict[str, str] = {}
         self.level_warning_label = None
         self.runes_var = None
         self.recover_runes_button = None
@@ -579,7 +577,6 @@ class StatsEditor:
         # Errors belong to the edits that load or discard replaces.
         for label in self._attr_error_labels.values():
             label.configure(text="")
-        self._attr_below_min.clear()
         save_file = self.get_save_file()
         if not save_file:
             return
@@ -650,7 +647,8 @@ class StatsEditor:
         self._refresh_matchmaking_min(slot)
 
         self.calculate_character_level()
-        self._class_min_ack = self._class_min_state()
+        self._loaded_archetype = self._current_archetype
+        self._loaded_attrs = {k: self.stat_vars[k].get().strip() for k in _ATTR_ORDER}
         self.tracker.mark_clean()
 
     def _tracked_state(self) -> dict:
@@ -791,7 +789,7 @@ class StatsEditor:
         """Called when the user changes the starting class in the Identity tab.
 
         Recalculates the level and warns if any current stat falls below the
-        new class minimum. Returns confirm_class_minimum for the Identity
+        new class minimum. Returns check_class_minimum for the Identity
         tab's Apply All.
         """
         self._current_archetype = archetype_id
@@ -804,20 +802,25 @@ class StatsEditor:
                 class_minimum_message(class_name, violations),
                 parent=self.parent,
             )
-        return self.confirm_class_minimum
+        return self.check_class_minimum
 
     def _class_min_violations(self) -> tuple[str, list[str]]:
-        """Class name and the attributes below its minimum, as text lines."""
+        """Class name and the attributes below its minimum, as text lines.
+        With the class unchanged, only edited attributes count."""
         save_file = self.get_save_file()
         class_data = get_class_data(
             self._current_archetype, bool(getattr(save_file, "is_convergence", False))
         )
         if not class_data:
             return "", []
+        class_changed = self._current_archetype != self._loaded_archetype
         violations = []
         for key in _ATTR_ORDER:
+            raw = self.stat_vars[key].get().strip()
+            if not class_changed and raw == self._loaded_attrs.get(key):
+                continue
             try:
-                current = int(self.stat_vars[key].get().strip())
+                current = int(raw)
             except ValueError:
                 continue
             if current < class_data.get(key, 1):
@@ -826,26 +829,11 @@ class StatsEditor:
                 )
         return class_data["name"], violations
 
-    def _class_min_state(self) -> tuple:
-        return (
-            self._current_archetype,
-            tuple(self.stat_vars[key].get().strip() for key in _ATTR_ORDER),
-        )
-
-    def confirm_class_minimum(self) -> None:
-        """Ask before writing stats below the class minimum; raises
-        StageCancelled on No. Asks once per class and attribute values."""
-        state = self._class_min_state()
-        if state == self._class_min_ack:
-            return
+    def check_class_minimum(self) -> None:
+        """Raise StageError when an attribute is below the class minimum."""
         class_name, violations = self._class_min_violations()
-        if violations and not CTkMessageBox.askyesno(
-            "Class Minimum Conflict",
-            class_minimum_message(class_name, violations) + "\n\nApply the changes?",
-            parent=self.parent,
-        ):
-            raise StageCancelled()
-        self._class_min_ack = state
+        if violations:
+            raise StageError(class_minimum_message(class_name, violations))
 
     def _on_attr_change(self, key: str) -> None:
         # Validate against class base minimum and 99 cap.
@@ -859,7 +847,6 @@ class StatsEditor:
         stat_min = class_data.get(key, 1) if class_data else 1
 
         raw = self._attr_entries[key].get().strip()
-        below_min = False
         if not raw:
             msg = "cannot be empty"
         else:
@@ -869,20 +856,13 @@ class StatsEditor:
                     msg = "min 1"
                 elif val < stat_min:
                     msg = f"min {stat_min}"
-                    below_min = True
                 elif val > 99:
                     msg = "max 99"
                 else:
                     msg = ""
             except ValueError:
                 msg = f"min {stat_min} - 99"
-        if below_min:
-            self._attr_below_min.add(key)
-        else:
-            self._attr_below_min.discard(key)
-        self._attr_error_labels[key].configure(
-            text=msg, text_color=palette.WARNING_TEXT if below_min else "red"
-        )
+        self._attr_error_labels[key].configure(text=msg, text_color="red")
         self.calculate_character_level()
 
     def _on_range_change(self, key: str) -> None:
@@ -982,10 +962,8 @@ class StatsEditor:
             if _range_error(var.get(), limit):
                 self._on_range_change(key)
                 raise StageError("Fix the values marked in red before applying.")
-        if any(
-            self._attr_error_labels[k].cget("text")
-            for k in _ATTR_KEYS - self._attr_below_min
-        ):
+        self.check_class_minimum()
+        if any(self._attr_error_labels[k].cget("text") for k in _ATTR_KEYS):
             raise StageError("Fix the attributes marked in red before applying.")
 
         try:
@@ -1029,7 +1007,6 @@ class StatsEditor:
         last_grace = self._selected_last_grace(
             bool(getattr(save_file, "is_convergence", False))
         )
-        self.confirm_class_minimum()
 
         def commit() -> list[str]:
             from io import BytesIO

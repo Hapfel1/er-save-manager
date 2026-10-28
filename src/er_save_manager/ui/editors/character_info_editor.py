@@ -612,8 +612,8 @@ class CharacterInfoEditor:
         if problem:
             raise StageError(problem)
         if class_changed and self._confirm_class is not None:
-            # Same class minimum warning as the Stats tab; raises
-            # StageCancelled when declined.
+            # Same class minimum check as the Stats tab; raises StageError
+            # when an attribute is below the new class minimum.
             self._confirm_class()
         target_level = int(self.char_ng_level_var.get().split("(")[1].rstrip(")"))
         time_of_day = (
