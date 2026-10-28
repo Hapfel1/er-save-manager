@@ -63,6 +63,20 @@ def raise_after_ctk_refocus(window, delay_ms: int = 150) -> None:
     window.after(delay_ms, lambda: raise_existing_window(window))
 
 
+def transient_to(dialog, parent) -> None:
+    """Keep a modal dialog above the window it blocks.
+
+    Without it the window manager can raise the parent over the dialog,
+    which then stays hidden while its grab blocks the parent. A transient
+    copies its master's state, so a hidden or minimized parent is skipped.
+    """
+    if parent is None:
+        return
+    top = parent.winfo_toplevel()
+    if top.winfo_viewable():
+        dialog.transient(top)
+
+
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
     """Call callback() once writes to var pause for delay_ms.
 

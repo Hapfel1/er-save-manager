@@ -36,6 +36,7 @@ class CTkMessageBox:
             bind_mousewheel,
             force_render_dialog,
             style_window_frame,
+            transient_to,
         )
 
         dialog = ctk.CTkToplevel(parent if parent else None)
@@ -45,6 +46,7 @@ class CTkMessageBox:
         dialog.attributes("-alpha", 0)
         dialog.title(title)
         dialog.resizable(False, False)
+        transient_to(dialog, parent)
 
         font = ("Inter", font_size)
         # Wide layout once the text would run past ~12 lines at the normal wrap
