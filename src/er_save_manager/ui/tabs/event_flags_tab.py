@@ -1008,13 +1008,24 @@ class EventFlagsTab:
                 "it, so it cannot be set."
             )
 
-        def toggle_flag():
+        def read_flag_id() -> int | None:
+            """Flag ID field as an int, or None after an error message."""
             try:
                 flag_id = int(flag_id_var.get())
             except ValueError:
+                flag_id = -1
+            if flag_id < 0:
                 CTkMessageBox.showerror(
-                    "Invalid Flag ID", "Invalid flag ID.", parent=dialog
+                    "Invalid Flag ID",
+                    "Flag ID must be a whole number, 0 or higher.",
+                    parent=dialog,
                 )
+                return None
+            return flag_id
+
+        def toggle_flag():
+            flag_id = read_flag_id()
+            if flag_id is None:
                 return
             if not EventFlags.has_flag(flag_id):
                 CTkMessageBox.showwarning(
@@ -1072,8 +1083,10 @@ class EventFlagsTab:
                 )
 
         def check_flag():
+            flag_id = read_flag_id()
+            if flag_id is None:
+                return
             try:
-                flag_id = int(flag_id_var.get())
                 if not EventFlags.has_flag(flag_id):
                     CTkMessageBox.showwarning(
                         "Flag Not In Save", missing_flag_message(flag_id), parent=dialog
@@ -1085,10 +1098,6 @@ class EventFlagsTab:
                     dialog,
                     f"Flag {flag_id}: {flag_name}\n\nState: {'ON' if state else 'OFF'}",
                     "info",
-                )
-            except ValueError:
-                CTkMessageBox.showerror(
-                    "Invalid Flag ID", "Invalid flag ID.", parent=dialog
                 )
             except Exception as e:
                 CTkMessageBox.showerror(

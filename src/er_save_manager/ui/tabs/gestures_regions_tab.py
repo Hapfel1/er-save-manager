@@ -26,8 +26,11 @@ from er_save_manager.ui.utils import (
 )
 
 GESTURE_SLOT_EMPTY = 0xFFFFFFFE
-# The 6-slot gesture wheel stores each gesture as its id minus one.
+# The 6-slot gesture wheel stores each gesture as its id minus one; an empty
+# wheel slot holds GESTURE_SLOT_EMPTY, shown as the id WHEEL_EMPTY.
 WHEEL_SLOTS = 6
+WHEEL_EMPTY = GESTURE_SLOT_EMPTY + 1
+WHEEL_EMPTY_LABEL = "Empty"
 
 
 # Gesture rows created per staged build step (prebuild_rows)
@@ -301,8 +304,11 @@ class GesturesRegionsTab:
         if len(selected) > 64:
             raise StageError(f"At most 64 gestures can be unlocked ({len(selected)}).")
         new_gesture_ids = selected + [GESTURE_SLOT_EMPTY] * (64 - len(selected))
+        # A gesture that gets locked leaves the wheel too.
+        locked = self._initial_unlocked - set(selected)
+        cleared = [(i, g) for i, g in enumerate(self._shown_wheel(slot)) if g in locked]
 
-        def commit() -> None:
+        def commit() -> list[str]:
             if isinstance(save_file._raw_data, bytes):
                 save_file._raw_data = bytearray(save_file._raw_data)
             slot.gestures.gesture_ids = new_gesture_ids
@@ -319,17 +325,49 @@ class GesturesRegionsTab:
             save_file._raw_data[abs_offset : abs_offset + len(gesture_data)] = (
                 gesture_data
             )
+            if not cleared:
+                return []
+            wheel = list(slot.equipped_gestures.gesture_ids)
+            for i, _g in cleared:
+                wheel[i] = GESTURE_SLOT_EMPTY
+            self._write_wheel(save_file, slot, wheel)
+            removed = ", ".join(
+                f"Slot {i + 1} {self._wheel_label(g)}" for i, g in cleared
+            )
+            return [f"Locked gestures removed from the gesture wheel: {removed}."]
 
         return commit
+
+    def _shown_wheel(self, slot) -> list[int]:
+        """Gesture ids of the wheel boxes, or the saved wheel when a box
+        holds no known choice."""
+        try:
+            return [self._wheel_names[var.get()] for var in self._wheel_vars]
+        except KeyError:
+            return [(g + 1) & 0xFFFFFFFF for g in slot.equipped_gestures.gesture_ids]
+
+    @staticmethod
+    def _write_wheel(save_file, slot, stored_ids: list[int]) -> None:
+        """Write the six stored wheel values (gesture id - 1) into the
+        in-memory save."""
+        if isinstance(save_file._raw_data, bytes):
+            save_file._raw_data = bytearray(save_file._raw_data)
+        slot.equipped_gestures.gesture_ids = stored_ids
+        data = BytesIO()
+        slot.equipped_gestures.write(data)
+        start = slot.data_start + slot.equipped_gestures_offset
+        save_file._raw_data[start : start + len(data.getvalue())] = data.getvalue()
 
     def _load_wheel(self, slot) -> None:
         """Fill the wheel boxes; choices are the unlocked gestures plus
         whatever the wheel already holds."""
-        equipped = [g + 1 for g in slot.equipped_gestures.gesture_ids]
+        equipped = [(g + 1) & 0xFFFFFFFF for g in slot.equipped_gestures.gesture_ids]
         choices = sorted(
-            self._initial_unlocked | set(equipped), key=lambda g: get_gesture_name(g)
+            (self._initial_unlocked | set(equipped)) - {WHEEL_EMPTY},
+            key=lambda g: get_gesture_name(g),
         )
-        self._wheel_names = {self._wheel_label(g): g for g in choices}
+        self._wheel_names = {WHEEL_EMPTY_LABEL: WHEEL_EMPTY}
+        self._wheel_names.update({self._wheel_label(g): g for g in choices})
         names = list(self._wheel_names)
         for combo, var, gesture_id in zip(
             self._wheel_combos, self._wheel_vars, equipped, strict=True
@@ -340,6 +378,8 @@ class GesturesRegionsTab:
 
     @staticmethod
     def _wheel_label(gesture_id: int) -> str:
+        if gesture_id == WHEEL_EMPTY:
+            return WHEEL_EMPTY_LABEL
         return f"{get_gesture_name(gesture_id)} ({gesture_id})"
 
     def wheel_changes(self) -> int:
@@ -361,17 +401,19 @@ class GesturesRegionsTab:
             gesture_ids = [self._wheel_names[var.get()] for var in self._wheel_vars]
         except KeyError:
             raise StageError("Pick a gesture for every wheel slot.") from None
-        if len(set(gesture_ids)) != len(gesture_ids):
+        placed = [g for g in gesture_ids if g != WHEEL_EMPTY]
+        if len(set(placed)) != len(placed):
             raise StageError("Each gesture can only be on the wheel once.")
+        # Gestures locked in the same Apply leave the wheel (prepare_gestures
+        # reports them).
+        selected = {gid for gid, var in self.gesture_states.items() if var.get()}
+        locked = self._initial_unlocked - selected
+        gesture_ids = [WHEEL_EMPTY if g in locked else g for g in gesture_ids]
 
         def commit() -> None:
-            if isinstance(save_file._raw_data, bytes):
-                save_file._raw_data = bytearray(save_file._raw_data)
-            slot.equipped_gestures.gesture_ids = [g - 1 for g in gesture_ids]
-            data = BytesIO()
-            slot.equipped_gestures.write(data)
-            start = slot.data_start + slot.equipped_gestures_offset
-            save_file._raw_data[start : start + len(data.getvalue())] = data.getvalue()
+            self._write_wheel(
+                save_file, slot, [(g - 1) & 0xFFFFFFFF for g in gesture_ids]
+            )
 
         return commit
 
