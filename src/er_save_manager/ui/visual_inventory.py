@@ -123,7 +123,6 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self.geometry("760x680")
         self.minsize(500, 400)
         self.resizable(True, True)
-        self.transient(parent)
 
         self._build_ui()
         self._rebuild()

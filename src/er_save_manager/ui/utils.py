@@ -48,6 +48,35 @@ def raise_existing_window(window) -> bool:
     return True
 
 
+def raise_after_ctk_refocus(window, delay_ms: int = 150) -> None:
+    """Raise a new popup again once CTkToplevel's Windows refocus has run.
+
+    On Windows, CTkToplevel.__init__ refocuses the widget that had focus
+    before it (in the main window) 10 ms later, which activates the main
+    window. A popup that is not transient to it then ends up behind it.
+    resizable() repeats that refocus 10 ms after it runs, which can be after
+    a slow build and so after the raise; the flag turns that repeat off.
+    CTkToplevel already set the title bar in __init__.
+    """
+    if isinstance(window, ctk.CTkToplevel):
+        window._deactivate_windows_window_header_manipulation = True
+    window.after(delay_ms, lambda: raise_existing_window(window))
+
+
+def transient_to(dialog, parent) -> None:
+    """Keep a modal dialog above the window it blocks.
+
+    Without it the window manager can raise the parent over the dialog,
+    which then stays hidden while its grab blocks the parent. A transient
+    copies its master's state, so a hidden or minimized parent is skipped.
+    """
+    if parent is None:
+        return
+    top = parent.winfo_toplevel()
+    if top.winfo_viewable():
+        dialog.transient(top)
+
+
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
     """Call callback() once writes to var pause for delay_ms.
 

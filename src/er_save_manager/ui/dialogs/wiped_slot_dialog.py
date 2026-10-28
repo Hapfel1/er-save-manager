@@ -22,6 +22,7 @@ from er_save_manager.ui.utils import (
     force_render_dialog,
     open_folder,
     style_window_frame,
+    transient_to,
 )
 
 _WARNING = palette.WARNING_TEXT
@@ -83,6 +84,7 @@ def show_wiped_slot_dialog(
     dialog.attributes("-alpha", 0)
     dialog.title("Character Data Wiped")
     dialog.resizable(False, False)
+    transient_to(dialog, parent)
 
     main = ctk.CTkFrame(dialog, fg_color="transparent")
     main.pack(fill=tk.BOTH, expand=True, padx=20, pady=(16, 16))

@@ -17,7 +17,11 @@ import customtkinter as ctk
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.ui import palette
 from er_save_manager.ui.tooltip import MULTI_SELECT_TIP, add_tooltip
-from er_save_manager.ui.utils import center_window, debounced_trace
+from er_save_manager.ui.utils import (
+    center_window,
+    debounced_trace,
+    raise_after_ctk_refocus,
+)
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
 if TYPE_CHECKING:
@@ -66,13 +70,13 @@ class VisualBonfireBrowser(ctk.CTkToplevel):
         self.title("Visual Bonfires")
         self.geometry(f"{w}x760")
         self.minsize(520, 480)
-        self.transient(parent)
         self.attributes("-alpha", 0)
         self.update_idletasks()
         center_window(self, w, 760, parent=parent, align_top=True)
         self.attributes("-alpha", 1)
         self.lift()
         self.focus_force()
+        raise_after_ctk_refocus(self)
 
         self._build_ui()
         self._rebuild()

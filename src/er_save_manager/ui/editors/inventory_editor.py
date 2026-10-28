@@ -24,6 +24,7 @@ from er_save_manager.ui.utils import (
     center_window,
     patch_combo_scroll,
     pick_file,
+    raise_after_ctk_refocus,
     raise_existing_window,
 )
 
@@ -3969,7 +3970,6 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self.resizable(True, True)
         self.minsize(720, 460)
         _center_over(self, parent, 840, 600)
-        self.transient(parent)
 
         # Rows of the loadout list; None is the unsaved draft.
         self._names: list[str | None] = []
@@ -4099,6 +4099,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
         self.refresh()
         self.lift()
         self.focus_force()
+        raise_after_ctk_refocus(self)
 
     def _on_destroy(self, event) -> None:
         if event.widget is self and self.refresh in self.editor._loadout_listeners:

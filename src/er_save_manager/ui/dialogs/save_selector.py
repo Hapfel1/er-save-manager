@@ -5,7 +5,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
-from er_save_manager.ui.utils import center_window, style_window_frame
+from er_save_manager.ui.utils import center_window, style_window_frame, transient_to
 
 # Rows built before the dialog shows (about the list's visible height), then
 # per later event loop turn
@@ -38,6 +38,7 @@ class SaveSelectorDialog:
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Select Save File")
         dialog.resizable(True, True)
+        transient_to(dialog, parent)
         # Stay transparent while the rows are built, so the window never
         # shows up empty and fills in afterwards. Position it now: window
         # managers place a window when it is first mapped and may ignore
