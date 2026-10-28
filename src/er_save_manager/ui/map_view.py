@@ -1170,6 +1170,8 @@ class MapWindow:
         self._press_view: tuple[float, float] = (0.0, 0.0)
         self._pan_origin: tuple[int, int, float, float] = (0, 0, 0.0, 0.0)
         self._drag_marker: MapMarker | None = None
+        # Pointer position relative to the dragged marker's anchor on screen
+        self._drag_offset: tuple[float, float] = (0.0, 0.0)
         self._dragging = False
         self._render_pending = False
         self._list_markers: list[MapMarker] = []
@@ -1289,6 +1291,7 @@ class MapWindow:
         self._selected_pin = None
         self._selected_region = None
         self._selected_loc = None
+        self._pins = []
         self._hover_tile = None
         self._tile_key = None
         self._queue_list_fill()
@@ -2723,7 +2726,8 @@ class MapWindow:
                     sx, sy, image=self._icons.npc(_NPC_SIZE, hostile, dead)
                 )
                 self._items[item] = ("pin", pin)
-                if tags:
+                # The selection tag already names the selected NPC
+                if tags and pin != sel:
                     self._name_tag(
                         pin, sx, sy + _NPC_SIZE / 2 + 2, hostile, dead, drawn
                     )
@@ -3225,6 +3229,7 @@ class MapWindow:
         self._selected_pin = None
         self._selected_loc = None
         self._pins = []
+        self._clear_marker_selection()
         by_map: dict[int, list[_Placed]] = {}
         for g in self._placed:
             if (
@@ -3814,6 +3819,9 @@ class MapWindow:
         self._drag_marker = (
             hit[1] if hit and hit[0] == "marker" and self._markers_editable() else None
         )
+        if self._drag_marker is not None:
+            sx, sy = self._to_screen(self._drag_marker.x, self._drag_marker.y)
+            self._drag_offset = (event.x - sx, event.y - sy)
 
     def _on_drag(self, event):
         if self._press is None:
@@ -3822,18 +3830,22 @@ class MapWindow:
         if not self._dragging and math.hypot(dx, dy) < _DRAG_THRESHOLD:
             return
         if not self._dragging and self._drag_marker is not None:
-            # Redraw once so the dragged marker shows as selected.
+            # Redraw the icons once so the dragged marker shows as selected;
+            # the map tiles stay.
+            self._clear_place_selection()
             self._selected_marker = self._drag_marker
-            self._render()
+            self._draw_overlays()
         self._dragging = True
         self._canvas.delete("hover")
         if self._drag_marker is not None:
             marker = self._drag_marker
             old = self._to_screen(marker.x, marker.y)
-            marker.x, marker.y = self._to_map(event.x, event.y)
+            nx, ny = event.x - self._drag_offset[0], event.y - self._drag_offset[1]
+            marker.x, marker.y = self._to_map(nx, ny)
             tag = self._marker_tags.get(id(marker))
             if tag is not None:
-                self._canvas.move(tag, event.x - old[0], event.y - old[1])
+                self._canvas.move(tag, nx - old[0], ny - old[1])
+                self._canvas.move("select_tag", nx - old[0], ny - old[1])
         else:
             self._pan_to(
                 self._press_view[0] - dx / self._zoom,
@@ -3849,6 +3861,8 @@ class MapWindow:
             if marker is not None and self._editor is not None:
                 self._editor.move(marker, marker.x, marker.y)
                 self._refresh_marker_panel(select=marker)
+                # Places the name tag again (above or below, inside the view)
+                self._schedule_render()
             return
         hit = self._hit(*press)
         mode = self._click_mode.get()
@@ -3923,6 +3937,7 @@ class MapWindow:
         self._pins = []
         self._selected_pin = None
         self._selected_region = None
+        self._clear_marker_selection()
         self._update_location_info()
         self._schedule_render()
 
@@ -3932,6 +3947,7 @@ class MapWindow:
         self._selected_loc = None
         self._selected_region = None
         self._pins = []
+        self._clear_marker_selection()
         self._update_location_info()
         self._schedule_render()
 
@@ -4421,6 +4437,7 @@ class MapWindow:
         self._selected_loc = None
         self._selected_pin = None
         self._selected_region = None
+        self._clear_marker_selection()
         self._pins = floors
         self._pin_var.set(0)
         self._fill_floor_choices()
@@ -4874,6 +4891,7 @@ class MapWindow:
         if self._syncing_list or not sel:
             return
         marker = self._list_markers[int(sel[0])]
+        self._clear_place_selection()
         self._selected_marker = marker
         if marker.map in _MAP_ORDER:
             self._show_map(marker.map)
@@ -4881,14 +4899,42 @@ class MapWindow:
         if marker.kind == MARKER:
             self._icon = marker.icon
             self._highlight_icon()
+        self._schedule_render()
 
     def _select_marker(self, marker: MapMarker):
+        self._clear_place_selection()
         self._selected_marker = marker
         if marker.kind == MARKER:
             self._icon = marker.icon
             self._highlight_icon()
         self._refresh_marker_panel(select=marker)
         self._schedule_render()
+
+    def _clear_marker_selection(self):
+        """Selecting anything else deselects the marker, so the tag, Delete
+        and the icon buttons never act on a marker that is not shown as
+        selected."""
+        if self._selected_marker is None:
+            return
+        self._selected_marker = None
+        self._marker_list.selection_remove(*self._marker_list.selection())
+
+    def _clear_place_selection(self):
+        """Location, pin, region and floor selection, dropped when a marker
+        is selected."""
+        if (
+            self._selected_loc is None
+            and self._selected_pin is None
+            and self._selected_region is None
+            and not self._pins
+        ):
+            return
+        self._selected_loc = None
+        self._selected_pin = None
+        self._selected_region = None
+        self._pins = []
+        self._loc_list.selection_remove(*self._loc_list.selection())
+        self._update_location_info()
 
     def _highlight_icon(self):
         for icon, button in self._icon_buttons.items():
