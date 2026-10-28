@@ -13,6 +13,7 @@ from er_save_manager.ui.utils import (
     debounced_trace,
     patch_combo_scroll,
     pick_file,
+    raise_after_ctk_refocus,
 )
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
@@ -58,13 +59,13 @@ class IconBrowser(ctk.CTkToplevel):
         self.geometry(f"{w}x800")
         self.minsize(w, 520)
         self.resizable(True, True)
-        self.transient(parent)
         self.attributes("-alpha", 0)
         self.update_idletasks()
         _center_over(self, parent, w, 800, top=True)
         self.attributes("-alpha", 1)
         # Non-modal by design: the visual inventory may be open at the same time
         self.raise_window()
+        raise_after_ctk_refocus(self)
 
         self._build_ui()
 

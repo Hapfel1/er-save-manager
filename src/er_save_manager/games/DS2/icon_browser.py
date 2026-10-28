@@ -30,6 +30,7 @@ from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
     patch_combo_scroll,
+    raise_after_ctk_refocus,
 )
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
@@ -67,13 +68,13 @@ class IconBrowser(ctk.CTkToplevel):
         self.title("Add Item")
         self.geometry(f"{w}x720")
         self.minsize(w, 480)
-        self.transient(parent)
         self.attributes("-alpha", 0)
         self.update_idletasks()
         _center_over(self, parent, w, 720)
         self.attributes("-alpha", 1)
         self.lift()
         self.focus_force()
+        raise_after_ctk_refocus(self)
 
         self._build_ui()
         self._load_category(self._current_cat)

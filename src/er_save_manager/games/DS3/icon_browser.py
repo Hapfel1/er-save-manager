@@ -30,6 +30,7 @@ from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
     patch_combo_scroll,
+    raise_after_ctk_refocus,
 )
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
 
@@ -77,13 +78,13 @@ def open_popup(window: ctk.CTkToplevel, parent, title: str) -> None:
     window.title(title)
     window.geometry(f"{w}x760")
     window.minsize(w, 480)
-    window.transient(parent)
     window.attributes("-alpha", 0)
     window.update_idletasks()
     center_window(window, w, 760, parent=parent, align_top=True)
     window.attributes("-alpha", 1)
     window.lift()
     window.focus_force()
+    raise_after_ctk_refocus(window)
 
 
 def search_row(window, on_change=None, var: tk.StringVar | None = None) -> tk.StringVar:
