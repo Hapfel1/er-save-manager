@@ -3,48 +3,230 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
-## 📦 Release 2.4.0
+## 📦 Release 2.4.1
 **Released:** October 28, 2026
 
-### Elden Ring
 
-- World map shows item pickups, NPCs, bosses, merchants, quest routes, summoning pools, imp seals and paintings, with respawn, revive, kill and restock ([db912a5](https://github.com/Hapfel1/er-save-manager/commit/db912a518de5c68685d6a941b617ee7e436a11e8))
-- Teleport to any spot on the world map, or to a pickup, boss, NPC or the bloodstain ([4cb70ce](https://github.com/Hapfel1/er-save-manager/commit/4cb70ce454423ccdea329ce26d2f89eec4d03249), [99145ca](https://github.com/Hapfel1/er-save-manager/commit/99145ca7b813d7c684280dd82a717cf69c3fd07d))
-- Completion per region, exportable as a text file ([db912a5](https://github.com/Hapfel1/er-save-manager/commit/db912a518de5c68685d6a941b617ee7e436a11e8))
-- Pick which map pieces and graces an unlock covers ([471d331](https://github.com/Hapfel1/er-save-manager/commit/471d33158ed71c9ab37e1b0030d95ec1f13b1353))
-- Warnings before teleports into boss arenas, to graces that only appear after their boss and into the Ashen Capital early ([a78bf0e](https://github.com/Hapfel1/er-save-manager/commit/a78bf0ee9e8c78f7333b29d592d20eedb22a7697), [83bf6fd](https://github.com/Hapfel1/er-save-manager/commit/83bf6fd5957519ada3e41e5b7d4cc2dff32ba6c1), [d206356](https://github.com/Hapfel1/er-save-manager/commit/d206356c25ff239dd4def8b06e331da4ab0cb66e))
-- Custom coordinates are checked against the game's map data ([3900dae](https://github.com/Hapfel1/er-save-manager/commit/3900daeee8279bd476d3c2316da7dbfa114adbbd))
-- Convergence 3.0.4 support ([ff3fa6f](https://github.com/Hapfel1/er-save-manager/commit/ff3fa6fe94f94e7502b511ba970d40a57b7cf245))
+### ✨ New Features
 
-### Dark Souls III
+- ER: Choose map pieces and graces before a map unlock ([471d331](https://github.com/Hapfel1/er-save-manager/commit/471d33158ed71c9ab37e1b0030d95ec1f13b1353))
 
-- PS4 saves (decrypted userdata folders) ([39a4c64](https://github.com/Hapfel1/er-save-manager/commit/39a4c6464b5ea7f0c3216ced452b7c8b392c06ff))
-- Quest progress and the missing NPCs ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d), [8f92266](https://github.com/Hapfel1/er-save-manager/commit/8f92266beae864a908b2b5cc111f530196db89a5))
-- Matchmaking weapon level follows upgrade edits ([0219338](https://github.com/Hapfel1/er-save-manager/commit/02193380b001dfaa5a10e1db05a842eba37861ef), [b43a4fe](https://github.com/Hapfel1/er-save-manager/commit/b43a4fe4b6899034d9a28e5c6bc7f60d5f94c0be), [c8bcc4b](https://github.com/Hapfel1/er-save-manager/commit/c8bcc4bee6ab5c193c17fd831ae60bf5f846d38a))
+- ER: Warn about graces that only spawn after their boss ([a78bf0e](https://github.com/Hapfel1/er-save-manager/commit/a78bf0ee9e8c78f7333b29d592d20eedb22a7697))
 
-### Dark Souls II
+- ER: Teleport to any spot picked on the world map ([4cb70ce](https://github.com/Hapfel1/er-save-manager/commit/4cb70ce454423ccdea329ce26d2f89eec4d03249))
 
-- World Flags tab: doors, item pickup respawn and event flags ([952c375](https://github.com/Hapfel1/er-save-manager/commit/952c375150a045a44a927da97dc4eea96c65ee3e))
-- Quest progress and the missing NPCs ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d), [5da0771](https://github.com/Hapfel1/er-save-manager/commit/5da077158d3809293bf665f649e02e8991cda6ec))
-- Fixed respawned group fights that could not be won ([017f94c](https://github.com/Hapfel1/er-save-manager/commit/017f94cd0ecb640cade94e074c8c001252d7505c))
+- ER: Warn before a map pin teleport, drop the Forge bowl floor ([83bf6fd](https://github.com/Hapfel1/er-save-manager/commit/83bf6fd5957519ada3e41e5b7d4cc2dff32ba6c1))
 
-### Dark Souls Remastered
+- ER: NPCs, bosses, merchants, quests, pickups and progress on the world map ([db912a5](https://github.com/Hapfel1/er-save-manager/commit/db912a518de5c68685d6a941b617ee7e436a11e8))
 
-- Quest progress ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d))
-- Fixed catalysts and talismans getting upgrade levels; affected saves are repaired on load ([e8c639a](https://github.com/Hapfel1/er-save-manager/commit/e8c639a354406cccfd7701b068d35f3779df118c))
+- ER: Check custom teleport map ids and coordinates against floor data ([3900dae](https://github.com/Hapfel1/er-save-manager/commit/3900daeee8279bd476d3c2316da7dbfa114adbbd))
 
-### General
+- DS3: Add missing NPCs to the NPCs tab ([8f92266](https://github.com/Hapfel1/er-save-manager/commit/8f92266beae864a908b2b5cc111f530196db89a5))
 
-- Review window listing every unapplied change ([48c7365](https://github.com/Hapfel1/er-save-manager/commit/48c73657661a62b411331cd476d2366e0da87bb9))
-- Optional auto-reload when the save changes outside the tool ([a8b74c9](https://github.com/Hapfel1/er-save-manager/commit/a8b74c95fb6408a7fa00016cc80ea138a67a02a8))
-- SteamID field accepts every Steam ID format ([27244ca](https://github.com/Hapfel1/er-save-manager/commit/27244caec41d90e1957cae0a229ac8b87e8e3ee7))
-- Notices show as toasts; warnings can be turned off in Settings ([d206356](https://github.com/Hapfel1/er-save-manager/commit/d206356c25ff239dd4def8b06e331da4ab0cb66e), [586feaa](https://github.com/Hapfel1/er-save-manager/commit/586feaa3f47019ad30335484884c1e233feea52b))
-- Saves changed or deleted while open are no longer written over, and can be restored from the Backup Manager ([58cba50](https://github.com/Hapfel1/er-save-manager/commit/58cba5087ba0f4640aa203fefb754f3ecea38df5), [b9d2110](https://github.com/Hapfel1/er-save-manager/commit/b9d2110cb339e8ea7eaa6b596ff855ce730662af))
-- More input checks and backup fixes in all games ([9ef4e74](https://github.com/Hapfel1/er-save-manager/commit/9ef4e742ba0d8cd0a2a6cfe30f0108b520acbdfc), [f3c65ec](https://github.com/Hapfel1/er-save-manager/commit/f3c65ecd0ae13e1dd1db1155ee530302927bd38b), [c2e746e](https://github.com/Hapfel1/er-save-manager/commit/c2e746eaf728706d793beab4730ff6bd83a96555), [dccfaec](https://github.com/Hapfel1/er-save-manager/commit/dccfaec9536993aaa141a6301464af7a34ba29d8), [c8c0377](https://github.com/Hapfel1/er-save-manager/commit/c8c0377ea8382ecc9e27064558c367b4f37149f3), [619d065](https://github.com/Hapfel1/er-save-manager/commit/619d0659f934bf5afb6c9064b68d95633732471f), [8066110](https://github.com/Hapfel1/er-save-manager/commit/8066110925806842c1f8e4c71e8a9970205c738b))
-- Unexpected errors are shown and written to errors.log ([0fe1ed4](https://github.com/Hapfel1/er-save-manager/commit/0fe1ed4365c6f9625fc9392c4a393e5f0b219e45))
+- DS3: PS4 userdata saves, load-screen equipment sync ([39a4c64](https://github.com/Hapfel1/er-save-manager/commit/39a4c6464b5ea7f0c3216ced452b7c8b392c06ff))
+
+- DS3: Raise the matchmaking weapon level on upgrade edits ([0219338](https://github.com/Hapfel1/er-save-manager/commit/02193380b001dfaa5a10e1db05a842eba37861ef))
+
+- DS3: Lower the matchmaking weapon level when the top weapon is downgraded ([b43a4fe](https://github.com/Hapfel1/er-save-manager/commit/b43a4fe4b6899034d9a28e5c6bc7f60d5f94c0be))
+
+- DS3: Show the matchmaking weapon level in Stats ([c8bcc4b](https://github.com/Hapfel1/er-save-manager/commit/c8bcc4bee6ab5c193c17fd831ae60bf5f846d38a))
+
+- DS2: Add Agdayne, Griant, Morrel, Cale, Shalquoir and five more NPCs ([5da0771](https://github.com/Hapfel1/er-save-manager/commit/5da077158d3809293bf665f649e02e8991cda6ec))
+
+- DS2: World Flags tab with doors, item pickup respawn and event flags ([952c375](https://github.com/Hapfel1/er-save-manager/commit/952c375150a045a44a927da97dc4eea96c65ee3e))
+
+- DS2: Explain the World Flags area lists in tooltips ([49bb8b6](https://github.com/Hapfel1/er-save-manager/commit/49bb8b6b4bac6cc25e1e089bfcc5b63e3161e1df))
+
+- DS2: Check button for the event flag id field ([e97765d](https://github.com/Hapfel1/er-save-manager/commit/e97765d2431c2a4c31aa166cd73b41d04829586e))
+
+- General: Quest progress for DS3, DSR and DS2; ER table gaps filled ([e345eea](https://github.com/Hapfel1/er-save-manager/commit/e345eeae1ae7b68cdfca2778cc94b8849d36066d))
+
+- General: Quest dialog per-game step handling ([0fd1f63](https://github.com/Hapfel1/er-save-manager/commit/0fd1f637a7af99b6f25cb502e41a2f8a2bb4527b))
+
+- General: Optional auto-reload when the save is modified externally ([a8b74c9](https://github.com/Hapfel1/er-save-manager/commit/a8b74c95fb6408a7fa00016cc80ea138a67a02a8))
+
+- General: Teleport ban warning, opt-out warnings and toasts for notices ([d206356](https://github.com/Hapfel1/er-save-manager/commit/d206356c25ff239dd4def8b06e331da4ab0cb66e))
+
+- General: List each unapplied change in the pending bar with a Review window ([48c7365](https://github.com/Hapfel1/er-save-manager/commit/48c73657661a62b411331cd476d2366e0da87bb9))
+
+- General: Mark deleted characters in the character management slot lists ([a9c60f5](https://github.com/Hapfel1/er-save-manager/commit/a9c60f58b3d1a50e35f46b82cdbd8899bc88ba21))
+
+- General: Tag and fade for the selected marker, fix pickup glow box ([6d1e141](https://github.com/Hapfel1/er-save-manager/commit/6d1e14127f8eb3e9bec37d4777c33ea8ed04c92b))
+
+- General: Rounded toasts with repeat counter, stack cap, hover pause ([586feaa](https://github.com/Hapfel1/er-save-manager/commit/586feaa3f47019ad30335484884c1e233feea52b))
+
+- General: Shared write_failed and save_writable hooks for save writes ([db53afd](https://github.com/Hapfel1/er-save-manager/commit/db53afd5727c8d80679387b5617bfdf619aaf8e5))
+
+- General: Log uncaught exceptions to errors.log and show an error dialog ([0fe1ed4](https://github.com/Hapfel1/er-save-manager/commit/0fe1ed4365c6f9625fc9392c4a393e5f0b219e45))
+
+- General: Shared name check counting UTF-16 code units ([fbbb893](https://github.com/Hapfel1/er-save-manager/commit/fbbb8936ade8f3788ba3018732b01da40a1d8e51))
+
+- General: Convert SteamID2, SteamID3 and Steam32 input to SteamID64 ([27244ca](https://github.com/Hapfel1/er-save-manager/commit/27244caec41d90e1957cae0a229ac8b87e8e3ee7))
+
+- General: Update data for Convergence 3.0.4 ([ff3fa6f](https://github.com/Hapfel1/er-save-manager/commit/ff3fa6fe94f94e7502b511ba970d40a57b7cf245))
+
+- General: Broader list search and unique labels for repeated names ([fbdfbab](https://github.com/Hapfel1/er-save-manager/commit/fbdfbab0f64a0b25f2f9ba8b6d28762ea10e2c56))
+
+- General: Highlight the picked quest step, add missed NPC steps (#435) ([81b55f7](https://github.com/Hapfel1/er-save-manager/commit/81b55f78d19b571f480b0ae06d680151a9b61e1e))
+
+
+### 🔧 Bug Fixes
+
+- ER: Name map entries after the grace they warp to ([54f205d](https://github.com/Hapfel1/er-save-manager/commit/54f205d3bdbf6af55a05c2e60b037add0c22c12b))
+
+- ER: Remove the teleport region unlock that never ran ([21ae35d](https://github.com/Hapfel1/er-save-manager/commit/21ae35d38a67400bc812ceac103d86a0c403b97b))
+
+- ER: Write the Regions tab list in place instead of rebuilding the slot ([dce5c9a](https://github.com/Hapfel1/er-save-manager/commit/dce5c9aa43f91ad3e79ef02c15932d1be7a5eafb))
+
+- ER: Add missing merchant stock and Convergence NPC reward pickups ([d7bcf49](https://github.com/Hapfel1/er-save-manager/commit/d7bcf49e54b584ac16ee2368cf7bbadb8d6617e8))
+
+- ER: Re-read swapped slots from their data offset ([a4ef0cd](https://github.com/Hapfel1/er-save-manager/commit/a4ef0cd922205749db8c6fce6d41088cf7d40065))
+
+- ER: Write presets at the parsed offset on PlayStation saves ([3550daa](https://github.com/Hapfel1/er-save-manager/commit/3550daaf64d4fbde8b186babdd40d8b8eaa9ff60))
+
+- ER: Stage loadout spawns and drop items that cannot be added ([926be6b](https://github.com/Hapfel1/er-save-manager/commit/926be6b0b3fe519eb5a0c7a202c5fa10a5cda084))
+
+- ER: Validate stats and identity fields instead of raising Tk errors ([9ef4e74](https://github.com/Hapfel1/er-save-manager/commit/9ef4e742ba0d8cd0a2a6cfe30f0108b520acbdfc))
+
+- ER: Character management copy, transfer and import checks ([9d10380](https://github.com/Hapfel1/er-save-manager/commit/9d103804da47ab82c4bb99f9d102ceae7ab3fd0a))
+
+- ER: Controller Vibration range is 0-10 ([5fc7f15](https://github.com/Hapfel1/er-save-manager/commit/5fc7f15be4296945503ad90fc6f919cad7aab640))
+
+- ER: Surface map pins, bloodstain teleport, tile floor snap, quest dialog lag ([4bbfc37](https://github.com/Hapfel1/er-save-manager/commit/4bbfc3735829626f9762dd659c25c298362ca220))
+
+- ER: Body type and voice type labels (#436) ([5b95be5](https://github.com/Hapfel1/er-save-manager/commit/5b95be5fe4cd7898c6a1eb30cbfa614c0fd40f28))
+
+- DS3: Name the second Shrine Handmaid entry after Untended Graves ([31fc2b0](https://github.com/Hapfel1/er-save-manager/commit/31fc2b0315210c98ff3302101e2e6bc8cd0159a5))
+
+- DS3: Validate names, guard immediate writes and staged equipment ([f3c65ec](https://github.com/Hapfel1/er-save-manager/commit/f3c65ecd0ae13e1dd1db1155ee530302927bd38b))
+
+- DS2: Respawn spawn-once boss fight enemies on repair and respawn ([017f94c](https://github.com/Hapfel1/er-save-manager/commit/017f94cd0ecb640cade94e074c8c001252d7505c))
+
+- DS2: Validate Stats input and catch character operation write errors ([c2e746e](https://github.com/Hapfel1/er-save-manager/commit/c2e746eaf728706d793beab4730ff6bd83a96555))
+
+- DS2: Roll back failed tab writes, lock slots with a bad MD5 ([717fd82](https://github.com/Hapfel1/er-save-manager/commit/717fd82ed1e99b472feafe381067641230eff15f))
+
+- DSR: Catalysts and talismans cannot be upgraded ([e8c639a](https://github.com/Hapfel1/er-save-manager/commit/e8c639a354406cccfd7701b068d35f3779df118c))
+
+- DSR: Validate edits up front and reload after failed writes ([dccfaec](https://github.com/Hapfel1/er-save-manager/commit/dccfaec9536993aaa141a6301464af7a34ba29d8))
+
+- NR: Validate relic imports, roll back failed writes, lock unreadable slots ([c8c0377](https://github.com/Hapfel1/er-save-manager/commit/c8c0377ea8382ecc9e27064558c367b4f37149f3))
+
+- General: Scroll only the innermost area under the pointer ([d620eec](https://github.com/Hapfel1/er-save-manager/commit/d620eecb7d56d2af066ec85396983bd05322491a))
+
+- General: Cut character names and passwords at the first null ([bce06f8](https://github.com/Hapfel1/er-save-manager/commit/bce06f84bede120603bd766dd445cf4cf54a27c9))
+
+- General: Center the selection ring on every marker kind ([b78ea99](https://github.com/Hapfel1/er-save-manager/commit/b78ea995062d4b2613360880ef399a9498b114c0))
+
+- General: Teleport to item, boss and NPC pins, collect or respawn rewards ([99145ca](https://github.com/Hapfel1/er-save-manager/commit/99145ca7b813d7c684280dd82a717cf69c3fd07d))
+
+- General: Reshape toasts after resize, drop app-wide relayout ([2327701](https://github.com/Hapfel1/er-save-manager/commit/232770158c629e0c1594ddb8fd9646cfcc875f7e))
+
+- General: Round toast corners by compositing over the window behind ([f7de8e3](https://github.com/Hapfel1/er-save-manager/commit/f7de8e3c8d76e9f89e9c3342f44c8072cfd58551))
+
+- General: Write every save through one atomic_write helper ([cb263fb](https://github.com/Hapfel1/er-save-manager/commit/cb263fbc30e41d27b6ef122ed496e707136571a0))
+
+- General: Block writes when the loaded save changed on disk ([58cba50](https://github.com/Hapfel1/er-save-manager/commit/58cba5087ba0f4640aa203fefb754f3ecea38df5))
+
+- General: Ask about unapplied edits before operations that write the save ([a5bd207](https://github.com/Hapfel1/er-save-manager/commit/a5bd207870f9261badcf02f5e9216b1fb0b8360d))
+
+- General: Refuse to patch the SteamID of files that are not Sekiro saves ([ca877d2](https://github.com/Hapfel1/er-save-manager/commit/ca877d2ce80b88909c83a173a39c5db24d7d4abf))
+
+- General: Run share code and vanity URL requests on a worker thread ([dac790e](https://github.com/Hapfel1/er-save-manager/commit/dac790e68ab4a03dd0d0ea507331e435abb32f5d))
+
+- General: Reject invalid backup limit and interval values ([4a61d9b](https://github.com/Hapfel1/er-save-manager/commit/4a61d9b172d68e453d6ed39e8dbe038996981f02))
+
+- General: Report failed checks and show readable issue labels ([b8101a3](https://github.com/Hapfel1/er-save-manager/commit/b8101a35316772c05cddbd26a2dde1e426d70c01))
+
+- General: Drop the double space in the unapplied changes bar ([1f68d2f](https://github.com/Hapfel1/er-save-manager/commit/1f68d2f305fec662ef1520e365a17cf73c594bf2))
+
+- General: Refuse cut-off and other-game files in the ER parser ([33b03d3](https://github.com/Hapfel1/er-save-manager/commit/33b03d357fb33d448b0070c4bbf62bf9f41cc8c8))
+
+- General: Check a save before warnings, plain load errors, keep the loaded path ([261e1a4](https://github.com/Hapfel1/er-save-manager/commit/261e1a48b523c47bf96943aca876ae007fc1703c))
+
+- General: Open Elden Ring saves with cut regulation data after a warning ([815b824](https://github.com/Hapfel1/er-save-manager/commit/815b824020fc417a08e7a2f0907953c7bf704b4e))
+
+- General: Rebuild the backup list from disk and write backups via a temp file ([619d065](https://github.com/Hapfel1/er-save-manager/commit/619d0659f934bf5afb6c9064b68d95633732471f))
+
+- General: Prune after the write and keep the restored backup ([8066110](https://github.com/Hapfel1/er-save-manager/commit/8066110925806842c1f8e4c71e8a9970205c738b))
+
+- General: Report failed auto-backups with a toast and errors.log ([22028d3](https://github.com/Hapfel1/er-save-manager/commit/22028d3c94198d2c2bc1284802e7bbe042ffb140))
+
+- General: Notice for a deleted save, restore it, block restore while the game runs ([b9d2110](https://github.com/Hapfel1/er-save-manager/commit/b9d2110cb339e8ea7eaa6b596ff855ce730662af))
+
+- General: Validate SteamID64 input and skip no-op patches before backup ([c093cbc](https://github.com/Hapfel1/er-save-manager/commit/c093cbc2f6d3a632da61cdbeabdf7c58c8aae405))
+
+- General: Read live slot flags, validate imports, ask before direct writes ([353b2f9](https://github.com/Hapfel1/er-save-manager/commit/353b2f9fcf115b108d6ff0d9e2dc00b1dbfbc578))
+
+- General: Validate preset imports and confirm overwrites ([90a9242](https://github.com/Hapfel1/er-save-manager/commit/90a92423bcdd6fc9658154d20b9ab1e263c8614c))
+
+- General: Validate add fields, loadout entries and AoW inserts ([e7e20cf](https://github.com/Hapfel1/er-save-manager/commit/e7e20cf9b97ed5d087a78ee11a138362be7a3175))
+
+- General: Validate custom teleport input and guard direct writes ([d137d31](https://github.com/Hapfel1/er-save-manager/commit/d137d31533cdc59943c943330bb7c9c61a9e23aa))
+
+- General: Guard checksum rewrite, plain file errors, hex offset input ([3da3e59](https://github.com/Hapfel1/er-save-manager/commit/3da3e5920950a300e2709aab76a4a7234c0b7783))
+
+- General: Exclusive marker selection and smooth marker drag ([18ef8fa](https://github.com/Hapfel1/er-save-manager/commit/18ef8fa515fee3a3f2831923994a2629c603b595))
+
+- General: Stop the process monitor without waiting out its sleep ([beecb23](https://github.com/Hapfel1/er-save-manager/commit/beecb23b38be9f0b9b3ee25dddbbe416e6fdb5e7))
+
+- General: Name tag and fade for entries picked in the region left list ([93fc03e](https://github.com/Hapfel1/er-save-manager/commit/93fc03e4ebcfdbccace8ea1e17bda835129e1307))
+
+- General: Open popups in front and keep modal dialogs above their parent (#431) ([3f2761d](https://github.com/Hapfel1/er-save-manager/commit/3f2761dc79e762992958ec61aa988c2ddf4fe0bb))
+
+- General: Input checks, import validation and plain messages for ER, DS3, DSR, DS2 and NR (#426) ([6d95c93](https://github.com/Hapfel1/er-save-manager/commit/6d95c93a4353b7687e3b195682b1677d905ff5ef))
+
+
+### 📖 Documentation
+
+- General: Document the 2.4.0 features, short 2.4.0 release notes ([52dd26e](https://github.com/Hapfel1/er-save-manager/commit/52dd26eec1fd1198471807d3674dbcfa974378b2))
+
+
+### ⚡ Performance Improvements
+
+- ER: Build gesture rows in the staged tab build ([e074ee3](https://github.com/Hapfel1/er-save-manager/commit/e074ee3843d01f5a9e3232ec4b39915f98f2bbad))
+
+- DS2: Index map object states per WorldObjects ([3a8296d](https://github.com/Hapfel1/er-save-manager/commit/3a8296d9f92a598e42560492a9cf7f03be5041b1))
+
+- General: No full canvas redraw on hover, map art off the UI thread ([c4b26f7](https://github.com/Hapfel1/er-save-manager/commit/c4b26f705979be8d9b7d28de6d181724d28e958c))
+
+- General: Reuse Inspector character cards on reload ([137d57e](https://github.com/Hapfel1/er-save-manager/commit/137d57e2f8d3fcbb25f665fa55bf1742769a9d4b))
+
+- General: No full reload for grace writes that keep the slot layout ([d92b9a5](https://github.com/Hapfel1/er-save-manager/commit/d92b9a58965b533f41480d737d01954e62e838db))
+
+- General: Load DS saves without building every queued tab first ([92b2b70](https://github.com/Hapfel1/er-save-manager/commit/92b2b70efa4444bd58de13e2913766bb1c8a23ae))
+
+- General: Build equipment rows in the staged tab build ([d39fc16](https://github.com/Hapfel1/er-save-manager/commit/d39fc16fe70f67b86100a47fdadd29e0a0ca093f))
+
+- General: Add Inspector character cards one per event loop turn ([09c3245](https://github.com/Hapfel1/er-save-manager/commit/09c3245709eeb041553c409d2ded5802282406ee))
+
+- General: Show the save picker before all its rows are built ([401f199](https://github.com/Hapfel1/er-save-manager/commit/401f19949bb1702baf9fb676fd48a1b1d7293c1e))
+
+- General: Open long dropdowns before all their rows exist ([bc74e81](https://github.com/Hapfel1/er-save-manager/commit/bc74e816b364f248df0443af9b306b9f72130bfc))
+
+- General: Fill Backup Manager and Unlocked Regions lists per turn ([c445934](https://github.com/Hapfel1/er-save-manager/commit/c44593400c12c6684a0d2c7a80f68a9e880e2de6))
+
+- General: Faster ER save loading (#434) ([9b11540](https://github.com/Hapfel1/er-save-manager/commit/9b11540005886de79ff121071bb9dda26697084c))
+
+
+### ♻️ Code Refactoring
+
+- General: Move DS2 and NR data files into data/ folders ([b0ba143](https://github.com/Hapfel1/er-save-manager/commit/b0ba1436b1cc862aaabda98bf4c2d4d3917726da))
+
+
+### 📦 Dependencies
+
+- General: Bump the github-actions group with 3 updates ([c965f80](https://github.com/Hapfel1/er-save-manager/commit/c965f80cc81dc2bd99e6aa1321c7336042e4d51a))
+
+
+### 🧹 Maintenance
+
+- DS3: Drop Convergence icons that duplicate vanilla ([347b6a8](https://github.com/Hapfel1/er-save-manager/commit/347b6a8ff748a8efe48bc9900bd55a292e79d740))
+
+- General: Slim the build and remove dead code ([7de92a2](https://github.com/Hapfel1/er-save-manager/commit/7de92a276c682e48568d1fbb4ca13bb462b20f7f))
+
 
 ---
-
 ## 📦 Release 2.3.0
 **Released:** October 19, 2026
 
@@ -2118,6 +2300,7 @@ implementation) ([19bee2c](https://github.com/Hapfel1/er-save-manager/commit/19b
 
 
 ---
+[2.4.1]: https://github.com/Hapfel1/er-save-manager/compare/v2.3.0..v2.4.1
 [2.3.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.2.0..v2.3.0
 [2.2.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.1.0..v2.2.0
 [2.1.0]: https://github.com/Hapfel1/er-save-manager/compare/v2.0.1..v2.1.0
