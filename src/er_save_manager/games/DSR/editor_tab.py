@@ -37,6 +37,7 @@ from er_save_manager.ui.editors.ds_equipment import AttunementSection, Equipment
 from er_save_manager.ui.pending import FieldTracker, PendingPage, StageError, var_state
 from er_save_manager.ui.utils import bind_mousewheel, game_blocks_write
 from er_save_manager.validation.names import name_problem
+from er_save_manager.validation.numbers import parse_whole
 
 
 def _game_blocks_write(parent) -> bool:
@@ -588,22 +589,25 @@ class DSREditorTab:
         return commit
 
     def _recalc_level(self) -> None:
-        """Recalculate and update the level field from current stat inputs."""
+        """Level from the current stat inputs, "-" while one is not a stat
+        value."""
         try:
-            vit = int(self._stat_vars["vit"].get())
-            atn = int(self._stat_vars["atn"].get())
-            end = int(self._stat_vars["end"].get())
-            str_ = int(self._stat_vars["str"].get())
-            dex = int(self._stat_vars["dex"].get())
-            int_ = int(self._stat_vars["int"].get())
-            fth = int(self._stat_vars["fth"].get())
-            res = int(self._stat_vars["res"].get())
+            stats = [parse_whole(self._stat_vars[key].get()) for key in STAT_KEYS]
         except ValueError:
+            stats = []
+        if not stats or not all(1 <= v <= MAX_STAT for v in stats):
+            self._stat_vars["level"].set("-")
             return
-        lvl = calc_level_from_stats(
-            self._loaded_class_idx, vit, atn, end, str_, dex, int_, fth, res
-        )
+        lvl = calc_level_from_stats(self._loaded_class_idx, *stats)
         self._stat_vars["level"].set(str(max(1, lvl)))
+
+    def _whole(self, key: str) -> int:
+        try:
+            return parse_whole(self._stat_vars[key].get())
+        except ValueError:
+            raise StageError(
+                f"{self._stat_labels[key]} must be a whole number."
+            ) from None
 
     # --- Apply ---------------------------------------------------------------- #
 
@@ -613,12 +617,9 @@ class DSREditorTab:
             raise StageError("No character loaded.")
         slot = self._current_slot
         class_idx = self._loaded_class_idx
-        try:
-            stats = {key: int(self._stat_vars[key].get()) for key in STAT_KEYS}
-            souls = int(self._stat_vars["souls"].get())
-            humanity = int(self._stat_vars["humanity"].get())
-        except ValueError:
-            raise StageError("Stats, souls and humanity must be numbers.") from None
+        stats = {key: self._whole(key) for key in STAT_KEYS}
+        souls = self._whole("souls")
+        humanity = self._whole("humanity")
         problems = self._stat_problems(stats, class_idx)
         if not 0 <= souls <= MAX_SOULS:
             problems.append(f"Souls must be 0-{MAX_SOULS:,}")
@@ -654,7 +655,7 @@ class DSREditorTab:
         )
         # The Stats page's values, which Apply All writes first.
         try:
-            stats = {key: int(self._stat_vars[key].get()) for key in STAT_KEYS}
+            stats = {key: parse_whole(self._stat_vars[key].get()) for key in STAT_KEYS}
         except ValueError:
             stats = {key: char.get_stat(key) for key in STAT_KEYS}
         problems = self._stat_problems(stats, new_class)
@@ -682,19 +683,21 @@ class DSREditorTab:
     def _stat_problems(self, stats: dict[str, int], class_idx: int) -> list[str]:
         """Stats above the cap or below the class's starting values."""
         problems = [
-            f"{key.upper()} above {MAX_STAT}"
+            f"{self._stat_labels[key]} above {MAX_STAT}"
             for key, value in stats.items()
             if value > MAX_STAT
         ]
         base = class_base_stats(class_idx)
         if self._enforce_class_min and base is not None:
             problems += [
-                f"{key.upper()} below the class minimum of {base[key]}"
+                f"{self._stat_labels[key]} below the class minimum of {base[key]}"
                 for key, value in stats.items()
                 if value < base[key]
             ]
         else:
             problems += [
-                f"{key.upper()} below 1" for key, value in stats.items() if value < 1
+                f"{self._stat_labels[key]} below 1"
+                for key, value in stats.items()
+                if value < 1
             ]
         return problems

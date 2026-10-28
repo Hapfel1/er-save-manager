@@ -465,10 +465,20 @@ class DSRAppearanceTab:
         if not path:
             return
         try:
-            app = Appearance.from_json(
-                json.loads(Path(path).read_text(encoding="utf-8"))
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except OSError as exc:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"Could not read the file:\n{exc.strerror or exc}",
+                parent=self.parent,
             )
-        except (OSError, ValueError) as exc:
+            return
+        except ValueError:
+            # Not UTF-8 text or not JSON.
+            data = None
+        try:
+            app = Appearance.from_json(data)
+        except ValueError as exc:
             CTkMessageBox.showerror("Import Failed", str(exc), parent=self.parent)
             return
         self._show(app)

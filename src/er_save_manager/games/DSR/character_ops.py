@@ -27,6 +27,8 @@ from .save import (
 
 _ERC_MAGIC = b"DSRC"
 _ERC_VERSION = 1
+_ERC_HEADER = 12  # magic, version, data size
+_ERC_CHECKSUM = 16  # MD5 of everything before it
 _STEAM64_BASE = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
 
@@ -320,33 +322,36 @@ def export_character(save: DSRSave, slot_index: int, output_path: str | Path) ->
         f.write(checksum)
 
 
+def read_character_file(input_path: str | Path) -> bytes:
+    """Character data of a .dsrc file. Raises ValueError with a message for
+    the user when the file is not a readable DSR character file, OSError when
+    it cannot be read."""
+    raw = Path(input_path).read_bytes()
+    if raw[:4] != _ERC_MAGIC:
+        raise ValueError("Not a DSR character file.")
+    if len(raw) < _ERC_HEADER:
+        raise ValueError("Not a DSR character file (too short).")
+    version, size = struct.unpack_from("<II", raw, 4)
+    if version != _ERC_VERSION:
+        raise ValueError(
+            f"Not a DSR character file this version can read (format {version})."
+        )
+    if size != SLOT_DATA_SIZE or len(raw) != _ERC_HEADER + size + _ERC_CHECKSUM:
+        raise ValueError("Not a DSR character file (wrong size).")
+    if hashlib.md5(raw[:-_ERC_CHECKSUM]).digest() != raw[-_ERC_CHECKSUM:]:
+        raise ValueError("The DSR character file is damaged (checksum mismatch).")
+    return raw[_ERC_HEADER:-_ERC_CHECKSUM]
+
+
 def import_character(save: DSRSave, slot_index: int, input_path: str | Path) -> str:
     """Import a character from a .dsrc file into a slot. Returns the character name."""
+    return import_character_data(save, slot_index, read_character_file(input_path))
+
+
+def import_character_data(save: DSRSave, slot_index: int, data: bytes) -> str:
+    """Write character data from read_character_file into a slot and its
+    directory entry. Returns the character name."""
     _check_bounds(slot_index)
-
-    with open(input_path, "rb") as f:
-        magic = f.read(4)
-        if magic != _ERC_MAGIC:
-            raise ValueError("Invalid .dsrc file: bad magic")
-
-        version = struct.unpack("<I", f.read(4))[0]
-        if version != _ERC_VERSION:
-            raise ValueError(f"Unsupported .dsrc version: {version}")
-
-        size = struct.unpack("<I", f.read(4))[0]
-        data = f.read(size)
-        checksum_expected = f.read(16)
-
-    with open(input_path, "rb") as f:
-        checksum_actual = hashlib.md5(f.read()[:-16]).digest()
-
-    if checksum_actual != checksum_expected:
-        raise ValueError("Checksum mismatch - file may be corrupted")
-
-    if len(data) != SLOT_DATA_SIZE:
-        raise ValueError(
-            f"Slot data size mismatch: expected {SLOT_DATA_SIZE} bytes, got {len(data)}"
-        )
 
     data = bytearray(data)
     new_steamid = _get_system_steam64(save)
@@ -367,5 +372,7 @@ def import_character(save: DSRSave, slot_index: int, input_path: str | Path) -> 
     char = DSRCharacter(slot_index=slot_index, _data=data)
     save.characters[slot_index] = char
     _sync_dir_name_level(save, slot_index, char.name, char.level)
+    sync_dir_equipment(save, slot_index)
+    _sync_dir_appearance(save, slot_index, char)
     _set_active(save, slot_index, True)
     return char.name

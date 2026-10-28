@@ -3464,12 +3464,16 @@ class SaveManagerGUI:
         except Exception as e:
             CTkMessageBox.showerror("Repair Failed", str(e), parent=self.root)
             return
-        slots = ", ".join(f"slot {i + 1} ({n})" for i, n in repaired.items())
+        chars = self.dsr_save.characters
+        slots = "\n".join(
+            f"Slot {i + 1} ({chars[i].name}): {n} item{'s' if n > 1 else ''}"
+            for i, n in repaired.items()
+        )
         CTkMessageBox.showinfo(
             "Catalysts Repaired",
             "Some catalysts or talismans had an upgrade level they cannot have "
             "and showed as ?WikiName? in game. They were reset to +0.\n\n"
-            f"Repaired: {slots}. A backup was made first.",
+            f"{slots}\n\nA backup was made first.",
             parent=self.root,
         )
 
