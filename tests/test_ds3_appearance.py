@@ -9,10 +9,17 @@ import pytest
 
 from er_save_manager.games.DS3 import appearance as A
 from er_save_manager.games.DS3.character_ops import (
+    DIR_ARM_STYLE_OFFSET,
     DIR_BASE,
+    DIR_BODY_TYPE_OFFSET,
+    DIR_CLASS_OFFSET,
     DIR_FACE_OFFSET,
+    DIR_PLAY_TIME_OFFSET,
+    DIR_SOUL_MEMORY_OFFSET,
     DIR_STRIDE,
+    DIR_TYPED_IDS_OFFSET,
     _sync_dir_face,
+    _sync_dir_summary,
 )
 from er_save_manager.games.DS3.slot import DS3Slot, LayoutError
 
@@ -148,8 +155,9 @@ class _Parser:
 class _Save:
     has_directory = True
 
-    def __init__(self, entry10: bytearray) -> None:
+    def __init__(self, entry10: bytearray, characters=None) -> None:
         self._parser = _Parser(entry10)
+        self.characters = characters or []
 
 
 def test_directory_copy_follows_the_slot(slot):
@@ -167,3 +175,24 @@ def test_directory_without_block_is_left_alone(slot):
     before = bytes(entry10)
     _sync_dir_face(_Save(entry10), 1, slot.face_block)
     assert bytes(entry10) == before
+
+
+def test_directory_summary_follows_the_slot(slot):
+    entry10 = bytearray(DIR_BASE + DIR_STRIDE * 10)
+    _sync_dir_summary(_Save(entry10, [slot]), 0)
+    entry = entry10[DIR_BASE : DIR_BASE + DIR_STRIDE]
+    u32 = lambda off: int.from_bytes(entry[off : off + 4], "little")  # noqa: E731
+    assert u32(DIR_PLAY_TIME_OFFSET) == slot.play_time_ms // 1000
+    assert u32(DIR_SOUL_MEMORY_OFFSET) == slot.soul_memory
+    block = slot.arm_style_block
+    assert (
+        bytes(entry[DIR_ARM_STYLE_OFFSET : DIR_ARM_STYLE_OFFSET + len(block)]) == block
+    )
+    for k in range(len(slot.equipped_ids())):
+        _, item_id, handle = slot.equip_slot(k)
+        want = (
+            0 if item_id == 0xFFFFFFFF else (handle >> 28 << 28) | (item_id & 0x7FFFFF)
+        )
+        assert u32(DIR_TYPED_IDS_OFFSET + 4 * k) == want
+    assert entry[DIR_BODY_TYPE_OFFSET] == slot.body_type
+    assert entry[DIR_CLASS_OFFSET] == slot.starting_class

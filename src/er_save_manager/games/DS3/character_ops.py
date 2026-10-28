@@ -35,8 +35,13 @@ _ERC_VERSION = 1
 # Layout per entry (554 bytes), offsets relative to entry start:
 #   +0x00  34   Character name (UTF-16LE)
 #   +0x22   4   Level (u32 LE)
+#   +0x26   4   Play time in seconds (slot play time ms / 1000)
+#   +0x2A   4   Soul memory
 #   +0x3A       Appearance block (mirrors the slot's FACE block)
+#   +0x136 28   Arm style and active weapon slots (copy of the slot's block)
+#   +0x152 88   Equip slot ids with the handle's type nibble, 0 when empty
 #   +0x1AA 88   Item ids of the 22 equip slots (copy of the slot's id block)
+#   +0x21E  3   Body type, starting class, player block +0xA0 (u8 each)
 #   remaining bytes: other load-screen display data not required for the
 #   character to load correctly.
 #
@@ -45,8 +50,19 @@ DIR_BASE = 4258
 DIR_STRIDE = 554
 DIR_NAME_OFFSET = 0x00
 DIR_LEVEL_OFFSET = 0x22
+DIR_PLAY_TIME_OFFSET = 0x26
+DIR_SOUL_MEMORY_OFFSET = 0x2A
 DIR_FACE_OFFSET = 0x3A
+DIR_ARM_STYLE_OFFSET = 0x136
+DIR_TYPED_IDS_OFFSET = 0x152
 DIR_EQUIP_OFFSET = 0x1AA
+DIR_BODY_TYPE_OFFSET = 0x21E
+DIR_CLASS_OFFSET = 0x21F
+DIR_MIRROR_U8_OFFSET = 0x220
+# Typed ids keep the handle's type nibble and the low 23 bits of the id.
+_TYPED_ID_TYPE_MASK = 0xF0000000
+_TYPED_ID_MASK = 0x007FFFFF
+_EMPTY_EQUIP_ID = 0xFFFFFFFF
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -136,10 +152,34 @@ def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
     _write_dir_entry(save, slot_index, entry)
 
 
+def _sync_dir_summary(save: DS3Save, slot_index: int) -> None:
+    """Copy play time, soul memory, arm style, typed equip ids, body type and
+    class from the slot into its directory entry."""
+    char = save.characters[slot_index]
+    entry = _read_dir_entry(save, slot_index)
+    struct.pack_into("<I", entry, DIR_PLAY_TIME_OFFSET, char.play_time_ms // 1000)
+    struct.pack_into("<I", entry, DIR_SOUL_MEMORY_OFFSET, char.soul_memory)
+    block = char.arm_style_block
+    entry[DIR_ARM_STYLE_OFFSET : DIR_ARM_STYLE_OFFSET + len(block)] = block
+    typed = []
+    for k in range(len(char.equipped_ids())):
+        _, item_id, handle = char.equip_slot(k)
+        typed.append(
+            0
+            if item_id == _EMPTY_EQUIP_ID
+            else (handle & _TYPED_ID_TYPE_MASK) | (item_id & _TYPED_ID_MASK)
+        )
+    struct.pack_into(f"<{len(typed)}I", entry, DIR_TYPED_IDS_OFFSET, *typed)
+    entry[DIR_BODY_TYPE_OFFSET] = char.body_type
+    entry[DIR_CLASS_OFFSET] = char.starting_class
+    entry[DIR_MIRROR_U8_OFFSET] = char.dir_mirror_u8
+    _write_dir_entry(save, slot_index, entry)
+
+
 def _sync_dir_from_slot(save: DS3Save, slot_index: int) -> None:
     """Fill a slot's directory entry from the character slot alone: name,
-    level, appearance block and equipped item ids. Fields whose offsets do
-    not resolve on this slot are left as they are."""
+    level, appearance block, equipment and the load-screen summary fields.
+    Fields whose offsets do not resolve on this slot are left as they are."""
     char = save.characters[slot_index]
     _sync_dir_name_level(save, slot_index, char.name, char.level)
     try:
@@ -148,6 +188,10 @@ def _sync_dir_from_slot(save: DS3Save, slot_index: int) -> None:
         pass
     try:
         sync_dir_equipment(save, slot_index)
+    except LayoutError:
+        pass
+    try:
+        _sync_dir_summary(save, slot_index)
     except LayoutError:
         pass
 
