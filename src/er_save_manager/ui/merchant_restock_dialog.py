@@ -5,6 +5,7 @@ and restocks rows by clearing their purchase counters.
 """
 
 import tkinter as tk
+from collections import Counter
 
 import customtkinter as ctk
 
@@ -67,6 +68,23 @@ class MerchantRestockDialog:
         def _grace_name(r: StockRow) -> str:
             grace = graces.get(r.grace_flag)
             return grace.name if grace else ""
+
+        # Merchant filter entries: a name several merchants share gets the
+        # region, plus the grace when two share a region too
+        spots = {(r.merchant, r.map_id): r for r in stock}
+        names = Counter(name for name, _map in spots)
+        in_region = Counter((name, _region(r)) for (name, _map), r in spots.items())
+        merchant_labels = {}
+        for (name, map_id), r in spots.items():
+            label = name
+            if names[name] > 1 and _region(r):
+                label = f"{name} ({_region(r)})"
+                if in_region[name, _region(r)] > 1 and _grace_name(r):
+                    label = f"{name} ({_region(r)}, {_grace_name(r)})"
+            merchant_labels[name, map_id] = label
+
+        def _merchant_label(r: StockRow) -> str:
+            return merchant_labels[r.merchant, r.map_id]
 
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Merchant Restock")
@@ -192,7 +210,7 @@ class MerchantRestockDialog:
             return True
 
         def _on_scope_changed():
-            merchants = sorted({r.merchant for r in stock if _in_scope(r)})
+            merchants = sorted({_merchant_label(r) for r in stock if _in_scope(r)})
             merchant_combo.configure(values=[_ALL, *merchants])
             if merchant_var.get() not in merchants:
                 merchant_var.set(_ALL)
@@ -205,7 +223,9 @@ class MerchantRestockDialog:
             query = search_var.get().strip().lower()
             shown = 0
             for r in stock:
-                if not _in_scope(r) or (merchant != _ALL and r.merchant != merchant):
+                if not _in_scope(r) or (
+                    merchant != _ALL and _merchant_label(r) != merchant
+                ):
                     continue
                 count = bought_by_flag[r.flag_id]
                 sold_out = count >= r.quantity
