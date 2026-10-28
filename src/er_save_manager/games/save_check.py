@@ -9,7 +9,8 @@ Checked per game:
   DS3, DSR  load screen directory name and level match the character slot
   DSR       event flag 0 is off
   DS3       slot layout resolves (inventory, gestures, NG+ offsets);
-            storage box indices (items the game hides)
+            storage box indices (items the game hides); characters deleted
+            on the load screen (restorable, never repaired automatically)
   DS2       load screen caches (entries 0 and 22) match name, level, class
   NR        no bytes past the last BND4 entry (left by old relic spawns)
 """
@@ -31,6 +32,8 @@ class Issue:
     fixable: bool
     # Character slot the issue belongs to; None for save-wide issues.
     slot: int | None = None
+    # A deleted character restore() can list again; repair() leaves it.
+    restorable: bool = False
 
 
 def _md5(data: bytes) -> bytes:
@@ -91,6 +94,15 @@ def _check_ds3(path: Path) -> list[Issue]:
                 else:
                     issues.append(Issue("Invalid global data checksum", True))
     save = DS3Save.from_file(path)
+    for i in sorted(save.deleted):
+        issues.append(
+            Issue(
+                "Deleted on the load screen. The character data is still in the save.",
+                False,
+                i,
+                restorable=True,
+            )
+        )
     for i, char in enumerate(save.characters):
         if char is not None and char.layout_error:
             issues.append(Issue(char.layout_error, False, i))
@@ -119,6 +131,16 @@ def _repair_ds3(path: Path) -> None:
         if char is not None and not char.layout_error:
             char.fix_storage_indices()
     save.save_to_file(path)
+
+
+def _restore_ds3(path: Path, slot: int) -> str:
+    from er_save_manager.games.DS3.character_ops import restore_slot
+    from er_save_manager.games.DS3.save import DS3Save
+
+    save = DS3Save.from_file(path)
+    name = restore_slot(save, slot)
+    save.save_to_file(path)
+    return name
 
 
 # --- Dark Souls Remastered ---------------------------------------------------
@@ -308,6 +330,9 @@ _GAMES = {
 }
 
 
+_RESTORE = {"dark_souls_3": _restore_ds3}
+
+
 def supported(game_key: str) -> bool:
     return game_key in _GAMES
 
@@ -325,3 +350,9 @@ def check(game_key: str, path: str | Path) -> list[Issue]:
 def repair(game_key: str, path: str | Path) -> None:
     """Fix every fixable issue and write the save in place."""
     _GAMES[game_key][1](Path(path))
+
+
+def restore(game_key: str, path: str | Path, slot: int) -> str:
+    """List a character deleted on the load screen again and write the save
+    in place. Returns the character name."""
+    return _RESTORE[game_key](Path(path), slot)

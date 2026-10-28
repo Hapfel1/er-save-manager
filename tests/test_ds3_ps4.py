@@ -39,7 +39,11 @@ def _write_folder(folder: Path, body: bytes, slots: range, with_global: bool) ->
         data = body if i == 0 else bytes(SLOT_SIZE)
         (folder / f"userdata{i:04d}").write_bytes(data)
     if with_global:
-        (folder / "userdata0010").write_bytes(bytes(GLOBAL_SIZE))
+        # The game lists slot 0 only: in-use u8 at 0x1098 of the PC plaintext,
+        # which carries a u32 size field the userdata file does not.
+        global_body = bytearray(GLOBAL_SIZE)
+        global_body[0x1098 - 4] = 1
+        (folder / "userdata0010").write_bytes(bytes(global_body))
 
 
 @pytest.fixture
@@ -219,3 +223,49 @@ def test_character_file_is_checked_before_import(ps_folder, tmp_path):
     data = character_ops.read_character_file(save, 3, good)
     assert character_ops.place_character(save, 3, data) == save.characters[0].name
     assert save.characters[3].equipped_ids() == save.characters[0].equipped_ids()
+
+
+def _delete_on_load_screen(folder: Path, slot: int) -> None:
+    """Clear the in-use flag like the game's load-screen delete; data stays."""
+    path = folder / "userdata0010"
+    body = bytearray(path.read_bytes())
+    body[0x1098 - 4 + slot] = 0
+    path.write_bytes(bytes(body))
+
+
+def test_load_screen_delete_hides_the_character(ps_folder):
+    _delete_on_load_screen(ps_folder, 0)
+    save = DS3Save.from_file(ps_folder / "userdata0000")
+    assert save.characters[0] is None
+    assert save.deleted[0].name
+
+
+def test_restore_lists_the_character_again(ps_folder):
+    from er_save_manager.games import save_check
+
+    _delete_on_load_screen(ps_folder, 0)
+    issues = save_check.check("dark_souls_3", ps_folder / "userdata0000")
+    assert [i.slot for i in issues if i.restorable] == [0]
+    name = save_check.restore("dark_souls_3", ps_folder / "userdata0000", 0)
+    save = DS3Save.from_file(ps_folder / "userdata0000")
+    assert save.characters[0].name == name
+    assert not save.deleted
+    assert save.slot_in_use(0)
+
+
+def test_repair_leaves_a_deleted_character_deleted(ps_folder):
+    from er_save_manager.games import save_check
+
+    _delete_on_load_screen(ps_folder, 0)
+    save_check.repair("dark_souls_3", ps_folder / "userdata0000")
+    assert 0 in DS3Save.from_file(ps_folder / "userdata0000").deleted
+
+
+def test_swap_moves_a_deleted_character_with_its_slot(ps_folder):
+    _delete_on_load_screen(ps_folder, 0)
+    save = DS3Save.from_file(ps_folder / "userdata0000")
+    character_ops.swap_slots(save, 0, 3)
+    save.save_to_file(ps_folder / "userdata0000")
+    save = DS3Save.from_file(ps_folder / "userdata0000")
+    assert list(save.deleted) == [3]
+    assert all(c is None for c in save.characters)

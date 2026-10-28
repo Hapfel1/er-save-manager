@@ -247,6 +247,20 @@ def copy_slot(save: DS3Save, from_slot: int, to_slot: int) -> None:
 
     save.characters[to_slot] = DS3Slot(to_slot, bytearray(src.get_raw()))
     _write_dir_entry(save, to_slot, _read_dir_entry(save, from_slot))
+    save.set_slot_in_use(to_slot, True)
+    save.deleted.pop(to_slot, None)
+
+
+def restore_slot(save: DS3Save, slot_index: int) -> str:
+    """List a slot deleted on the load screen again. Returns the character name."""
+    _check_bounds(slot_index)
+    char = save.deleted.pop(slot_index, None)
+    if char is None:
+        raise ValueError(f"Slot {slot_index + 1} holds no deleted character.")
+    save.characters[slot_index] = char
+    _sync_dir_from_slot(save, slot_index)
+    save.set_slot_in_use(slot_index, True)
+    return char.name
 
 
 def delete_slot(save: DS3Save, slot_index: int) -> None:
@@ -256,7 +270,9 @@ def delete_slot(save: DS3Save, slot_index: int) -> None:
     size = save._parser.get_slot_plaintext_size(slot_index)
     save._parser.set_slot(slot_index, bytearray(size))
     save.characters[slot_index] = None
+    save.deleted.pop(slot_index, None)
     _write_dir_entry(save, slot_index, _DIR_EMPTY_TEMPLATE)
+    save.set_slot_in_use(slot_index, False)
 
 
 def swap_slots(save: DS3Save, slot_a: int, slot_b: int) -> None:
@@ -282,6 +298,18 @@ def swap_slots(save: DS3Save, slot_a: int, slot_b: int) -> None:
     entry_b = _read_dir_entry(save, slot_b)
     _write_dir_entry(save, slot_a, entry_b)
     _write_dir_entry(save, slot_b, entry_a)
+    save.set_slot_in_use(slot_a, char_b is not None)
+    save.set_slot_in_use(slot_b, char_a is not None)
+    # save_to_file writes only listed characters, so the stored entries swap
+    # too: a deleted character's data and an empty slot move with their slot.
+    raw_a = save._parser.get_slot(slot_a)
+    save._parser.set_slot(slot_a, save._parser.get_slot(slot_b))
+    save._parser.set_slot(slot_b, raw_a)
+    gone_a, gone_b = save.deleted.pop(slot_a, None), save.deleted.pop(slot_b, None)
+    for target, gone in ((slot_b, gone_a), (slot_a, gone_b)):
+        if gone is not None:
+            gone.slot_index = target
+            save.deleted[target] = gone
 
 
 def transfer_slot(
@@ -307,6 +335,8 @@ def transfer_slot(
         _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
     else:
         _sync_dir_from_slot(target_save, to_slot)
+    target_save.set_slot_in_use(to_slot, True)
+    target_save.deleted.pop(to_slot, None)
 
 
 def export_character(save: DS3Save, slot_index: int, output_path: str | Path) -> None:
@@ -385,4 +415,6 @@ def place_character(save: DS3Save, slot_index: int, data: bytearray) -> str:
 
     save.characters[slot_index] = DS3Slot(slot_index, data)
     _sync_dir_from_slot(save, slot_index)
+    save.set_slot_in_use(slot_index, True)
+    save.deleted.pop(slot_index, None)
     return save.characters[slot_index].name

@@ -69,7 +69,8 @@ class DS3InspectorTab:
         # The Inspector has no Game data selector; vanilla names the classes
         classes = catalog.starting_classes("vanilla")
         rows = []
-        for slot_idx, char in enumerate(save.characters):
+        for slot_idx, listed in enumerate(save.characters):
+            char = listed or save.deleted.get(slot_idx)
             if char is None:
                 continue
             cls = char.starting_class
@@ -80,8 +81,9 @@ class DS3InspectorTab:
                 "ng": "NG+?" if char.layout_error else f"NG+{char.ng_plus}",
                 "playtime": format_playtime(char.play_time_ms / 1000),
             }
+            name = char.name if listed else f"{char.name} (deleted)"
             rows.append(
-                CharacterRow(slot_idx, char.name, values, slot_issues(issues, slot_idx))
+                CharacterRow(slot_idx, name, values, slot_issues(issues, slot_idx))
             )
         self.list.show(columns("Souls"), rows)
 
@@ -94,6 +96,14 @@ class DS3InspectorTab:
     def _edit_selected(self) -> None:
         if self.selected_slot is None:
             notify(self.parent, "Select a character first.", "warning")
+            return
+        save = self._get_save()
+        if save is not None and self.selected_slot in save.deleted:
+            notify(
+                self.parent,
+                "This character is deleted. Restore it in View All Issues first.",
+                "warning",
+            )
             return
         if self._on_slot_selected:
             self._on_slot_selected(self.selected_slot)

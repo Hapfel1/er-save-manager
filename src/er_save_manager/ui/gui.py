@@ -3373,7 +3373,10 @@ class SaveManagerGUI:
 
         game = self.active_game
         if game == "dark_souls_3":
-            loader, char = self._load_ds3_save, self.ds3_save.characters[slot_idx]
+            loader = self._load_ds3_save
+            char = self.ds3_save.characters[slot_idx] or self.ds3_save.deleted.get(
+                slot_idx
+            )
             name = char.name if char else ""
         elif game == "dark_souls_remastered":
             loader, char = self._load_dsr_save, self.dsr_save.characters[slot_idx]
