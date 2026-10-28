@@ -27,6 +27,7 @@ from er_save_manager.ui.pending import (
     PendingPage,
     StageCancelled,
     StageError,
+    guard_before_write,
     save_writable,
     var_state,
     write_failed,
@@ -485,7 +486,7 @@ class NREditorTab:
         if self._pending_register is not None:
             self._pending_register("Character Editor")(
                 PendingPage(
-                    "Overview",
+                    "Character Editor",
                     self._overview_tracker.changes,
                     self._prepare_overview,
                     lambda: self._refill_overview(),
@@ -627,6 +628,18 @@ class NREditorTab:
         if slot is not None:
             self._populate_overview(slot)
 
+    @staticmethod
+    def _currency(var: tk.StringVar, field: str) -> int:
+        """Value of a currency field; StageError naming the field when it is
+        not a whole number from 0 to _MAX_CURRENCY."""
+        try:
+            value = int(var.get())
+        except ValueError:
+            raise StageError(f"{field} must be a whole number.") from None
+        if not 0 <= value <= _MAX_CURRENCY:
+            raise StageError(f"{field} must be between 0 and {_MAX_CURRENCY:,}.")
+        return value
+
     def _prepare_overview(self):
         save = self._get_nr_save()
         if save is None or self._current_slot < 0:
@@ -634,13 +647,8 @@ class NREditorTab:
         slot = save.slots[self._current_slot]
         if slot.is_unreadable:
             raise StageError(_LOCKED_TEXT)
-        try:
-            murk = int(self._murk_var.get())
-            mon = int(self._mon_var.get())
-        except ValueError:
-            raise StageError("Murk and Sovereign Sigils must be integers.") from None
-        if not (0 <= murk <= _MAX_CURRENCY and 0 <= mon <= _MAX_CURRENCY):
-            raise StageError(f"Values must be between 0 and {_MAX_CURRENCY:,}.")
+        murk = self._currency(self._murk_var, "Murk")
+        mon = self._currency(self._mon_var, "Sovereign Sigils")
         name = self._name_var.get().strip()
         problem = name_problem(name, _PLAYER_NAME_UNITS, "Player name")
         if problem:
@@ -1356,6 +1364,12 @@ class NREditorTab:
     # Immediate writes
     # ------------------------------------------------------------------
 
+    def _loadout_edit_kept(self, action: str) -> bool:
+        """Ask Apply / Discard / Cancel when the Loadouts tab holds an
+        unapplied edit, which the reload after a relic write would drop.
+        False when the user cancelled or applying failed."""
+        return not self._loadout_changes() or guard_before_write(action)
+
     def _writable_slot(self):
         """Current slot when it may be changed and written now, else None
         after telling the user why."""
@@ -1423,10 +1437,6 @@ class NREditorTab:
         if self._selected_relic_ga is None:
             notify(self.parent, "Select a relic row first.", "warning")
             return
-        slot = self._writable_slot()
-        if slot is None:
-            return
-        save = self._get_nr_save()
         try:
             real_id = int(self._re_item_var.get())
             effects = [int(v.get()) for v in self._re_effect_vars]
@@ -1436,15 +1446,23 @@ class NREditorTab:
                 "Invalid Input", "Could not parse IDs.", parent=self.parent
             )
             return
+        # Applying the Loadouts edit reloads the tabs and clears the selection
+        ga = self._selected_relic_ga
+        if not self._loadout_edit_kept("edit the relic"):
+            return
+        self._selected_relic_ga = ga
+        slot = self._writable_slot()
+        if slot is None:
+            return
+        save = self._get_nr_save()
 
         from er_save_manager.games.NR.relic_ops import ids_problem, prepare_relic
-        from er_save_manager.games.NR.relic_rules import edit_issues
+        from er_save_manager.games.NR.relic_rules import edit_issues, relic_kind
 
         problem = ids_problem(real_id, effects, curses)
         if problem:
             CTkMessageBox.showerror("Invalid Relic", problem, parent=self.parent)
             return
-        ga = self._selected_relic_ga
         rs = slot.relic_states.get(ga)
         if rs is None:
             return
@@ -1463,17 +1481,23 @@ class NREditorTab:
                 parent=self.parent,
             )
             return
-        # Unknown effects (mod data) and issues the relic already had, which
-        # an older game version may have rolled, only warn.
+        # Unknown relic ids and effects (mod data) and issues the relic
+        # already had, which an older game version may have rolled, only warn.
+        if relic_kind(real_id) == "unknown":
+            header = "Unknown relic ID"
+            note = (
+                "The relic ID is not in the game data, so its effects cannot "
+                "be checked. The relic may come from mod data."
+            )
+        else:
+            header = "Unknown relic effects"
+            note = "The relic may come from mod data or an older game version."
         if warnings and not confirm_warning(
             self.parent,
             "show_relic_validation_warning",
             "Validation Warning",
-            "Unknown relic effects",
-            [
-                "\n".join(i.message for i in warnings),
-                "The relic may come from mod data or an older game version.",
-            ],
+            header,
+            ["\n".join(i.message for i in warnings), note],
             confirm_text="Apply",
         ):
             return
@@ -1513,6 +1537,7 @@ class NREditorTab:
         if not written:
             return
         self._populate_relics(slot, keep_selection=True)
+        self._on_relic_select([ga])
         self._populate_loadouts(slot)
         self._show_toast("Relic saved.")
 
@@ -1527,12 +1552,14 @@ class NREditorTab:
             "Confirm Remove", "Remove this relic permanently?", parent=self.parent
         ):
             return
+        ga = self._selected_relic_ga
+        if not self._loadout_edit_kept("remove the relic"):
+            return
         slot = self._writable_slot()
         if slot is None:
             return
         from er_save_manager.games.NR.relic_ops import remove_relic
 
-        ga = self._selected_relic_ga
         written, cleared = self._change_and_write(
             slot, lambda: remove_relic(slot, ga), "nr_relic_remove", "Remove Failed"
         )
@@ -1558,6 +1585,8 @@ class NREditorTab:
         rid = self._spawn_relic_id.get()
         if self._current_nr_slot() is not None and rid < 0:
             notify(self.parent, "Select a relic type first.", "warning")
+            return
+        if not self._loadout_edit_kept("spawn the relic"):
             return
         slot = self._writable_slot()
         if slot is None:
@@ -1653,6 +1682,8 @@ class NREditorTab:
 
         if _game_blocks_write(self.parent):
             return
+        if not self._loadout_edit_kept("import relics"):
+            return
         slot = self._writable_slot()
         if slot is None:
             return
@@ -1665,6 +1696,11 @@ class NREditorTab:
                 raise ValueError("Expected a JSON list of relics")
         except (OSError, ValueError) as e:
             CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+            return
+        if not rows:
+            CTkMessageBox.showinfo(
+                "Nothing to Import", "No relics in this file.", parent=self.parent
+            )
             return
         relics, skipped, warnings = sort_import_rows(rows)
         skipped_text = (
@@ -2299,6 +2335,19 @@ class NREditorTab:
             )
             return
         if not self._loadout_issues_confirmed(slot, "Save the preset"):
+            return
+        info = slot.loadout
+        if (
+            info is not None
+            and info.spare_bytes < 0
+            and not CTkMessageBox.askyesno(
+                "Loadouts Over Capacity",
+                f"The loadout section is over capacity by {-info.spare_bytes} "
+                "bytes, so the game loads none of this character's presets, "
+                "the new one included.\n\nSave the preset anyway?",
+                parent=self.parent,
+            )
+        ):
             return
         slot_index, vessel_id = self._current_slot, self._lo_target.vessel_id
         relics = list(self._lo_relics)
