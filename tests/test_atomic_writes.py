@@ -102,3 +102,39 @@ def test_same_second_same_operation_backups_get_distinct_filenames(
     assert first_path.exists()
     assert second_path.exists()
     assert first_path.read_bytes() == first_content
+
+
+def test_create_backup_removes_temp_files_of_ended_writes(
+    tmp_path, sanitized_save_path
+):
+    """A crash between the temp write and the rename leaves
+    <name>.tmp<pid>; the next backup in the folder deletes it unless the
+    writing process still runs."""
+    import os
+
+    from er_save_manager.backup.manager import BackupManager
+
+    live_save = tmp_path / "ER0000.co2"
+    shutil.copyfile(sanitized_save_path, live_save)
+    manager = BackupManager(live_save)
+    folder = manager.backup_folder
+    folder.mkdir()
+
+    # Above the Linux pid_max limit (2**22), so no process has this id.
+    dead = 2**22 + 1
+    stale = [
+        folder / f"ER0000.co2_2026-01-01_00-00-00_x.bak.tmp{dead}",
+        folder / f"ER0000.co2_2026-01-01_00-00-00_x.bak.zip.tmp{dead}",
+        folder / f"metadata.json.tmp{dead}",
+    ]
+    live = [
+        folder / f"ER0000.co2_2026-01-01_00-00-00_y.bak.tmp{os.getpid()}",
+        folder / f"unrelated.txt.tmp{dead}",
+    ]
+    for path in stale + live:
+        path.write_bytes(b"partial")
+
+    manager.create_backup(operation="add_item")
+
+    assert not any(p.exists() for p in stale)
+    assert all(p.exists() for p in live)

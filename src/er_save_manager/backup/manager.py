@@ -78,6 +78,43 @@ class BackupHistory:
 _BACKUP_EXTENSIONS = (".bak.zip", ".bak.gz", ".bak", ".zip", ".gz")
 # "<stem>_<YYYY-mm-dd_HH-MM-SS>[_<operation and description>]"
 _NAME_STAMP = re.compile(r"_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})(?:_(.*))?$")
+# Temporary name of an unfinished write: "<target name>.tmp<writer pid>".
+_TMP_NAME = re.compile(r"^(.+)\.tmp(\d+)$")
+
+
+def _pid_running(pid: int) -> bool:
+    """True when a process with this id exists (or its state is unknown)."""
+    if pid <= 0:
+        return False
+    if os.name == "nt":
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+        kernel32.GetExitCodeProcess.argtypes = (
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_ulong),
+        )
+        # PROCESS_QUERY_LIMITED_INFORMATION; os.kill on Windows terminates.
+        handle = kernel32.OpenProcess(0x1000, False, pid)
+        if not handle:
+            # ERROR_ACCESS_DENIED: the process exists under another user.
+            return kernel32.GetLastError() == 5
+        try:
+            code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError:
+        return True
+    return True
 
 
 def _metadata_from_entry(entry) -> BackupMetadata | None:
@@ -268,6 +305,27 @@ class BackupManager:
         found.sort(key=lambda b: b.timestamp, reverse=True)
         return found
 
+    def _remove_stale_temps(self) -> None:
+        """Delete temporary backup and metadata files left by a write whose
+        process ended before the rename (crash, kill, power loss). Files of
+        this process or of a running process belong to a live write."""
+        try:
+            paths = list(self.backup_folder.iterdir())
+        except OSError:
+            return
+        own = os.getpid()
+        for path in paths:
+            match = _TMP_NAME.match(path.name)
+            if match is None:
+                continue
+            target, pid = match.group(1), int(match.group(2))
+            if target != self.METADATA_FILE and not target.endswith(_BACKUP_EXTENSIONS):
+                continue
+            if pid == own or _pid_running(pid) or not path.is_file():
+                continue
+            with contextlib.suppress(OSError):
+                path.unlink()
+
     def _save_history(self) -> None:
         """Save backup history to metadata file."""
         self.backup_folder.mkdir(parents=True, exist_ok=True)
@@ -368,6 +426,7 @@ class BackupManager:
         if not any(p.exists() for p in sources):
             raise FileNotFoundError(f"Save file not found: {self.save_path}")
         self.backup_folder.mkdir(parents=True, exist_ok=True)
+        self._remove_stale_temps()
 
         if self._ps_folder:
             compress = True

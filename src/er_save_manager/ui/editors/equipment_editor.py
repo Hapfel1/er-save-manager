@@ -62,7 +62,12 @@ _QUICKITEM_CATS = [
     "Seamless Co-op Items",
     "Convergence Remembrances",
     "Convergence Runes",
+    "Convergence Steeds",
 ]
+# Key Items goods offered in the quick item and pouch slots: the Spectral
+# Steed Whistle (EquipParamGoods isEquip). The Convergence whistles are the
+# "Convergence Steeds" category above.
+_QUICKITEM_KEY_GOODS = frozenset({0x40000000 | 130})
 # Flasks are deliberately excluded: equipping them via the tool duplicates
 # them rather than moving them, so they are never offered here and are
 # skipped on apply even if present in an old/shared loadout.
@@ -149,6 +154,13 @@ _PHYSICK_KEYS = {"physick1", "physick2"}
 _QUICKITEM_KEYS = {f"quickitem{i}" for i in range(1, 11)}
 _POUCH_KEYS = {f"pouch{i}" for i in range(1, 7)}
 _GOODS_KEYS = _SPELL_KEYS | _PHYSICK_KEYS | _QUICKITEM_KEYS | _POUCH_KEYS
+
+
+def _slot_extra_ids(key: str) -> frozenset[int]:
+    """Full item ids the slot key takes outside its _SLOT_CATS categories."""
+    if key in _QUICKITEM_KEYS or key in _POUCH_KEYS:
+        return _QUICKITEM_KEY_GOODS
+    return frozenset()
 
 
 def _resolve_name(key: str, raw_id: int, is_cnv: bool = False) -> str:
@@ -341,10 +353,15 @@ def _suffix_duplicate_names(
 
 
 def _owned_direct_items(
-    slot, cat_names: set[str], category_bit: int, is_cnv: bool, is_co2: bool
+    slot,
+    cat_names: set[str],
+    category_bit: int,
+    is_cnv: bool,
+    is_co2: bool,
+    extra_ids: frozenset[int] = frozenset(),
 ) -> list[tuple[int, int, str, str]]:
     """Return (base_id, direct_handle, name, category_name) for owned
-    talisman/goods entries.
+    talisman/goods entries in cat_names, plus the full item ids extra_ids.
 
     category_bit is the item database category (0x20000000 talisman,
     0x40000000 goods). base_id is the 24-bit masked value stored directly
@@ -369,7 +386,10 @@ def _owned_direct_items(
         if base_id in seen:
             continue
         item = db.items_by_id.get(category_bit | base_id)
-        if item is None or item.category_name not in cat_names:
+        if item is None or (
+            item.category_name not in cat_names
+            and (category_bit | base_id) not in extra_ids
+        ):
             continue
         if not _cat_allowed(item.category_name, is_cnv, is_co2):
             continue
@@ -1366,7 +1386,9 @@ class EquipmentEditor:
         elif key in _TALISMAN_KEYS:
             owned = _owned_direct_items(slot, cats, 0x20000000, is_cnv, is_co2)
         elif key in _GOODS_KEYS:
-            owned = _owned_direct_items(slot, cats, 0x40000000, is_cnv, is_co2)
+            owned = _owned_direct_items(
+                slot, cats, 0x40000000, is_cnv, is_co2, _slot_extra_ids(key)
+            )
         else:
             return []
 
@@ -1799,9 +1821,10 @@ class EquipmentEditor:
         item = db.items_by_id.get(full_id)
         if item is None:
             return None, "not in the item database"
-        if item.category_name not in _SLOT_CATS.get(key, ()) or not _cat_allowed(
-            item.category_name, is_cnv, self._is_co2_save()
-        ):
+        if (
+            item.category_name not in _SLOT_CATS.get(key, ())
+            and full_id not in _slot_extra_ids(key)
+        ) or not _cat_allowed(item.category_name, is_cnv, self._is_co2_save()):
             return None, "the editor cannot equip it in this slot"
         armor_slot = _ARMOR_KEY_TO_SLOT.get(key)
         if armor_slot and _load_armor_slot_types().get(raw) != armor_slot:

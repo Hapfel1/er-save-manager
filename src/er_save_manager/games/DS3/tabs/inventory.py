@@ -818,6 +818,11 @@ class DS3InventoryTab:
 
     def set_quantity(self, offsets: list[int], quantity: int, parent=None) -> bool:
         parent = parent or self.parent
+        if quantity < 1:
+            CTkMessageBox.showerror(
+                "Invalid Value", "Quantity must be at least 1.", parent=parent
+            )
+            return False
         save, save_path, char = self._begin(offsets, parent)
         if char is None:
             return False
@@ -1251,6 +1256,11 @@ class DS3InventoryTab:
             upgrade = self._read_int(self._spawn_upg_var, "Upgrade", parent)
         if quantity is None or upgrade is None:
             return False
+        if quantity < 1:
+            CTkMessageBox.showerror(
+                "Invalid Value", "Quantity must be at least 1.", parent=parent
+            )
+            return False
         if len(items) > _CONFIRM_SPAWN_COUNT and not CTkMessageBox.askyesno(
             "Spawn Items", f"Spawn {len(items)} items?", parent=parent
         ):
@@ -1275,6 +1285,8 @@ class DS3InventoryTab:
 
         to_storage = self.location_var.get() == LOCATIONS[1]
         spawned, capped, skipped = [], 0, []
+        # Key items have no storage box list; they go to the held key list.
+        keys_held = 0
         held_groups = {
             catalog.single_group(e.item_id)
             for e in [*char.iter_inventory(), *char.iter_storage()]
@@ -1315,12 +1327,19 @@ class DS3InventoryTab:
                 skipped.append(f"{item['Name']} ({exc})")
                 continue
             spawned.append(catalog.display_name(item_id, self.source))
+            keys_held += to_storage and lim.key_item
         where = "storage box" if to_storage else "inventory"
-        done = (
-            f"Spawned {spawned[0]} into the {where}"
-            if len(spawned) == 1
-            else f"Spawned {len(spawned)} items into the {where}"
-        )
+        if len(spawned) == 1:
+            if keys_held:
+                where = "inventory (key items cannot go in the storage box)"
+            done = f"Spawned {spawned[0]} into the {where}"
+        else:
+            done = f"Spawned {len(spawned)} items into the {where}"
+            if keys_held:
+                done += (
+                    f", {keys_held} key item{'s' if keys_held > 1 else ''} into "
+                    "the inventory (key items cannot go in the storage box)"
+                )
         return self._finish(
             save,
             save_path,

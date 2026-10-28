@@ -135,37 +135,56 @@ def export_character(
         f.write(checksum)
 
 
+def read_character_file(input_path: str | Path, slot_size: int) -> bytes:
+    """Slot data of a .nrc file. ValueError with a plain message when the
+    file cannot be read, is not a character file, is damaged or holds a slot
+    of another size than slot_size."""
+    try:
+        raw = Path(input_path).read_bytes()
+    except OSError as e:
+        raise ValueError(f"The file cannot be read: {e.strerror or e}") from None
+    header = len(_ERC_MAGIC) + 8
+    if raw[: len(_ERC_MAGIC)] != _ERC_MAGIC:
+        raise ValueError("The file is not a Nightreign character file (.nrc).")
+    if len(raw) < header:
+        raise ValueError("The character file is cut off.")
+    version, size = struct.unpack_from("<II", raw, len(_ERC_MAGIC))
+    if version != _ERC_VERSION:
+        raise ValueError(
+            f"The character file has format version {version}; this version "
+            f"of the save manager reads version {_ERC_VERSION}."
+        )
+    if len(raw) < header + size + 16:
+        raise ValueError("The character file is cut off.")
+    if (
+        hashlib.md5(raw[: header + size]).digest()
+        != raw[header + size : header + size + 16]
+    ):
+        raise ValueError("The character file is damaged (checksum mismatch).")
+    if size != slot_size:
+        raise ValueError(
+            f"The character file holds {size} bytes of slot data; slots in "
+            f"this save hold {slot_size}."
+        )
+    data = raw[header : header + size]
+    try:
+        slot = _parse_slot(bytearray(data), 0)
+    except Exception:
+        raise ValueError("The character in the file cannot be read.") from None
+    if slot.is_empty():
+        raise ValueError("The character file holds an empty slot.")
+    if slot.is_unreadable:
+        raise ValueError("The character in the file cannot be read.")
+    return data
+
+
 def import_character(
     save: NightreignSave, slot_index: int, input_path: str | Path
 ) -> str:
     """Import a character from a .nrc file into a slot. Returns the player name."""
     _check_bounds(slot_index)
-
-    with open(input_path, "rb") as f:
-        magic = f.read(4)
-        if magic != _ERC_MAGIC:
-            raise ValueError("Invalid .nrc file: bad magic")
-
-        version = struct.unpack("<I", f.read(4))[0]
-        if version != _ERC_VERSION:
-            raise ValueError(f"Unsupported .nrc version: {version}")
-
-        size = struct.unpack("<I", f.read(4))[0]
-        data = f.read(size)
-        checksum_expected = f.read(16)
-
-    with open(input_path, "rb") as f:
-        checksum_actual = hashlib.md5(f.read()[:-16]).digest()
-
-    if checksum_actual != checksum_expected:
-        raise ValueError("Checksum mismatch - file may be corrupted")
-
     entry = save.entries[slot_index]
-    if len(data) != len(entry.decrypted):
-        raise ValueError(
-            f"Slot data size mismatch: expected {len(entry.decrypted)} bytes, got {len(data)}"
-        )
-
+    data = read_character_file(input_path, len(entry.decrypted))
     entry.decrypted[:] = data
     save.slots[slot_index] = _parse_slot(entry.decrypted, slot_index)
     _sync_slot_steam_id(save, slot_index)

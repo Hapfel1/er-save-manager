@@ -456,7 +456,7 @@ class DSREventFlagsTab:
                 f"Flag {fid}  ->  {'ON (1)' if state else 'OFF (0)'}"
             )
         except Exception as exc:
-            self._lookup_result_var.set(f"Error: {exc}")
+            self._lookup_result_var.set(f"{exc}.")
 
     def _lookup_write(self, value: bool) -> None:
         if _game_blocks_write(self.parent):
@@ -481,7 +481,7 @@ class DSREventFlagsTab:
         try:
             char.set_flag(fid, value)
         except Exception as exc:
-            self._lookup_result_var.set(f"Error: {exc}")
+            self._lookup_result_var.set(f"{exc}.")
             return
         try:
             _backup_and_save(

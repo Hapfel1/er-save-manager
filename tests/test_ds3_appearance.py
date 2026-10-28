@@ -122,6 +122,20 @@ def test_json_round_trip(slot):
         A.Appearance.from_json({"format": "dsr_appearance", "version": 1})
 
 
+@pytest.mark.parametrize("body_type", [0.9, "1", True, 2, None])
+def test_json_body_type_must_be_int_0_or_1(slot, body_type):
+    data = {**A.Appearance.from_character(slot).to_json(), "body_type": body_type}
+    with pytest.raises(ValueError, match="body_type"):
+        A.Appearance.from_json(data)
+
+
+@pytest.mark.parametrize("face", ["zz", 5, None])
+def test_json_face_must_be_hex(slot, face):
+    data = {**A.Appearance.from_character(slot).to_json(), "face": face}
+    with pytest.raises(ValueError, match="face"):
+        A.Appearance.from_json(data)
+
+
 class _Parser:
     def __init__(self, entry10: bytearray) -> None:
         self._entry10 = entry10

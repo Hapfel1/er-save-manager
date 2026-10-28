@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.games.DSR.save import BONFIRE_LIT_LEVEL
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import (
@@ -281,6 +282,22 @@ class DSRWorldStateTab:
                 )
             else:
                 self._show_toast("Nothing to change, already set.")
+            return
+        kindled = [
+            self._bonfires[i]["name"]
+            for i in changed
+            if not lit
+            and char.bonfire_level(self._bonfires[i]["entity"]) > BONFIRE_LIT_LEVEL
+        ]
+        one = len(kindled) == 1
+        if kindled and not CTkMessageBox.askyesno(
+            "Unlight Kindled Bonfire",
+            f"{', '.join(kindled[:5])}{' and more' if len(kindled) > 5 else ''} "
+            f"{'is' if one else 'are'} kindled. Unlighting loses the kindle "
+            "level: lighting again here sets it to Lit, not kindled.\n\n"
+            f"Unlight {'it' if one else 'them'}?",
+            parent=self.parent,
+        ):
             return
         if not save_writable():
             return

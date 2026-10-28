@@ -196,3 +196,26 @@ def test_userdata_gets_the_ps4_ban_warning(ps_folder, tmp_path):
     pc.write_bytes(b"BND4")
     assert not is_vanilla_save(str(pc))
     assert warning_key("dark_souls_3", str(pc)) == "dark_souls_3"
+
+
+def test_character_file_is_checked_before_import(ps_folder, tmp_path):
+    save = DS3Save.from_file(ps_folder / "userdata0000")
+    good = tmp_path / "c.ds3c"
+    character_ops.export_character(save, 0, good)
+    raw = good.read_bytes()
+    bad = {
+        "empty": (b"", "Not a Dark Souls III character file"),
+        "header": (raw[:6], "cut off"),
+        "half": (raw[: len(raw) // 2], "cut off"),
+        "flip": (raw[:100] + bytes([raw[100] ^ 1]) + raw[101:], "checksum"),
+    }
+    for name, (data, message) in bad.items():
+        path = tmp_path / f"{name}.ds3c"
+        path.write_bytes(data)
+        with pytest.raises(ValueError, match=message):
+            character_ops.read_character_file(save, 3, path)
+    assert save.characters[3] is None
+
+    data = character_ops.read_character_file(save, 3, good)
+    assert character_ops.place_character(save, 3, data) == save.characters[0].name
+    assert save.characters[3].equipped_ids() == save.characters[0].equipped_ids()

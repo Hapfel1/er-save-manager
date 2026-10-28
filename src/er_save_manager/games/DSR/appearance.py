@@ -32,6 +32,17 @@ PHYSIQUE_COUNT = 9
 TYPE_COUNT = 10  # face types, hair types, color presets
 JSON_FORMAT = "dsr_appearance"
 JSON_VERSION = 1
+# JSON keys and the names the user sees for them.
+_JSON_LABELS = {
+    "body_type": "Body type",
+    "physique": "Physique",
+    "face_type": "Face type",
+    "hair_type": "Hair type",
+    "color_preset": "Color preset",
+    "hair_rgba": "Hair color",
+    "eye_rgba": "Eye color",
+    "face_data": "Face data",
+}
 # Half-range of a named control slider in byte units: the creation menu's
 # Eye Size slider at its right end sits here. si.ctl control vectors are all
 # unit length, so one value fits every named control.
@@ -213,7 +224,9 @@ class Appearance:
             if len(rgba) != 4 or not all(
                 math.isfinite(v) and 0.0 <= v <= 1.0 for v in rgba
             ):
-                raise ValueError(f"{name} must be four values from 0 to 1")
+                raise ValueError(
+                    f"{_JSON_LABELS[name]} must be four values from 0 to 1"
+                )
         if len(self.face_data) != FACE_DATA_SIZE:
             raise ValueError(f"Face data must be {FACE_DATA_SIZE} bytes")
 
@@ -234,21 +247,28 @@ class Appearance:
     @classmethod
     def from_json(cls, d: dict) -> Appearance:
         if not isinstance(d, dict) or d.get("format") != JSON_FORMAT:
-            raise ValueError("Not a Dark Souls Remastered appearance file")
+            raise ValueError("Not a Dark Souls Remastered appearance file.")
         if d.get("version") != JSON_VERSION:
-            raise ValueError(f"Unsupported appearance file version {d.get('version')}")
+            raise ValueError("This appearance file version is not supported.")
+        missing = [label.lower() for key, label in _JSON_LABELS.items() if key not in d]
+        if missing:
+            raise ValueError(f"The appearance file has no {', '.join(missing)}.")
+        values = {}
+        for key in ("body_type", "physique", "face_type", "hair_type", "color_preset"):
+            if type(d[key]) is not int:
+                raise ValueError(f"{_JSON_LABELS[key]} must be a whole number.")
+            values[key] = d[key]
+        for key in ("hair_rgba", "eye_rgba"):
+            rgba = d[key]
+            if not isinstance(rgba, list) or not all(
+                type(v) in (int, float) for v in rgba
+            ):
+                raise ValueError(f"{_JSON_LABELS[key]} must be four numbers.")
+            values[key] = tuple(float(v) for v in rgba)
         try:
-            app = cls(
-                body_type=int(d["body_type"]),
-                physique=int(d["physique"]),
-                face_type=int(d["face_type"]),
-                hair_type=int(d["hair_type"]),
-                color_preset=int(d["color_preset"]),
-                hair_rgba=tuple(float(v) for v in d["hair_rgba"]),
-                eye_rgba=tuple(float(v) for v in d["eye_rgba"]),
-                face_data=bytes.fromhex(d["face_data"]),
-            )
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"Invalid appearance file: {exc}") from exc
+            values["face_data"] = bytes.fromhex(d["face_data"])
+        except (TypeError, ValueError):
+            raise ValueError("Face data is not valid.") from None
+        app = cls(**values)
         app.validate()
         return app

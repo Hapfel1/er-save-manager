@@ -16,6 +16,7 @@ from er_save_manager.games.DS2.save import (
     SlotState,
     Treasure,
 )
+from er_save_manager.games.DS2.wording import counted
 from er_save_manager.games.DS2.world_flags import (
     DOORS,
     Door,
@@ -146,12 +147,10 @@ class _Page:
     def refresh(self) -> None:
         raise NotImplementedError
 
-    def _apply(
-        self, title: str, message: str, operation: str, mutate, done: str
-    ) -> None:
+    def _apply(self, title: str, message: str, operation: str, mutate, done) -> None:
         """Confirm, then run mutate(save, slot) to change the slot, back up and
-        write. mutate returns how many things it changed; done is the toast
-        text with {n} for that count."""
+        write. mutate returns how many things it changed; done(n) gives the
+        toast text for that count."""
         if game_blocks_write(self.parent, "darksoulsii.exe", "Dark Souls II"):
             return
         save: DS2Save | None = self.get_save()
@@ -183,7 +182,7 @@ class _Page:
                 write_failed(exc, self.parent)
                 return
         self.refresh()
-        self.show_toast(done.format(n=changed), duration=2500)
+        self.show_toast(done(changed), duration=2500)
 
 
 class DS2DoorsPanel(_Page):
@@ -283,10 +282,10 @@ class DS2DoorsPanel(_Page):
 
         self._apply(
             f"{verb} Doors",
-            f"{verb} {len(doors)} selected doors?\n\nA backup is made first.",
+            f"{verb} {counted(len(doors), 'selected door')}?\n\nA backup is made first.",
             f"{verb.lower()}_doors",
             mutate,
-            ("Opened" if opened else "Closed") + " {n} doors",
+            lambda n: f"{'Opened' if opened else 'Closed'} {counted(n, 'door')}",
         )
 
 
@@ -390,7 +389,7 @@ class DS2ItemsPanel(_Page):
         save: DS2Save | None = self.get_save()
         if save is None or not treasures:
             return
-        message = f"Respawn {len(treasures)} taken pickups?"
+        message = f"Respawn {counted(len(treasures), 'taken pickup')}?"
         keys = [t for t in treasures if self._has_key_item(save, t)]
         if keys:
             names = ", ".join(", ".join(self._item_names(save, t)) for t in keys)
@@ -406,7 +405,7 @@ class DS2ItemsPanel(_Page):
             message,
             "respawn_pickups",
             lambda s, slot: s.world_objects(slot).respawn(ids),
-            "Respawned {n} pickups",
+            lambda n: f"Respawned {counted(n, 'pickup')}",
         )
 
     def _on_respawn_selected(self) -> None:
@@ -586,10 +585,10 @@ class DS2FlagsPanel(_Page):
         verb = "Set" if value else "Clear"
         self._apply(
             title,
-            f"{verb} {len(ids)} event flags?\n\nA backup is made first.",
+            f"{verb} {counted(len(ids), 'event flag')}?\n\nA backup is made first.",
             "set_event_flags" if value else "clear_event_flags",
             mutate,
-            ("Set" if value else "Cleared") + " {n} event flags",
+            lambda n: f"{'Set' if value else 'Cleared'} {counted(n, 'event flag')}",
         )
 
     def _on_set_selected(self, value: bool) -> None:

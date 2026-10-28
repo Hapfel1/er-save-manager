@@ -11,6 +11,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.save import BONFIRE_MAX_INTENSITY, DS2Save, SlotState
+from er_save_manager.games.DS2.wording import counted
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import save_writable, write_failed
@@ -288,13 +289,13 @@ class DS2BonfirePanel:
                 write_failed(exc, self.parent)
                 return
         self.refresh()
-        self.show_toast(f"Changed {changed} bonfires", duration=2500)
+        self.show_toast(f"Changed {counted(changed, 'bonfire')}", duration=2500)
 
     def _on_light_selected(self) -> None:
         ids = [i for i in self._selected_ids() if not self._lit[i]]
         self._apply(
-            "Light bonfires",
-            f"Light {len(ids)} selected bonfires?\n\nA backup is made first.",
+            "Light Bonfires",
+            f"Light {counted(len(ids), 'selected bonfire')}?\n\nA backup is made first.",
             "light_bonfires",
             lambda bonfires: bonfires.set_lit(ids, True),
         )
@@ -304,8 +305,8 @@ class DS2BonfirePanel:
             i for i in self._selected_ids() if self._lit[i] and i != self._last_rested
         ]
         self._apply(
-            "Unlight bonfires",
-            f"Unlight {len(ids)} selected bonfires?\n\nA backup is made first.",
+            "Unlight Bonfires",
+            f"Unlight {counted(len(ids), 'selected bonfire')}?\n\nA backup is made first.",
             "unlight_bonfires",
             lambda bonfires: bonfires.set_lit(ids, False),
         )
@@ -318,8 +319,8 @@ class DS2BonfirePanel:
             if not self._lit[i] or self._intensities[i] != intensity
         ]
         self._apply(
-            "Set bonfire intensity",
-            f"Set {len(ids)} selected bonfires to intensity {intensity}?\n\n"
+            "Set Bonfire Intensity",
+            f"Set {counted(len(ids), 'selected bonfire')} to intensity {intensity}?\n\n"
             "Unlit ones are lit. A backup is made first.",
             "set_bonfire_intensity",
             lambda bonfires: bonfires.set_intensity(ids, intensity),
@@ -328,7 +329,7 @@ class DS2BonfirePanel:
     def _on_set_last_rested(self) -> None:
         bonfire_id = self._selected_ids()[0]
         self._apply(
-            "Set last rested bonfire",
+            "Set Last Rested Bonfire",
             f"Make {BONFIRES[bonfire_id]} the last rested bonfire?\n\n"
             "It is lit if needed. The character still loads where they saved; "
             "death or a Homeward Bone takes them there. A backup is made first.",
@@ -339,8 +340,8 @@ class DS2BonfirePanel:
     def _on_unlock_all(self) -> None:
         ids = [i for i, lit in self._lit.items() if not lit]
         self._apply(
-            "Unlock all bonfires",
-            f"Light {len(ids)} unlit bonfires in this slot?\n\nA backup is made first.",
+            "Unlock All Bonfires",
+            f"Light {counted(len(ids), 'unlit bonfire')} in this slot?\n\nA backup is made first.",
             "unlock_bonfires",
             lambda bonfires: bonfires.set_lit(ids, True),
         )

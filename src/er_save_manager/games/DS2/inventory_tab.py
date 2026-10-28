@@ -1312,6 +1312,8 @@ class DS2InventoryPanel:
             "Remove Items", f"Remove {len(picked)} items?", parent=self.parent
         ):
             return
+        if len(picked) == 1 and not self._confirm_single_remove(*picked[0]):
+            return
 
         character = save.characters[self.get_slot_index()]
         # The equipment block names items by id, so a carried copy of an
@@ -1329,7 +1331,8 @@ class DS2InventoryPanel:
             and character.delete_entry(item)
         ]
         note = (
-            f". Not removed, equipped (unequip in game first): {', '.join(blocked)}"
+            ". Not removed, equipped (unequip on the Equipment tab first): "
+            + ", ".join(blocked)
             if blocked
             else ""
         )
@@ -1372,7 +1375,7 @@ class DS2InventoryPanel:
         moved, refused = [], []
         for item, name, category in rows:
             if item.item_id in equipped:
-                refused.append(f"{name}: equipped, unequip it in game first")
+                refused.append(f"{name}: equipped, unequip it on the Equipment tab")
                 continue
             # Owning several copies of a spell is normal, so spells never
             # count as a stack waiting at the destination.
@@ -1400,6 +1403,28 @@ class DS2InventoryPanel:
         else:
             text = f"Not moved: {'; '.join(refused)}"
         self.show_toast(text, duration=4000 if refused else 2500)
+
+    @staticmethod
+    def _shown_value(typed: int, written: set[int]) -> int:
+        """The value the rows got when they all got the same one, else the
+        typed value (rows with different caps)."""
+        return next(iter(written)) if len(written) == 1 else typed
+
+    def _confirm_single_remove(self, item, name: str, category: str) -> bool:
+        """Ask before removing one key item or gesture; other rows need no
+        confirmation."""
+        if category == "keys":
+            title, kind = "Remove Key Item", "key item"
+        elif category == "gestures":
+            title, kind = "Remove Gesture", "gesture"
+        else:
+            return True
+        return CTkMessageBox.askyesno(
+            title,
+            f"Remove the {kind} {name}?\n\nIt may not be obtainable again in "
+            "this playthrough.",
+            parent=self.parent,
+        )
 
     @staticmethod
     def _edit_toast(value: str, changed: list[str], capped: int, skipped: int) -> str:
@@ -1452,10 +1477,11 @@ class DS2InventoryPanel:
             )
             return
 
-        changed, capped = [], 0
+        changed, capped, written = [], 0, set()
         for item, name, limit in targets:
             value = min(quantity, limit)
             capped += quantity > limit
+            written.add(value)
             if item.quantity != value:
                 item.quantity = value
                 character.write_inventory_slot(item)
@@ -1468,7 +1494,12 @@ class DS2InventoryPanel:
             return
         self._reset_inputs()
         self.show_toast(
-            self._edit_toast(f"x{quantity}", changed, capped, len(rows) - len(targets)),
+            self._edit_toast(
+                f"x{self._shown_value(quantity, written)}",
+                changed,
+                capped,
+                len(rows) - len(targets),
+            ),
             duration=3000,
         )
 
@@ -1507,10 +1538,11 @@ class DS2InventoryPanel:
             )
             return
 
-        changed, capped = [], 0
+        changed, capped, written = [], 0, set()
         for item, name, limit in targets:
             value = min(level, limit)
             capped += level > limit
+            written.add(value)
             if item.upgrade != value:
                 item.upgrade = value
                 character.write_inventory_slot(item)
@@ -1523,7 +1555,12 @@ class DS2InventoryPanel:
             return
         self._reset_inputs()
         self.show_toast(
-            self._edit_toast(f"+{level}", changed, capped, len(rows) - len(targets)),
+            self._edit_toast(
+                f"+{self._shown_value(level, written)}",
+                changed,
+                capped,
+                len(rows) - len(targets),
+            ),
             duration=3000,
         )
 

@@ -1269,16 +1269,16 @@ class SaveManagerGUI:
                 for i, label in slot_entries(self.ds2_save)
             ]
         if game == "nightreign" and self._nr_save is not None:
-            return [
-                (
-                    i,
-                    f"Slot {i + 1} - {slot.player_name}"
-                    if slot.player_name
-                    else f"Slot {i + 1} - Empty",
-                    bool(slot.player_name),
-                )
-                for i, slot in enumerate(self._nr_save.slots)
-            ]
+            entries = []
+            for i, slot in enumerate(self._nr_save.slots):
+                if slot.is_unreadable:
+                    # The parsed name offset does not match an unreadable slot
+                    entries.append((i, f"Slot {i + 1} - (unreadable)", True))
+                elif slot.player_name:
+                    entries.append((i, f"Slot {i + 1} - {slot.player_name}", True))
+                else:
+                    entries.append((i, f"Slot {i + 1} - Empty", False))
+            return entries
         return []
 
     def _slot_detail(self, slot_idx: int) -> str:
@@ -3464,12 +3464,16 @@ class SaveManagerGUI:
         except Exception as e:
             CTkMessageBox.showerror("Repair Failed", str(e), parent=self.root)
             return
-        slots = ", ".join(f"slot {i + 1} ({n})" for i, n in repaired.items())
+        chars = self.dsr_save.characters
+        slots = "\n".join(
+            f"Slot {i + 1} ({chars[i].name}): {n} item{'s' if n > 1 else ''}"
+            for i, n in repaired.items()
+        )
         CTkMessageBox.showinfo(
             "Catalysts Repaired",
             "Some catalysts or talismans had an upgrade level they cannot have "
             "and showed as ?WikiName? in game. They were reset to +0.\n\n"
-            f"Repaired: {slots}. A backup was made first.",
+            f"{slots}\n\nA backup was made first.",
             parent=self.root,
         )
 
