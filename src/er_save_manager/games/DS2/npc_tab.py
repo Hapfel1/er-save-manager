@@ -9,6 +9,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.DS2.save import DS2Save, NpcState, SlotState
+from er_save_manager.games.DS2.wording import counted
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import save_writable, write_failed
@@ -178,13 +179,13 @@ class DS2NpcPanel:
                 write_failed(exc, self.parent)
                 return
         self.refresh()
-        self.show_toast(f"Changed {changed} NPCs", duration=2500)
+        self.show_toast(f"Changed {counted(changed, 'NPC')}", duration=2500)
 
     def _on_revive(self) -> None:
         names = [s.entry.name for s in self._selected() if s.dead or s.hostile]
         self._apply(
             "Revive NPCs",
-            f"Revive {len(names)} selected NPCs?\n\n"
+            f"Revive {counted(len(names), 'selected NPC')}?\n\n"
             "A backup is made first. In game, rest at a bonfire for the NPC to "
             "return.",
             "revive_npcs",
@@ -195,7 +196,7 @@ class DS2NpcPanel:
         names = [s.entry.name for s in self._selected() if s.hostile]
         self._apply(
             "Calm NPCs",
-            f"Calm {len(names)} selected NPCs?\n\nA backup is made first.",
+            f"Calm {counted(len(names), 'selected NPC')}?\n\nA backup is made first.",
             "calm_npcs",
             lambda npcs: npcs.calm(names),
         )
