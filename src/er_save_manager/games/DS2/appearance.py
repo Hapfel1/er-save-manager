@@ -134,6 +134,17 @@ PARTS = (
 )
 
 
+def unknown_parts(block: bytes) -> list[str]:
+    """'Label value' for each part whose value is not in its option list for
+    the block's body type."""
+    gender = block[GENDER]
+    return [
+        f"{part.label} {part.get(block)}"
+        for part in PARTS
+        if part.get(block) not in [v for _label, v in part.choices(gender)]
+    ]
+
+
 def get_rgb(block: bytes, offset: int) -> tuple[int, int, int]:
     return tuple(block[offset : offset + 3])
 

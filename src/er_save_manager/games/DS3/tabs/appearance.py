@@ -317,7 +317,7 @@ class DS3AppearanceTab:
                 characters=lambda save: [
                     (i, c.name, c) for i, c in enumerate(save.characters) if c
                 ],
-                load_save=DS3Save.from_file,
+                load_save=DS3Save.open_checked,
                 save_filetypes=_SAVE_FILETYPES,
             ),
             get_save=self._get_save,
@@ -547,10 +547,22 @@ class DS3AppearanceTab:
         if not path:
             return
         try:
-            app = Appearance.from_json(
-                json.loads(Path(path).read_text(encoding="utf-8"))
+            raw = Path(path).read_bytes()
+        except OSError as exc:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"Could not read the file: {exc.strerror or exc}",
+                parent=self.parent,
             )
-        except (OSError, ValueError) as exc:
+            return
+        try:
+            # UnicodeDecodeError and JSONDecodeError are ValueErrors.
+            data = json.loads(raw.decode("utf-8-sig"))
+        except ValueError:
+            data = None
+        try:
+            app = Appearance.from_json(data)
+        except ValueError as exc:
             CTkMessageBox.showerror("Import Failed", str(exc), parent=self.parent)
             return
         self._show(app)

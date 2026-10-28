@@ -187,6 +187,7 @@ from pathlib import Path
 
 from er_save_manager import aes_cbc
 from er_save_manager.own_writes import atomic_write
+from er_save_manager.validation.names import utf16_len
 
 # AES-128-CBC key (same key as DS2/ER Seamless Coop)
 _NR_KEY = bytes(
@@ -240,6 +241,10 @@ _LOADOUT_REL = 0x21A  # relic loadout chunk header
 _SLOT_VERSION = 0x4  # u32 slot version in the slot header
 _STEAM64_MIN = 0x0110000100000000
 _STEAM64_MAX = 0x01100001FFFFFFFF
+
+# Name fields in UTF-16 code units, no terminator when full
+_PLAYER_NAME_UNITS = 16
+_PRESET_NAME_UNITS = 18
 
 _LOADOUT_CHUNK_ID = 0x00C2
 _LOADOUT_HEADER_SZ = 0x14  # chunk header (8) + count fields (12)
@@ -314,6 +319,19 @@ HERO_NAMES = [
     "Scholar",
     "Undertaker",
 ]
+
+
+def _encode_name(value: str, units: int, field: str) -> bytes:
+    """UTF-16LE bytes of value padded to the field size. ValueError when it
+    does not fit or holds a lone surrogate, so a name is never cut inside a
+    surrogate pair."""
+    try:
+        raw = value.encode("utf-16-le")
+    except UnicodeEncodeError:
+        raise ValueError(f"{field} contains an invalid character") from None
+    if len(raw) > units * 2:
+        raise ValueError(f"{field} cannot exceed {units} UTF-16 units")
+    return raw.ljust(units * 2, b"\x00")
 
 
 # ---------------------------------------------------------------------------
@@ -605,8 +623,9 @@ class CustomPreset:
         data[base] = 0x01 if not self.is_empty else 0x00
         data[base + 1] = self.hero_id
         data[base + 3] = self.counter
-        name_bytes = self.name.encode("utf-16-le").ljust(36, b"\x00")[:36]
-        data[base + 4 : base + 40] = name_bytes
+        data[base + 4 : base + 40] = _encode_name(
+            self.name, _PRESET_NAME_UNITS, "Preset name"
+        )
         struct.pack_into("<I", data, base + 44, self.vessel_id)
         struct.pack_into("<6I", data, base + 48, *self.relics)
         struct.pack_into("<Q", data, base + 72, self.timestamp)
@@ -750,8 +769,9 @@ class NightreignSlot:
     def player_name(self, value: str) -> None:
         if self.name_offset < 0:
             raise RuntimeError("slot not parsed")
-        name_bytes = value.encode("utf-16-le").ljust(32, b"\x00")[:32]
-        self.decrypted[self.name_offset : self.name_offset + 32] = name_bytes
+        self.decrypted[self.name_offset : self.name_offset + 32] = _encode_name(
+            value, _PLAYER_NAME_UNITS, "Player name"
+        )
 
     @property
     def murk(self) -> int:
@@ -1291,8 +1311,10 @@ class NightreignSave:
         if preset is None:
             raise KeyError(f"preset {preset_index} not found in slot {slot_index}")
         if name is not None:
-            if len(name) > 18:
-                raise ValueError("Preset name cannot exceed 18 characters")
+            if utf16_len(name) > _PRESET_NAME_UNITS:
+                raise ValueError(
+                    f"Preset name cannot exceed {_PRESET_NAME_UNITS} UTF-16 units"
+                )
             preset.name = name
         if relics is not None:
             if len(relics) != 6:
@@ -1319,8 +1341,10 @@ class NightreignSave:
             raise RuntimeError("slot has no loadout section")
         if hero_type not in slot.heroes:
             raise KeyError(f"hero_type {hero_type} not found in slot {slot_index}")
-        if len(name) > 18:
-            raise ValueError("Preset name cannot exceed 18 characters")
+        if utf16_len(name) > _PRESET_NAME_UNITS:
+            raise ValueError(
+                f"Preset name cannot exceed {_PRESET_NAME_UNITS} UTF-16 units"
+            )
         if len(relics) != 6:
             raise ValueError("relics must have exactly 6 elements")
         if not slot.free_presets:

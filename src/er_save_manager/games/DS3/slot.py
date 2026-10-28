@@ -177,6 +177,7 @@ _STAT_REL = {
 }
 _LEVEL_REL = 0x60
 _SOULS_REL = 0x64
+_SOUL_MEMORY_REL = 0x68
 _NAME_REL = 0x78
 _NAME_LEN = 32  # bytes, 16 UTF-16 code units; a u16 terminator follows
 NAME_MAX_CHARS = _NAME_LEN // 2
@@ -184,6 +185,8 @@ NAME_MAX_CHARS = _NAME_LEN // 2
 # more rows in Convergence and Cinders).
 _CLASS_REL = 0x9E
 _BODY_TYPE_REL = 0x9A
+# u8 of unknown meaning; the load-screen directory entry mirrors it.
+_DIR_MIRROR_U8_REL = 0xA0
 # u8 highest weapon upgrade level reached, +5-cap weapons counting double.
 # The game raises it on an upgrade and never lowers it, so weapons upgraded
 # outside the game leave it stale.
@@ -194,6 +197,8 @@ _EQUIP_SLOTS_REL = 0x1F0
 _EQUIP_SLOT_COUNT = 22
 _EQUIP_IDS_REL = 0x264
 _EQUIP_HANDLES_REL = 0x2BC
+# Arm style u32 and six active weapon slot u32s, up to the id block.
+_ARM_STYLE_REL = 0x248
 _EQUIP_ID_MASK = 0x0FFFFFFF
 # Equip slot groups by slot number. Slots 10, 11 and 16 are unidentified.
 EQUIP_HANDS = range(6)
@@ -601,6 +606,16 @@ class DS3Slot:
         self._data[self._player(_BODY_TYPE_REL)] = value & 0xFF
 
     @property
+    def dir_mirror_u8(self) -> int:
+        return self._data[self._player(_DIR_MIRROR_U8_REL)]
+
+    @property
+    def arm_style_block(self) -> bytes:
+        """Arm style and active weapon slots, as the directory entry copies them."""
+        off = self._player(_ARM_STYLE_REL)
+        return bytes(self._data[off : off + _EQUIP_IDS_REL - _ARM_STYLE_REL])
+
+    @property
     def weapon_level(self) -> int:
         return self._data[self._player(_WEAPON_LEVEL_REL)]
 
@@ -644,6 +659,7 @@ class DS3Slot:
         return property(getter, setter)
 
     souls = _u32_prop(_SOULS_REL)
+    soul_memory = _u32_prop(_SOUL_MEMORY_REL)
     hp = _u32_prop(_HP_REL)
     fp = _u32_prop(_FP_REL)
     stamina = _u32_prop(_STAMINA_REL)
@@ -1236,7 +1252,9 @@ class DS3Slot:
             _write_u32(self._data, entry.offset + 8, entry.quantity)
             return entry
         if position is None:
-            raise ValueError("No free inventory slot")
+            raise ValueError(
+                "No free storage box slot" if to_storage else "No free inventory slot"
+            )
 
         if kind in (ID_WEAPON, ID_ARMOR):
             handle = self._alloc_gaitem(item_id, handle_type, durability)

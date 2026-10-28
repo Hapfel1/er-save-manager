@@ -22,6 +22,16 @@ _ERC_MAGIC = b"NRC\x00"
 _ERC_VERSION = 1
 CHARACTER_SLOTS = 10
 
+# Global entry (entry 10): one u8 per slot, 1 while the game lists the slot,
+# then one load-screen summary per slot starting with the UTF-16LE name.
+_E10_SLOT_IN_USE = 0x1958
+_E10_SUMMARY = _E10_SLOT_IN_USE + CHARACTER_SLOTS
+_E10_SUMMARY_STRIDE = 0x290
+_SUMMARY_NAME_SIZE = 0x22  # 16 UTF-16 units and a terminator
+# Every slot entry starts with this header, empty or not; the rest of an
+# empty slot is zero.
+_SLOT_HEADER_SIZE = 4
+
 
 def _check_bounds(slot_index: int) -> None:
     if not 0 <= slot_index < CHARACTER_SLOTS:
@@ -37,6 +47,28 @@ def _sync_slot_steam_id(save: NightreignSave, slot_index: int) -> None:
         slot.steam_id = 0
     elif save.profile is not None and save.profile.steam_id:
         slot.steam_id = save.profile.steam_id
+
+
+def _global(save: NightreignSave) -> bytearray:
+    return save.entries[CHARACTER_SLOTS].decrypted
+
+
+def _summary_span(slot_index: int) -> slice:
+    start = _E10_SUMMARY + slot_index * _E10_SUMMARY_STRIDE
+    return slice(start, start + _E10_SUMMARY_STRIDE)
+
+
+def _set_in_use(save: NightreignSave, slot_index: int, in_use: bool) -> None:
+    _global(save)[_E10_SLOT_IN_USE + slot_index] = 1 if in_use else 0
+
+
+def _sync_summary_name(save: NightreignSave, slot_index: int) -> None:
+    """Write the slot's player name into its load-screen summary."""
+    name = save.slots[slot_index].player_name.encode("utf-16-le")
+    start = _summary_span(slot_index).start
+    _global(save)[start : start + _SUMMARY_NAME_SIZE] = name[
+        : _SUMMARY_NAME_SIZE - 2
+    ].ljust(_SUMMARY_NAME_SIZE, b"\x00")
 
 
 def copy_slot(save: NightreignSave, from_slot: int, to_slot: int) -> None:
@@ -57,14 +89,27 @@ def copy_slot(save: NightreignSave, from_slot: int, to_slot: int) -> None:
 
     dst_entry.decrypted[:] = data
     save.slots[to_slot] = _parse_slot(dst_entry.decrypted, to_slot)
+    g = _global(save)
+    g[_summary_span(to_slot)] = g[_summary_span(from_slot)]
+    _set_in_use(save, to_slot, True)
 
 
 def delete_slot(save: NightreignSave, slot_index: int) -> None:
-    """Clear a character slot."""
+    """Clear a character slot the way the game leaves an empty one: header
+    kept, rest zero, in-use flag off, empty summary."""
     _check_bounds(slot_index)
     entry = save.entries[slot_index]
-    entry.decrypted[:] = bytes(len(entry.decrypted))
+    size = len(entry.decrypted)
+    entry.decrypted[_SLOT_HEADER_SIZE:] = bytes(size - _SLOT_HEADER_SIZE)
     save.slots[slot_index] = _parse_slot(entry.decrypted, slot_index)
+    _set_in_use(save, slot_index, False)
+    # Empty slots carry the same summary template; reuse another empty
+    # slot's when the save has one.
+    g = _global(save)
+    for other in range(CHARACTER_SLOTS):
+        if other != slot_index and not g[_E10_SLOT_IN_USE + other]:
+            g[_summary_span(slot_index)] = g[_summary_span(other)]
+            break
 
 
 def swap_slots(save: NightreignSave, slot_a: int, slot_b: int) -> None:
@@ -86,6 +131,11 @@ def swap_slots(save: NightreignSave, slot_a: int, slot_b: int) -> None:
 
     save.slots[slot_a] = _parse_slot(entry_a.decrypted, slot_a)
     save.slots[slot_b] = _parse_slot(entry_b.decrypted, slot_b)
+    g = _global(save)
+    span_a, span_b = _summary_span(slot_a), _summary_span(slot_b)
+    g[span_a], g[span_b] = bytes(g[span_b]), bytes(g[span_a])
+    in_a, in_b = g[_E10_SLOT_IN_USE + slot_a], g[_E10_SLOT_IN_USE + slot_b]
+    g[_E10_SLOT_IN_USE + slot_a], g[_E10_SLOT_IN_USE + slot_b] = in_b, in_a
 
 
 def transfer_slot(
@@ -110,6 +160,10 @@ def transfer_slot(
     dst_entry.decrypted[:] = data
     target_save.slots[to_slot] = _parse_slot(dst_entry.decrypted, to_slot)
     _sync_slot_steam_id(target_save, to_slot)
+    _global(target_save)[_summary_span(to_slot)] = _global(source_save)[
+        _summary_span(from_slot)
+    ]
+    _set_in_use(target_save, to_slot, True)
 
 
 def export_character(
@@ -135,38 +189,59 @@ def export_character(
         f.write(checksum)
 
 
+def read_character_file(input_path: str | Path, slot_size: int) -> bytes:
+    """Slot data of a .nrc file. ValueError with a plain message when the
+    file cannot be read, is not a character file, is damaged or holds a slot
+    of another size than slot_size."""
+    try:
+        raw = Path(input_path).read_bytes()
+    except OSError as e:
+        raise ValueError(f"The file cannot be read: {e.strerror or e}") from None
+    header = len(_ERC_MAGIC) + 8
+    if raw[: len(_ERC_MAGIC)] != _ERC_MAGIC:
+        raise ValueError("The file is not a Nightreign character file (.nrc).")
+    if len(raw) < header:
+        raise ValueError("The character file is cut off.")
+    version, size = struct.unpack_from("<II", raw, len(_ERC_MAGIC))
+    if version != _ERC_VERSION:
+        raise ValueError(
+            f"The character file has format version {version}; this version "
+            f"of the save manager reads version {_ERC_VERSION}."
+        )
+    if len(raw) < header + size + 16:
+        raise ValueError("The character file is cut off.")
+    if (
+        hashlib.md5(raw[: header + size]).digest()
+        != raw[header + size : header + size + 16]
+    ):
+        raise ValueError("The character file is damaged (checksum mismatch).")
+    if size != slot_size:
+        raise ValueError(
+            f"The character file holds {size} bytes of slot data; slots in "
+            f"this save hold {slot_size}."
+        )
+    data = raw[header : header + size]
+    try:
+        slot = _parse_slot(bytearray(data), 0)
+    except Exception:
+        raise ValueError("The character in the file cannot be read.") from None
+    if slot.is_empty():
+        raise ValueError("The character file holds an empty slot.")
+    if slot.is_unreadable:
+        raise ValueError("The character in the file cannot be read.")
+    return data
+
+
 def import_character(
     save: NightreignSave, slot_index: int, input_path: str | Path
 ) -> str:
     """Import a character from a .nrc file into a slot. Returns the player name."""
     _check_bounds(slot_index)
-
-    with open(input_path, "rb") as f:
-        magic = f.read(4)
-        if magic != _ERC_MAGIC:
-            raise ValueError("Invalid .nrc file: bad magic")
-
-        version = struct.unpack("<I", f.read(4))[0]
-        if version != _ERC_VERSION:
-            raise ValueError(f"Unsupported .nrc version: {version}")
-
-        size = struct.unpack("<I", f.read(4))[0]
-        data = f.read(size)
-        checksum_expected = f.read(16)
-
-    with open(input_path, "rb") as f:
-        checksum_actual = hashlib.md5(f.read()[:-16]).digest()
-
-    if checksum_actual != checksum_expected:
-        raise ValueError("Checksum mismatch - file may be corrupted")
-
     entry = save.entries[slot_index]
-    if len(data) != len(entry.decrypted):
-        raise ValueError(
-            f"Slot data size mismatch: expected {len(entry.decrypted)} bytes, got {len(data)}"
-        )
-
+    data = read_character_file(input_path, len(entry.decrypted))
     entry.decrypted[:] = data
     save.slots[slot_index] = _parse_slot(entry.decrypted, slot_index)
     _sync_slot_steam_id(save, slot_index)
+    _sync_summary_name(save, slot_index)
+    _set_in_use(save, slot_index, True)
     return save.slots[slot_index].player_name

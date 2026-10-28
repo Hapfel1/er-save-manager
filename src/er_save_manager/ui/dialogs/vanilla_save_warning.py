@@ -6,6 +6,7 @@ DS3, Atvaark's DS2 guide); none of it is official.
 """
 
 import tkinter as tk
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -199,18 +200,58 @@ _GAME_TEXT["dark_souls_3_ps4"] = (
 )
 
 
+# PlayStation has no Easy Anti-Cheat; the relic rules are the same.
+_GAME_TEXT["nightreign_ps"] = (
+    "There is no confirmed list of what gets a PlayStation Nightreign save banned.",
+    _GAME_TEXT["nightreign"][1],
+)
+
+
+def _nr_save_name(save_path: str) -> str:
+    """File name of the save a Nightreign file belongs to: the save named by
+    its .backups folder, else the file name without .bak suffixes."""
+    path = Path(save_path)
+    if path.parent.name.lower().endswith(".backups"):
+        return path.parent.name[: -len(".backups")]
+    name = path.name
+    while name.lower().endswith(".bak"):
+        name = name[: -len(".bak")]
+    return name
+
+
+def _is_nr_ps_save(save_path: str) -> bool:
+    from er_save_manager.games.save_identify import _NR_PS_SIZE
+
+    path = Path(save_path)
+    try:
+        with path.open("rb") as f:
+            magic = f.read(4)
+        return magic != b"BND4" and path.stat().st_size == _NR_PS_SIZE
+    except OSError:
+        return False
+
+
 def is_vanilla_save(save_path: str) -> bool:
     from er_save_manager.games.DS3.parser import is_ps_userdata
+    from er_save_manager.games.save_identify import identify_game
 
+    if identify_game(save_path) == "nightreign":
+        # Seamless Co-op and vanilla Nightreign saves hold the same data, so
+        # only a .co2 name marks a save that never reaches the official
+        # servers. Backups and renamed copies count as vanilla.
+        return not _nr_save_name(save_path).lower().endswith(".co2")
     return save_path.lower().endswith(VANILLA_SUFFIXES) or is_ps_userdata(save_path)
 
 
 def warning_key(game_key: str, save_path: str) -> str:
-    """_GAME_TEXT key for a save: DS3 PS4 userdata files get their own text."""
+    """_GAME_TEXT key for a save: DS3 PS4 userdata files and Nightreign
+    PlayStation saves get their own text."""
     from er_save_manager.games.DS3.parser import is_ps_userdata
 
     if game_key == "dark_souls_3" and is_ps_userdata(save_path):
         return "dark_souls_3_ps4"
+    if game_key == "nightreign" and _is_nr_ps_save(save_path):
+        return "nightreign_ps"
     return game_key
 
 

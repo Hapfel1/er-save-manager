@@ -17,6 +17,7 @@ from er_save_manager.games.DS2.save import (
     DS2Save,
     SlotState,
 )
+from er_save_manager.games.DS2.wording import counted
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import save_writable, write_failed
@@ -255,13 +256,13 @@ class DS2BossPanel:
                 write_failed(exc, self.parent)
                 return
         self.refresh()
-        self.show_toast(f"Changed {changed} bosses", duration=2500)
+        self.show_toast(f"Changed {counted(changed, 'boss', 'bosses')}", duration=2500)
 
     def _repair(self, states: list[BossState]) -> None:
         row_ids = [s.fight.row_id for s in states]
         self._apply(
             "Repair Bosses",
-            f"Repair {len(row_ids)} bosses?\n\n"
+            f"Repair {counted(len(row_ids), 'boss', 'bosses')}?\n\n"
             "A boss with a partly recorded win is recorded as defeated. A boss "
             "still in its arena stays there, and enemies of its fight marked "
             "killed spawn again. A backup is made first.",
@@ -279,7 +280,7 @@ class DS2BossPanel:
         row_ids = [s.fight.row_id for s in self._selected() if not s.gone_from_arena]
         self._apply(
             "Kill Bosses",
-            f"Kill {len(row_ids)} selected bosses?\n\nEach is recorded as defeated "
+            f"Kill {counted(len(row_ids), 'selected boss', 'selected bosses')}?\n\nEach is recorded as defeated "
             "and removed from its arena. No souls, boss soul or other drops are "
             "given. A backup is made first.",
             "kill_bosses",
@@ -290,7 +291,7 @@ class DS2BossPanel:
         row_ids = [s.fight.row_id for s in self._selected() if s.gone_from_arena]
         self._apply(
             "Respawn Bosses",
-            f"Respawn {len(row_ids)} selected bosses?\n\n"
+            f"Respawn {counted(len(row_ids), 'selected boss', 'selected bosses')}?\n\n"
             "Their defeat counts are kept. A backup is made first.",
             "respawn_bosses",
             lambda bosses: bosses.respawn(row_ids),
@@ -303,7 +304,8 @@ class DS2BossPanel:
         row_ids = [s.fight.row_id for s in self._selected()]
         self._apply(
             "Set Defeats",
-            f"Set the defeat count of {len(row_ids)} selected bosses to "
+            f"Set the defeat count of "
+            f"{counted(len(row_ids), 'selected boss', 'selected bosses')} to "
             f"{defeats}?\n\nEach is recorded as defeated. A boss still in its "
             "arena stays there. A backup is made first.",
             "set_boss_defeats",

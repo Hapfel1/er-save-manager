@@ -25,6 +25,24 @@ from .character_ops import CHARACTER_SLOTS
 from .parser import NightreignSave
 
 
+def _target_problem(target_path: str) -> str | None:
+    """Why a transfer target is not a whole Nightreign save, None when the
+    parser may read it."""
+    from er_save_manager.games.save_identify import identify_game, incomplete_reason
+
+    name = Path(target_path).name
+    if incomplete_reason(target_path):
+        return f"{name} is not a complete save file. It is empty or cut off."
+    game = identify_game(target_path)
+    if game is not None and game != "nightreign":
+        profile = PROFILES_BY_KEY.get(game)
+        if profile is None:
+            return f"{name} is a save of another game, not a Nightreign save."
+        article = "an" if profile.name[0] in "AEIOU" else "a"
+        return f"{name} is {article} {profile.name} save, not a Nightreign save."
+    return None
+
+
 class NRCharacterManagementTab:
     def __init__(
         self,
@@ -591,6 +609,17 @@ class NRCharacterManagementTab:
             return
 
         to_slot = self._slot_index(self._import_slot_var.get())
+        try:
+            character_ops.read_character_file(
+                import_path, len(save.entries[to_slot].decrypted)
+            )
+        except ValueError as e:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"{Path(import_path).name} cannot be imported. {e}",
+                parent=self.parent,
+            )
+            return
         to_slot_obj = save.slots[to_slot]
         if not to_slot_obj.is_empty():
             response = CTkMessageBox.askyesno(
@@ -656,14 +685,18 @@ class NRCharacterManagementTab:
             )
             return
 
-        try:
-            target_save = NightreignSave.from_file(target_path)
-        except Exception as e:
-            CTkMessageBox.showerror(
-                "Load Failed",
-                f"Could not load target save:\n{str(e)}",
-                parent=self.parent,
-            )
+        problem = _target_problem(target_path)
+        target_save = None
+        if problem is None:
+            try:
+                target_save = NightreignSave.from_file(target_path)
+            except Exception:
+                problem = (
+                    f"{Path(target_path).name} is not a Nightreign save file, "
+                    "or it is damaged."
+                )
+        if target_save is None:
+            CTkMessageBox.showerror("Load Failed", problem, parent=self.parent)
             return
 
         to_slot = self._pick_target_slot(target_save, target_path)

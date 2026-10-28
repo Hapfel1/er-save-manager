@@ -209,9 +209,17 @@ class Appearance:
             raise ValueError("Not a Dark Souls III appearance file")
         if d.get("version") != JSON_VERSION:
             raise ValueError(f"Unsupported appearance file version {d.get('version')}")
+        body_type = d.get("body_type")
+        # bool is an int subclass; True/False are not body types.
+        if type(body_type) is not int or body_type not in (0, 1):
+            raise ValueError("body_type must be 0 or 1 in the appearance file")
+        face = d.get("face")
         try:
-            app = cls(body_type=int(d["body_type"]), face=bytes.fromhex(d["face"]))
-        except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"Invalid appearance file: {exc}") from exc
+            face = bytes.fromhex(face)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "face must be a hex string in the appearance file"
+            ) from None
+        app = cls(body_type=body_type, face=face)
         app.validate()
         return app

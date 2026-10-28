@@ -10,7 +10,11 @@ import customtkinter as ctk
 
 from er_save_manager.data.starting_classes import get_all_classes, get_class_data
 from er_save_manager.ui.pending import FieldTracker, StageError, var_state
-from er_save_manager.ui.utils import bind_mousewheel, trace_variable
+from er_save_manager.ui.utils import (
+    bind_mousewheel,
+    patch_combo_scroll,
+    trace_variable,
+)
 from er_save_manager.validation.names import name_problem, utf16_len
 
 # Index = stored body type
@@ -30,8 +34,44 @@ _TARNISHED_PACK_FLAG = 6953
 # Name field: 16 UTF-16 code units plus a terminator.
 _MAX_NAME_UNITS = 16
 
-# PlayerGameData stores the keepsake as a u8.
-_MAX_GIFT = 0xFF
+# Keepsake names by stored value: CharMakeMenuListItemParam rows
+# 100300-100309 (value, captionId -> GR_MenuText).
+_KEEPSAKES = (
+    "None",
+    "Crimson Amber Medallion",
+    "Lands Between Rune",
+    "Golden Seed",
+    "Fanged Imp Ashes",
+    "Cracked Pot",
+    "Stonesword Key",
+    "Bewitching Branch",
+    "Boiled Prawn",
+    "Shabriri's Woe",
+)
+_KEEPSAKES_CONVERGENCE = (
+    "None",
+    "Golden Seed",
+    "Sacred Tear",
+    "Memory Stone",
+    "Imbued Sword Key",
+    "Combat Remnant",
+    "Heirloom Remnant",
+    "Enchanted Remnant",
+    "Warding Remnant",
+    "Fanged Imp Ashes",
+)
+
+# Index = ClearCount; flags 50-57 mark the same journey
+_NG_LABELS = (
+    "NG (0)",
+    "NG+ (1)",
+    "NG+2 (2)",
+    "NG+3 (3)",
+    "NG+4 (4)",
+    "NG+5 (5)",
+    "NG+6 (6)",
+    "NG+7 (7)",
+)
 
 # The load screen profile stores seconds played as a u32.
 _MAX_PLAYTIME_SECONDS = 0xFFFFFFFF
@@ -72,6 +112,15 @@ def _time_of_day_error(hour: str, minute: str, second: str) -> str:
         if not 0 <= value <= limit:
             return f"{name} must be 0-{limit}"
     return ""
+
+
+def _keepsake_names(is_convergence: bool) -> tuple[str, ...]:
+    return _KEEPSAKES_CONVERGENCE if is_convergence else _KEEPSAKES
+
+
+def _unknown_keepsake(value: int) -> str:
+    """Label for a stored keepsake value outside the game's list."""
+    return f"Unknown ({value})"
 
 
 def _owns_tarnished_pack(slot) -> bool:
@@ -137,8 +186,10 @@ class CharacterInfoEditor:
         self._loading = False
 
         self.frame = None
-        # Called with the new archetype int when the user changes the class combo.
+        # Called with the new archetype int when the user changes the class
+        # combo; returns a check that prepare() runs, or None.
         self.on_archetype_change = None
+        self._confirm_class = None
 
     def setup_ui(self):
         """Setup the character info editor UI"""
@@ -228,7 +279,7 @@ class CharacterInfoEditor:
             is_convergence = save_file.is_convergence if save_file else False
             for i, c in get_all_classes(is_convergence).items():
                 if c["name"] == class_name:
-                    self.on_archetype_change(i)
+                    self._confirm_class = self.on_archetype_change(i)
                     return
 
         self.char_archetype_var.trace_add("write", _on_archetype_combo_change)
@@ -249,12 +300,16 @@ class CharacterInfoEditor:
         ctk.CTkLabel(creation_frame, text="Keepsake:").grid(
             row=3, column=2, sticky=ctk.W, padx=5, pady=5
         )
-        self.char_gift_var = tk.StringVar(value="0")
-        ctk.CTkEntry(
+        self.char_gift_var = ctk.StringVar(value=_KEEPSAKES[0])
+        self.char_gift_combo = ctk.CTkComboBox(
             creation_frame,
-            textvariable=self.char_gift_var,
-            width=100,
-        ).grid(row=3, column=3, padx=5, pady=5)
+            variable=self.char_gift_var,
+            values=list(_KEEPSAKES),
+            state="readonly",
+            width=200,
+        )
+        self.char_gift_combo.grid(row=3, column=3, padx=5, pady=5)
+        patch_combo_scroll(self.char_gift_combo)
 
         progression_frame = ctk.CTkFrame(self.frame, fg_color="transparent")
         progression_frame.pack(fill=ctk.X, pady=5, padx=10)
@@ -273,16 +328,7 @@ class CharacterInfoEditor:
         ng_combo = ctk.CTkComboBox(
             progression_frame,
             variable=self.char_ng_level_var,
-            values=[
-                "NG (0)",
-                "NG+ (1)",
-                "NG+2 (2)",
-                "NG+3 (3)",
-                "NG+4 (4)",
-                "NG+5 (5)",
-                "NG+6 (6)",
-                "NG+7 (7)",
-            ],
+            values=list(_NG_LABELS),
             state="readonly",
             width=140,
         )
@@ -474,7 +520,14 @@ class CharacterInfoEditor:
             self.char_voice_var.set(
                 _VOICE_TYPES[voice] if voice < len(_VOICE_TYPES) else str(voice)
             )
-            self.char_gift_var.set(str(getattr(char, "gift", 0)))
+            # A stored value outside the list stays selectable and is
+            # written back unchanged.
+            keepsakes = list(_keepsake_names(is_convergence))
+            gift = getattr(char, "gift", 0)
+            if gift >= len(keepsakes):
+                keepsakes.append(_unknown_keepsake(gift))
+            self.char_gift_combo.configure(values=keepsakes)
+            self.char_gift_var.set(keepsakes[min(gift, len(keepsakes) - 1)])
 
         # Play time lives in the slot header; the load screen copy follows it
         seconds_played = getattr(slot, "play_time_ms", 0) // 1000
@@ -494,17 +547,7 @@ class CharacterInfoEditor:
                 slot, "unk_gamedataman_0x120_or_gamedataman_0x130", None
             )
         if clearcount is not None and 0 <= clearcount <= 7:
-            ng_label = [
-                "NG (0)",
-                "NG+ (1)",
-                "NG+2 (2)",
-                "NG+3 (3)",
-                "NG+4 (4)",
-                "NG+5 (5)",
-                "NG+6 (6)",
-                "NG+7 (7)",
-            ][clearcount]
-            self.char_ng_level_var.set(ng_label)
+            self.char_ng_level_var.set(_NG_LABELS[clearcount])
         else:
             self._load_ng_level(save_file, slot_idx)
 
@@ -530,34 +573,48 @@ class CharacterInfoEditor:
 
         class_name = self.char_archetype_var.get()
         is_convergence = save_file.is_convergence
-        if class_name in _TARNISHED_PACK_CLASS_NAMES and not _owns_tarnished_pack(slot):
-            raise StageError(
-                f"'{class_name}' requires the Tarnished Pack DLC (event flag "
-                f"{_TARNISHED_PACK_FLAG}) to be set on this character first."
-            )
+        stored_archetype = slot.player_game_data.archetype
         archetype_id = next(
             (
                 i
                 for i, c in get_all_classes(is_convergence).items()
                 if c["name"] == class_name
             ),
-            0,
+            stored_archetype,
         )
+        class_changed = archetype_id != stored_archetype
+        # The stored class stays even when the DLC flag is missing.
+        if (
+            class_changed
+            and class_name in _TARNISHED_PACK_CLASS_NAMES
+            and not _owns_tarnished_pack(slot)
+        ):
+            raise StageError(
+                f"'{class_name}' requires the Tarnished Pack DLC (event flag "
+                f"{_TARNISHED_PACK_FLAG}) to be set on this character first."
+            )
         try:
             body = _BODY_TYPES.index(self.char_body_type_var.get())
             voice = _VOICE_TYPES.index(self.char_voice_var.get())
         except ValueError:
             raise StageError("Body type and voice type are invalid.") from None
-        try:
-            gift = int(self.char_gift_var.get().strip())
-        except ValueError:
-            gift = -1
-        if not 0 <= gift <= _MAX_GIFT:
-            raise StageError(f"Keepsake must be a whole number 0-{_MAX_GIFT}.")
+        keepsake = self.char_gift_var.get()
+        keepsakes = _keepsake_names(is_convergence)
+        stored_gift = slot.player_game_data.gift
+        if keepsake in keepsakes:
+            gift = keepsakes.index(keepsake)
+        elif keepsake == _unknown_keepsake(stored_gift):
+            gift = stored_gift
+        else:
+            raise StageError(f"Keepsake: '{keepsake}' is not a keepsake.")
         char_name = self.char_name_var.get().strip()
         problem = name_problem(char_name, _MAX_NAME_UNITS)
         if problem:
             raise StageError(problem)
+        if class_changed and self._confirm_class is not None:
+            # Same class minimum check as the Stats tab; raises StageError
+            # when an attribute is below the new class minimum.
+            self._confirm_class()
         target_level = int(self.char_ng_level_var.get().split("(")[1].rstrip(")"))
         time_of_day = (
             int(self.time_h_var.get()),
@@ -657,17 +714,7 @@ class CharacterInfoEditor:
                 self.char_ng_level_var.set("NG (0)")
             elif sum(ng_bits[1:]) == 1 and ng_bits[0] == 0:
                 idx = ng_bits[1:].index(1) + 1
-                ng_label = [
-                    "NG (0)",
-                    "NG+ (1)",
-                    "NG+2 (2)",
-                    "NG+3 (3)",
-                    "NG+4 (4)",
-                    "NG+5 (5)",
-                    "NG+6 (6)",
-                    "NG+ (7)",
-                ][idx]
-                self.char_ng_level_var.set(ng_label)
+                self.char_ng_level_var.set(_NG_LABELS[idx])
             else:
                 self.char_ng_level_var.set("NG (0)")
         except Exception:

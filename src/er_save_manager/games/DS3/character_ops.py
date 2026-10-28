@@ -21,7 +21,7 @@ import struct
 from pathlib import Path
 
 from .save import DS3Save
-from .slot import DS3Slot
+from .slot import DS3Slot, LayoutError
 
 _ERC_MAGIC = b"DS3C"
 _ERC_VERSION = 1
@@ -35,8 +35,13 @@ _ERC_VERSION = 1
 # Layout per entry (554 bytes), offsets relative to entry start:
 #   +0x00  34   Character name (UTF-16LE)
 #   +0x22   4   Level (u32 LE)
+#   +0x26   4   Play time in seconds (slot play time ms / 1000)
+#   +0x2A   4   Soul memory
 #   +0x3A       Appearance block (mirrors the slot's FACE block)
+#   +0x136 28   Arm style and active weapon slots (copy of the slot's block)
+#   +0x152 88   Equip slot ids with the handle's type nibble, 0 when empty
 #   +0x1AA 88   Item ids of the 22 equip slots (copy of the slot's id block)
+#   +0x21E  3   Body type, starting class, player block +0xA0 (u8 each)
 #   remaining bytes: other load-screen display data not required for the
 #   character to load correctly.
 #
@@ -45,8 +50,19 @@ DIR_BASE = 4258
 DIR_STRIDE = 554
 DIR_NAME_OFFSET = 0x00
 DIR_LEVEL_OFFSET = 0x22
+DIR_PLAY_TIME_OFFSET = 0x26
+DIR_SOUL_MEMORY_OFFSET = 0x2A
 DIR_FACE_OFFSET = 0x3A
+DIR_ARM_STYLE_OFFSET = 0x136
+DIR_TYPED_IDS_OFFSET = 0x152
 DIR_EQUIP_OFFSET = 0x1AA
+DIR_BODY_TYPE_OFFSET = 0x21E
+DIR_CLASS_OFFSET = 0x21F
+DIR_MIRROR_U8_OFFSET = 0x220
+# Typed ids keep the handle's type nibble and the low 23 bits of the id.
+_TYPED_ID_TYPE_MASK = 0xF0000000
+_TYPED_ID_MASK = 0x007FFFFF
+_EMPTY_EQUIP_ID = 0xFFFFFFFF
 
 _DIR_EMPTY_TEMPLATE = bytes.fromhex(
     "0000000000000000000000000000000000000000000000000000000000000000"
@@ -136,6 +152,50 @@ def _sync_dir_face(save: DS3Save, slot_index: int, block: bytes) -> None:
     _write_dir_entry(save, slot_index, entry)
 
 
+def _sync_dir_summary(save: DS3Save, slot_index: int) -> None:
+    """Copy play time, soul memory, arm style, typed equip ids, body type and
+    class from the slot into its directory entry."""
+    char = save.characters[slot_index]
+    entry = _read_dir_entry(save, slot_index)
+    struct.pack_into("<I", entry, DIR_PLAY_TIME_OFFSET, char.play_time_ms // 1000)
+    struct.pack_into("<I", entry, DIR_SOUL_MEMORY_OFFSET, char.soul_memory)
+    block = char.arm_style_block
+    entry[DIR_ARM_STYLE_OFFSET : DIR_ARM_STYLE_OFFSET + len(block)] = block
+    typed = []
+    for k in range(len(char.equipped_ids())):
+        _, item_id, handle = char.equip_slot(k)
+        typed.append(
+            0
+            if item_id == _EMPTY_EQUIP_ID
+            else (handle & _TYPED_ID_TYPE_MASK) | (item_id & _TYPED_ID_MASK)
+        )
+    struct.pack_into(f"<{len(typed)}I", entry, DIR_TYPED_IDS_OFFSET, *typed)
+    entry[DIR_BODY_TYPE_OFFSET] = char.body_type
+    entry[DIR_CLASS_OFFSET] = char.starting_class
+    entry[DIR_MIRROR_U8_OFFSET] = char.dir_mirror_u8
+    _write_dir_entry(save, slot_index, entry)
+
+
+def _sync_dir_from_slot(save: DS3Save, slot_index: int) -> None:
+    """Fill a slot's directory entry from the character slot alone: name,
+    level, appearance block, equipment and the load-screen summary fields.
+    Fields whose offsets do not resolve on this slot are left as they are."""
+    char = save.characters[slot_index]
+    _sync_dir_name_level(save, slot_index, char.name, char.level)
+    try:
+        _sync_dir_face(save, slot_index, char.face_block)
+    except LayoutError:
+        pass
+    try:
+        sync_dir_equipment(save, slot_index)
+    except LayoutError:
+        pass
+    try:
+        _sync_dir_summary(save, slot_index)
+    except LayoutError:
+        pass
+
+
 def _check_bounds(slot_index: int) -> None:
     if not 0 <= slot_index < DS3Save.CHARACTER_SLOTS:
         raise IndexError(
@@ -187,6 +247,20 @@ def copy_slot(save: DS3Save, from_slot: int, to_slot: int) -> None:
 
     save.characters[to_slot] = DS3Slot(to_slot, bytearray(src.get_raw()))
     _write_dir_entry(save, to_slot, _read_dir_entry(save, from_slot))
+    save.set_slot_in_use(to_slot, True)
+    save.deleted.pop(to_slot, None)
+
+
+def restore_slot(save: DS3Save, slot_index: int) -> str:
+    """List a slot deleted on the load screen again. Returns the character name."""
+    _check_bounds(slot_index)
+    char = save.deleted.pop(slot_index, None)
+    if char is None:
+        raise ValueError(f"Slot {slot_index + 1} holds no deleted character.")
+    save.characters[slot_index] = char
+    _sync_dir_from_slot(save, slot_index)
+    save.set_slot_in_use(slot_index, True)
+    return char.name
 
 
 def delete_slot(save: DS3Save, slot_index: int) -> None:
@@ -196,7 +270,9 @@ def delete_slot(save: DS3Save, slot_index: int) -> None:
     size = save._parser.get_slot_plaintext_size(slot_index)
     save._parser.set_slot(slot_index, bytearray(size))
     save.characters[slot_index] = None
+    save.deleted.pop(slot_index, None)
     _write_dir_entry(save, slot_index, _DIR_EMPTY_TEMPLATE)
+    save.set_slot_in_use(slot_index, False)
 
 
 def swap_slots(save: DS3Save, slot_a: int, slot_b: int) -> None:
@@ -222,6 +298,18 @@ def swap_slots(save: DS3Save, slot_a: int, slot_b: int) -> None:
     entry_b = _read_dir_entry(save, slot_b)
     _write_dir_entry(save, slot_a, entry_b)
     _write_dir_entry(save, slot_b, entry_a)
+    save.set_slot_in_use(slot_a, char_b is not None)
+    save.set_slot_in_use(slot_b, char_a is not None)
+    # save_to_file writes only listed characters, so the stored entries swap
+    # too: a deleted character's data and an empty slot move with their slot.
+    raw_a = save._parser.get_slot(slot_a)
+    save._parser.set_slot(slot_a, save._parser.get_slot(slot_b))
+    save._parser.set_slot(slot_b, raw_a)
+    gone_a, gone_b = save.deleted.pop(slot_a, None), save.deleted.pop(slot_b, None)
+    for target, gone in ((slot_b, gone_a), (slot_a, gone_b)):
+        if gone is not None:
+            gone.slot_index = target
+            save.deleted[target] = gone
 
 
 def transfer_slot(
@@ -242,12 +330,13 @@ def transfer_slot(
     if new_steam64 is not None:
         _patch_slot_steamid(data, new_steam64)
 
-    char = DS3Slot(to_slot, data)
-    target_save.characters[to_slot] = char
+    target_save.characters[to_slot] = DS3Slot(to_slot, data)
     if source_save.has_directory:
         _write_dir_entry(target_save, to_slot, _read_dir_entry(source_save, from_slot))
     else:
-        _sync_dir_name_level(target_save, to_slot, char.name, char.level)
+        _sync_dir_from_slot(target_save, to_slot)
+    target_save.set_slot_in_use(to_slot, True)
+    target_save.deleted.pop(to_slot, None)
 
 
 def export_character(save: DS3Save, slot_index: int, output_path: str | Path) -> None:
@@ -272,42 +361,60 @@ def export_character(save: DS3Save, slot_index: int, output_path: str | Path) ->
         f.write(checksum)
 
 
+_ERC_HEADER = struct.Struct("<4sII")
+_ERC_CHECKSUM_SIZE = 16
+
+
+def read_character_file(
+    save: DS3Save, slot_index: int, input_path: str | Path
+) -> bytearray:
+    """Slot data of a .ds3c file, checked against the file's checksum and the
+    plaintext size of slot_index in save. Raises ValueError with a message
+    for the user."""
+    _check_bounds(slot_index)
+    _check_available(save, slot_index)
+    raw = Path(input_path).read_bytes()
+    if raw[:4] != _ERC_MAGIC:
+        raise ValueError("Not a Dark Souls III character file (.ds3c).")
+    if len(raw) < _ERC_HEADER.size:
+        raise ValueError("The character file is cut off.")
+    _, version, size = _ERC_HEADER.unpack_from(raw)
+    if version != _ERC_VERSION:
+        raise ValueError(f"Unsupported .ds3c version {version}.")
+    end = _ERC_HEADER.size + size
+    if len(raw) < end + _ERC_CHECKSUM_SIZE:
+        raise ValueError("The character file is cut off.")
+    if hashlib.md5(raw[:end]).digest() != raw[end : end + _ERC_CHECKSUM_SIZE]:
+        raise ValueError("The character file is damaged (checksum mismatch).")
+    expected_size = save._parser.get_slot_plaintext_size(slot_index)
+    if size != expected_size:
+        raise ValueError(
+            f"The character data is {size:,} bytes, a slot in this save holds "
+            f"{expected_size:,}."
+        )
+    return bytearray(raw[_ERC_HEADER.size : end])
+
+
 def import_character(save: DS3Save, slot_index: int, input_path: str | Path) -> str:
     """Import a character from a .ds3c file into a slot. Returns the character name."""
     _check_bounds(slot_index)
     _check_available(save, slot_index)
+    return place_character(
+        save, slot_index, read_character_file(save, slot_index, input_path)
+    )
 
-    with open(input_path, "rb") as f:
-        magic = f.read(4)
-        if magic != _ERC_MAGIC:
-            raise ValueError("Invalid .ds3c file: bad magic")
 
-        version = struct.unpack("<I", f.read(4))[0]
-        if version != _ERC_VERSION:
-            raise ValueError(f"Unsupported .ds3c version: {version}")
-
-        size = struct.unpack("<I", f.read(4))[0]
-        data = f.read(size)
-        checksum_expected = f.read(16)
-
-    with open(input_path, "rb") as f:
-        checksum_actual = hashlib.md5(f.read()[:-16]).digest()
-
-    if checksum_actual != checksum_expected:
-        raise ValueError("Checksum mismatch - file may be corrupted")
-
-    expected_size = save._parser.get_slot_plaintext_size(slot_index)
-    if len(data) != expected_size:
-        raise ValueError(
-            f"Slot data size mismatch: expected {expected_size} bytes, got {len(data)}"
-        )
-
-    data = bytearray(data)
+def place_character(save: DS3Save, slot_index: int, data: bytearray) -> str:
+    """Write slot data from read_character_file() into a slot. Returns the
+    character name."""
+    _check_bounds(slot_index)
+    _check_available(save, slot_index)
     new_steam64 = _target_steam64(save)
     if new_steam64 is not None:
         _patch_slot_steamid(data, new_steam64)
 
-    char = DS3Slot(slot_index, data)
-    save.characters[slot_index] = char
-    _sync_dir_name_level(save, slot_index, char.name, char.level)
-    return char.name
+    save.characters[slot_index] = DS3Slot(slot_index, data)
+    _sync_dir_from_slot(save, slot_index)
+    save.set_slot_in_use(slot_index, True)
+    save.deleted.pop(slot_index, None)
+    return save.characters[slot_index].name

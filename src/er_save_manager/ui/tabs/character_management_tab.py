@@ -887,16 +887,6 @@ class CharacterManagementTab:
 
     def swap_characters(self):
         """Swap two character slots"""
-        if not guard_before_write("swap the characters"):
-            return
-        if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
-            return
-
         save_file = self.get_save_file()
         if not save_file:
             notify(self.parent, "Load a save file first.", "warning")
@@ -910,6 +900,29 @@ class CharacterManagementTab:
                 "Same Slot", "Slots must be different.", parent=self.parent
             )
             return
+        if (
+            save_file.characters[slot_a].is_empty()
+            and save_file.characters[slot_b].is_empty()
+        ):
+            notify(
+                self.parent,
+                f"Slot {slot_a + 1} and Slot {slot_b + 1} are both empty, "
+                "nothing to swap.",
+                "info",
+            )
+            return
+
+        if not guard_before_write("swap the characters"):
+            return
+        if self.is_game_running and self.is_game_running():
+            CTkMessageBox.showerror(
+                "Elden Ring Is Running",
+                "Close Elden Ring before modifying save files.",
+                parent=self.parent,
+            )
+            return
+        # Applying in the guard reloads the save.
+        save_file = self.get_save_file()
 
         try:
             from er_save_manager.backup.manager import BackupManager
@@ -950,14 +963,7 @@ class CharacterManagementTab:
         """Export character to .erc file"""
         if not guard_before_write("export the character"):
             return
-        if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
-            return
-
+        # Export only reads the loaded save, so it runs while the game runs.
         save_file = self.get_save_file()
         if not save_file:
             notify(self.parent, "Load a save file first.", "warning")

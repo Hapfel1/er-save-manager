@@ -616,6 +616,18 @@ class DS3CharacterManagementTab:
             return
 
         to_slot = self._slot_index(self._import_slot_var.get())
+        try:
+            data = character_ops.read_character_file(save, to_slot, import_path)
+        except OSError as e:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"Could not read the character file: {e.strerror or e}",
+                parent=self.parent,
+            )
+            return
+        except ValueError as e:
+            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+            return
         to_char = save.characters[to_slot]
         if to_char is not None:
             response = CTkMessageBox.askyesno(
@@ -642,7 +654,7 @@ class DS3CharacterManagementTab:
                 )
 
             changed = True
-            character_ops.import_character(save, to_slot, Path(import_path))
+            character_ops.place_character(save, to_slot, data)
 
             if save_path:
                 save.save_to_file(Path(save_path))
@@ -689,11 +701,11 @@ class DS3CharacterManagementTab:
             return
 
         try:
-            target_save = DS3Save.from_file(target_path)
-        except Exception as e:
+            target_save = DS3Save.open_checked(target_path)
+        except ValueError as e:
             CTkMessageBox.showerror(
-                "Load Failed",
-                f"Could not load target save:\n{str(e)}",
+                "Target Not Loaded",
+                f"{Path(target_path).name} could not be loaded: {e}",
                 parent=self.parent,
             )
             return

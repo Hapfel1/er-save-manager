@@ -20,6 +20,7 @@ import customtkinter as ctk
 
 from er_save_manager.games.DS3.tabs.inventory import enable
 from er_save_manager.games.DSR import catalog
+from er_save_manager.games.DSR.save import KEY_ITEM_SLOTS
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -54,7 +55,10 @@ def _summary(done: str, count: int, skipped: list[str], capped: int = 0) -> str:
     if skipped:
         shown = ", ".join(skipped[:3]) + (" and more" if len(skipped) > 3 else "")
         parts.append(f"skipped {shown}")
-    return ". ".join(parts) + "." if parts else "Nothing changed."
+    if not parts:
+        return "Nothing changed."
+    text = ". ".join(parts) + "."
+    return text[0].upper() + text[1:]
 
 
 def _tree(parent, columns, height: int = 10, show: str = "headings") -> ttk.Treeview:
@@ -919,7 +923,29 @@ class DSRInventoryTab:
         ):
             return False
 
-        held = {(i.category, i.item_id) for i in char.iter_items()}
+        inventory = char.iter_items()
+        held = {(i.category, i.item_id) for i in inventory}
+        # Stack sizes as add_item sees them: key items stack in slots below
+        # KEY_ITEM_SLOTS, everything else above.
+        stacks = {
+            (i.category, i.item_id, i.slot_index < KEY_ITEM_SLOTS): i.quantity
+            for i in inventory
+        }
+        dup_keys = [
+            item["name"]
+            for item in items
+            if item["key_item"]
+            and catalog.limits(item).max_quantity <= 1
+            and (item["type"], catalog.item_id_at(item, 0)) in held
+        ]
+        # How the game treats a second copy of a held key item is not known.
+        spawn_dup_keys = not dup_keys or CTkMessageBox.askyesno(
+            "Key Item Already Held",
+            f"{', '.join(dup_keys[:5])}{' and more' if len(dup_keys) > 5 else ''} "
+            f"{'is' if len(dup_keys) == 1 else 'are'} already held. How the game "
+            "handles a second copy is not known yet.\n\nSpawn another copy?",
+            parent=parent,
+        )
         has_estus = any(
             t == catalog.TYPE_GOODS and i in catalog.ESTUS_IDS for t, i in held
         )
@@ -931,6 +957,9 @@ class DSRInventoryTab:
                     skipped.append(f"{item['name']} (already has an Estus Flask)")
                     continue
                 has_estus = True
+            if item["name"] in dup_keys and not spawn_dup_keys:
+                skipped.append(f"{item['name']} (already held)")
+                continue
             if item["spell"]:
                 # A spell is one entry of quantity 1; spawning it again does
                 # not add casts.
@@ -943,6 +972,14 @@ class DSRInventoryTab:
             capped += lim.max_upgrade > 0 and level != upgrade
             qty = max(1, min(quantity, lim.max_quantity))
             capped += lim.max_quantity > 1 and qty != quantity
+            if lim.max_quantity > 1:
+                key = (item["type"], catalog.item_id_at(item, level), item["key_item"])
+                have = stacks.get(key, 0)
+                if have >= lim.max_quantity:
+                    skipped.append(f"{item['name']} (already at max)")
+                    continue
+                capped += qty == quantity and have + qty > lim.max_quantity
+                stacks[key] = min(have + qty, lim.max_quantity)
             slot = char.add_item(
                 item["type"],
                 catalog.item_id_at(item, level),

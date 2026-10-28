@@ -28,7 +28,8 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     own = [i for i in all_issues if i.slot == slot_idx]
     shared = [i for i in all_issues if i.slot is None]
     fixable = [i for i in own + shared if i.fixable]
-    unfixable = [i for i in own + shared if not i.fixable]
+    deleted = [i for i in own if i.restorable]
+    unfixable = [i for i in own + shared if not i.fixable and not i.restorable]
 
     dialog = ds.create(parent, f"Character Details - {name}")
 
@@ -36,6 +37,16 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     main.pack(fill="both", expand=True, padx=20, pady=16)
 
     buttons = []
+    if deleted:
+        buttons.append(
+            {
+                "text": "Restore Character",
+                "width": 150,
+                "command": lambda: _restore(
+                    dialog, game_key, Path(save_path), slot_idx, name, reload
+                ),
+            }
+        )
     if fixable:
         buttons.append(
             {
@@ -46,10 +57,18 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
                 ),
             }
         )
-    buttons.append({"text": "Close", "command": dialog.destroy, "primary": not fixable})
+    buttons.append(
+        {
+            "text": "Close",
+            "command": dialog.destroy,
+            "primary": not fixable and not deleted,
+        }
+    )
     ds.button_row(main, buttons)
 
-    if fixable:
+    if deleted:
+        ds.header(main, f"{name}: deleted", icon="ℹ", icon_color=ds.INFO)
+    elif fixable:
         ds.header(main, f"{name}: {len(fixable)} issue(s) found", icon="⚠")
     elif unfixable:
         ds.header(main, f"{name}: no fixable issues", icon="ℹ", icon_color=ds.INFO)
@@ -77,13 +96,24 @@ def show_issues(parent, game_key: str, save_path, slot_idx: int, name: str, relo
     def build(body):
         own_fix = [i for i in fixable if i.slot is not None]
         save_wide = [i for i in fixable if i.slot is None]
+        if deleted:
+            section(body, "Deleted character", deleted, ds.INFO)
+            ctk.CTkLabel(
+                body,
+                text="Restore Character lists it on the load screen again; "
+                "a backup is made first.",
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+                wraplength=_WRAP,
+                justify="left",
+            ).pack(anchor="w", pady=(6, 0))
         if own_fix:
             section(body, "Character", own_fix, ds.WARNING)
         if save_wide:
             section(body, "Save file", save_wide, ds.WARNING)
         if unfixable:
             section(body, "Structural notes (no automatic fix)", unfixable)
-        if not fixable and not unfixable:
+        if not fixable and not unfixable and not deleted:
             ctk.CTkLabel(
                 body, text="The character appears healthy.", font=ds.FONT
             ).pack(anchor="w", pady=(10, 0))
@@ -132,3 +162,31 @@ def _fix_all(dialog, game_key, save_path: Path, slot_idx, fixable, reload) -> No
         "Backup saved to backup manager.",
         parent=parent,
     )
+
+
+def _restore(dialog, game_key, save_path: Path, slot_idx, name, reload) -> None:
+    from er_save_manager.backup.manager import BackupManager
+
+    parent = dialog.master
+    dialog.destroy()
+    if not CTkMessageBox.askyesno(
+        "Restore Character",
+        f"Restore {name} in Slot {slot_idx + 1}?\n\nA backup will be created first.",
+        parent=parent,
+    ):
+        return
+    try:
+        BackupManager(save_path).create_backup(
+            description=f"before_restore_slot_{slot_idx + 1}",
+            operation=f"restore_slot_{slot_idx + 1}",
+            save=None,
+        )
+        save_check.restore(game_key, save_path, slot_idx)
+    except Exception as exc:
+        CTkMessageBox.showerror(
+            "Restore Failed", f"The character was not restored:\n{exc}", parent=parent
+        )
+        return
+    if reload:
+        reload()
+    notify(parent, f"{name} restored to Slot {slot_idx + 1}.", "success")

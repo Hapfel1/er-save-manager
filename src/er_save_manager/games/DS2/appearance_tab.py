@@ -327,4 +327,15 @@ class DS2AppearanceTab:
             return
         self.block = app.block
         self._show_values()
+        unknown = app_data.unknown_parts(app.block)
+        if unknown:
+            CTkMessageBox.showwarning(
+                "Unknown Appearance Values",
+                "Appearance loaded. These parts hold values outside the "
+                f"editor's option lists: {', '.join(unknown)}. They show as "
+                '"Value n" and are written unchanged. Check the file if it was '
+                "edited by hand.\n\nApply All to save it.",
+                parent=self.parent,
+            )
+            return
         self._show_toast("Appearance loaded. Apply All to save it.")

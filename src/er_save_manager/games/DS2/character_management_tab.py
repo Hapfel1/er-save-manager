@@ -30,6 +30,12 @@ STALE_SUMMARY_NOTE = (
     "In-game, this slot may still show the old character until you load it once."
 )
 
+
+class _BackupFailed(Exception):
+    """A backup before an operation failed. Kept apart from RuntimeError,
+    which the operations raise for a never-created target slot."""
+
+
 _DS2_FILETYPES = [("DS2 Character", "*.ds2c"), ("All files", "*.*")]
 _SAVE_FILETYPES = [("DS2 save files", "*.sl2"), ("All files", "*.*")]
 
@@ -151,23 +157,23 @@ class DS2CharacterManagementTab:
     def _slot_display_names(self, save: DS2Save | None = None) -> list[str]:
         save = save or self.get_save()
         if save is None:
-            return [f"{i} - (no save loaded)" for i in range(10)]
+            return [f"Slot {i + 1} - (no save loaded)" for i in range(10)]
 
         names = []
         for i in range(10):
             state = save.slot_state(i)
             if state is SlotState.CHARACTER:
-                names.append(f"{i} - {save.slot_display_name(i)}")
+                names.append(f"Slot {i + 1} - {save.slot_display_name(i)}")
             else:
-                names.append(f"{i} - ({state.value})")
+                names.append(f"Slot {i + 1} - ({state.value})")
         return names
 
-    def _copy_source_names(self, save: DS2Save | None = None) -> list[str]:
-        """Labels of the slots that can be copied, which are the ones holding a
-        named character. A slot that was never created or is still before
-        character creation has nothing to copy. With no such slot every slot is
-        listed, so the picker is never empty and the copy reports the empty
-        slot."""
+    def _character_slot_names(self, save: DS2Save | None = None) -> list[str]:
+        """Labels of the slots holding a named character, the sources for copy
+        and the targets for delete. A slot that was never created or is still
+        before character creation has nothing to copy or delete. With no such
+        slot every slot is listed, so the picker is never empty and the
+        operation reports the empty slot."""
         save = save or self.get_save()
         names = self._slot_display_names(save)
         if save is None:
@@ -181,7 +187,8 @@ class DS2CharacterManagementTab:
 
     @staticmethod
     def _slot_index_from_display(value: str) -> int:
-        return int(value.split(" - ")[0])
+        """0-based slot index of a "Slot N - ..." label."""
+        return int(value.split(" - ")[0].removeprefix("Slot ")) - 1
 
     # ------------------------------------------------------------------
     # Panels
@@ -205,7 +212,7 @@ class DS2CharacterManagementTab:
         row = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         row.pack(fill="x", pady=5)
 
-        sources = self._copy_source_names()
+        sources = self._character_slot_names()
         names = self._slot_display_names()
         self.copy_from_var = self._labeled_slot_combo(row, "From:", sources, 0)
         # Default the destination to a slot other than the source.
@@ -318,7 +325,7 @@ class DS2CharacterManagementTab:
         row = ctk.CTkFrame(self.ops_scrollable, fg_color="transparent")
         row.pack(fill="x", pady=5)
 
-        names = self._slot_display_names()
+        names = self._character_slot_names()
         self.delete_slot_var = self._labeled_slot_combo(row, "Slot:", names, 0)
         ctk.CTkButton(
             row,
@@ -359,7 +366,7 @@ class DS2CharacterManagementTab:
                 description=description, operation=operation
             )
         except Exception as exc:
-            raise RuntimeError(f"Backup failed: {exc}") from exc
+            raise _BackupFailed(f"Backup failed: {exc}") from exc
 
     def _confirm_uninitialized_override(self, message: str) -> bool:
         """Show the uninitialized-slot warning and ask whether to proceed
@@ -415,13 +422,14 @@ class DS2CharacterManagementTab:
 
         from_name = save.characters[from_slot].name
         if not from_name:
-            notify(self.parent, f"Slot {from_slot} is empty.", "warning")
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         to_name = save.characters[to_slot].name
         if to_name and not CTkMessageBox.askyesno(
             "Overwrite?",
-            f"Slot {to_slot} contains '{to_name}'.\n\nOverwrite with '{from_name}'?",
+            f"Slot {to_slot + 1} contains '{to_name}'.\n\n"
+            f"Overwrite with '{from_name}'?",
             parent=self.parent,
         ):
             return
@@ -431,7 +439,7 @@ class DS2CharacterManagementTab:
         try:
             self._backup(
                 self.get_save_path(),
-                f"before_copy_{from_name}_slot{from_slot}_to_slot{to_slot}",
+                f"before_copy_{from_name}_slot{from_slot + 1}_to_slot{to_slot + 1}",
                 "copy_character",
             )
             DS2CharacterOperations.copy_slot(save, from_slot, to_slot)
@@ -446,7 +454,7 @@ class DS2CharacterManagementTab:
             return
 
         self._write_and_reload(
-            save, f"Character '{from_name}' copied to Slot {to_slot}."
+            save, f"Character '{from_name}' copied to Slot {to_slot + 1}."
         )
 
     def _swap_characters(self) -> None:
@@ -471,7 +479,7 @@ class DS2CharacterManagementTab:
         try:
             self._backup(
                 self.get_save_path(),
-                f"before_swap_{slot_a}_and_{slot_b}",
+                f"before_swap_{slot_a + 1}_and_{slot_b + 1}",
                 "swap_characters",
             )
             DS2CharacterOperations.swap_slots(save, slot_a, slot_b)
@@ -485,7 +493,9 @@ class DS2CharacterManagementTab:
             )
             return
 
-        self._write_and_reload(save, f"Swapped Slot {slot_a} and Slot {slot_b}.")
+        self._write_and_reload(
+            save, f"Swapped Slot {slot_a + 1} and Slot {slot_b + 1}."
+        )
 
     def _export_character(self) -> None:
         if not guard_before_write("export the character"):
@@ -497,7 +507,7 @@ class DS2CharacterManagementTab:
         slot = self._slot_index_from_display(self.export_slot_var.get())
         character = save.characters[slot]
         if not character.name:
-            notify(self.parent, f"Slot {slot} is empty.", "warning")
+            notify(self.parent, f"Slot {slot + 1} is empty.", "warning")
             return
 
         save_path = self.get_save_path()
@@ -545,10 +555,22 @@ class DS2CharacterManagementTab:
             return
 
         to_slot = self._slot_index_from_display(self.import_slot_var.get())
+        try:
+            profile_data, big_data = DS2CharacterOperations.read_export(input_path)
+            DS2CharacterOperations.check_export_fits(
+                save, to_slot, profile_data, big_data
+            )
+        except ValueError as e:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"{Path(input_path).name} cannot be imported.\n\n{e}",
+                parent=self.parent,
+            )
+            return
         to_name = save.characters[to_slot].name
         if to_name and not CTkMessageBox.askyesno(
             "Overwrite?",
-            f"Slot {to_slot} contains '{to_name}'.\n\nOverwrite?",
+            f"Slot {to_slot + 1} contains '{to_name}'.\n\nOverwrite?",
             parent=self.parent,
         ):
             return
@@ -557,7 +579,7 @@ class DS2CharacterManagementTab:
 
         try:
             self._backup(
-                save_path, f"before_import_to_slot_{to_slot}", "import_character"
+                save_path, f"before_import_to_slot_{to_slot + 1}", "import_character"
             )
             name = DS2CharacterOperations.import_character(save, to_slot, input_path)
         except RuntimeError as warning:
@@ -572,7 +594,9 @@ class DS2CharacterManagementTab:
             )
             return
 
-        self._write_and_reload(save, f"Character '{name}' imported to Slot {to_slot}.")
+        self._write_and_reload(
+            save, f"Character '{name}' imported to Slot {to_slot + 1}."
+        )
 
     def _delete_character(self) -> None:
         if not guard_before_write("delete the character"):
@@ -586,13 +610,15 @@ class DS2CharacterManagementTab:
         slot = self._slot_index_from_display(self.delete_slot_var.get())
         character = save.characters[slot]
         if not character.name:
-            notify(self.parent, f"Slot {slot} is already empty.", "info")
+            notify(self.parent, f"Slot {slot + 1} is already empty.", "info")
             return
 
-        name = character.name
+        name = save.slot_display_name(slot)
+        shown = f"'{name}'" if name else "(no name)"
         if not CTkMessageBox.askyesno(
             "Confirm Delete",
-            f"Delete character '{name}' from Slot {slot}?\n\nThis will create a backup first.",
+            f"Delete character {shown} from Slot {slot + 1}?\n\n"
+            "This will create a backup first.",
             parent=self.parent,
         ):
             return
@@ -602,7 +628,7 @@ class DS2CharacterManagementTab:
         try:
             self._backup(
                 self.get_save_path(),
-                f"before_delete_{name}_slot_{slot}",
+                f"before_delete_{name}_slot_{slot + 1}",
                 "delete_character",
             )
             DS2CharacterOperations.delete_slot(save, slot)
@@ -616,7 +642,7 @@ class DS2CharacterManagementTab:
             return
         if self.reload_save:
             self.reload_save()
-        self.show_toast(f"Character deleted from Slot {slot}.", duration=2500)
+        self.show_toast(f"Character deleted from Slot {slot + 1}.", duration=2500)
 
     # ------------------------------------------------------------------
     # Transfer (cross-save, with auto-find)
@@ -674,7 +700,7 @@ class DS2CharacterManagementTab:
         from_slot = self._slot_index_from_display(self.transfer_from_var.get())
         from_character = save.characters[from_slot]
         if not from_character.name:
-            notify(self.parent, f"Slot {from_slot} is empty.", "warning")
+            notify(self.parent, f"Slot {from_slot + 1} is empty.", "warning")
             return
 
         target_path = self._select_target_save_file()
@@ -701,12 +727,12 @@ class DS2CharacterManagementTab:
         try:
             self._backup(
                 current_path,
-                f"before_transfer_slot_{from_slot}_to_other_save",
+                f"before_transfer_slot_{from_slot + 1}_to_other_save",
                 "transfer_character",
             )
             self._backup(
                 target_path,
-                f"before_receive_character_to_slot_{to_slot}",
+                f"before_receive_character_to_slot_{to_slot + 1}",
                 "receive_character",
             )
             DS2CharacterOperations.transfer_slot(save, from_slot, target_save, to_slot)
@@ -734,6 +760,7 @@ class DS2CharacterManagementTab:
         if self.reload_save:
             self.reload_save()
         self.show_toast(
-            f"Character transferred to Slot {to_slot} in target save. {STALE_SUMMARY_NOTE}",
+            f"Character transferred to Slot {to_slot + 1} in target save. "
+            f"{STALE_SUMMARY_NOTE}",
             duration=4000,
         )

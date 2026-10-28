@@ -64,8 +64,11 @@ class QuestProgressDialog:
     ):
         """quest_flags: NPC -> steps table (default: the Elden Ring table).
         commit(description): backs up and writes the save for games other
-        than Elden Ring; raises on failure. Without it the Elden Ring slot
-        buffer is written back. apply_steps_between: Apply also applies the
+        than Elden Ring; raises on failure. A failure it already reported
+        (write_failed, which reloads the save) is raised chained to the
+        original error (raise ... from exc): the dialog, now editing a
+        stale save, then closes without a second message. Without commit
+        the Elden Ring slot buffer is written back. apply_steps_between: Apply also applies the
         steps between the furthest complete step and the chosen one.
         undo: applied steps get an Undo button that clears the flags they
         set, for tables whose steps are independent flags (DS2).
@@ -386,7 +389,10 @@ class QuestProgressDialog:
                 try:
                     commit(toast_msg)
                 except Exception as exc:
-                    CTkMessageBox.showerror("Save Failed", str(exc), parent=dialog)
+                    if exc.__cause__ is not None:
+                        dialog.destroy()
+                    else:
+                        CTkMessageBox.showerror("Save Failed", str(exc), parent=dialog)
                     return
                 if show_toast:
                     show_toast(toast_msg, duration=2500)

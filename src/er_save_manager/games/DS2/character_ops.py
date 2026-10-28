@@ -28,7 +28,7 @@ _EXPORT_VERSION = 1
 UNINITIALIZED_SLOT_WARNING = (
     "Slot {slot} has never been through the game's own character creation "
     "screen. Writing character data into it directly will not make it "
-    "appear at the load screen, even though the write itself succeeds."
+    "appear at the load screen, even though the write itself succeeds. "
     "Create a throwaway character in this slot "
     "in-game first, save and quit, then run this again."
 )
@@ -65,7 +65,7 @@ class DS2CharacterOperations:
         """Return a warning message if slot_index has never been through
         character creation in-game, or None if it is safe to write into."""
         if save.slot_state(slot_index) is SlotState.NEVER_CREATED:
-            return UNINITIALIZED_SLOT_WARNING.format(slot=slot_index)
+            return UNINITIALIZED_SLOT_WARNING.format(slot=slot_index + 1)
         return None
 
     @staticmethod
@@ -196,7 +196,7 @@ class DS2CharacterOperations:
 
         character = save.characters[slot_index]
         if not character.name:
-            raise ValueError(f"Slot {slot_index} is empty")
+            raise ValueError(f"Slot {slot_index + 1} is empty")
 
         profile_data = bytes(character.raw())
         big_data = bytes(save.container.get_entry(BIG_ENTRY_START + slot_index))
@@ -211,6 +211,67 @@ class DS2CharacterOperations:
         buffer += hashlib.md5(buffer).digest()
 
         atomic_write(output_path, buffer)
+
+    @staticmethod
+    def read_export(input_path: str) -> tuple[bytes, bytes]:
+        """Profile and big entry data of a .ds2c file. Raises ValueError with a
+        plain reason when the file cannot be read, is not a .ds2c file, is
+        cut short or fails its checksum."""
+        try:
+            with open(input_path, "rb") as f:
+                data = f.read()
+        except OSError as exc:
+            raise ValueError(
+                f"The file could not be read: {exc.strerror or exc}"
+            ) from exc
+        if not data:
+            raise ValueError("The file is empty.")
+        if not data.startswith(_EXPORT_MAGIC):
+            raise ValueError(
+                "This is not a Dark Souls II character file (.ds2c). Export one "
+                "from a DS2 save with Export Character."
+            )
+        truncated = ValueError("The file is cut short or damaged.")
+        off = len(_EXPORT_MAGIC)
+        if off + 8 > len(data):
+            raise truncated
+        version, profile_size = struct.unpack_from("<II", data, off)
+        if version != _EXPORT_VERSION:
+            raise ValueError(
+                f"This .ds2c file has format version {version}; this version of "
+                f"the app reads version {_EXPORT_VERSION}."
+            )
+        off += 8
+        if off + profile_size + 4 > len(data):
+            raise truncated
+        profile_data = data[off : off + profile_size]
+        off += profile_size
+        big_size = struct.unpack_from("<I", data, off)[0]
+        off += 4
+        if off + big_size + 16 != len(data):
+            raise truncated
+        big_data = data[off : off + big_size]
+        off += big_size
+        if hashlib.md5(data[:off]).digest() != data[off:]:
+            raise ValueError("The file is damaged: its checksum does not match.")
+        return profile_data, big_data
+
+    @staticmethod
+    def check_export_fits(
+        save: DS2Save, slot_index: int, profile_data: bytes, big_data: bytes
+    ) -> None:
+        """Raise ValueError when .ds2c data does not match the size of the
+        slot's entries. BND4 entry sizes are fixed in the container's entry
+        table, so a file from another game version cannot be imported."""
+        target_profile = save.characters[slot_index].raw()
+        target_big = save.container.get_entry(BIG_ENTRY_START + slot_index)
+        if len(profile_data) != len(target_profile) or len(big_data) != len(target_big):
+            raise ValueError(
+                "The character in this file does not fit this save: its data "
+                f"is {len(profile_data)} + {len(big_data)} bytes, the slot holds "
+                f"{len(target_profile)} + {len(target_big)}. The file likely "
+                "comes from another game version."
+            )
 
     @staticmethod
     def import_character(
@@ -235,44 +296,12 @@ class DS2CharacterOperations:
             if warning:
                 raise RuntimeError(warning)
 
-        with open(input_path, "rb") as f:
-            magic = f.read(5)
-            if magic != _EXPORT_MAGIC:
-                raise ValueError("Invalid .ds2c file: bad magic")
-
-            version = struct.unpack("<I", f.read(4))[0]
-            if version != _EXPORT_VERSION:
-                raise ValueError(f"Unsupported .ds2c version: {version}")
-
-            profile_size = struct.unpack("<I", f.read(4))[0]
-            profile_data = f.read(profile_size)
-
-            big_size = struct.unpack("<I", f.read(4))[0]
-            big_data = f.read(big_size)
-
-            checksum_expected = f.read(16)
-
-        with open(input_path, "rb") as f:
-            data_to_hash = f.read()[:-16]
-        if hashlib.md5(data_to_hash).digest() != checksum_expected:
-            raise ValueError("Checksum mismatch - .ds2c file may be corrupted")
-
+        profile_data, big_data = DS2CharacterOperations.read_export(input_path)
+        DS2CharacterOperations.check_export_fits(
+            save, slot_index, profile_data, big_data
+        )
         target_profile = save.characters[slot_index].raw()
         target_big = save.container.get_entry(BIG_ENTRY_START + slot_index)
-
-        if len(profile_data) != len(target_profile):
-            raise ValueError(
-                f"Profile size mismatch: .ds2c has {len(profile_data)} bytes, "
-                f"target slot expects {len(target_profile)}. Likely a different "
-                f"game version; cannot import into this save."
-            )
-        if len(big_data) != len(target_big):
-            raise ValueError(
-                f"Big entry size mismatch: .ds2c has {len(big_data)} bytes, "
-                f"target slot expects {len(target_big)}. Likely a different "
-                f"game version; cannot import into this save."
-            )
-
         target_profile[:] = profile_data
         target_big[:] = big_data
         save.sync_name_caches()
@@ -293,7 +322,7 @@ class DS2CharacterOperations:
 
         character: Character = save.characters[slot_index]
         if not character.name:
-            raise ValueError(f"Slot {slot_index} is empty")
+            raise ValueError(f"Slot {slot_index + 1} is empty")
 
         inventory = [i for i in character.inventory() if i.item_id != 0]
         key_items = [i for i in character.key_items() if i.item_id != 0]

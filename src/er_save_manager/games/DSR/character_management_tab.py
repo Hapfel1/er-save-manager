@@ -601,6 +601,18 @@ class DSRCharacterManagementTab:
         )
         if not import_path:
             return
+        try:
+            data = character_ops.read_character_file(import_path)
+        except ValueError as e:
+            CTkMessageBox.showerror("Import Failed", str(e), parent=self.parent)
+            return
+        except OSError as e:
+            CTkMessageBox.showerror(
+                "Import Failed",
+                f"Could not read the file:\n{e.strerror or e}",
+                parent=self.parent,
+            )
+            return
 
         to_slot = self._slot_index(self._import_slot_var.get())
         to_char = save.characters[to_slot]
@@ -625,7 +637,7 @@ class DSRCharacterManagementTab:
                     "import_character",
                 )
 
-            character_ops.import_character(save, to_slot, Path(import_path))
+            character_ops.import_character_data(save, to_slot, data)
         except Exception as e:
             CTkMessageBox.showerror(
                 "Import Failed", f"Import failed:\n{str(e)}", parent=self.parent
@@ -724,7 +736,7 @@ class DSRCharacterManagementTab:
         return pick_file(
             title="Select target save file",
             initialdir=initialdir,
-            filetypes=[("DSR save files", "*.sl2"), ("All files", "*.*")],
+            filetypes=[("DSR save files", "*.sl2 *.co2"), ("All files", "*.*")],
         )
 
     def _select_target_save_file(self) -> str | None:
