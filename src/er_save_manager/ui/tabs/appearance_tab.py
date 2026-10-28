@@ -585,7 +585,7 @@ class AppearanceTab:
                             if hasattr(preset, "get_body_type")
                             else 0
                         )
-                        detail = "Type A" if body_type_value == 0 else "Type B"
+                        detail = "Type A" if body_type_value == 1 else "Type B"
                 except Exception:
                     detail = "Error"
 
@@ -638,7 +638,7 @@ class AppearanceTab:
                 return
 
             body_type_value = preset.get_body_type()
-            body_type = "Type A" if body_type_value == 0 else "Type B"
+            body_type = "Type A" if body_type_value == 1 else "Type B"
 
             def get_attr(obj, name, default=0):
                 """Safely get attribute with default"""
@@ -948,7 +948,7 @@ class AppearanceTab:
                         if hasattr(preset, "get_body_type")
                         else 0
                     )
-                    body_type = "Type A" if body_type_value == 0 else "Type B"
+                    body_type = "Type A" if body_type_value == 1 else "Type B"
                     available_presets.append((i, f"Preset {i + 1}: {body_type}"))
                 else:
                     available_presets.append((i, f"Preset {i + 1}: Empty"))

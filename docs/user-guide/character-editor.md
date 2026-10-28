@@ -161,8 +161,9 @@ Character voice selection for grunts and sounds.
 
 **Options:**
 
-- Young (Voice 1-3)
-- Mature (Voice 1-3)
+- Young 1, Young 2
+- Mature 1, Mature 2
+- Aged 1, Aged 2
 
 ### Keepsake (Starting Gift)
 

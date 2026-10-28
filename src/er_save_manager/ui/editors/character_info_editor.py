@@ -18,9 +18,9 @@ from er_save_manager.ui.utils import (
 from er_save_manager.validation.names import name_problem, utf16_len
 
 # Index = stored body type
-_BODY_TYPES = ["Type A", "Type B"]
-# Index = stored voice type
-_VOICE_TYPES = ["Young", "Mature", "Aged"]
+_BODY_TYPES = ["Type B", "Type A"]
+# Index = stored voice type, in creation menu order
+_VOICE_TYPES = ["Young 1", "Young 2", "Mature 1", "Mature 2", "Aged 1", "Aged 2"]
 
 # Starting classes in the Tarnished Pack DLC slots (archetypes 10-11, which
 # Convergence uses for its Tarnished Edition classes). Hidden from the class
