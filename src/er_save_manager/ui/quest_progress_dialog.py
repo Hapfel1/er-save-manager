@@ -14,6 +14,11 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.utils import bind_mousewheel
 
+# Step rows built before the dialog shows a quest; the rest follow in idle
+# chunks of _ROW_CHUNK.
+_FIRST_ROWS = 12
+_ROW_CHUNK = 8
+
 
 def last_complete_index(steps, is_complete) -> int:
     """Index of the furthest step whose flags all match, -1 if none."""
@@ -151,7 +156,10 @@ class QuestProgressDialog:
 
         # ---- State ----
         selected_npc = tk.StringVar(value="")
-        step_widgets = []  # (step_dict, apply_btn)
+        # (frame, number, description, meta, button) per step row, reused
+        # across NPCs and re-renders
+        step_rows = []
+        render_job = [None]
 
         def _safe_get_flag(flag_id):
             try:
@@ -169,73 +177,109 @@ class QuestProgressDialog:
             done = sum(1 for s in steps if _step_is_complete(s))
             return done, sum(1 for s in steps if is_tracked(s))
 
-        def _render_steps(npc_name):
-            for w in steps_scroll.winfo_children():
-                w.destroy()
-            step_widgets.clear()
+        def _make_row():
+            frame = ctk.CTkFrame(steps_scroll, corner_radius=8, fg_color=ds.ROW)
+            frame.columnconfigure(1, weight=1)
+            number = ctk.CTkLabel(frame, text="", font=ds.BOLD, width=28)
+            number.grid(row=0, column=0, rowspan=2, padx=(8, 4), pady=8, sticky="n")
+            desc = ctk.CTkLabel(
+                frame,
+                text="",
+                font=ds.FONT,
+                anchor="w",
+                justify="left",
+                wraplength=470,
+            )
+            desc.grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=(8, 0))
+            meta = ctk.CTkLabel(
+                frame, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="w"
+            )
+            meta.grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 8))
+            btn = ds.button(frame, "", None, width=80)
+            btn.grid(row=0, column=2, rowspan=2, padx=8, pady=8)
+            return frame, number, desc, meta, btn
 
+        def _fill_row(row, i, step, npc_name):
+            frame, number, desc, meta, btn = row
+            complete = _step_is_complete(step)
+            # Step number, or a check mark once every flag of the step is set
+            number.configure(
+                text="✓" if complete else str(i + 1),
+                text_color=ds.FOUND if complete else ds.MUTED,
+            )
+            desc.configure(text=step["description"])
+            meta_parts = []
+            if step["location"]:
+                meta_parts.append(step["location"])
+            meta_parts.append(f"{len(step['flags'])} flag(s)")
+            if not is_tracked(step):
+                meta_parts.append("not tracked")
+            meta.configure(text="  |  ".join(meta_parts))
+            if undo and complete:
+                text, primary, state = "Undo", False, "normal"
+
+                def command(s=step, npc=npc_name):
+                    _undo_step(s, npc)
+            else:
+                text = "Applied" if complete else "Apply"
+                primary = not complete
+                state = "disabled" if complete else "normal"
+
+                def command(idx=i, npc=npc_name):
+                    _apply_step(idx, npc)
+
+            btn.configure(
+                text=text,
+                command=command,
+                state=state,
+                fg_color=ctk.ThemeManager.theme["CTkButton"]["fg_color"]
+                if primary
+                else ds.SECONDARY,
+            )
+            if not frame.winfo_manager():
+                frame.pack(fill=tk.X, pady=3, padx=2)
+
+        def _fill_rows(npc_name, start):
+            """Fill the step rows from start on, building missing ones. Rows
+            past the first screenful follow in idle chunks."""
+            render_job[0] = None
+            if not dialog.winfo_exists():
+                return
             steps = QUEST_FLAGS[npc_name]
+            end = min(len(steps), start + (_ROW_CHUNK if start else _FIRST_ROWS))
+            for i in range(start, end):
+                if i == len(step_rows):
+                    step_rows.append(_make_row())
+                _fill_row(step_rows[i], i, steps[i], npc_name)
+            if end < len(steps):
+                render_job[0] = dialog.after(1, _fill_rows, npc_name, end)
+
+        longest = max((len(s) for s in QUEST_FLAGS.values()), default=0)
+
+        def _prebuild():
+            """Build the hidden rows of the longest quest ahead of time, two
+            per idle slot, so the first NPC selection only fills them."""
+            if not dialog.winfo_exists():
+                return
+            for _ in range(2):
+                if len(step_rows) >= longest:
+                    return
+                step_rows.append(_make_row())
+            dialog.after(1, _prebuild)
+
+        def _render_steps(npc_name, keep_scroll=False):
+            if render_job[0] is not None:
+                dialog.after_cancel(render_job[0])
+                render_job[0] = None
+            steps = QUEST_FLAGS[npc_name]
+            for row in step_rows[len(steps) :]:
+                row[0].pack_forget()
+            if not keep_scroll:
+                steps_scroll._parent_canvas.yview_moveto(0)
+
             done, total = _count_complete(npc_name)
             npc_header.configure(text=f"{npc_name}  ({done}/{total} steps complete)")
-
-            for i, step in enumerate(steps):
-                complete = _step_is_complete(step)
-                row_frame = ctk.CTkFrame(steps_scroll, corner_radius=8, fg_color=ds.ROW)
-                row_frame.pack(fill=tk.X, pady=3, padx=2)
-                row_frame.columnconfigure(1, weight=1)
-
-                # Step number, or a check mark once every flag of the step is set
-                ctk.CTkLabel(
-                    row_frame,
-                    text="✓" if complete else str(i + 1),
-                    font=ds.BOLD,
-                    text_color=ds.FOUND if complete else ds.MUTED,
-                    width=28,
-                ).grid(row=0, column=0, rowspan=2, padx=(8, 4), pady=8, sticky="n")
-
-                ctk.CTkLabel(
-                    row_frame,
-                    text=step["description"],
-                    font=ds.FONT,
-                    anchor="w",
-                    justify="left",
-                    wraplength=470,
-                ).grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=(8, 0))
-
-                meta_parts = []
-                if step["location"]:
-                    meta_parts.append(step["location"])
-                meta_parts.append(f"{len(step['flags'])} flag(s)")
-                if not is_tracked(step):
-                    meta_parts.append("not tracked")
-                ctk.CTkLabel(
-                    row_frame,
-                    text="  |  ".join(meta_parts),
-                    font=ds.SMALL,
-                    text_color=ds.MUTED,
-                    anchor="w",
-                ).grid(row=1, column=1, sticky="ew", padx=(0, 8), pady=(0, 8))
-
-                if undo and complete:
-                    apply_btn = ds.button(
-                        row_frame,
-                        "Undo",
-                        lambda s=step, npc=npc_name: _undo_step(s, npc),
-                        primary=False,
-                        width=80,
-                    )
-                else:
-                    apply_btn = ds.button(
-                        row_frame,
-                        "Applied" if complete else "Apply",
-                        lambda idx=i, npc=npc_name: _apply_step(idx, npc),
-                        primary=not complete,
-                        width=80,
-                        state="disabled" if complete else "normal",
-                    )
-                apply_btn.grid(row=0, column=2, rowspan=2, padx=8, pady=8)
-
-                step_widgets.append((step, apply_btn))
+            _fill_rows(npc_name, 0)
 
             apply_all_btn.configure(
                 state="normal",
@@ -346,7 +390,7 @@ class QuestProgressDialog:
                     return
                 if show_toast:
                     show_toast(toast_msg, duration=2500)
-                _render_steps(npc_name)
+                _render_steps(npc_name, keep_scroll=True)
                 _rebuild_npc_list(search_var.get())
                 return
 
@@ -376,7 +420,7 @@ class QuestProgressDialog:
                 show_toast(toast_msg, duration=2500)
 
             # Re-render step list with fresh flag states
-            _render_steps(npc_name)
+            _render_steps(npc_name, keep_scroll=True)
             _rebuild_npc_list(search_var.get())
 
         # ---- NPC button rendering ----
@@ -421,3 +465,4 @@ class QuestProgressDialog:
         search_var.trace_add("write", _on_search)
         _rebuild_npc_list()
         ds.finish(dialog, parent, width=920, height=660)
+        dialog.after(1, _prebuild)

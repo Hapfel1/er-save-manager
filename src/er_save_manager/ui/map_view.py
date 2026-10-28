@@ -18,6 +18,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageTk
 from er_save_manager.data.boss_locations import BossSpot, boss_spots
 from er_save_manager.data.floor_points import (
     FloorPoint,
+    bloodstain_location,
     floor_near,
     floors_near,
     pin_location,
@@ -243,6 +244,10 @@ class _Placed:
     rect: tuple[float, float, float, float] | None = None
     point: tuple[float, float] | None = None
     icon: int | None = None  # dungeon map icon id
+
+
+# (map number, map x, map y, label, runes, map id, (x, y, z)) of a bloodstain
+Bloodstain = tuple[int, float, float, str, int, str, tuple[float, float, float]]
 
 
 @dataclass
@@ -1110,9 +1115,10 @@ class MapWindow:
         MapWindow._instance = self
         self._on_select_slot = on_select_slot
         self._on_move_bloodstain = on_move_bloodstain
-        # (map number, map x, map y, label, runes) of the bloodstain, None
-        # when there is none
-        self._bloodstain: tuple[int, float, float, str, int] | None = None
+        # None when the character has no bloodstain
+        self._bloodstain: Bloodstain | None = None
+        # Floor point of the bloodstain while it is the selection (_pins[0])
+        self._blood_pin: FloorPoint | None = None
         self._parent = parent
         self._images = _MapImages(maps_dir, convergence)
         meta = json.loads((maps_dir / "maps.json").read_text(encoding="utf-8"))
@@ -1238,8 +1244,11 @@ class MapWindow:
         self._char_combo.configure(values=names or [""])
         self._char_combo.set(current or "")
 
-    def set_bloodstain(self, bloodstain: tuple[int, float, float, str, int] | None):
+    def set_bloodstain(self, bloodstain: Bloodstain | None):
+        selected = self._blood_selected()
         self._bloodstain = bloodstain
+        if selected:
+            self._select_bloodstain()
         if bloodstain is None:
             self._blood_var.set("Bloodstain: none")
         else:
@@ -3883,6 +3892,8 @@ class MapWindow:
             self._select_pin(hit[1])
         elif hit and hit[0] == "step":
             self._select_step(hit[1][1])
+        elif hit and hit[0] == "bloodstain":
+            self._select_bloodstain()
         else:
             mx, my = self._to_map(*press)
             if self._click_target.get() == _TARGET_TILES:
@@ -3944,6 +3955,31 @@ class MapWindow:
         self._selected_pin = None
         self._selected_region = None
         self._clear_marker_selection()
+        self._update_location_info()
+        self._schedule_render()
+
+    def _blood_selected(self) -> bool:
+        return bool(self._pins) and self._pins[0] is self._blood_pin
+
+    def _select_bloodstain(self):
+        """Select the bloodstain at its saved position; Teleport Here moves
+        the character there."""
+        blood = self._bloodstain
+        if blood is None:
+            self._select_location(None)
+            return
+        map_no, mx, my, _label, _runes, map_id, (x, y, z) = blood
+        floor = floor_near(
+            map_id, x, y, z, self._images.convergence, 4.0, map_no, (mx, my)
+        )
+        flag = floor.arena_flag if floor is not None else 0
+        self._blood_pin = FloorPoint(map_id, x, y, z, map_no, mx, my, flag)
+        self._selected_loc = None
+        self._selected_pin = None
+        self._selected_region = None
+        self._pins = [self._blood_pin]
+        self._pin_var.set(0)
+        self._fill_floor_choices()
         self._update_location_info()
         self._schedule_render()
 
@@ -4480,11 +4516,12 @@ class MapWindow:
         self._update_location_info()
         self._schedule_render()
 
-    def _pin_info(self, pin: FloorPoint) -> str:
+    def _pin_info(self, pin: FloorPoint, kind: str = "Map pin", *extra: str) -> str:
         lines = [
             get_name_for_map_id(pin.map_id_str),
-            f"Map pin  {pin.map_id_str}",
+            f"{kind}  {pin.map_id_str}",
             f"Position {pin.x:.1f}, {pin.y:.1f}, {pin.z:.1f}",
+            *extra,
         ]
         gate = arena_gate(pin.arena_flag)
         if gate is not None:
@@ -4508,7 +4545,13 @@ class MapWindow:
         self._show_pin_icons([])
         self._detail.pack_forget()
         if self._pins:
-            self._info_var.set(self._pin_info(self._pins[self._pin_var.get()]))
+            pin = self._pins[self._pin_var.get()]
+            if self._blood_selected():
+                self._info_var.set(
+                    self._pin_info(pin, "Bloodstain", f"{self._bloodstain[4]:,} runes")
+                )
+            else:
+                self._info_var.set(self._pin_info(pin))
             self._teleport_btn.configure(state="normal")
             self._area_btn.configure(state="disabled")
             self._grace_row.pack_forget()
@@ -4825,7 +4868,9 @@ class MapWindow:
         return floor or FloorPoint(map_id, x, y, z, pin.map_no, *pin.point)
 
     def _teleport(self):
-        if self._pins:
+        if self._blood_selected():
+            self._on_teleport(bloodstain_location(self._blood_pin))
+        elif self._pins:
             self._on_teleport(pin_location(self._pins[self._pin_var.get()]))
         elif self._selected_loc is not None:
             self._on_teleport(self._selected_loc.loc)

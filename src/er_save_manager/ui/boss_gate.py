@@ -29,7 +29,7 @@ def closed_gate(
     loc: MapLocation, convergence: bool, flag_state: FlagState
 ) -> BossGate | None:
     """Gate of a location whose flag is not set on the character."""
-    if loc.tile_type == "pin":
+    if loc.tile_type in ("pin", "bloodstain"):
         gate = arena_gate(loc.arena_flag)
     else:
         gate = location_gate(loc.tile_type, loc.map_id_str, loc.flag_id, convergence)
@@ -64,7 +64,7 @@ def confirm_teleport(
     )
     if loc.tile_type == "grace":
         where = f"The grace {loc.name} only appears after {gate.condition}."
-    elif loc.tile_type == "pin":
+    elif loc.tile_type in ("pin", "bloodstain"):
         where = (
             f"This spot is inside the fog wall of {gate.boss}."
             if gate.boss
@@ -73,7 +73,7 @@ def confirm_teleport(
         )
     else:
         where = f"{loc.name} is at a grace that only appears after {gate.condition}."
-    boss = gate.boss or loc.tile_type == "pin"
+    boss = gate.boss or loc.tile_type in ("pin", "bloodstain")
     return confirm_warning(
         parent,
         BOSS_GATE_SETTING,

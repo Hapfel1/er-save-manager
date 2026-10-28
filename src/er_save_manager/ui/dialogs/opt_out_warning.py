@@ -33,6 +33,11 @@ WARNINGS = (
         "Elden Ring: graces that are not spawned yet and boss arenas.",
     ),
     (
+        "show_bloodstain_teleport_warning",
+        "Show warning before teleporting to the bloodstain",
+        "Elden Ring: dying again at the death spot loses the runes.",
+    ),
+    (
         "show_reward_respawn_warning",
         "Show warning before respawning a reward on the world map",
         "Elden Ring: boss, enemy and NPC rewards are not placed back on the map.",
