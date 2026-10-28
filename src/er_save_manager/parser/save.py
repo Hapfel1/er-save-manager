@@ -244,16 +244,21 @@ class Save:
 
         return obj
 
-    def _digest_slots(self) -> dict[int, bytes]:
-        """MD5 of each non-empty slot's data, to tell which slots were edited."""
-        import hashlib
+    def _digest_slots(self) -> dict[int, int]:
+        """CRC32 of each non-empty slot's data, to tell which slots were edited.
+
+        Change detection only; a missed edit would leave that slot's load
+        screen profile unsynced.
+        """
+        import zlib
 
         digests = {}
-        for idx, slot in enumerate(self.character_slots):
-            if slot.is_empty() or not getattr(slot, "data_start", 0):
-                continue
-            data = self._raw_data[slot.data_start : slot.data_start + 0x280000]
-            digests[idx] = hashlib.md5(data).digest()
+        with memoryview(self._raw_data) as raw:
+            for idx, slot in enumerate(self.character_slots):
+                if slot.is_empty() or not getattr(slot, "data_start", 0):
+                    continue
+                start = slot.data_start
+                digests[idx] = zlib.crc32(raw[start : start + 0x280000])
         return digests
 
     def _edited_slots(self) -> list[int]:

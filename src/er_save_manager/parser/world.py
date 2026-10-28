@@ -381,7 +381,6 @@ class GaitemGameDataEntry:
         f.write(struct.pack("<IB3s", self.item_id, self.acquired, self.pad))
 
 
-@dataclass
 class GaitemGameData:
     """Item types ever acquired (8 bytes + 14000 records x 8 bytes = 0x1B588 bytes)
 
@@ -392,21 +391,38 @@ class GaitemGameData:
     records of 16 bytes (u32 item_id, u8 1, 3 bytes, u32, u32). entries
     always holds the 8-byte view for an exact round trip; record_size tells
     which layout the data is in.
+
+    entries is built from the read bytes on first access; until then write()
+    copies those bytes back unchanged.
     """
 
-    count: int = 0
-    entries: list[GaitemGameDataEntry] = field(default_factory=list)
+    def __init__(
+        self, count: int = 0, entries: list[GaitemGameDataEntry] | None = None
+    ) -> None:
+        self.count = count
+        self._entries = [] if entries is None else entries
+        self._raw: bytes | None = None
+
+    @property
+    def entries(self) -> list[GaitemGameDataEntry]:
+        if self._raw is not None:
+            self._entries = [
+                GaitemGameDataEntry(i, a, p)
+                for i, a, p in struct.iter_unpack("<IB3s", self._raw)
+            ]
+            self._raw = None
+        return self._entries
+
+    @entries.setter
+    def entries(self, value: list[GaitemGameDataEntry]) -> None:
+        self._entries = value
+        self._raw = None
 
     @classmethod
     def read(cls, f: BytesIO) -> GaitemGameData:
         """Read GaitemGameData from stream"""
-        obj = cls()
-        obj.count = struct.unpack("<q", f.read(8))[0]  # i64
-        data = read_exact(f, 8 * 14000)
-        obj.entries = [
-            GaitemGameDataEntry(i, a, p)
-            for i, a, p in struct.iter_unpack("<IB3s", data)
-        ]
+        obj = cls(count=struct.unpack("<q", f.read(8))[0])  # i64
+        obj._raw = read_exact(f, 8 * 14000)
         return obj
 
     @staticmethod
@@ -444,7 +460,10 @@ class GaitemGameData:
     def write(self, f: BytesIO):
         """Write GaitemGameData to stream"""
         f.write(struct.pack("<q", self.count))
-        for entry in self.entries:
+        if self._raw is not None:
+            f.write(self._raw)
+            return
+        for entry in self._entries:
             entry.write(f)
 
 
