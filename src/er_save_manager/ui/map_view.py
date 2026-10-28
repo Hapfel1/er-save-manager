@@ -3326,13 +3326,19 @@ class MapWindow:
         frame.pack(fill=tk.X, padx=12, pady=(0, 6), after=self._unlock_row)
 
     def _on_left_selected(self):
-        """Center the map on the chosen left entry."""
+        """Center the map on the chosen left entry and select it (name tag,
+        others faded), keeping the region panel."""
         sel = self._detail_tree.selection()
         if not sel or sel[0] == "none":
             return
         _category, _label, target = self._detail_rows[int(sel[0])]
         if not isinstance(target, (_Pin, _Placed)):
             return
+        if isinstance(target, _Pin):
+            self._selected_pin, self._selected_loc = target, None
+        else:
+            self._selected_pin, self._selected_loc = None, target
+        self._active_npc = None
         self._show_map(target.map_no)
         self._show_layer_of(target)
         self._center_on(*target.point, max(self._zoom, self._fit_zoom() * 4))
@@ -4491,11 +4497,12 @@ class MapWindow:
         return "\n".join(lines)
 
     def _update_location_info(self):
-        if self._selected_pin is not None:
-            self._show_pin_info(self._selected_pin)
-            return
+        # A region stays shown while one of its left entries is selected
         if self._selected_region is not None:
             self._show_region_info(self._selected_region)
+            return
+        if self._selected_pin is not None:
+            self._show_pin_info(self._selected_pin)
             return
         self._pin_btn.pack_forget()
         self._show_pin_icons([])
