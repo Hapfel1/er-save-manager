@@ -62,33 +62,31 @@ def test_parses_cleanly(slot):
     assert slot.flags_error is None
     assert slot.name == "invtest"
     assert slot.ng_plus == 0
-
-
-def test_level_matches_class_and_stats(slot):
-    cls = catalog.starting_classes("vanilla")[slot.starting_class]
     stats = {k: slot.get_stat(k) for k in catalog.STAT_KEYS}
+    cls = catalog.starting_classes("vanilla")[slot.starting_class]
     assert slot.level == cls.level_for(stats)
+    assert "vanilla" in catalog.matching_sources(slot.starting_class, stats, slot.level)
+    # A level that fits no class table, and a class index past every table
+    assert catalog.matching_sources(slot.starting_class, stats, slot.level + 1) == []
+    assert catalog.matching_sources(999, stats, slot.level) == []
 
 
-@pytest.mark.parametrize("source", list(catalog.SOURCES))
-def test_starting_classes(source):
-    classes = catalog.starting_classes(source)
-    assert len({c.name for c in classes}) == len(classes)
-    for cls in classes:
-        assert cls.level_for(cls.stats) == cls.level
-    if source == "vanilla":
-        # Every vanilla class sits at attribute sum - 89.
-        assert len(classes) == 10
-        assert all(sum(c.stats.values()) - c.level == 89 for c in classes)
+def test_starting_classes():
+    for source in catalog.SOURCES:
+        classes = catalog.starting_classes(source)
+        assert len({c.name for c in classes}) == len(classes)
+        for cls in classes:
+            assert cls.level_for(cls.stats) == cls.level
+    # Every vanilla class sits at attribute sum - 89.
+    classes = catalog.starting_classes("vanilla")
+    assert len(classes) == 10
+    assert all(sum(c.stats.values()) - c.level == 89 for c in classes)
 
 
-def test_event_flags_known_state(slot):
+def test_event_flags(slot, slot_bytes):
     assert slot.get_flag(50)  # playthrough lap 0
     assert slot.get_flag(14000001)  # Cemetery of Ash bonfire
     assert not slot.get_flag(14000800)  # Iudex Gundyr alive
-
-
-def test_set_flag_changes_one_bit(slot, slot_bytes):
     slot.set_flag(13000800, True)
     assert slot.get_flag(13000800)
     diff = [
@@ -107,6 +105,10 @@ def test_gestures(slot):
     slot.set_gesture_unlocked(33, True)
     assert slot.gesture_unlocked(33)
     assert slot.layout_error is None
+    gestures = json.loads((DATA / "gestures.json").read_text(encoding="utf-8"))
+    ids = [g["id"] for g in gestures]
+    assert len(ids) == len(set(ids))
+    assert all(0 <= i < GESTURE_COUNT for i in ids)
 
 
 def test_ng_plus_keeps_lap_flags_one_hot(slot):
@@ -237,20 +239,22 @@ def test_malformed_lists_block_inventory_only(slot):
         fresh.add_item(TITANITE_SHARD, sort_key=16010)
 
 
-@pytest.mark.parametrize("source", ["vanilla", "convergence", "cinders"])
-def test_item_data_has_icons_and_unique_ids(source):
+def test_item_data_has_icons_and_unique_ids():
     from er_save_manager.games.DS3.icon_manager import get_icon
 
-    items = catalog.items(source)
-    assert items, source
-    for category, entries in items.items():
-        ids = [e["Id"] for e in entries]
-        assert len(ids) == len(set(ids)), (source, category)
-        missing = [e["Name"] for e in entries if get_icon(e["IconId"], source) is None]
-        assert not missing, (source, category, missing[:5])
+    for source in ("vanilla", "convergence", "cinders"):
+        items = catalog.items(source)
+        assert items, source
+        for category, entries in items.items():
+            ids = [e["Id"] for e in entries]
+            assert len(ids) == len(set(ids)), (source, category)
+            missing = [
+                e["Name"] for e in entries if get_icon(e["IconId"], source) is None
+            ]
+            assert not missing, (source, category, missing[:5])
 
 
-def test_catalog_limits_and_names():
+def test_catalog():
     dark_hand = next(
         e for e in catalog.items()["weapon_items"] if e["Name"] == "Dark Hand"
     )
@@ -263,6 +267,19 @@ def test_catalog_limits_and_names():
     dagger = catalog.lookup(DAGGER)
     variants = catalog.infusion_variants(dagger)
     assert [v["Infusion"] for v in variants[:3]] == ["Normal", "Heavy", "Sharp"]
+
+    flasks = [i for i in catalog.items()["goods_items"] if "Estus Flask" in i["Name"]]
+    groups = {catalog.single_group(int(i["Id"], 16)) for i in flasks}
+    assert groups == {"Estus Flask", "Ashen Estus Flask"}
+    assert catalog.single_group(TITANITE_SHARD) is None
+
+    for source in catalog.SOURCES:
+        item = catalog.lookup(0x4008FCC8, source)
+        assert item is not None and catalog.is_seamless(item)
+
+    assert catalog.matchmaking_level(DAGGER + 7) == 7
+    assert catalog.matchmaking_level(0x107AC0 + 3) == 6  # Tailbone Short Sword, +5 cap
+    assert catalog.matchmaking_level(0x10000000 | 1000) == 0
 
 
 def test_move_between_inventory_and_storage(slot):
@@ -308,26 +325,6 @@ def test_cached_offsets_match_fresh_parse_after_many_inserts(slot):
     for entry in _real(slot):
         if entry.handle >> 28 in (0x8, 0x9):
             assert slot._find_gaitem(entry.handle).item_id == entry.item_id
-
-
-def test_estus_flasks_are_one_group_per_kind():
-    flasks = [i for i in catalog.items()["goods_items"] if "Estus Flask" in i["Name"]]
-    groups = {catalog.single_group(int(i["Id"], 16)) for i in flasks}
-    assert groups == {"Estus Flask", "Ashen Estus Flask"}
-    assert catalog.single_group(TITANITE_SHARD) is None
-
-
-def test_gesture_data_ids_are_table_rows():
-    gestures = json.loads((DATA / "gestures.json").read_text(encoding="utf-8"))
-    ids = [g["id"] for g in gestures]
-    assert len(ids) == len(set(ids))
-    assert all(0 <= i < GESTURE_COUNT for i in ids)
-
-
-def test_seamless_goods_in_every_source():
-    for source in catalog.SOURCES:
-        item = catalog.lookup(0x4008FCC8, source)
-        assert item is not None and catalog.is_seamless(item)
 
 
 def test_character_death_bits(slot, slot_bytes):
@@ -405,6 +402,10 @@ def test_weapon_level_updates_equipped_ids(slot):
     new_id = slot.set_weapon_level(weapon, 3)
     assert slot.equipped_ids()[k] == new_id & 0x0FFFFFFF
     assert slot.equipped_entry(k).offset == weapon.offset
+    # The matchmaking weapon level field
+    slot.weapon_level = 7
+    assert slot._data[slot._player(0xA3)] == 7
+    assert slot.weapon_level == 7
 
 
 def test_set_equip_rejects_items_that_do_not_fit(slot):
@@ -476,34 +477,9 @@ def test_attunement_slots_per_source():
     assert attunement.slots(10, [0x20004F6A]) == 3
     assert attunement.slots(10, [0x20004F6A], "convergence") == 4
     assert attunement.spell_cost(0x4013D620) == 1
-
-
-def test_upgrade_materials_are_not_quick_items():
-    from er_save_manager.games.DS3 import attunement
-
+    # Upgrade materials are not quick items
     assert attunement.is_material(TITANITE_SHARD)
     assert not attunement.is_material(0x40000097)  # Estus Flask
-
-
-def test_weapon_level_field(slot):
-    off = slot._player(0xA3)
-    slot.weapon_level = 7
-    assert slot._data[off] == 7
-    assert slot.weapon_level == 7
-
-
-def test_matchmaking_level_scale():
-    assert catalog.matchmaking_level(DAGGER + 7) == 7
-    assert catalog.matchmaking_level(0x107AC0 + 3) == 6  # Tailbone Short Sword, +5 cap
-    assert catalog.matchmaking_level(0x10000000 | 1000) == 0
-
-
-def test_matching_sources(slot):
-    stats = {k: slot.get_stat(k) for k in catalog.STAT_KEYS}
-    assert "vanilla" in catalog.matching_sources(slot.starting_class, stats, slot.level)
-    # A level that fits no class table, and a class index past every table
-    assert catalog.matching_sources(slot.starting_class, stats, slot.level + 1) == []
-    assert catalog.matching_sources(999, stats, slot.level) == []
 
 
 def test_equipment_check_rejects_removed_pick(slot):

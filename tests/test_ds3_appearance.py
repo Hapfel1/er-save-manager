@@ -43,11 +43,7 @@ def test_reads_block_and_body_type(slot):
     assert len(face) == FACE_SIZE
     assert face[:4] == b"FACE"
     assert slot.body_type == 1
-
-
-def test_fixture_face_is_the_commoner_template(slot):
     # A fresh character keeps its base template's sliders and skin color.
-    face = slot.face_block
     assert A.template_names(1)[0] == "Commoner"
     assert A.apply_template(face, 1, 0) == face
 
@@ -102,10 +98,6 @@ def test_apply_writes_block_and_body_type(slot):
     A.Appearance(0, face).apply_to(slot)
     assert slot.face_block == face
     assert slot.body_type == 0
-
-
-def test_apply_refuses_bad_blocks(slot):
-    face = slot.face_block
     with pytest.raises(ValueError):
         A.Appearance(1, face[:-1]).apply_to(slot)
     with pytest.raises(ValueError):
@@ -169,8 +161,7 @@ def test_directory_copy_follows_the_slot(slot):
     _sync_dir_face(_Save(entry10), 2, new)
     assert bytes(entry10[at : at + len(new)]) == new
 
-
-def test_directory_without_block_is_left_alone(slot):
+    # A directory entry without a block is left alone
     entry10 = bytearray(DIR_BASE + DIR_STRIDE * 10)
     before = bytes(entry10)
     _sync_dir_face(_Save(entry10), 1, slot.face_block)

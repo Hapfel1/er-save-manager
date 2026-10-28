@@ -6,24 +6,18 @@ counters must have storage and must not overlap another row's counter.
 
 from __future__ import annotations
 
-import pytest
-
 from er_save_manager.data.shop_stock import bought, get_stock
 from er_save_manager.parser.event_flags import EventFlags
 
-DATASETS = pytest.mark.parametrize(
-    "is_convergence", [False, True], ids=["vanilla", "convergence"]
-)
 
-
-@DATASETS
-def test_counters_stored_and_disjoint(is_convergence):
-    owner: dict[int, int] = {}
-    for row in get_stock(is_convergence):
-        assert row.quantity >= 1 and row.merchant and row.item_name
-        for flag_id in row.counter_flags:
-            assert EventFlags.has_flag(flag_id), flag_id
-            assert owner.setdefault(flag_id, row.flag_id) == row.flag_id, flag_id
+def test_counters_stored_and_disjoint():
+    for cnv in (False, True):
+        owner: dict[int, int] = {}
+        for row in get_stock(cnv):
+            assert row.quantity >= 1 and row.merchant and row.item_name
+            for flag_id in row.counter_flags:
+                assert EventFlags.has_flag(flag_id), flag_id
+                assert owner.setdefault(flag_id, row.flag_id) == row.flag_id, flag_id
 
 
 def test_counter_is_lsb_first_purchase_count():

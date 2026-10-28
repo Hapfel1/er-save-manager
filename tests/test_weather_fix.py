@@ -7,80 +7,35 @@ from io import BytesIO
 from er_save_manager.fixes.weather import WeatherFix
 
 
-def _first_active_slot(save):
-    for i, slot in enumerate(save.character_slots):
-        if not slot.is_empty():
-            return i
-    raise AssertionError("fixture save has no active character slots")
-
-
-def _write_weather(save, slot) -> None:
+def _set_weather(save, area_id=None, timer=None):
+    slot = save.character_slots[0]
+    weather = slot.world_area_weather
+    weather.area_id = slot.map_id.data[3] if area_id is None else area_id
+    if timer is not None:
+        weather.timer = timer
     buf = BytesIO()
-    slot.world_area_weather.write(buf)
+    weather.write(buf)
     data = buf.getvalue()
     save._raw_data[slot.weather_offset : slot.weather_offset + len(data)] = data
+    return weather
 
 
-def test_detects_area_id_zero_with_real_map_location(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    assert slot.map_id.data != b"\x00\x00\x00\x00"  # fixture precondition
-
-    slot.world_area_weather.area_id = 0
-    _write_weather(sanitized_save, slot)
-
-    assert WeatherFix().detect(sanitized_save, i) is True
-
-
-def test_detects_unreasonably_large_timer(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-
-    slot.world_area_weather.timer = 100001
-    _write_weather(sanitized_save, slot)
-
-    assert WeatherFix().detect(sanitized_save, i) is True
+def test_area_id_zero_is_synced_to_map_id(sanitized_save):
+    expected = sanitized_save.character_slots[0].map_id.data[3]
+    assert expected != 0
+    weather = _set_weather(sanitized_save, area_id=0)
+    assert WeatherFix().detect(sanitized_save, 0) is True
+    assert WeatherFix().apply(sanitized_save, 0).applied is True
+    assert weather.area_id == expected
+    assert WeatherFix().detect(sanitized_save, 0) is False
 
 
-def test_timer_at_threshold_is_not_corruption(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-
-    slot.world_area_weather.timer = 100000
-    slot.world_area_weather.area_id = slot.map_id.data[3]  # keep other condition clean
-    _write_weather(sanitized_save, slot)
-
-    assert WeatherFix().detect(sanitized_save, i) is False
-
-
-def test_apply_syncs_area_id_to_map_id(sanitized_save):
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-    expected_area_id = slot.map_id.data[3]
-
-    slot.world_area_weather.area_id = 0
-    _write_weather(sanitized_save, slot)
-
-    result = WeatherFix().apply(sanitized_save, i)
-
-    assert result.applied is True
-    assert slot.world_area_weather.area_id == expected_area_id
-    assert WeatherFix().detect(sanitized_save, i) is False
-
-
-def test_apply_does_not_reset_an_oversized_timer(sanitized_save):
-    """apply() only ever writes area_id; a corruption triggered purely by
-    an oversized timer is left with that timer value unchanged. This
-    documents actual behavior, not necessarily ideal behavior.
-    """
-    i = _first_active_slot(sanitized_save)
-    slot = sanitized_save.character_slots[i]
-
-    slot.world_area_weather.timer = 999999
-    slot.world_area_weather.area_id = slot.map_id.data[3]
-    _write_weather(sanitized_save, slot)
-
-    result = WeatherFix().apply(sanitized_save, i)
-
-    assert result.applied is True
-    assert slot.world_area_weather.timer == 999999
+def test_timer_threshold(sanitized_save):
+    _set_weather(sanitized_save, timer=100000)
+    assert WeatherFix().detect(sanitized_save, 0) is False
+    _set_weather(sanitized_save, timer=100001)
+    assert WeatherFix().detect(sanitized_save, 0) is True
+    # apply() only writes area_id; an oversized timer stays as it is
+    weather = _set_weather(sanitized_save, timer=999999)
+    assert WeatherFix().apply(sanitized_save, 0).applied is True
+    assert weather.timer == 999999

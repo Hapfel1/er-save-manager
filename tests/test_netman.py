@@ -44,12 +44,9 @@ def template():
     return data
 
 
-def test_template_is_valid(template):
+def test_game_written_netman_is_valid_and_unchanged(sanitized_save_readonly, template):
     assert len(template) == NETMAN_SIZE
     assert netman_problems(template) == []
-
-
-def test_game_written_netman_is_valid_and_unchanged(sanitized_save_readonly, template):
     slots = _slots_with_netman(sanitized_save_readonly)
     assert slots
     for i in slots:
@@ -113,9 +110,9 @@ def _damage_and_repair(blob, chunk6_pos, edit, template):
     return dict(_chunks(repaired))
 
 
-def test_damaged_message_is_dropped_and_others_kept(sanitized_save, template):
-    i, chunk6 = _slot_with_messages(sanitized_save)
-    blob = _region(sanitized_save, i)[1]
+def test_damaged_message_is_dropped_and_others_kept(sanitized_save_readonly, template):
+    i, chunk6 = _slot_with_messages(sanitized_save_readonly)
+    blob = _region(sanitized_save_readonly, i)[1]
     entries = _message_entries(chunk6)
     victim = 1
     offset = 4 + 32 + 8 + sum(len(e) + (-len(e) % 4) for _, e in entries[:victim])
@@ -131,9 +128,9 @@ def test_damaged_message_is_dropped_and_others_kept(sanitized_save, template):
         assert rebuilt[ctype] == old[ctype]
 
 
-def test_bytes_cut_from_a_message_keep_the_rest(sanitized_save, template):
-    i, chunk6 = _slot_with_messages(sanitized_save)
-    blob = _region(sanitized_save, i)[1]
+def test_bytes_cut_from_a_message_keep_the_rest(sanitized_save_readonly, template):
+    i, chunk6 = _slot_with_messages(sanitized_save_readonly)
+    blob = _region(sanitized_save_readonly, i)[1]
     entries = _message_entries(chunk6)
     victim = 1
     offset = 4 + 32 + 8 + sum(len(e) + (-len(e) % 4) for _, e in entries[:victim])
@@ -145,9 +142,9 @@ def test_bytes_cut_from_a_message_keep_the_rest(sanitized_save, template):
     assert dict(_chunks(repaired))[8] == dict(_chunks(blob))[8]
 
 
-def test_destroyed_message_chunk_header_is_salvaged(sanitized_save, template):
-    i, chunk6 = _slot_with_messages(sanitized_save)
-    blob = _region(sanitized_save, i)[1]
+def test_destroyed_message_chunk_header_is_salvaged(sanitized_save_readonly, template):
+    i, chunk6 = _slot_with_messages(sanitized_save_readonly)
+    blob = _region(sanitized_save_readonly, i)[1]
 
     def wipe_header(buf):
         buf[4 + 32 : 4 + 32 + 8] = b"\xff" * 8

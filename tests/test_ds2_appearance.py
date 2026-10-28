@@ -47,27 +47,21 @@ def test_colors():
     assert block[app.TATTOO_COLOR + 3] == 0x80  # tattoo alpha kept
 
 
-def test_gender_keeps_hairstyle_position():
-    female = app.set_gender(_block(hair=4), 1)
-    assert (female[app.GENDER], female[app.HAIRSTYLE]) == (1, 23)
+def test_gender_keeps_hairstyle_and_build_position():
+    female = app.set_gender(app.set_u8(_block(hair=4), app.BUILD, 7), 1)
+    assert (female[app.GENDER], female[app.HAIRSTYLE], female[app.BUILD]) == (1, 23, 27)
     male = app.set_gender(female, 0)
-    assert male[app.HAIRSTYLE] == 4
+    assert (male[app.HAIRSTYLE], male[app.BUILD]) == (4, 7)
     # A value outside the known lists is left as it is
-    odd = app.set_gender(_block(hair=127), 1)
-    assert odd[app.HAIRSTYLE] == 127
-
-
-def test_gender_keeps_build_position():
-    female = app.set_gender(app.set_u8(_block(), app.BUILD, 7), 1)
-    assert female[app.BUILD] == 27
-    assert app.set_gender(female, 0)[app.BUILD] == 7
+    assert app.set_gender(_block(hair=127), 1)[app.HAIRSTYLE] == 127
 
 
 def _part(label: str) -> app.Part:
     return next(p for p in app.PARTS if p.label == label)
 
 
-def test_tattoo_and_physique_share_a_byte():
+def test_part_bytes():
+    # Tattoo and physique share a byte
     tattoo, physique = _part("Tattoo"), _part("Physique")
     block = app.set_u8(_block(), app.TATTOO_PHYSIQUE, 0xA4)
     assert (tattoo.get(block), physique.get(block)) == (4, 2)
@@ -76,8 +70,6 @@ def test_tattoo_and_physique_share_a_byte():
     block = physique.set(block, 1)
     assert block[app.TATTOO_PHYSIQUE] == 0x9F
 
-
-def test_beard_and_eyebrow_bytes():
     block = _part("Beard").set(_block(), 3)
     block = _part("Eyebrow").set(block, 9)
     assert (block[app.BEARD], block[app.EYEBROW]) == (3, 9)

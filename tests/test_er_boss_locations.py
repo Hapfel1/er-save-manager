@@ -9,9 +9,6 @@ from er_save_manager.data.boss_locations import boss_spots
 from er_save_manager.data.icon_manager import has_icon, icons_available
 from er_save_manager.data.world_map import location_map_point
 
-DATASETS = pytest.mark.parametrize(
-    "is_convergence", [False, True], ids=["vanilla", "convergence"]
-)
 # Arenas outside any world map: Elden Beast, the Chapel of Anticipation
 # (Grafted Scion) and the Siofra / Nokron ancestor arenas
 OFF_MAP = {
@@ -22,11 +19,8 @@ OFF_MAP = {
 }
 
 
-def test_vanilla_names_are_bosses():
+def test_boss_spots():
     assert {b.name for b in boss_spots()} <= set(BOSSES)
-
-
-def test_convergence_bosses():
     spots = boss_spots(True)
     names = [b.name for b in spots]
     assert len(names) == len(set(names))
@@ -36,23 +30,19 @@ def test_convergence_bosses():
     sigur = next(b for b in spots if b.name == "Sigur, Night's Captain")
     assert sigur.flags == tuple(BOSSES["Godfrey, First Elden Lord"]["flags"])
 
-
-@DATASETS
-def test_on_world_map(is_convergence):
-    off = {
-        b.name
-        for b in boss_spots(is_convergence)
-        if location_map_point(b.map_id, b.position[0], b.position[2], is_convergence)
-        is None
-    }
-    assert off <= OFF_MAP
+    for cnv in (False, True):
+        off = {
+            b.name
+            for b in boss_spots(cnv)
+            if location_map_point(b.map_id, b.position[0], b.position[2], cnv) is None
+        }
+        assert off <= OFF_MAP, cnv
 
 
 @pytest.mark.skipif(not icons_available(), reason="icons.db not present")
-@DATASETS
-def test_faces_have_icons(is_convergence):
-    spots = boss_spots(is_convergence)
-    missing = [b.name for b in spots if b.face and not has_icon(b.face)]
-    assert missing == []
-    # Only bosses whose defeat awards no item are left without one
-    assert sum(1 for b in spots if not b.face) <= 15
+def test_faces_have_icons():
+    for cnv in (False, True):
+        spots = boss_spots(cnv)
+        assert [b.name for b in spots if b.face and not has_icon(b.face)] == []
+        # Only bosses whose defeat awards no item are left without one
+        assert sum(1 for b in spots if not b.face) <= 15

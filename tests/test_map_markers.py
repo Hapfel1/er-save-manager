@@ -40,8 +40,6 @@ def test_menu_save_load_keeps_corrupt_size():
     block.write(out)
     assert out.getvalue() == raw[: 8 + 0x1000]
 
-
-def test_marker_record_round_trip():
     rec = MapMarkerRecord(7, 1234.5, 678.25, 10, 3, 0)
     assert MapMarkerRecord.unpack(rec.pack(), 0) == rec
     assert MapMarkerRecord().pack() == bytes.fromhex(
@@ -99,23 +97,17 @@ def test_delete_empties_record_and_keeps_others_in_place(sanitized_save):
     assert records[second.index].id == second.id
 
 
-def test_ids_continue_from_highest(sanitized_save):
+def test_ids_capacity_and_clear_filters(sanitized_save):
     editor = MapMarkerEditor(sanitized_save, 0)
     top = max((m.id for m in editor.markers), default=0)
     assert editor.add(1.0, 1.0, 0).id == top + 1
 
-
-def test_capacity(sanitized_save):
-    editor = MapMarkerEditor(sanitized_save, 0)
     editor.clear()
     for i in range(100):
         assert editor.add(float(i), 0.0, 0) is not None
     assert editor.add(0.0, 0.0, 0) is None
     assert editor.add(0.0, 0.0, 0, kind=BEACON) is not None
 
-
-def test_clear_filters(sanitized_save):
-    editor = MapMarkerEditor(sanitized_save, 0)
     editor.clear()
     editor.add(0.0, 0.0, MAP_LANDS_BETWEEN)
     editor.add(0.0, 0.0, MAP_UNDERGROUND)
@@ -147,14 +139,12 @@ def test_export_import_and_copy(sanitized_save, tmp_path):
     assert [(m.x, m.y, m.icon) for m in copied] == [(10.0, 20.0, 5)]
 
 
-def test_world_map_transform():
+def test_world_map_geometry():
     assert global_to_map(7168.0, 16640.0) == (0.0, 0.0)
     assert map_to_global(*global_to_map(12000.0, 9000.0)) == (12000.0, 9000.0)
     left, top, right, bottom = tile_map_rect(42, 36)
     assert (right - left, bottom - top) == (256, 256)
 
-
-def test_location_map_point_layers():
     assert location_map_point("m60_42_36_00", 0.0, 0.0)[0] == MAP_LANDS_BETWEEN
     assert location_map_point("m61_47_41_00", 0.0, 0.0)[0] == MAP_REALM_OF_SHADOW
     point = location_map_point("m12_01_00_00", 0.0, 0.0)
@@ -162,8 +152,6 @@ def test_location_map_point_layers():
     # Leyndell converts to m60 through its conversion rows.
     assert location_map_point("m11_00_00_00", 0.0, 0.0)[0] == MAP_LANDS_BETWEEN
 
-
-def test_location_map_point_convergence_maps():
     # Maps only Convergence has conversion rows for.
     assert location_map_point("m17_00_00_00", 0.0, 0.0) is None
     assert location_map_point("m17_00_00_00", 0.0, 0.0, True)[0] == MAP_REALM_OF_SHADOW

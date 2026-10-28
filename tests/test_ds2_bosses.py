@@ -48,11 +48,7 @@ def test_kill_written_by_the_game_reads_as_defeated():
     assert states[LAST_GIANT.row_id].status is BossStatus.DEFEATED
     assert states[LAST_GIANT.row_id].defeats == 1
     assert states[PURSUER.row_id].status is BossStatus.NOT_DEFEATED
-
-
-def test_ascetic_state_reads_as_respawned():
-    data = _data()
-    _kill_last_giant(data)
+    # Bonfire Ascetic state: map flag cleared
     data[ANCHOR + LG_MAP_FLAG[0]] &= ~LG_MAP_FLAG[1] & 0xFF
     assert _states(data)[LAST_GIANT.row_id].status is BossStatus.RESPAWNED
 
@@ -70,8 +66,7 @@ def test_partial_kill_is_invalid_and_repair_completes_it():
     _kill_last_giant(expected)
     assert data == expected
 
-
-def test_repair_keeps_a_boss_in_its_arena():
+    # A boss still in its arena stays there
     data = _data()
     data[ANCHOR + LG_FLAG[0]] |= LG_FLAG[1]
     data[ANCHOR + LG_FLAG[0] + COPY] |= LG_FLAG[1]
@@ -103,10 +98,6 @@ def test_set_defeats_writes_both_copies_and_keeps_the_arena():
     expected[ANCHOR + LG_MAP_FLAG[0]] = 0
     assert data == expected
     assert _states(data)[LAST_GIANT.row_id].status is BossStatus.RESPAWNED
-
-
-def test_set_defeats_rejects_zero():
-    view = BossStates(_data(), ANCHOR, (LAST_GIANT,), MAPS)
     with pytest.raises(ValueError):
         view.set_defeats([LAST_GIANT.row_id], 0)
 
@@ -121,12 +112,8 @@ def test_kill_writes_what_the_game_writes():
     assert data == expected
     assert view.kill([LAST_GIANT.row_id]) == 0
 
-
-def test_kill_after_respawn_counts_a_second_defeat():
-    data = _data()
-    _kill_last_giant(data)
+    # A kill after a respawn counts a second defeat
     data[ANCHOR + LG_MAP_FLAG[0]] = 0
-    view = BossStates(data, ANCHOR, (LAST_GIANT,), MAPS)
     assert view.kill([LAST_GIANT.row_id]) == 1
 
     expected = _data()
@@ -161,7 +148,7 @@ def _magus_map_flag(data: bytearray) -> tuple[int, int]:
     return ANCHOR - 0xBD0 + 3 * 25 + 96 // 8, 0x80 >> 96 % 8
 
 
-def test_arena_enemy_marked_killed_with_boss_in_arena_is_invalid():
+def test_arena_enemy_kill_counts():
     data = _magus_data()
     data[KILLS + 1] = 1
     data[KILLS + 2] = 1
@@ -169,11 +156,9 @@ def test_arena_enemy_marked_killed_with_boss_in_arena_is_invalid():
     assert state.status is BossStatus.INVALID
     assert state.problem == "2 arena enemies marked killed"
 
-
-def test_repair_clears_only_the_arena_kill_counts():
-    data = _magus_data()
+    # Repair clears only the arena enemies' counts
     data[KILLS] = 3
-    data[KILLS + 2] = 1
+    data[KILLS + 1] = 0
     view = _magus_view(data)
     assert view.repair([MAGUS.row_id]) == 1
 
@@ -182,8 +167,7 @@ def test_repair_clears_only_the_arena_kill_counts():
     assert data == expected
     assert view.states()[0].status is BossStatus.NOT_DEFEATED
 
-
-def test_arena_kill_counts_after_a_win_are_valid():
+    # The same counts after a win are valid
     data = _magus_data()
     data[KILLS + 1] = data[KILLS + 2] = 1
     offset, mask = _magus_map_flag(data)

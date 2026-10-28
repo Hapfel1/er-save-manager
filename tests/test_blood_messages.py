@@ -58,13 +58,6 @@ def test_message_text():
     ]
 
 
-def test_cached_messages_read(sanitized_save_readonly):
-    i = _first_slot_with_messages(sanitized_save_readonly)
-    messages = BloodMessageEditor(sanitized_save_readonly, i).messages()
-    assert all(not m.is_own for m in messages)
-    assert all("[" not in m.text for m in messages)
-
-
 def test_protect_and_delete_own_message(sanitized_save):
     i = _first_slot_with_messages(sanitized_save)
     entry = _own_entry(10003, 30003, 50003, 10007, 33017, gesture=20)
@@ -92,14 +85,16 @@ def test_protect_and_delete_own_message(sanitized_save):
     assert len(editor.messages()) == len(before) - 1
 
 
-def test_cached_message_not_editable(sanitized_save):
-    i = _first_slot_with_messages(sanitized_save)
-    editor = BloodMessageEditor(sanitized_save, i)
-    msg = editor.messages()[0]
-    raw = bytes(sanitized_save._raw_data)
+def test_cached_messages_are_read_only(sanitized_save_readonly):
+    i = _first_slot_with_messages(sanitized_save_readonly)
+    editor = BloodMessageEditor(sanitized_save_readonly, i)
+    messages = editor.messages()
+    assert all(not m.is_own and "[" not in m.text for m in messages)
+    msg = messages[0]
+    raw = bytes(sanitized_save_readonly._raw_data)
     assert editor.delete(msg)[0] is False
     assert editor.set_protected(msg, True)[0] is False
-    assert bytes(sanitized_save._raw_data) == raw
+    assert bytes(sanitized_save_readonly._raw_data) == raw
 
 
 def test_stale_message_refused(sanitized_save):

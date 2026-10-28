@@ -22,12 +22,9 @@ def _entry(payload: bytes) -> bytes:
     return struct.pack("<II", len(compressed), len(payload)) + compressed
 
 
-def test_unreadable_entry_falls_back_to_vanilla():
+def test_entry_without_params_falls_back_to_vanilla():
     regulation = Regulation.from_container(_Container(bytes(0x100)))
     assert len(regulation.boss_fights()) == len(Regulation.vanilla().boss_fights())
-
-
-def test_entry_without_params_falls_back_to_vanilla():
     # Not a BND4 archive, as read from the SpEffect EMEVD archive some saves hold.
     regulation = Regulation.from_container(_Container(_entry(b"BND3" + bytes(0x40))))
     assert regulation.class_base(30) is not None

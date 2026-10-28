@@ -76,3 +76,5 @@ known-first-party = ["er_save_manager"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 minversion = "8.0"
+# pytest-xdist; -n0 runs in one process (debugging, -x, -s)
+addopts = "-n auto"
