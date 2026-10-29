@@ -41,12 +41,12 @@ None), which allows opening a single slot file on its own.
 from __future__ import annotations
 
 import hashlib
-import re
 import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from er_save_manager import aes_cbc
+from er_save_manager.games import ps_userdata
 from er_save_manager.own_writes import atomic_write
 
 _DS3_KEY = bytes.fromhex("FD464D695E69A39A10E319A7ACE8B7FA")
@@ -167,56 +167,24 @@ class DS3Parser:
 
 # --- PlayStation 4 -----------------------------------------------------------
 
-_PS_NAME = re.compile(r"userdata(\d{4})", re.IGNORECASE)
-_PS_SLOT_SIZE = 0xC0000
-_PS_GLOBAL_SIZE = 0x60000
-
-
-def _ps_index(path: Path) -> int | None:
-    """Entry index encoded in a PS userdata file name, or None."""
-    m = _PS_NAME.fullmatch(path.name)
-    if m is None:
-        return None
-    index = int(m.group(1))
-    return index if index < DS3Parser.TOTAL_SLOTS else None
+_PS_SIZES = ps_userdata.ENTRY_SIZES["dark_souls_3"]
 
 
 def _ps_expected_size(index: int) -> int:
-    return _PS_GLOBAL_SIZE if index == DS3Parser.CHARACTER_SLOTS else _PS_SLOT_SIZE
+    return _PS_SIZES[index]
 
 
 def is_ps_userdata(path: str | Path) -> bool:
     """True for a DS3 PS4 userdataNNNN file of the size its index requires."""
-    path = Path(path)
-    index = _ps_index(path)
-    if index is None:
-        return False
-    try:
-        return path.stat().st_size == _ps_expected_size(index)
-    except OSError:
-        return False
+    return ps_userdata.is_ps_userdata(path, "dark_souls_3")
 
 
 def ps_folder_files(path: str | Path) -> dict[int, Path]:
     """Entry index -> file for every valid userdata file next to path."""
-    folder = Path(path).parent
-    files = {}
-    try:
-        children = list(folder.iterdir())
-    except OSError:
-        return files
-    for child in children:
-        index = _ps_index(child)
-        if index is not None and index not in files and is_ps_userdata(child):
-            files[index] = child
-    return files
+    return ps_userdata.folder_files(path, "dark_souls_3")
 
 
-def save_identity(path: str | Path) -> Path:
-    """Path that identifies the save a file belongs to: the folder for a PS
-    userdata file, the file itself otherwise."""
-    path = Path(path).resolve()
-    return path.parent if is_ps_userdata(path) else path
+save_identity = ps_userdata.save_identity
 
 
 class DS3PSParser:

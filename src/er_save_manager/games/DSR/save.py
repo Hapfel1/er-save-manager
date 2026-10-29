@@ -184,6 +184,7 @@ from enum import IntEnum
 from pathlib import Path
 
 from er_save_manager import aes_cbc
+from er_save_manager.games import ps_userdata
 from er_save_manager.own_writes import atomic_write
 
 # --- Constants --------------------------------------------------------------- #
@@ -1502,19 +1503,119 @@ class DSRCharacter:
 # --- Save file --------------------------------------------------------------- #
 
 
+# --- PlayStation 4 ----------------------------------------------------------- #
+#
+# A PS4 save folder holds userdata0000-0009 (characters) and userdata0010
+# (system data). On the console every file is
+#   [IV 16][AES-128-CBC ciphertext][MD5 16]
+# with PS_AES_KEY and MD5 = md5(IV + ciphertext). Apollo Save Tool's
+# "Decrypt userdata" step replaces the ciphertext with the plaintext in place
+# and leaves IV and MD5 as they were; both forms load.
+#
+# Plaintext: [u32 size = plaintext length - 0x10][data][PKCS7 padding]. A
+# character's IV + plaintext is the PC decrypted slot layout (0x60020 bytes;
+# the PC slot's first 16 bytes take the IV's place).
+#
+# userdata0010 holds the PC system data with a 0x2000-byte PS4 key config
+# block inserted at +0x28, up to +0x60010 (_ps_system_view maps it). The rest
+# of the file (a character copy and other data) is not decoded and is
+# written back unchanged.
+
+PS_AES_KEY = bytes.fromhex("20EC4B7519C2BD15E70C1EE4B204B8CB")
+_PS_IV_SIZE = 16
+_PS_MD5_SIZE = 16
+_PS_SIZE_FIELD_SLACK = 0x10  # plaintext length - u32 size field
+_PS_KEYCONFIG_OFFSET = 0x28
+_PS_KEYCONFIG_SIZE = 0x2000
+_PS_SYSTEM_END = 0x60010
+_PC_SYSTEM_SIZE_FIELD = 0x10
+_PC_SYSTEM_DATA_SIZE = SLOT_DATA_SIZE - _PS_SIZE_FIELD_SLACK - _PS_IV_SIZE
+
+
+@dataclass
+class _PSFile:
+    path: Path
+    iv: bytes
+    # File content between IV and MD5, decrypted
+    plaintext: bytearray
+    # True when the file holds ciphertext (as copied off the console)
+    encrypted: bool
+    # File bytes as last read or written
+    written: bytes
+
+    @classmethod
+    def read(cls, path: Path) -> _PSFile:
+        raw = path.read_bytes()
+        iv = raw[:_PS_IV_SIZE]
+        body = raw[_PS_IV_SIZE:-_PS_MD5_SIZE]
+        encrypted = _md5(raw[:-_PS_MD5_SIZE]) == raw[-_PS_MD5_SIZE:]
+        plaintext = bytearray(
+            aes_cbc.decrypt(PS_AES_KEY, iv, body) if encrypted else body
+        )
+        size = struct.unpack_from("<I", plaintext, 0)[0]
+        if size != len(plaintext) - _PS_SIZE_FIELD_SLACK:
+            raise ValueError(
+                f"{path.name} is not a readable DSR PS4 save file (encrypted "
+                "with another key or damaged)."
+            )
+        return cls(path, iv, plaintext, encrypted, raw)
+
+    def to_bytes(self) -> bytes:
+        """File bytes in the form the file was read in, with a valid MD5."""
+        ciphertext = aes_cbc.encrypt(PS_AES_KEY, self.iv, bytes(self.plaintext))
+        body = ciphertext if self.encrypted else bytes(self.plaintext)
+        return self.iv + body + _md5(self.iv + ciphertext)
+
+    def checksum_ok(self) -> bool:
+        ciphertext = aes_cbc.encrypt(PS_AES_KEY, self.iv, bytes(self.plaintext))
+        return _md5(self.iv + ciphertext) == self.written[-_PS_MD5_SIZE:]
+
+
+def _ps_system_view(file: _PSFile) -> bytearray:
+    """userdata0010 system data in the PC slot 10 layout."""
+    data = file.iv + file.plaintext
+    after = _PS_KEYCONFIG_OFFSET + _PS_KEYCONFIG_SIZE
+    view = bytearray(data[:_PS_KEYCONFIG_OFFSET] + data[after:_PS_SYSTEM_END])
+    view += bytes(SLOT_DATA_SIZE - len(view))
+    struct.pack_into("<I", view, _PC_SYSTEM_SIZE_FIELD, _PC_SYSTEM_DATA_SIZE)
+    return view
+
+
+def _ps_apply_system_view(file: _PSFile, view: bytes) -> None:
+    after = _PS_KEYCONFIG_OFFSET + _PS_KEYCONFIG_SIZE
+    mapped = _PS_KEYCONFIG_OFFSET + _PS_SYSTEM_END - after
+    if any(view[mapped:]):
+        raise RuntimeError(
+            "DSR system data has content past the part a PS4 save can hold."
+        )
+    # Plaintext offsets are file offsets minus the IV.
+    start = _PC_SYSTEM_SIZE_FIELD + 4
+    file.plaintext[start - _PS_IV_SIZE : _PS_KEYCONFIG_OFFSET - _PS_IV_SIZE] = view[
+        start:_PS_KEYCONFIG_OFFSET
+    ]
+    file.plaintext[after - _PS_IV_SIZE : _PS_SYSTEM_END - _PS_IV_SIZE] = view[
+        _PS_KEYCONFIG_OFFSET:mapped
+    ]
+
+
 @dataclass
 class DSRSave:
     """
-    Complete DSR save file (BND4 container).
+    Complete DSR save: a PC BND4 file or a PS4 userdata folder.
     Provides access to all 10 character slots and the system slot.
     """
 
     _raw: bytearray = field(default_factory=bytearray, repr=False)
     characters: list[DSRCharacter | None] = field(default_factory=list)
     system_data: bytearray = field(default_factory=bytearray, repr=False)
+    # PS4 userdata0000-0010; None for a PC save
+    _ps: list[_PSFile] | None = field(default=None, repr=False)
 
     @classmethod
     def from_file(cls, path: str | Path) -> DSRSave:
+        """Open a PC .sl2/.co2 or any userdata file of a PS4 save folder."""
+        if ps_userdata.is_ps_userdata(path, "dark_souls_remastered"):
+            return cls._from_ps(path)
         raw = bytearray(Path(path).read_bytes())
         if len(raw) != FILE_SIZE:
             raise ValueError(
@@ -1526,23 +1627,58 @@ class DSRSave:
         save._load_characters()
         return save
 
+    @classmethod
+    def _from_ps(cls, path: str | Path) -> DSRSave:
+        files = ps_userdata.require_folder(path, "dark_souls_remastered")
+        save = cls(_ps=[_PSFile.read(f) for f in files])
+        save._load_characters()
+        return save
+
+    @property
+    def is_ps(self) -> bool:
+        return self._ps is not None
+
     def _load_characters(self) -> None:
         self.characters = []
         for i in range(CHARACTER_SLOTS):
-            off = SLOTS_OFFSET + i * SLOT_SIZE
-            iv = bytes(self._raw[off : off + 16])
-            ciphertext = bytes(self._raw[off + 16 : off + 16 + SLOT_DATA_SIZE])
-            plaintext = _decrypt(iv, ciphertext)
-            char = DSRCharacter(slot_index=i, _data=bytearray(plaintext))
+            char = DSRCharacter(slot_index=i, _data=self.slot_plaintext(i))
             self.characters.append(char if not char.is_empty else None)
 
+        if self._ps is not None:
+            self.system_data = _ps_system_view(self._ps[CHARACTER_SLOTS])
+            return
         sys_off = SLOTS_OFFSET + 10 * SLOT_SIZE
         sys_iv = bytes(self._raw[sys_off : sys_off + 16])
         sys_ciphertext = bytes(self._raw[sys_off + 16 : sys_off + 16 + SLOT_DATA_SIZE])
         self.system_data = bytearray(_decrypt(sys_iv, sys_ciphertext))
 
+    def slot_plaintext(self, index: int) -> bytearray:
+        """Decrypted character slot 0-9 as stored, in the PC layout."""
+        if self._ps is not None:
+            file = self._ps[index]
+            return bytearray(file.iv + file.plaintext)
+        off = SLOTS_OFFSET + index * SLOT_SIZE
+        iv = bytes(self._raw[off : off + 16])
+        ciphertext = bytes(self._raw[off + 16 : off + 16 + SLOT_DATA_SIZE])
+        return bytearray(_decrypt(iv, ciphertext))
+
+    def set_slot_plaintext(self, index: int, data: bytes) -> None:
+        """Store a decrypted character slot (PC layout) as the slot's data."""
+        if self._ps is not None:
+            self._ps[index].plaintext[:] = data[_PS_IV_SIZE:]
+            return
+        off = SLOTS_OFFSET + index * SLOT_SIZE
+        iv = bytes(self._raw[off : off + 16])
+        ciphertext = _encrypt(iv, bytes(data))
+        self._raw[off : off + 16] = _md5(ciphertext)
+        self._raw[off + 16 : off + 16 + SLOT_DATA_SIZE] = ciphertext
+
     def save_to_file(self, path: str | Path) -> None:
-        """Re-encrypt modified characters and write the file."""
+        """Re-encrypt modified characters and write the file (PS4: every
+        changed userdata file)."""
+        if self._ps is not None:
+            self._save_ps()
+            return
         raw = bytearray(self._raw)
         for i, char in enumerate(self.characters):
             if char is None:
@@ -1563,11 +1699,26 @@ class DSRSave:
 
         atomic_write(path, raw, loaded=True)
 
+    def _save_ps(self) -> None:
+        for i, char in enumerate(self.characters):
+            if char is not None:
+                self.set_slot_plaintext(i, char.get_raw())
+        _ps_apply_system_view(self._ps[CHARACTER_SLOTS], self.system_data)
+        for file in self._ps:
+            data = file.to_bytes()
+            if data == file.written:
+                continue
+            atomic_write(file.path, data)
+            file.written = data
+
     def verify_checksums(self) -> list[tuple[int, bool]]:
         """
         Return (slot_index, is_valid) pairs for all slots, including slot 10.
-        A slot is valid when md5(ciphertext) == stored IV.
+        A PC slot is valid when md5(ciphertext) == stored IV, a PS4 file when
+        md5(IV + ciphertext) == its trailing MD5.
         """
+        if self._ps is not None:
+            return [(i, f.checksum_ok()) for i, f in enumerate(self._ps)]
         results = []
         for i in range(SLOT_COUNT):
             off = SLOTS_OFFSET + i * SLOT_SIZE

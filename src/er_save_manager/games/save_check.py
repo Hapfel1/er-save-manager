@@ -259,10 +259,12 @@ def _ds2_cache_mismatches(save) -> list[tuple[int, str]]:
 
 def _check_ds2(path: Path) -> list[Issue]:
     from er_save_manager.games.DS2 import save as ds2
+    from er_save_manager.games.ps_userdata import is_ps_userdata
 
-    raw = path.read_bytes()
+    # PS4 userdata files carry no checksum.
+    raw = b"" if is_ps_userdata(path) else path.read_bytes()
     issues = []
-    for i in range(ds2.TOTAL_ENTRIES):
+    for i in range(ds2.TOTAL_ENTRIES if raw else 0):
         size, offset = ds2._read_entry_header(raw, i)
         blob = raw[offset : offset + size]
         if _md5(blob[16:]) != blob[:16]:

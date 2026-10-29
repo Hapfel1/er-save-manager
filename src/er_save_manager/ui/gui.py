@@ -106,11 +106,50 @@ _SHORT_TAB_NAMES = {
 _NARROW_HEADER_BUTTON = 130
 
 # Games that load console saves, shown the console save help button
-_CONSOLE_SAVE_GAMES = ("elden_ring", "nightreign", "dark_souls_3")
+_CONSOLE_SAVE_GAMES = (
+    "elden_ring",
+    "nightreign",
+    "dark_souls_3",
+    "dark_souls_remastered",
+    "dark_souls_2",
+)
+# Games whose PS4 saves load as a folder of userdata files
+_PS4_USERDATA_GAMES = ("dark_souls_3", "dark_souls_remastered", "dark_souls_2")
+
+# PS4 save help text per userdata game
+_PS4_SAVE_TEXT = {
+    "dark_souls_3": (
+        "PS4 saves must be decrypted and exported as userdata files "
+        "(userdata0000 to userdata0009 for the characters, userdata0010 "
+        "for the load screen) before you can load them. Open any of them "
+        "and the files next to it are loaded too. A file opened on its "
+        "own only gives access to its own character. Auto-Find does not "
+        "find userdata files."
+    ),
+    "dark_souls_remastered": (
+        "PS4 saves must be exported from the console as userdata files, for "
+        "example with Apollo Save Tool. Open any of them and the whole folder "
+        "is loaded: userdata0000 to userdata0009 for the characters and "
+        "userdata0010 for the load screen. All 11 files are needed; the "
+        "backup files the console keeps next to them are not. Files as copied "
+        "off the console and files run through Apollo's Decrypt userdata step "
+        "both load, and each is saved back in the form it had. Decrypted "
+        "files need Apollo's Encrypt userdata and Update MD5 Hash steps before "
+        "they go back to the console. Auto-Find does not find userdata files."
+    ),
+    "dark_souls_2": (
+        "PS4 saves must be decrypted and exported as userdata files before "
+        "you can load them. Open any of them and the whole folder is loaded: "
+        "userdata0000 to userdata0022. All 23 files are needed; the backup "
+        "files the console keeps next to them are not. Edits write back only "
+        "the files that changed, so the folder can be imported as it is. "
+        "Auto-Find does not find userdata files."
+    ),
+}
 
 
 def _console_button_text(game_key: str) -> str:
-    return "PS4 Save?" if game_key == "dark_souls_3" else "PS / Switch Save?"
+    return "PS4 Save?" if game_key in _PS4_USERDATA_GAMES else "PS / Switch Save?"
 
 
 _log = logging.getLogger(__name__)
@@ -2563,6 +2602,11 @@ class SaveManagerGUI:
         return False
 
     def _parse_failed(self, save_path: str, exc: Exception) -> None:
+        from er_save_manager.games.ps_userdata import IncompleteFolderError
+
+        if isinstance(exc, IncompleteFolderError):
+            self._load_failed(save_path, str(exc), exc)
+            return
         profile = self._active_profile()
         game = profile.name if profile else "Elden Ring"
         self._load_failed(
@@ -2577,8 +2621,8 @@ class SaveManagerGUI:
         """Show instructions for loading a PlayStation or Switch save."""
         from er_save_manager.ui import dialog_style as ds
 
-        ds3 = self.active_game == "dark_souls_3"
-        title = "PS4 Saves" if ds3 else "PS / Switch Saves"
+        ps4_text = _PS4_SAVE_TEXT.get(self.active_game)
+        title = "PS4 Saves" if ps4_text else "PS / Switch Saves"
         dialog = ds.create(self.root, title)
         main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
@@ -2593,15 +2637,8 @@ class SaveManagerGUI:
             text_color=palette.PURPLE_TEXT,
         ).pack(side=ctk.LEFT, padx=(0, 10))
         ctk.CTkLabel(header, text=title, font=("Inter", 19, "bold")).pack(side=ctk.LEFT)
-        if ds3:
-            text = (
-                "PS4 saves must be decrypted and exported as userdata files "
-                "(userdata0000 to userdata0009 for the characters, userdata0010 "
-                "for the load screen) before you can load them. Open any of them "
-                "and the files next to it are loaded too. A file opened on its "
-                "own only gives access to its own character. Auto-Find does not "
-                "find userdata files."
-            )
+        if ps4_text:
+            text = ps4_text
         else:
             text = (
                 "Console saves must be decrypted and exported as memory.dat "
@@ -2668,7 +2705,7 @@ class SaveManagerGUI:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
             if profile.key in ("elden_ring", "nightreign"):
                 ext_str += " *.dat"
-            elif profile.key == "dark_souls_3":
+            elif profile.key in _PS4_USERDATA_GAMES:
                 ext_str += " userdata*"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
             title = f"Select {profile.name} Save File"

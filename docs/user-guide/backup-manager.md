@@ -145,7 +145,7 @@ ER0000.co2.backups/
 └── ...
 ```
 
-A Dark Souls III PS4 save is a folder of `userdata` files. Its backups go to `userdata.backups/` in that folder, whichever userdata file was opened, and each backup zips every userdata file of the folder. Restoring writes all of them back.
+A Dark Souls III, Dark Souls Remastered or Dark Souls II PS4 save is a folder of `userdata` files. Its backups go to `userdata.backups/` in that folder, whichever userdata file was opened, and each backup zips every userdata file of the folder. Restoring writes all of them back.
 
 ### Disk Space
 

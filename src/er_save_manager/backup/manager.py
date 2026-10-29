@@ -183,11 +183,11 @@ class BackupManager:
         Args:
             save_path: Path to the save file
         """
-        from er_save_manager.games.DS3.parser import is_ps_userdata
+        from er_save_manager.games.ps_userdata import is_ps_userdata
 
         self.save_path = Path(save_path).resolve()
-        # A DS3 PS4 save is a folder of userdata files; one backup holds all
-        # of them, whichever file was opened.
+        # A PS4 save is a folder of userdata files; one backup holds all of
+        # them, whichever file was opened.
         self._ps_folder = is_ps_userdata(self.save_path)
         stem = "userdata" if self._ps_folder else self.save_path.name
         self.backup_folder = self.save_path.parent / (stem + self.BACKUP_FOLDER_SUFFIX)
@@ -197,9 +197,9 @@ class BackupManager:
         """Files one backup of this save contains."""
         if not self._ps_folder:
             return [self.save_path]
-        from er_save_manager.games.DS3.parser import ps_folder_files
+        from er_save_manager.games.ps_userdata import folder_files
 
-        files = ps_folder_files(self.save_path)
+        files = folder_files(self.save_path)
         return [files[i] for i in sorted(files)] or [self.save_path]
 
     def _write_members(self, zipf: zipfile.ZipFile, target: Path) -> None:

@@ -14,6 +14,7 @@ import customtkinter as ctk
 from er_save_manager.games.DS2.character_ops import DS2CharacterOperations
 from er_save_manager.games.DS2.save import DS2Save, SlotState
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY, find_save_paths
+from er_save_manager.games.ps_userdata import save_identity
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import guard_before_write, save_writable, write_failed
@@ -37,7 +38,7 @@ class _BackupFailed(Exception):
 
 
 _DS2_FILETYPES = [("DS2 Character", "*.ds2c"), ("All files", "*.*")]
-_SAVE_FILETYPES = [("DS2 save files", "*.sl2"), ("All files", "*.*")]
+_SAVE_FILETYPES = [("DS2 save files", "*.sl2 userdata*"), ("All files", "*.*")]
 
 
 class DS2CharacterManagementTab:
@@ -708,7 +709,7 @@ class DS2CharacterManagementTab:
             return
 
         current_path = self.get_save_path()
-        if current_path and Path(target_path).resolve() == Path(current_path).resolve():
+        if current_path and save_identity(target_path) == save_identity(current_path):
             notify(self.parent, "Select a different target save file.", "warning")
             return
 

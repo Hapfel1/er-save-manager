@@ -99,7 +99,7 @@ def patch_steamid_ds3(save_path: Path, new_steam64: int) -> tuple[bool, str]:
         return False, f"Could not read file: {e}"
 
     if raw[:4] != _BND4_MAGIC:
-        from er_save_manager.games.DS3.parser import is_ps_userdata
+        from er_save_manager.games.ps_userdata import is_ps_userdata
 
         if is_ps_userdata(save_path):
             return False, "PS4 saves have no SteamID to patch."

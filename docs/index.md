@@ -64,8 +64,8 @@
 
 - [Nightreign](user-guide/nightreign.md) - Relics and Loadouts tabs with game icons, relic checks against the game's roll rules, Murk and Sovereign Sigils, character management
 - [Dark Souls III](user-guide/dark-souls-3.md) - Stats, equipment and attunement, appearance, character management, boss and NPC revival, quest progress, item spawning, world state, PS4 saves
-- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, covenants, equipment and attunement, appearance, character management, event flags, boss and NPC revival, quest progress, item spawning
-- [Dark Souls II SotFS](user-guide/dark-souls-2.md) - Stats, equipment and attunement, appearance, item spawning, character management, bonfire editing, doors, item pickup respawn, event flags, boss and NPC editing, quest progress
+- [Dark Souls Remastered](user-guide/dark-souls-remastered.md) - Stats, covenants, equipment and attunement, appearance, character management, event flags, boss and NPC revival, quest progress, item spawning, PS4 saves
+- [Dark Souls II SotFS](user-guide/dark-souls-2.md) - Stats, equipment and attunement, appearance, item spawning, character management, bonfire editing, doors, item pickup respawn, event flags, boss and NPC editing, quest progress, PS4 saves
 - Backup Manager for all of the above plus Armored Core 6 and Sekiro; [SteamID Patcher](user-guide/steamid-patcher.md) for all of them except Dark Souls Remastered
 
 ### :material-wrench: Work in Progress
