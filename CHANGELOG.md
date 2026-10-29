@@ -3,6 +3,25 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.5.0
+**Released:** October 29, 2026
+
+
+### ✨ New Features
+
+- NR: Records tab for the Visual Codex battle record (#442) ([4322807](https://github.com/Hapfel1/er-save-manager/commit/4322807313b7c5acacc652b9928fb139c6d025ce))
+
+- General: PS4 userdata saves (#438) ([9692ad5](https://github.com/Hapfel1/er-save-manager/commit/9692ad5236f89e4499c977ecfe852d0107a119a3))
+
+
+### 🔧 Bug Fixes
+
+- ER: Body type and voice type labels (#436) ([5b95be5](https://github.com/Hapfel1/er-save-manager/commit/5b95be5fe4cd7898c6a1eb30cbfa614c0fd40f28))
+
+- General: Upgrade cap 0 when adding from the Visual Item Picker (#440) ([8cc2179](https://github.com/Hapfel1/er-save-manager/commit/8cc2179dec46018163c475f77b12f07990709058))
+
+
+---
 ## 📦 Release 2.4.0
 **Released:** October 28, 2026
 
