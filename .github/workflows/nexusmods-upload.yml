@@ -34,7 +34,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       NEXUSMODS_FILE_ID_LINUX: ${{ vars.NEXUSMODS_FILE_ID_LINUX }}
       NEXUSMODS_FILE_ID_WINDOWS: ${{ vars.NEXUSMODS_FILE_ID_WINDOWS }}
-      NEXUSMODS_MOD_ID: "9271"
+      # v3 API mod id (gameId << 32 | page id): Elden Ring 4333, page 9271.
+      # The changelog endpoint returns 404 for the bare page id.
+      NEXUSMODS_MOD_ID: "18610093302839"
     steps:
       # Before any other step: checkout cleans the workspace.
       - name: Check out changelog script
