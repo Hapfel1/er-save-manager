@@ -143,10 +143,10 @@ jobs:
           # Update uv.lock with new version
           uv sync
           
-          # Update changelog only if this version section doesn't already exist
-          # This allows manual edits to be preserved on subsequent runs
+          # Prepend only the new release section. Regenerating the whole file
+          # with -o would replace hand-edited notes of earlier releases.
           if ! grep -q "^## 📦 Release ${NEXT_VERSION#v}$" CHANGELOG.md 2>/dev/null; then
-            git cliff --tag "$NEXT_VERSION" -o CHANGELOG.md
+            git cliff --unreleased --tag "$NEXT_VERSION" --prepend CHANGELOG.md
           fi
 
       - name: Commit and push release branch
@@ -348,6 +348,20 @@ jobs:
             echo "ℹ️  PR already exists, updating..."
             gh pr edit "release-$NEXT_VERSION" -b "$pr_body"
           fi
+
+      - name: Close superseded release PRs
+        run: |
+          # A release PR still open for another version (e.g. v2.4.1 when a
+          # feat: commit moved the next version to v2.5.0) is folded into
+          # this one; its draft release is removed by the next step.
+          current_pr=$(gh pr view "release-$NEXT_VERSION" --json number --jq .number)
+          gh pr list --base main --state open --json number,headRefName \
+            --jq ".[] | select(.headRefName | test(\"^release-v[0-9]+\\\\.[0-9]+\\\\.[0-9]+$\")) | select(.headRefName != \"release-$NEXT_VERSION\") | \"\(.number) \(.headRefName)\"" |
+          while read -r number branch; do
+            echo "Closing #$number ($branch), superseded by $NEXT_VERSION"
+            gh pr close "$number" --delete-branch \
+              --comment "Superseded by $NEXT_VERSION (#$current_pr), which includes these changes."
+          done
 
       - name: Delete old release drafts
         uses: hugo19941994/delete-draft-releases@v3.0.0

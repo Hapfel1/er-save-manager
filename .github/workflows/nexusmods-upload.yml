@@ -34,7 +34,15 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       NEXUSMODS_FILE_ID_LINUX: ${{ vars.NEXUSMODS_FILE_ID_LINUX }}
       NEXUSMODS_FILE_ID_WINDOWS: ${{ vars.NEXUSMODS_FILE_ID_WINDOWS }}
+      NEXUSMODS_MOD_ID: "9271"
     steps:
+      # Before any other step: checkout cleans the workspace.
+      - name: Check out changelog script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/nexus_changelog.py
+          sparse-checkout-cone-mode: false
+
       - name: Validate Nexus Mods configuration
         env:
           NEXUSMODS_API_KEY: ${{ secrets.NEXUSMODS_API_KEY }}
@@ -154,6 +162,26 @@ jobs:
 
           echo "resolved_version=$used_version" >> "$GITHUB_OUTPUT"
 
+      # Nexus appends changelog text on every call for a version, so only one
+      # platform sends it.
+      - name: Build Nexus changelog from the release notes
+        id: changelog
+        if: matrix.platform == 'Windows'
+        run: |
+          set -euo pipefail
+
+          gh release view "${{ steps.download.outputs.resolved_version }}" \
+            --repo "${{ github.repository }}" --json body --jq .body > release_body.md
+          text=$(python3 scripts/nexus_changelog.py < release_body.md)
+          if [ -z "$text" ]; then
+            echo "Release notes are empty, no changelog is added on Nexus Mods."
+          fi
+          {
+            echo "text<<NEXUS_CHANGELOG_EOF"
+            echo "$text"
+            echo "NEXUS_CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Zip Linux AppImage
         if: matrix.platform == 'Linux'
         run: |
@@ -176,3 +204,5 @@ jobs:
           update_mod_version: true
           archive_existing_version: true
           allow_mod_manager_download: false
+          mod_id: ${{ steps.changelog.outputs.text != '' && env.NEXUSMODS_MOD_ID || '' }}
+          changelog: ${{ steps.changelog.outputs.text }}
