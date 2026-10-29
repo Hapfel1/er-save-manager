@@ -774,7 +774,6 @@ class InventoryEditor:
         self.inv_quantity_var: ctk.StringVar | None = None
         self._quantity_entry: ctk.CTkEntry | None = None
         self._current_max_num: int = 1
-        self._current_upgrade_cap: int = 0
         self.inv_upgrade_var: ctk.StringVar | None = None
         self.inv_affinity_var: ctk.StringVar | None = None
         self.inv_location_var: ctk.StringVar | None = None
@@ -1498,11 +1497,9 @@ class InventoryEditor:
                     values=[str(i) for i in range(cap + 1)], state="normal"
                 )
                 self.inv_upgrade_var.set("0")
-                self._current_upgrade_cap = cap
             else:
                 self._upgrade_combo.configure(values=["0"], state="disabled")
                 self.inv_upgrade_var.set("0")
-                self._current_upgrade_cap = 0
 
         save_path = self.get_save_path() or ""
         is_convergence_save = ".cnv" in str(save_path).lower()
@@ -2281,7 +2278,17 @@ class InventoryEditor:
         upg = 0
         if is_weapon or is_ashes:
             upg = _parse_whole(self.inv_upgrade_var.get(), "Upgrade")
-            cap = self._current_upgrade_cap
+            # Derived from the item: the visual picker sets selected_item
+            # without going through this editor's form.
+            reinforcement = getattr(self.selected_item, "reinforcement", "standard")
+            if is_ashes:
+                cap = _ASH_UPGRADE_CAP
+            elif reinforcement == "none":
+                cap = 0
+            else:
+                cap = _weapon_upgrade_cap(
+                    self.selected_item, reinforcement, self._is_cnv_save()
+                )
             if not 0 <= upg <= cap:
                 raise ValueError(f"Upgrade must be 0-{cap} for {name}.")
 
