@@ -6,20 +6,18 @@
 ## 📦 Release 2.4.1
 **Released:** October 29, 2026
 
+### Nightreign
 
-### ✨ New Features
+- Records tab: play time, expeditions, wins, win streaks, battle record totals and personal bests, expeditions and wins per Nightfarer, victories per Nightlord ([4322807](https://github.com/Hapfel1/er-save-manager/commit/4322807313b7c5acacc652b9928fb139c6d025ce))
 
-- NR: Records tab for the Visual Codex battle record (#442) ([4322807](https://github.com/Hapfel1/er-save-manager/commit/4322807313b7c5acacc652b9928fb139c6d025ce))
+### Dark Souls Remastered / Dark Souls II
 
-- General: PS4 userdata saves (#438) ([9692ad5](https://github.com/Hapfel1/er-save-manager/commit/9692ad5236f89e4499c977ecfe852d0107a119a3))
+- PS4 saves (decrypted userdata folders) ([9692ad5](https://github.com/Hapfel1/er-save-manager/commit/9692ad5236f89e4499c977ecfe852d0107a119a3))
 
+### Elden Ring
 
-### 🔧 Bug Fixes
-
-- ER: Body type and voice type labels (#436) ([5b95be5](https://github.com/Hapfel1/er-save-manager/commit/5b95be5fe4cd7898c6a1eb30cbfa614c0fd40f28))
-
-- General: Upgrade cap 0 when adding from the Visual Item Picker (#440) ([8cc2179](https://github.com/Hapfel1/er-save-manager/commit/8cc2179dec46018163c475f77b12f07990709058))
-
+- Fixed body type showing the opposite type and wrong voice type labels ([5b95be5](https://github.com/Hapfel1/er-save-manager/commit/5b95be5fe4cd7898c6a1eb30cbfa614c0fd40f28))
+- Fixed weapons added from the Visual Item Picker failing with "Upgrade must be 0-0" ([8cc2179](https://github.com/Hapfel1/er-save-manager/commit/8cc2179dec46018163c475f77b12f07990709058))
 
 ---
 ## 📦 Release 2.4.0
