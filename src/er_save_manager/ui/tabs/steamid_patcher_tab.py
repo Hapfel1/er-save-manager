@@ -325,8 +325,8 @@ class SteamIDPatcherTab:
 
         save_path = Path(selected)
 
-        if profile.key == "dark_souls_3":
-            from er_save_manager.games.DS3.parser import is_ps_userdata
+        if profile.key in ("dark_souls_3", "dark_souls_2"):
+            from er_save_manager.games.ps_userdata import is_ps_userdata
 
             if is_ps_userdata(save_path):
                 _set(
@@ -541,13 +541,17 @@ class SteamIDPatcherTab:
                     "PlayStation saves have no SteamID to patch.",
                 )
         elif profile_key == "dark_souls_3":
-            from er_save_manager.games.DS3.parser import is_ps_userdata
             from er_save_manager.games.ds3_steamid import detect_steamid_ds3 as detect
+            from er_save_manager.games.ps_userdata import is_ps_userdata
 
             if is_ps_userdata(save_path):
                 return ("No SteamID", "PS4 saves have no SteamID to patch.")
         elif profile_key == "dark_souls_2":
             from er_save_manager.games.ds2_dsr_steamid import detect_steamid
+            from er_save_manager.games.ps_userdata import is_ps_userdata
+
+            if is_ps_userdata(save_path):
+                return ("No SteamID", "PS4 saves have no SteamID to patch.")
 
             def detect(path):
                 return detect_steamid(path, profile_key)

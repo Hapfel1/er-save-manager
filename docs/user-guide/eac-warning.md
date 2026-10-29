@@ -4,7 +4,7 @@ Loading a vanilla save shows an online ban warning first. This page explains wha
 
 ## What Is the Warning?
 
-Vanilla saves are the ones the official servers see: `.sl2` on PC, the PlayStation `memory.dat` export and the Dark Souls III PS4 `userdata` files. The Dark Souls III PS4 text names the PlayStation Network account instead of the Steam account. Loading one opens the **Vanilla Save File** dialog, written for the game that is selected (Elden Ring, Nightreign, Dark Souls III, Dark Souls II or Dark Souls Remastered):
+Vanilla saves are the ones the official servers see: `.sl2` on PC, the PlayStation `memory.dat` export and the PS4 `userdata` files of Dark Souls III, Dark Souls Remastered and Dark Souls II. Their texts name the PlayStation Network account instead of the Steam account. Loading one opens the **Vanilla Save File** dialog, written for the game that is selected (Elden Ring, Nightreign, Dark Souls III, Dark Souls II or Dark Souls Remastered):
 
 - How that game checks saves and what a ban means there (for example, Dark Souls III checks the save on load and on every save, offline included, and bans in a weekly wave)
 - **Generally safe** - edits community testing found safe, such as corruption fixes, teleports and spawning normally obtainable items

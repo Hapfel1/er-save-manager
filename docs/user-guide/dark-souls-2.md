@@ -19,6 +19,16 @@ DS2 support uses these tabs:
 
 ---
 
+## PlayStation 4 Saves
+
+A decrypted PS4 export is a folder of `userdata` files, `userdata0000` to `userdata0022`, one per entry of the PC save. Open any of them and the whole folder is loaded; all 23 files must be there (the console's own `backup` files are not needed). When one is missing or has the wrong size, loading stops and names it. Edits write back only the files that changed, in the same format, so the folder can be imported to the console as it is.
+
+Transfer and `.ds2c` export/import also move characters between a PS4 folder and a PC save. The owning account is stored once per save, not per character, so a moved character takes on the target save's account.
+
+Auto-Find does not find PS4 saves; use **Browse**. The **PS4 Save?** button in the file row repeats these steps.
+
+---
+
 ## Selecting a Character and Applying Changes
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
@@ -130,7 +140,7 @@ Some fights include enemies that only spawn a limited number of times (for examp
 
 ## SteamID Patcher
 
-Transfer a DS2 save between Steam accounts, same mechanism as the Elden Ring version.
+Transfer a DS2 save between Steam accounts, same mechanism as the Elden Ring version. PS4 saves hold no SteamID, so the patcher does not apply to them.
 
 ---
 

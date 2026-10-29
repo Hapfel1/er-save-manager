@@ -21,8 +21,6 @@ from .save import (
     DSRCharacter,
     DSRSave,
     _decrypt,
-    _encrypt,
-    _md5,
 )
 
 _ERC_MAGIC = b"DSRC"
@@ -122,17 +120,12 @@ def _set_active(save: DSRSave, slot_index: int, active: bool) -> None:
 
 
 def _clear_slot_data(save: DSRSave, slot_index: int) -> None:
-    """Zero the character data of a slot in the raw file, keeping the
-    plaintext header and padding, as the game does on delete."""
-    off = SLOTS_OFFSET + slot_index * SLOT_SIZE
-    iv = bytes(save._raw[off : off + 16])
-    ciphertext = bytes(save._raw[off + 16 : off + 16 + SLOT_DATA_SIZE])
-    data = bytearray(_decrypt(iv, ciphertext))
+    """Zero the character data of a slot, keeping the plaintext header and
+    padding, as the game does on delete."""
+    data = save.slot_plaintext(slot_index)
     length = struct.unpack_from("<I", data, _DATA_LENGTH_OFFSET)[0]
     data[_DATA_START : _DATA_START + length] = bytes(length)
-    ciphertext = _encrypt(iv, bytes(data))
-    save._raw[off : off + 16] = _md5(ciphertext)
-    save._raw[off + 16 : off + 16 + SLOT_DATA_SIZE] = ciphertext
+    save.set_slot_plaintext(slot_index, data)
 
 
 def _sync_dir_name_level(save: DSRSave, slot_index: int, name: str, level: int) -> None:
@@ -205,6 +198,8 @@ def _scan_steam64(data: bytearray) -> int | None:
 
 def _get_system_steam64(save: DSRSave) -> int | None:
     """Decrypt slot 10 (system data) and return the embedded Steam64, if any."""
+    if save.is_ps:
+        return None
     off = SLOTS_OFFSET + 10 * SLOT_SIZE
     iv = bytes(save._raw[off : off + 16])
     ciphertext = bytes(save._raw[off + 16 : off + 16 + SLOT_DATA_SIZE])

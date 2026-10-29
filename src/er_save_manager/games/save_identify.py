@@ -14,7 +14,7 @@ first entry size are fixed per game:
   Sekiro                12       0x100010
 
 PlayStation exports are matched by magic (ER), exact length (NR, same
-rule as the NR parser) or userdataNNNN name plus size (DS3).
+rule as the NR parser) or userdataNNNN name plus size (DS3, DSR, DS2).
 Anything else returns None, so callers only reject a file that positively
 matches a different game.
 
@@ -175,7 +175,7 @@ def identify_game(path: str | Path) -> str | None:
     except OSError:
         return None
 
-    from er_save_manager.games.DS3.parser import is_ps_userdata
+    from er_save_manager.games.ps_userdata import userdata_game
 
     magic = head[:4]
     if magic == b"BND4" and len(head) >= _FIRST_ENTRY_SIZE_OFFSET + 8:
@@ -184,6 +184,4 @@ def identify_game(path: str | Path) -> str | None:
         return "elden_ring"
     if size == _NR_PS_SIZE:
         return "nightreign"
-    if is_ps_userdata(path):
-        return "dark_souls_3"
-    return None
+    return userdata_game(path)

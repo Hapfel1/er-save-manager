@@ -3,6 +3,7 @@ Dark Souls II: Scholar of the First Sin save file parser.
 
 File layout (DS2SOFS0000.sl2, PC):
   BND4 container, identical shell to DS3/ER saves.
+  PS4 userdata folders hold the same entries one per file (DS2PSContainer).
 
   [0x0000:0x0004]  Magic "BND4"
   [0x000C:0x0010]  Entry count u32 LE (23 in a full 10-slot save)
@@ -67,6 +68,7 @@ from functools import cached_property
 from pathlib import Path
 
 from er_save_manager import aes_cbc
+from er_save_manager.games import ps_userdata
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.boss_arenas import LIMITED_ARENA_GENERATORS
 from er_save_manager.games.DS2.boss_database import BOSS_NAMES
@@ -1362,6 +1364,95 @@ class DS2Container:
         atomic_write(path, out, loaded=True)
 
 
+# Entry 0 starts with a section [u32 id][u32 version][u32 size] whose data
+# begins at +0x20. On PC it is 0x32C bytes; the PS4 version keeps only its
+# first bytes (0x14) and drops the rest, which includes the owner SteamID.
+# Every later section is the same on both platforms.
+_SUMMARY_SECTION_SIZE_OFFSET = 0x08
+_SUMMARY_SECTION_DATA = 0x20
+_PC_SUMMARY_SECTION_SIZE = 0x32C
+
+
+class DS2PSContainer:
+    """
+    PS4 userdata folder of a DS2 SOTFS save: userdata0000-0022, one file per
+    PC entry, each the decrypted entry data without its length prefix.
+
+    Entries are served in the PC layout, so DS2Save works on them unchanged:
+    entry 0's first section is widened to its PC size with zero bytes on load
+    and cut back on save. Only files whose content changed are written.
+    """
+
+    is_ps = True
+
+    def __init__(self, files: list[Path], entries: list[bytearray]) -> None:
+        self._files = files
+        self._written = [bytes(e) for e in entries]
+        self._ps_summary_size = struct.unpack_from(
+            "<I", entries[OCCUPANCY_ENTRY], _SUMMARY_SECTION_SIZE_OFFSET
+        )[0]
+        entries[OCCUPANCY_ENTRY] = self._summary_to_pc(entries[OCCUPANCY_ENTRY])
+        self._entries = entries
+
+    @classmethod
+    def from_file(cls, path: str | Path) -> DS2PSContainer:
+        files = ps_userdata.require_folder(path, "dark_souls_2")
+        entries = [bytearray(f.read_bytes()) for f in files]
+        size = struct.unpack_from(
+            "<I", entries[OCCUPANCY_ENTRY], _SUMMARY_SECTION_SIZE_OFFSET
+        )[0]
+        if size > _PC_SUMMARY_SECTION_SIZE:
+            raise ValueError(
+                f"{files[OCCUPANCY_ENTRY].name}: unexpected first section size "
+                f"{size:#x}."
+            )
+        return cls(files, entries)
+
+    def _summary_to_pc(self, data: bytes) -> bytearray:
+        cut = _SUMMARY_SECTION_DATA + self._ps_summary_size
+        out = bytearray(data[:cut])
+        out += bytes(_PC_SUMMARY_SECTION_SIZE - self._ps_summary_size)
+        out += data[cut:]
+        struct.pack_into(
+            "<I", out, _SUMMARY_SECTION_SIZE_OFFSET, _PC_SUMMARY_SECTION_SIZE
+        )
+        return out
+
+    def _summary_to_ps(self, data: bytes) -> bytes:
+        out = bytearray(data[: _SUMMARY_SECTION_DATA + self._ps_summary_size])
+        out += data[_SUMMARY_SECTION_DATA + _PC_SUMMARY_SECTION_SIZE :]
+        struct.pack_into("<I", out, _SUMMARY_SECTION_SIZE_OFFSET, self._ps_summary_size)
+        return bytes(out)
+
+    def damaged_entries(self) -> list[int]:
+        """PS4 userdata files carry no checksum."""
+        return []
+
+    def is_untouched_damaged(self, index: int) -> bool:
+        return False
+
+    def get_entry(self, index: int) -> bytearray:
+        return self._entries[index]
+
+    def set_entry(self, index: int, data: bytearray) -> None:
+        self._entries[index] = data
+
+    def save_to_file(self, path: str | Path) -> None:
+        """Write every changed entry to its userdata file."""
+        for i, file in enumerate(self._files):
+            data = self._entries[i]
+            data = self._summary_to_ps(data) if i == OCCUPANCY_ENTRY else bytes(data)
+            if data == self._written[i]:
+                continue
+            if len(data) != len(self._written[i]):
+                raise RuntimeError(
+                    f"{file.name}: entry size changed. Entry data must not "
+                    "change in length."
+                )
+            atomic_write(file, data)
+            self._written[i] = data
+
+
 @dataclass
 class InventoryItem:
     offset: int
@@ -2385,7 +2476,7 @@ class Character:
 class DS2Save:
     """Top-level DS2 SOTFS save: container plus the 10 character slots."""
 
-    def __init__(self, container: DS2Container) -> None:
+    def __init__(self, container: DS2Container | DS2PSContainer) -> None:
         self.container = container
         self.characters = [
             Character(
@@ -2402,7 +2493,14 @@ class DS2Save:
 
     @classmethod
     def from_file(cls, path: str | Path) -> DS2Save:
+        """Open a PC .sl2/.co2 or any userdata file of a PS4 save folder."""
+        if ps_userdata.is_ps_userdata(path, "dark_souls_2"):
+            return cls(DS2PSContainer.from_file(path))
         return cls(DS2Container.from_file(path))
+
+    @property
+    def is_ps(self) -> bool:
+        return getattr(self.container, "is_ps", False)
 
     def damaged_slots(self) -> list[int]:
         """Slots whose profile or per-character entry fails its MD5 check and
@@ -2469,6 +2567,32 @@ class DS2Save:
         if off + 4 > len(data):
             return None
         return struct.unpack_from("<I", data, off)[0]
+
+    def play_time_caches(self, slot_index: int) -> tuple[int, int]:
+        """Play time of a slot's load screen records in entries 0 and 22."""
+        return tuple(
+            struct.unpack_from(
+                "<I",
+                self.container.get_entry(entry),
+                name_offset + _OCC_STRIDE * slot_index + _CACHE_PLAYTIME_FROM_NAME,
+            )[0]
+            for entry, name_offset in (
+                (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+                (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+            )
+        )
+
+    def set_play_time_caches(self, slot_index: int, values: tuple[int, int]) -> None:
+        for (entry, name_offset), value in zip(
+            (
+                (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+                (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+            ),
+            values,
+            strict=True,
+        ):
+            off = name_offset + _OCC_STRIDE * slot_index + _CACHE_PLAYTIME_FROM_NAME
+            struct.pack_into("<I", self.container.get_entry(entry), off, value)
 
     def sync_name_caches(self) -> None:
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)

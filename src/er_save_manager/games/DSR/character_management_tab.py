@@ -12,6 +12,7 @@ from pathlib import Path
 import customtkinter as ctk
 
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY
+from er_save_manager.games.ps_userdata import save_identity
 from er_save_manager.platform import PlatformUtils
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
@@ -670,7 +671,7 @@ class DSRCharacterManagementTab:
         target_path = self._select_target_save_file()
         if not target_path:
             return
-        if current_path and Path(target_path).resolve() == Path(current_path).resolve():
+        if current_path and save_identity(target_path) == save_identity(current_path):
             notify(
                 self.parent,
                 "Select a different target save file for transfer.",
@@ -736,7 +737,10 @@ class DSRCharacterManagementTab:
         return pick_file(
             title="Select target save file",
             initialdir=initialdir,
-            filetypes=[("DSR save files", "*.sl2 *.co2"), ("All files", "*.*")],
+            filetypes=[
+                ("DSR save files", "*.sl2 *.co2 userdata*"),
+                ("All files", "*.*"),
+            ],
         )
 
     def _select_target_save_file(self) -> str | None:

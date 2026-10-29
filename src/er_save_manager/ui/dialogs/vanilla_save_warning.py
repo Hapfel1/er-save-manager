@@ -14,8 +14,8 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 
 # Extensions of saves that reach the official servers: .sl2 on PC, the
-# PlayStation memory.dat export for Elden Ring and Nightreign. DS3 PS4
-# userdata files have no extension and are matched by is_ps_userdata.
+# PlayStation memory.dat export for Elden Ring and Nightreign. PS4 userdata
+# files (DS3, DSR, DS2) have no extension and are matched by is_ps_userdata.
 # Seamless Co-op (.co2) saves never connect to them.
 VANILLA_SUFFIXES = (".sl2", ".dat")
 
@@ -199,6 +199,21 @@ _GAME_TEXT["dark_souls_3_ps4"] = (
     _GAME_TEXT["dark_souls_3"][1],
 )
 
+_GAME_TEXT["dark_souls_2_ps4"] = (
+    "The save is checked the next time you go online, so editing offline "
+    "does not avoid a ban. Soft bans in Dark Souls II are permanent and "
+    "apply to the whole PlayStation Network account: you only match with "
+    "other banned players.",
+    _GAME_TEXT["dark_souls_2"][1],
+)
+
+_GAME_TEXT["dark_souls_remastered_ps4"] = (
+    "Save data is checked when you go online. A soft ban limits "
+    "matchmaking to other banned players and applies to the whole "
+    "PlayStation Network account, not only this save.",
+    _GAME_TEXT["dark_souls_remastered"][1],
+)
+
 
 # PlayStation has no Easy Anti-Cheat; the relic rules are the same.
 _GAME_TEXT["nightreign_ps"] = (
@@ -232,7 +247,7 @@ def _is_nr_ps_save(save_path: str) -> bool:
 
 
 def is_vanilla_save(save_path: str) -> bool:
-    from er_save_manager.games.DS3.parser import is_ps_userdata
+    from er_save_manager.games.ps_userdata import is_ps_userdata
     from er_save_manager.games.save_identify import identify_game
 
     if identify_game(save_path) == "nightreign":
@@ -244,12 +259,12 @@ def is_vanilla_save(save_path: str) -> bool:
 
 
 def warning_key(game_key: str, save_path: str) -> str:
-    """_GAME_TEXT key for a save: DS3 PS4 userdata files and Nightreign
+    """_GAME_TEXT key for a save: PS4 userdata files and Nightreign
     PlayStation saves get their own text."""
-    from er_save_manager.games.DS3.parser import is_ps_userdata
+    from er_save_manager.games.ps_userdata import is_ps_userdata
 
-    if game_key == "dark_souls_3" and is_ps_userdata(save_path):
-        return "dark_souls_3_ps4"
+    if is_ps_userdata(save_path, game_key):
+        return f"{game_key}_ps4"
     if game_key == "nightreign" and _is_nr_ps_save(save_path):
         return "nightreign_ps"
     return game_key

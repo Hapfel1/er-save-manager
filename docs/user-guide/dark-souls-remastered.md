@@ -20,6 +20,18 @@ DSR saves hold no SteamID, so there is no SteamID Patcher.
 
 ---
 
+## PlayStation 4 Saves
+
+A PS4 save is a folder of `userdata` files: `userdata0000` to `userdata0009` hold the ten character slots and `userdata0010` holds the system data with the load-screen character list. Open any of them and the whole folder is loaded; all 11 files must be there (the console's own `backup` files are not needed). When one is missing or has the wrong size, loading stops and names it.
+
+On the console the files are encrypted. Both the files as copied off the console (for example with Apollo Save Tool) and files run through Apollo's **Decrypt userdata** step load. Each file is written back in the form it was read in, with a valid checksum, and only files that changed are written. Files in decrypted form still need Apollo's **Encrypt userdata** and **Update MD5 Hash** steps before they go back to the console; files in console form can be imported as they are.
+
+Transfer and `.dsrc` export/import also move characters between a PS4 folder and a PC save.
+
+Auto-Find does not find PS4 saves; use **Browse**. The **PS4 Save?** button in the file row repeats these steps.
+
+---
+
 ## Selecting a Character and Applying Changes
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
