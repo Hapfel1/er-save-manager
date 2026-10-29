@@ -2568,6 +2568,32 @@ class DS2Save:
             return None
         return struct.unpack_from("<I", data, off)[0]
 
+    def play_time_caches(self, slot_index: int) -> tuple[int, int]:
+        """Play time of a slot's load screen records in entries 0 and 22."""
+        return tuple(
+            struct.unpack_from(
+                "<I",
+                self.container.get_entry(entry),
+                name_offset + _OCC_STRIDE * slot_index + _CACHE_PLAYTIME_FROM_NAME,
+            )[0]
+            for entry, name_offset in (
+                (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+                (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+            )
+        )
+
+    def set_play_time_caches(self, slot_index: int, values: tuple[int, int]) -> None:
+        for (entry, name_offset), value in zip(
+            (
+                (OCCUPANCY_ENTRY, _OCC_NAME_OFFSET),
+                (CHARACTER_SELECT_ENTRY, _SELECT_NAME_OFFSET),
+            ),
+            values,
+            strict=True,
+        ):
+            off = name_offset + _OCC_STRIDE * slot_index + _CACHE_PLAYTIME_FROM_NAME
+            struct.pack_into("<I", self.container.get_entry(entry), off, value)
+
     def sync_name_caches(self) -> None:
         occ_data = self.container.get_entry(OCCUPANCY_ENTRY)
         select_data = self.container.get_entry(CHARACTER_SELECT_ENTRY)

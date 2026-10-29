@@ -43,6 +43,22 @@ def _clear_unnamed_name_caches(save: DS2Save, *slots: int) -> None:
             save.clear_name_cache(slot)
 
 
+def _sync_load_screen(
+    save: DS2Save, slot: int, play_times: tuple[int, int] | None = None
+) -> None:
+    """Copy class, equipment and appearance of the character now in slot to
+    its load screen records, and play_times when given (play time exists
+    only in those records). Names come from sync_name_caches(), levels from
+    save_to_file()."""
+    if not _is_valid_name(save.characters[slot].name):
+        return
+    save.sync_class_cache(slot)
+    save.sync_equipment_cache(slot)
+    save.sync_appearance_cache(slot)
+    if play_times is not None:
+        save.set_play_time_caches(slot, play_times)
+
+
 class DS2CharacterOperations:
     @staticmethod
     def _check_slot_index(slot_index: int) -> None:
@@ -97,6 +113,7 @@ class DS2CharacterOperations:
 
         save.sync_name_caches()
         _clear_unnamed_name_caches(save, to_slot)
+        _sync_load_screen(save, to_slot, save.play_time_caches(from_slot))
 
     @staticmethod
     def transfer_slot(
@@ -131,6 +148,7 @@ class DS2CharacterOperations:
 
         target_save.sync_name_caches()
         _clear_unnamed_name_caches(target_save, to_slot)
+        _sync_load_screen(target_save, to_slot, source_save.play_time_caches(from_slot))
 
     @staticmethod
     def delete_slot(save: DS2Save, slot_index: int) -> None:
@@ -168,6 +186,8 @@ class DS2CharacterOperations:
                 if warning:
                     raise RuntimeError(warning)
 
+        times_a = save.play_time_caches(slot_a)
+        times_b = save.play_time_caches(slot_b)
         profile_a = save.characters[slot_a].raw()
         profile_b = save.characters[slot_b].raw()
         profile_a[:], profile_b[:] = bytes(profile_b), bytes(profile_a)
@@ -178,6 +198,8 @@ class DS2CharacterOperations:
 
         save.sync_name_caches()
         _clear_unnamed_name_caches(save, slot_a, slot_b)
+        _sync_load_screen(save, slot_a, times_b)
+        _sync_load_screen(save, slot_b, times_a)
 
     @staticmethod
     def export_character(save: DS2Save, slot_index: int, output_path: str) -> None:
@@ -306,6 +328,7 @@ class DS2CharacterOperations:
         target_big[:] = big_data
         save.sync_name_caches()
         _clear_unnamed_name_caches(save, slot_index)
+        _sync_load_screen(save, slot_index)
 
         return save.characters[slot_index].name
 

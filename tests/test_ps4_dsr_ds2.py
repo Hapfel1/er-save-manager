@@ -257,3 +257,24 @@ def test_ps4_userdata_gets_the_ban_warning(tmp_path, dsr_folder):
     assert warning_key("dark_souls_2", str(dsr_folder / "userdata0001")) == (
         "dark_souls_2"
     )
+
+
+def test_ds2_transfer_updates_the_load_screen_records(tmp_path):
+    from er_save_manager.games.DS2.character_ops import DS2CharacterOperations
+
+    source = DS2Save.from_file(_write_ds2_folder(tmp_path / "a") / "userdata0000")
+    target = DS2Save.from_file(_write_ds2_folder(tmp_path / "b") / "userdata0000")
+    char = source.characters[3]
+    char.name = "Tess"
+    char.starting_class = 7
+    source.set_play_time_caches(3, (5000, 5000))
+
+    DS2CharacterOperations.transfer_slot(source, 3, target, 0, force=True)
+
+    assert target.play_time_caches(0) == (5000, 5000)
+    for entry, name_offset in (
+        (ds2.OCCUPANCY_ENTRY, ds2._OCC_NAME_OFFSET),
+        (ds2.CHARACTER_SELECT_ENTRY, ds2._SELECT_NAME_OFFSET),
+    ):
+        off = name_offset + ds2._CACHE_CLASS_FROM_NAME
+        assert struct.unpack_from("<H", target.container.get_entry(entry), off)[0] == 7
