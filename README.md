@@ -38,10 +38,10 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 - **Troubleshooting**: Troubleshooter for checking game launch/connection related issues
 - **Online Ban Warning**: Per-game warning before editing vanilla saves, listing which edits can get you banned online
 - **Backup Manager and SteamID Patcher for**: Elden Ring, Elden Ring Nightreign, Armored Core 6, Sekiro, Dark Souls III, Dark Souls II SotfS (Dark Souls Remastered: Backup Manager only, its saves hold no SteamID)
-- **DSR**: Stats Editing, Covenants, Equipment and Attunement, Appearance, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Supports SeamlessCoop
+- **DSR**: Stats Editing, Covenants, Equipment and Attunement, Appearance, Character Management, Save Fixer, Event Flags, Boss Revival, NPC Revival, Bonfire Lighting, NG+, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, PS4 saves, Supports SeamlessCoop
 - **DS3**: Stats Editing, Equipment and Attunement, Appearance, Character Management, Save Fixer, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Boss Revival, NPC Revival, Quest Progress, Bonfires, Gestures, NG+, PS4 saves, Supports Convergence, Cinders and SeamlessCoop
-- **Nightreign**: Relic spawning and editing with game icons and the game's roll rules, Chalice Loadouts and Presets, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
-- **DS2**: Stats Editing, Equipment and Attunement, Appearance, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Doors, Item Pickup Respawn, Event Flags, Boss Editing, NPC Revival, Quest Progress, Supports SeamlessCoop
+- **Nightreign**: Relic spawning and editing with game icons and the game's roll rules, Chalice Loadouts and Presets, Battle Records, Editing Murk and Sovereign Sigils, Character Management, Save Fixer, Supports decrypted PlayStation saves
+- **DS2**: Stats Editing, Equipment and Attunement, Appearance, Item Spawning and Inventory Editing with Visual Item Picker and Visual Inventory Editor, Build Import from Souls Planner, Character Management, Save Fixer, Bonfire Editing, Doors, Item Pickup Respawn, Event Flags, Boss Editing, NPC Revival, Quest Progress, PS4 saves, Supports SeamlessCoop
 
 ### Work in Progress
 
@@ -272,6 +272,7 @@ Automatically detects issues with your game installation, your save file and any
 - Visual Item Picker and Visual Inventory Editor
 - Batch editing: quantity, upgrade level, infusion, removal, repair
 - Equipped items are protected from removal, cut content is hidden by default and confirmed before spawning
+- PS4 saves (decrypted `userdata` folders), including transfer between PS4 and PC
 
 ### DS3
 
@@ -302,6 +303,7 @@ Automatically detects issues with your game installation, your save file and any
 - Item Gib opens the relic spawner
 - Copy a relic to the spawner, JSON import/export of relics
 - Loadouts tab: chalice and preset icon grid per hero, one card per relic slot, custom presets, including modded and over-capacity loadouts
+- Records tab: every value of the Visual Codex Battle Record pages, expeditions and wins per Nightfarer, victories per Nightlord
 - Relic validation from the game's roll tables: spawning or importing relics the game cannot roll is refused, issues an existing relic already had only warn
 - Editing Murk and Sovereign Sigils
 - Character Management
@@ -329,6 +331,7 @@ Automatically detects issues with your game installation, your save file and any
 - World Flags: open or close doors, respawn item pickups and chests, read and set event flags
 - Last rested bonfire
 - Seamless Co-op names up to 31 characters
+- PS4 saves (decrypted `userdata` folders), including transfer between PS4 and PC
 
 ## Building from Source
 

@@ -1,6 +1,6 @@
 # Elden Ring Nightreign
 
-Save editing for Nightreign: player name, murk and Sovereign Sigils, relic spawning and editing, and chalice relic loadouts.
+Save editing for Nightreign: player name, murk and Sovereign Sigils, relic spawning and editing, chalice relic loadouts and battle records.
 
 ## Overview
 
@@ -11,6 +11,7 @@ Nightreign support uses these tabs:
 - Character Editor
 - Relics
 - Loadouts
+- Records
 - SteamID Patcher
 - Backup Manager (top-level button)
 - Settings
@@ -23,7 +24,7 @@ Nightreign saves are AES-encrypted BND4 containers; the parser decrypts each slo
 
 The **Character** bar under the file row picks the character for every tab that edits one; switching tabs keeps the selection. The first character is loaded when a save opens.
 
-Character Editor and loadout slot edits are staged until they are applied: **Apply All** in the unapplied-changes bar writes them with one backup, **Discard** drops them. Relic actions (Spawn, Apply Edit, Remove, JSON import) write when clicked. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
+Character Editor, Records and loadout slot edits are staged until they are applied: **Apply All** in the unapplied-changes bar writes them with one backup, **Discard** drops them. Relic actions (Spawn, Apply Edit, Remove, JSON import) write when clicked. Switching characters, loading another save, switching games or closing the window with unapplied changes asks whether to apply or discard them first.
 
 ---
 
@@ -66,14 +67,26 @@ Loadouts with modded vessels or more presets than the game's loadout block holds
 
 ---
 
+## Records
+
+The character's Visual Codex battle record, laid out like the game's Battle Record pages:
+
+- **Summary** - play time, expedition time (both as H:MM:SS), total expeditions, wins, best and current win streak for normal expeditions and the Depths
+- **Battle Record** and **Battle Record (Depths)** - all-time totals and personal bests, ending reached and greatest Depth conquered
+- **Character Usage and Victories** - expeditions and wins per Nightfarer, victories per Nightlord
+
+The game keeps total expeditions equal to the sum of the Nightfarer expeditions, and wins equal to both the Nightfarer wins and the Nightlord victories. The header shows the table sums; **Match Totals** sets total expeditions and wins from the Nightfarer table. Applying totals that differ from the sums asks first. Play time is also written to the load screen.
+
+---
+
 ## Data Tracked Per Slot
 
 - Player name
 - Murk and Sovereign Sigils
 - Relic states (up to 5120 item state slots per slot, of which the first 84 are reserved)
-- Per-hero profile blocks: active flag, hero name, total runs, appearance data
 - Chalice and preset relic loadouts
-- Deep of Night Rank and score (from the global profile entry, shared across all slots)
+- Battle records: summary, normal and Depths totals and personal bests, per-Nightfarer and per-Nightlord tables
+- Load-screen summary in the global entry: in-use flag, name, play time
 
 ---
 

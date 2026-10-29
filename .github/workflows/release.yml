@@ -23,6 +23,11 @@ name: Create Release Draft
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version instead of the one from the commits (e.g. v2.4.1)"
+        required: false
+        default: ""
   push:
     branches:
       - main
@@ -71,8 +76,20 @@ jobs:
           current_version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
           echo "current_version=v$current_version" >> "$GITHUB_OUTPUT"
           
-          # Get next version from git-cliff (based on conventional commits)
-          next_version=$(git cliff --bumped-version --unreleased)
+          # Next version: the dispatch input or the NEXT_VERSION_OVERRIDE repo
+          # variable while that version is not tagged yet, else git-cliff
+          # from the conventional commits. The override lets a release with
+          # feat: commits ship as a patch version; once its tag exists the
+          # variable no longer applies.
+          override="${{ inputs.version || vars.NEXT_VERSION_OVERRIDE }}"
+          if [ -n "$override" ]; then
+            override="v${override#v}"
+          fi
+          if [ -n "$override" ] && [ -z "$(git tag -l "$override")" ]; then
+            next_version="$override"
+          else
+            next_version=$(git cliff --bumped-version --unreleased)
+          fi
           echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
           
           # Also output version without 'v' prefix for artifact naming
