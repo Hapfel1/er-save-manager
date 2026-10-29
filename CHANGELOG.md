@@ -3,6 +3,16 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.4.2
+**Released:** October 29, 2026
+
+
+### 🔧 Bug Fixes
+
+- General: Boss generator kill count left set blocks the boss (#446) ([d1731fd](https://github.com/Hapfel1/er-save-manager/commit/d1731fd70cb6675207acbf6e7bc224b3819128e2))
+
+
+---
 ## 📦 Release 2.4.1
 **Released:** October 29, 2026
 
