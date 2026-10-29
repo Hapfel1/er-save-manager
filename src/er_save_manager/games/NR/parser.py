@@ -743,6 +743,10 @@ class NightreignSlot:
     def play_time_ms(self) -> int:
         return struct.unpack_from("<I", self.decrypted, _SLOT_PLAY_TIME_OFFSET)[0]
 
+    @play_time_ms.setter
+    def play_time_ms(self, value: int) -> None:
+        struct.pack_into("<I", self.decrypted, _SLOT_PLAY_TIME_OFFSET, value)
+
     def is_empty(self) -> bool:
         """Slot has no character data.
 

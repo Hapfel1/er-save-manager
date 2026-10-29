@@ -28,6 +28,7 @@ _E10_SLOT_IN_USE = 0x1958
 _E10_SUMMARY = _E10_SLOT_IN_USE + CHARACTER_SLOTS
 _E10_SUMMARY_STRIDE = 0x290
 _SUMMARY_NAME_SIZE = 0x22  # 16 UTF-16 units and a terminator
+_SUMMARY_PLAY_TIME = 0x26  # u32 play time in seconds
 # Every slot entry starts with this header, empty or not; the rest of an
 # empty slot is zero.
 _SLOT_HEADER_SIZE = 4
@@ -69,6 +70,13 @@ def _sync_summary_name(save: NightreignSave, slot_index: int) -> None:
     _global(save)[start : start + _SUMMARY_NAME_SIZE] = name[
         : _SUMMARY_NAME_SIZE - 2
     ].ljust(_SUMMARY_NAME_SIZE, b"\x00")
+
+
+def sync_summary_play_time(save: NightreignSave, slot_index: int) -> None:
+    """Write the slot's play time into its load-screen summary."""
+    start = _summary_span(slot_index).start + _SUMMARY_PLAY_TIME
+    seconds = save.slots[slot_index].play_time_ms // 1000
+    struct.pack_into("<I", _global(save), start, seconds)
 
 
 def copy_slot(save: NightreignSave, from_slot: int, to_slot: int) -> None:

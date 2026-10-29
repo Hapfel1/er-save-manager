@@ -1584,6 +1584,7 @@ class SaveManagerGUI:
             "ds2_management_tab",
             "nr_inspector_tab",
             "nr_editor_tab",
+            "nr_records_tab",
             "nr_steamid_tab",
             "nr_char_mgmt_tab",
         ):
@@ -2290,6 +2291,7 @@ class SaveManagerGUI:
         """Create tab set for Nightreign."""
         self.nr_inspector_tab = None
         self.nr_editor_tab = None
+        self.nr_records_tab = None
         self.nr_steamid_tab = None
 
         self.notebook.add("Save Inspector")
@@ -2320,7 +2322,7 @@ class SaveManagerGUI:
         )
         self._build_tab("Character Management", self.nr_char_mgmt_tab.setup_ui)
 
-        for name in ("Character Editor", "Relics", "Loadouts"):
+        for name in ("Character Editor", "Relics", "Loadouts", "Records"):
             self.notebook.add(name)
         self.nr_editor_tab = NREditorTab(
             self.notebook.tab("Character Editor"),
@@ -2334,10 +2336,17 @@ class SaveManagerGUI:
         self._build_tab("Character Editor", self.nr_editor_tab.setup_steps)
         self._build_tab("Relics", self.nr_editor_tab.setup_relics)
         self._build_tab("Loadouts", self.nr_editor_tab.setup_loadouts)
+        from er_save_manager.games.NR.records_tab import NRRecordsTab
+
+        self.nr_records_tab = NRRecordsTab(
+            self.notebook.tab("Records"), lambda: self._nr_save, self._pending_register
+        )
+        self._build_tab("Records", self.nr_records_tab.setup_ui)
         self._character_tabs = {
             "Character Editor": self.nr_editor_tab.load_overview,
             "Relics": self.nr_editor_tab.load_relics,
             "Loadouts": self.nr_editor_tab.load_loadouts,
+            "Records": self.nr_records_tab.load_slot,
         }
 
         self.notebook.add("SteamID Patcher")
