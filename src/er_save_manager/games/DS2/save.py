@@ -70,7 +70,7 @@ from pathlib import Path
 from er_save_manager import aes_cbc
 from er_save_manager.games import ps_userdata
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
-from er_save_manager.games.DS2.boss_arenas import LIMITED_ARENA_GENERATORS
+from er_save_manager.games.DS2.boss_arenas import ARENA_GENERATORS
 from er_save_manager.games.DS2.boss_database import BOSS_NAMES
 from er_save_manager.games.DS2.item_database import (
     SEAMLESS_ITEMS,
@@ -979,11 +979,12 @@ class BossStates:
     player's world, leaves the defeat count at 0, which blocks the Bonfire
     Ascetic at the boss's bonfire.
 
-    Some fights have enemies that spawn only once (boss_arenas). Their kill
-    counts in the map record are 1 after a win and 0 while the boss is in its
-    arena, since a Bonfire Ascetic resets them. A count left at 1 with the boss
-    in its arena keeps that enemy from spawning while its health stays in the
-    fight's health bar, so the fight cannot be won; that state is invalid too.
+    The map record also holds a kill count for the boss and each enemy of its
+    fight (boss_arenas). They are 0 while the boss is in its arena, since a
+    Bonfire Ascetic resets them, and a win sets them. A count left set with the
+    boss in its arena is invalid: a spawn-once enemy stays away while its health
+    stays in the fight's health bar, and a boss whose generator starts on a flag
+    set during the fight (Burnt Ivory King) never appears.
     """
 
     def __init__(
@@ -1026,9 +1027,9 @@ class BossStates:
         return all(0 <= o < len(self._data) for o in offsets)
 
     def _arena_kill_offsets(self, fight: BossFight) -> list[int]:
-        """Kill count offsets of the fight's spawn-once enemies that its map's
+        """Kill count offsets of the fight's boss and enemies that its map's
         record lists."""
-        generators = LIMITED_ARENA_GENERATORS.get(fight.row_id)
+        generators = ARENA_GENERATORS.get(fight.row_id)
         if not generators:
             return []
         flag = fight.killed_flag
@@ -1051,7 +1052,7 @@ class BossStates:
         ]
 
     def _arena_kills(self, fight: BossFight) -> int:
-        """How many of the fight's spawn-once enemies are marked killed."""
+        """How many of the fight's boss and enemies are marked killed."""
         return sum(1 for o in self._arena_kill_offsets(fight) if self._data[o])
 
     def _clear_arena_kills(self, fight: BossFight) -> bool:
@@ -1120,7 +1121,7 @@ class BossStates:
         win, the way a full kill writes them: defeat count at least 1 and the
         defeated flag set, in both copies. The map flag is kept, so a boss
         still in its arena stays there. For a boss in its arena, the kill
-        counts of its spawn-once enemies are cleared so they spawn again.
+        counts of the fight's boss and enemies are cleared so they spawn again.
         Return how many bosses changed."""
         changed = 0
         for fight in self._selected(row_ids):
@@ -1145,8 +1146,8 @@ class BossStates:
 
     def respawn(self, row_ids: Iterable[int]) -> int:
         """Return the selected bosses to their arenas by clearing the map's
-        defeated flag and the kill counts of the fight's spawn-once enemies,
-        as a Bonfire Ascetic does. The defeat count and the defeated flag are
+        defeated flag and the kill counts of the fight's boss and enemies, as a
+        Bonfire Ascetic does. The defeat count and the defeated flag are
         kept. Return how many bosses changed."""
         changed = 0
         for fight in self._selected(row_ids):

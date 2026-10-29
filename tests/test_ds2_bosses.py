@@ -121,7 +121,7 @@ def test_kill_writes_what_the_game_writes():
     assert data == expected
 
 
-# BossBattleParam row 1014010, whose spawn-once enemies include Undead Laborer
+# BossBattleParam row 1014010, whose fight includes the spawn-once Undead Laborer
 # generators 2530 and 2533 in m10_14.
 MAGUS = BossFight(1014010, 114000096, 101000, 41, 14655)
 M10_14 = 0x0A0E0000
@@ -189,3 +189,23 @@ def test_respawn_resets_the_arena_kill_counts():
     expected = _magus_data()
     expected[KILLS] = 3
     assert data == expected
+
+
+# BossBattleParam row 5037000 (Burnt Ivory King, generator 908 in m50_37).
+IVORY_KING = BossFight(5037000, 537000086, 101070, 65, 537655)
+M50_37 = 0x32250000
+
+
+def test_boss_kill_count_without_a_win():
+    data = _data()
+    struct.pack_into("<II", data, RECORD, M50_37, 1)
+    struct.pack_into("<H", data, RECORD + 0x10, 908)
+    data[KILLS] = 1
+    view = BossStates(data, ANCHOR, (IVORY_KING,), MAPS, {M50_37: RECORD})
+    state = view.states()[0]
+    assert state.status is BossStatus.INVALID
+    assert state.problem == "1 arena enemy marked killed"
+
+    assert view.repair([IVORY_KING.row_id]) == 1
+    assert data[KILLS] == 0
+    assert view.states()[0].status is BossStatus.NOT_DEFEATED
