@@ -4,13 +4,11 @@
 > All notable changes to this project are documented here.
 
 ## 📦 Release 2.4.2
-**Released:** October 29, 2026
+**Released:** October 30, 2026
 
+### Dark Souls II
 
-### 🔧 Bug Fixes
-
-- General: Boss generator kill count left set blocks the boss (#446) ([d1731fd](https://github.com/Hapfel1/er-save-manager/commit/d1731fd70cb6675207acbf6e7bc224b3819128e2))
-
+- Fixed Respawn bringing back the fog, boss bar and music but no boss after a kill, and the Burnt Ivory King never leaving the 4th portal; Repair fixes saves already in that state ([d1731fd](https://github.com/Hapfel1/er-save-manager/commit/d1731fd70cb6675207acbf6e7bc224b3819128e2))
 
 ---
 ## 📦 Release 2.4.1
