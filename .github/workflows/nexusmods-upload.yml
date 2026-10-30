@@ -165,15 +165,37 @@ jobs:
           echo "resolved_version=$used_version" >> "$GITHUB_OUTPUT"
 
       # Nexus appends changelog text on every call for a version, so only one
-      # platform sends it.
-      - name: Build Nexus changelog from the release notes
+      # platform sends it. The text is the version's CHANGELOG.md section on
+      # the release branch, then on main: the tag and the draft release notes
+      # are made before later edits on the release branch, and a release can
+      # be published before its PR is merged. The release notes are the last
+      # fallback.
+      - name: Build Nexus changelog from CHANGELOG.md
         id: changelog
         if: matrix.platform == 'Windows'
         run: |
           set -euo pipefail
 
-          gh release view "${{ steps.download.outputs.resolved_version }}" \
-            --repo "${{ github.repository }}" --json body --jq .body > release_body.md
+          tag="${{ steps.download.outputs.resolved_version }}"
+          : > release_body.md
+          for ref in "release-v${tag#v}" main; do
+            if gh api "repos/${{ github.repository }}/contents/CHANGELOG.md?ref=$ref" \
+              -H "Accept: application/vnd.github.raw" > CHANGELOG.md 2>/dev/null; then
+              awk -v header="## 📦 Release ${tag#v}" '
+                /^## 📦 Release / { keep = ($0 == header) }
+                keep { print }
+              ' CHANGELOG.md > release_body.md
+            fi
+            if [ -s release_body.md ]; then
+              echo "Changelog from CHANGELOG.md on $ref."
+              break
+            fi
+          done
+          if [ ! -s release_body.md ]; then
+            echo "No CHANGELOG.md section for $tag, using the release notes."
+            gh release view "$tag" --repo "${{ github.repository }}" \
+              --json body --jq .body > release_body.md
+          fi
           text=$(python3 scripts/nexus_changelog.py < release_body.md)
           if [ -z "$text" ]; then
             echo "Release notes are empty, no changelog is added on Nexus Mods."
