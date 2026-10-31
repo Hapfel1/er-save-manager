@@ -3,6 +3,16 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.4.3
+**Released:** October 31, 2026
+
+
+### 🔧 Bug Fixes
+
+- ER: Added items scramble the Recent Items tab (#449) ([bce4804](https://github.com/Hapfel1/er-save-manager/commit/bce4804412c2f41d6f90fb088858deea2c5efcd8))
+
+
+---
 ## 📦 Release 2.4.2
 **Released:** October 30, 2026
 
