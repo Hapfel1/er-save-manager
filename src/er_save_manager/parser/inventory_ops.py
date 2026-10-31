@@ -736,27 +736,60 @@ def _gaitem_last_empty(slot, slot_data_base: int) -> int | None:
 # ---- inventory helpers ------------------------------------------------------
 
 
-def _global_next_acq_index(slot) -> int:
-    """Return next globally unique acquisition index (max across all inventories + 2)."""
-    max_seen = 0
-    for inv in (slot.inventory_held, slot.inventory_storage_box):
-        for it in inv.common_items:
-            # Ignore corrupted indices that exceed the 32-bit signed integer limit
-            if (
-                it.gaitem_handle != 0
-                and it.acquisition_index < 0x7FFFFFFF
-                and it.acquisition_index > max_seen
-            ):
-                max_seen = it.acquisition_index
-        for it in inv.key_items:
-            # Ignore corrupted indices that exceed the 32-bit signed integer limit
-            if (
-                it.gaitem_handle != 0
-                and it.acquisition_index < 0x7FFFFFFF
-                and it.acquisition_index > max_seen
-            ):
-                max_seen = it.acquisition_index
-    return max_seen + 2
+# Acquisition indices order the in-game Recent Items tab, compared unsigned
+# once the save is reloaded. Each inventory has its own index space: a new
+# item gets index 2 * acquisition_index_counter (u32) and the counter grows
+# by 1. Writing an index into the counter doubles every later index; once
+# 2 * counter wraps past 0xFFFFFFFF, new items sort below the older ones.
+# Inventories past these limits are renumbered well before that wrap.
+ACQ_INDEX_LIMIT = 0x80000000
+ACQ_COUNTER_LIMIT = ACQ_INDEX_LIMIT // 2
+
+
+def _acq_indices(inventory) -> list[int]:
+    return [
+        it.acquisition_index
+        for it in (*inventory.common_items, *inventory.key_items)
+        if it.gaitem_handle != 0
+    ]
+
+
+def acq_indices_overflowed(inventory) -> bool:
+    """True when an index or the counter is past the range the game can continue."""
+    return inventory.acquisition_index_counter >= ACQ_COUNTER_LIMIT or any(
+        i >= ACQ_INDEX_LIMIT for i in _acq_indices(inventory)
+    )
+
+
+def renumber_acq_indices(inventory) -> None:
+    """
+    Reassign acquisition indices 2, 4, 6... in their current unsigned order and
+    reset the counter to match, the spacing game-written saves use.
+    """
+    items = sorted(
+        (
+            it
+            for it in (*inventory.common_items, *inventory.key_items)
+            if it.gaitem_handle != 0
+        ),
+        key=lambda it: it.acquisition_index,
+    )
+    for n, it in enumerate(items, 1):
+        it.acquisition_index = 2 * n
+    inventory.acquisition_index_counter = len(items) + 1
+
+
+def _next_acq_index(inventory) -> tuple[int, int]:
+    """Return (index for a new item, counter after adding it) for one inventory."""
+    valid = [i for i in _acq_indices(inventory) if i < ACQ_INDEX_LIMIT]
+    top = max(valid, default=0)
+    counter = inventory.acquisition_index_counter
+    if counter >= ACQ_COUNTER_LIMIT:
+        counter = (top + 1) // 2
+    # Game-written saves have 2 * counter == top + 1 or top + 2. A counter
+    # inflated by older editor versions is not followed past top + 2.
+    index = max(top + 1, min(2 * counter, top + 2))
+    return index, max(counter + 1, index // 2 + 1)
 
 
 def _first_empty_inv_slot(inventory) -> int:
@@ -1101,7 +1134,7 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
 
 
 def _update_inv_counters(
-    slot, inventory, location: str, acq_idx: int, inv_slot: int, is_key: bool
+    inventory, acq_counter: int, inv_slot: int, is_key: bool
 ) -> None:
     """
     Update item counts and index counters after adding an inventory entry.
@@ -1123,10 +1156,7 @@ def _update_inv_counters(
     index = inv_slot if is_key else len(inventory.key_items) + inv_slot
     top = len(inventory.key_items) + len(inventory.common_items) - 1
     inventory.equip_index_counter = min(max(inventory.equip_index_counter, index), top)
-
-    slot.inventory_held.acquisition_index_counter = acq_idx
-    if location == "storage":
-        slot.inventory_storage_box.acquisition_index_counter = acq_idx
+    inventory.acquisition_index_counter = acq_counter
 
 
 # ---- public API -------------------------------------------------------------
@@ -1258,8 +1288,6 @@ def add_item(
                     f"item 0x{full_item_id:08X} already present (handle 0x{handle:08X})"
                 )
 
-    acq_idx = _global_next_acq_index(slot)
-
     is_key = _is_key_item(full_item_id)
     if is_key:
         inv_slot = _first_empty_key_slot(inventory)
@@ -1278,6 +1306,10 @@ def add_item(
             else:
                 raise ValueError("storage inventory is full")
 
+    if acq_indices_overflowed(inventory):
+        renumber_acq_indices(inventory)
+    acq_idx, acq_counter = _next_acq_index(inventory)
+
     entry = InventoryItem()
     entry.gaitem_handle = handle
     entry.quantity = quantity
@@ -1287,7 +1319,7 @@ def add_item(
         inventory.key_items[inv_slot] = entry
     else:
         inventory.common_items[inv_slot] = entry
-    _update_inv_counters(slot, inventory, location, acq_idx, inv_slot, is_key)
+    _update_inv_counters(inventory, acq_counter, inv_slot, is_key)
 
     _patch_slot(save, slot_idx, slot)
 
