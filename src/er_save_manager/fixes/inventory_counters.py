@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from er_save_manager.fixes.base import BaseFix, FixResult
-from er_save_manager.parser.inventory_ops import _patch_slot
+from er_save_manager.parser.inventory_ops import (
+    _patch_slot,
+    acq_indices_overflowed,
+    renumber_acq_indices,
+)
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
@@ -31,6 +35,10 @@ class InventoryCountersFix(BaseFix):
     equip_index_counter (held and storage) is an entry index high-water mark;
     game-written saves never exceed len(key_items) + len(common_items) - 1.
     A larger value crashes the game on load, so it is clamped to that bound.
+
+    Acquisition indices (Recent Items order) at or past 0x80000000, or a
+    counter that would push the next index there, are renumbered in their
+    current order.
     """
 
     name = "Inventory Counters"
@@ -50,6 +58,7 @@ class InventoryCountersFix(BaseFix):
                 i.equip_index_counter > _equip_index_top(i)
                 for i in (inv, slot.inventory_storage_box)
             )
+            or any(acq_indices_overflowed(i) for i in (inv, slot.inventory_storage_box))
         )
 
     def apply(self, save: Save, slot_index: int) -> FixResult:
@@ -83,6 +92,14 @@ class InventoryCountersFix(BaseFix):
                     f"{label} equip_index_counter: {i.equip_index_counter} -> {top}"
                 )
                 i.equip_index_counter = top
+                changed = True
+            if acq_indices_overflowed(i):
+                old = i.acquisition_index_counter
+                renumber_acq_indices(i)
+                details.append(
+                    f"{label} acquisition indices renumbered, counter "
+                    f"0x{old:X} -> {i.acquisition_index_counter}"
+                )
                 changed = True
 
         if not changed:

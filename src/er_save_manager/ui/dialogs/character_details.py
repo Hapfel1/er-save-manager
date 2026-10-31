@@ -160,7 +160,7 @@ def scan_character(save_file, slot_idx) -> CharacterScan:
         has_inv_counter_issue = InventoryCountersFix().detect(save_file, slot_idx)
         if has_inv_counter_issue:
             issues_detected.append(
-                "inventory_counters:Corrupted inventory item counters (can prevent key item pickups or cause crashes)"
+                "inventory_counters:Corrupted inventory item counters (can prevent key item pickups, cause crashes or scramble the Recent Items tab)"
             )
     except Exception:
         failed_checks.append("Inventory counters")

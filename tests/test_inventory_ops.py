@@ -144,6 +144,64 @@ def test_add_weapon_counters_follow_entry_positions(sanitized_save):
     assert held.equip_index_counter == len(held.key_items) + result["inventory_slot"]
 
 
+def _acq(inv):
+    return [
+        it.acquisition_index
+        for it in (*inv.common_items, *inv.key_items)
+        if it.gaitem_handle
+    ]
+
+
+def test_add_follows_game_acquisition_counter(sanitized_save):
+    slot = sanitized_save.character_slots[0]
+    held, storage = slot.inventory_held, slot.inventory_storage_box
+    # Game-written state: next index is 2 * counter, counter grows by 1
+    held.acquisition_index_counter = (max(_acq(held)) + 2) // 2
+    counter = held.acquisition_index_counter
+    storage_counter = storage.acquisition_index_counter
+
+    for k in range(3):
+        result = add_item(sanitized_save, 0, GOODS + k, quantity=1, location="held")
+        assert result["acquisition_index"] == max(_acq(held))
+        assert held.acquisition_index_counter == counter + k + 1
+    assert storage.acquisition_index_counter == storage_counter
+
+    # Counter equal to the top index (older editor writes) is not doubled
+    held.acquisition_index_counter = max(_acq(held))
+    top = max(_acq(held))
+    result = add_item(sanitized_save, 0, GOODS + 10, quantity=1, location="held")
+    assert result["acquisition_index"] == top + 2
+    assert held.acquisition_index_counter == top + 1
+
+
+def test_add_to_storage_uses_storage_index_space(sanitized_save):
+    slot = sanitized_save.character_slots[0]
+    held, storage = slot.inventory_held, slot.inventory_storage_box
+    held_counter = held.acquisition_index_counter
+    storage_top = max(_acq(storage), default=0)
+
+    result = add_item(sanitized_save, 0, GOODS, quantity=1, location="storage")
+    assert storage_top < result["acquisition_index"] <= storage_top + 2
+    assert held.acquisition_index_counter == held_counter
+
+
+def test_add_renumbers_wrapped_acquisition_indices(sanitized_save):
+    held = sanitized_save.character_slots[0].inventory_held
+    live = [it for it in held.common_items if it.gaitem_handle]
+    live[0].acquisition_index = 0x86EE5970
+    live[1].acquisition_index = 0xFFFFFFFE
+    held.acquisition_index_counter = 0x86EE5973
+    n = len(_acq(held))
+
+    result = add_item(sanitized_save, 0, GOODS, quantity=1, location="held")
+    indices = _acq(held)
+    assert sorted(indices) == list(range(2, 2 * (n + 1) + 1, 2))
+    assert live[1].acquisition_index == 2 * n
+    assert live[0].acquisition_index == 2 * n - 2
+    assert result["acquisition_index"] == 2 * n + 2
+    assert held.acquisition_index_counter == n + 2
+
+
 def test_bulk_add_keeps_handle_indices_in_range_and_unique(sanitized_save):
     for k in range(150):
         item = (ARMOR if k % 2 else WEAPON) + k * 10000

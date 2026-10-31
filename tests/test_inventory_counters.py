@@ -53,3 +53,31 @@ def test_clamps_equip_index_counter_past_array_end(sanitized_save):
     assert fix.apply(sanitized_save, 0).applied is True
     assert held.equip_index_counter == held_top
     assert storage.equip_index_counter == storage_top
+
+
+def test_renumbers_wrapped_acquisition_indices(sanitized_save):
+    slot = sanitized_save.character_slots[0]
+    held, storage = slot.inventory_held, slot.inventory_storage_box
+    fix = InventoryCountersFix()
+    assert fix.detect(sanitized_save, 0) is False
+
+    live = [it for it in held.common_items if it.gaitem_handle]
+    order = sorted(live, key=lambda it: it.acquisition_index)
+    order[0].acquisition_index = 0xC0000000
+    assert fix.detect(sanitized_save, 0) is True
+    result = fix.apply(sanitized_save, 0)
+    assert result.applied is True
+    assert order[0].acquisition_index == max(
+        it.acquisition_index
+        for it in held.common_items + held.key_items
+        if it.gaitem_handle
+    )
+    assert fix.detect(sanitized_save, 0) is False
+
+    storage.acquisition_index_counter = 0x7FFFFC02
+    assert fix.detect(sanitized_save, 0) is True
+    fix.apply(sanitized_save, 0)
+    assert (
+        storage.acquisition_index_counter
+        == _occupied(storage.common_items) + _occupied(storage.key_items) + 1
+    )
