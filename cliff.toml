@@ -42,19 +42,22 @@ body = """
 **Status:** Development in progress
 
 {% endif -%}
-{#- Entries are prefixed with their game, taken from the commit scope, and
-    listed game by game; any other scope (ui, backup, data) or none is General. -#}
+{#- Entries are prefixed with their game, taken from the first word of the
+    commit scope ("ER map" -> ER, "DSR, DS2" -> DSR, DS2), and listed game by
+    game; any other scope (ui, backup, data) or none is General. -#}
 {%- set games = ["ER", "DS3", "DS2", "DSR", "NR"] -%}
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | striptags | trim | upper_first }}
 {% for game in games | concat(with="General") -%}
 {% for commit in commits | unique(attribute="id") -%}
 {%- set scope = commit.scope | default(value="") | upper -%}
-{%- if scope in games %}{% set label = scope %}{% else %}{% set label = "General" %}{% endif -%}
+{%- set first = scope | replace(from=",", to=" ") | split(pat=" ") | first -%}
+{%- if first in games %}{% set label = first %}{% else %}{% set label = "General" %}{% endif -%}
+{%- if scope is matching("^(ER|DS3|DS2|DSR|NR)(, ?(ER|DS3|DS2|DSR|NR))*$") %}{% set prefix = scope %}{% else %}{% set prefix = label %}{% endif -%}
 {%- if label == game -%}
 {%- set pr_num = commit.remote.pr_number | default(value=0) -%}
 {%- set short_id = commit.id | truncate(length=7, end="") %}
-- {{ label }}: {{ commit.message | upper_first | trim }}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/Hapfel1/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/Hapfel1/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
+- {{ prefix }}: {{ commit.message | upper_first | trim }}{% if pr_num > 0 %} ([#{{ pr_num }}](https://github.com/Hapfel1/er-save-manager/pull/{{ pr_num }})){% endif %} ([{{ short_id }}](https://github.com/Hapfel1/er-save-manager/commit/{{ commit.id }})){% if commit.breaking %} ⚠️ **BREAKING CHANGE**{% endif %}
 {% endif -%}
 {% endfor -%}
 {% endfor %}
