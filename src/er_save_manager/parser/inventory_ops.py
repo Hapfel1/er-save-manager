@@ -736,11 +736,12 @@ def _gaitem_last_empty(slot, slot_data_base: int) -> int | None:
 # ---- inventory helpers ------------------------------------------------------
 
 
-# Acquisition indices sort the in-game Recent Items tab. The game keeps one
-# index space per inventory: each acquisition adds 1 to the inventory's
-# acquisition_index_counter and the new item's index lands near 2 * counter.
-# The game derives the next index from the counter, so writing an index into
-# the counter doubles every later index; at 0x80000000 they wrap.
+# Acquisition indices order the in-game Recent Items tab, compared unsigned
+# once the save is reloaded. Each inventory has its own index space: a new
+# item gets index 2 * acquisition_index_counter (u32) and the counter grows
+# by 1. Writing an index into the counter doubles every later index; once
+# 2 * counter wraps past 0xFFFFFFFF, new items sort below the older ones.
+# Inventories past these limits are renumbered well before that wrap.
 ACQ_INDEX_LIMIT = 0x80000000
 ACQ_COUNTER_LIMIT = ACQ_INDEX_LIMIT // 2
 
