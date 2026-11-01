@@ -39,7 +39,11 @@ game on its next save, so removing an item never needs to shrink the table.
 
 === PLAYER BLOCK (relative to gaitem end) ===
 
-  +0x10 base max HP, +0x1C base max FP, +0x2C base max stamina (u32)
+  +0x08 HP, +0x0C max HP, +0x10 base max HP (u32)
+  +0x14 FP, +0x18 max FP, +0x1C base max FP
+  +0x24 stamina, +0x28 max stamina, +0x2C base max stamina
+  Base max comes from the attribute alone; max adds equipment. The game
+  does not recompute the stored base from the attribute on load.
   +0x34 Vigor, Attunement, Endurance, Strength, Dexterity, Intelligence,
         Faith, Luck (u32 each), +0x5C Vitality, +0x60 level, +0x64 souls
   +0x78 name, UTF-16LE, 16 characters + terminator
@@ -161,9 +165,15 @@ _WA_HANDLE_FLAGS = 0x00800000
 
 # --- Player block (relative to gaitem end) ----------------------------------- #
 
+# (current, max, base max) of each resource
 _HP_REL = 0x10
 _FP_REL = 0x1C
 _STAMINA_REL = 0x2C
+_RESOURCE_REL = {
+    "hp": (0x08, 0x0C, _HP_REL),
+    "fp": (0x14, 0x18, _FP_REL),
+    "stamina": (0x24, 0x28, _STAMINA_REL),
+}
 _STAT_REL = {
     "vig": 0x34,
     "atn": 0x38,
@@ -665,6 +675,18 @@ class DS3Slot:
     stamina = _u32_prop(_STAMINA_REL)
     level = _u32_prop(_LEVEL_REL)
     del _u32_prop
+
+    def set_base_resource(self, kind: str, base: int) -> None:
+        """Write a new base max HP, FP or stamina and move the max and the
+        current value by the same amount, keeping the equipment bonus and
+        any missing amount."""
+        cur_rel, max_rel, base_rel = _RESOURCE_REL[kind]
+        delta = base - _read_u32(self._data, self._player(base_rel))
+        new_max = max(1, _read_u32(self._data, self._player(max_rel)) + delta)
+        cur = _read_u32(self._data, self._player(cur_rel)) + delta
+        _write_u32(self._data, self._player(base_rel), base)
+        _write_u32(self._data, self._player(max_rel), new_max)
+        _write_u32(self._data, self._player(cur_rel), min(max(cur, 1), new_max))
 
     def get_stat(self, key: str) -> int:
         rel = _STAT_REL.get(key.lower())

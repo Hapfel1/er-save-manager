@@ -1,5 +1,6 @@
 """
-DS3 catalog: the spawnable item lists, per-item limits and starting classes.
+DS3 catalog: the spawnable item lists, per-item limits, starting classes
+and attribute curves.
 
 Each game data source (the vanilla game, Convergence, Cinders) has a full
 item list, data/items.csv and data/<mod>_items.csv, one row per item,
@@ -298,3 +299,34 @@ def matching_sources(class_index: int, stats: dict[str, int], level: int) -> lis
         ):
             found.append(source)
     return found
+
+
+# --- Attribute curves -------------------------------------------------------- #
+
+_curves: dict = {}
+
+
+def base_resource(source: str, kind: str, value: int) -> int:
+    """Base max HP for vigor (kind "hp"), FP for attunement ("fp") or
+    stamina for endurance ("stamina"), from data/stat_curves.json.
+
+    HP and FP are the source's CalcCorrectGraph row 100 or 101: stage s
+    spans stage[s]..stage[s + 1]; the growth between grow[s] and
+    grow[s + 1] follows t ** adj[s] for adj > 0 and 1 - (1 - t) ** -adj[s]
+    for adj < 0, truncated to an integer. Stamina is a table for endurance
+    1-99, the same for every source."""
+    if not _curves:
+        _curves.update(
+            json.loads((_DATA_DIR / "stat_curves.json").read_text(encoding="utf-8"))
+        )
+    if kind == "stamina":
+        return _curves["stamina"][value - 1]
+    c = _curves[source][kind]
+    stage, grow, adj = c["stage"], c["grow"], c["adj"]
+    s = next((i for i in range(3) if value <= stage[i + 1]), 3)
+    t = min(max((value - stage[s]) / (stage[s + 1] - stage[s]), 0.0), 1.0)
+    if adj[s] > 0:
+        t = t ** adj[s]
+    elif adj[s] < 0:
+        t = 1 - (1 - t) ** -adj[s]
+    return int(grow[s] + (grow[s + 1] - grow[s]) * t)
