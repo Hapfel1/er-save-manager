@@ -19,12 +19,12 @@ from er_save_manager.games.DS2.save import (
 from er_save_manager.games.DS2.wording import counted
 from er_save_manager.games.DS2.world_flags import (
     DOORS,
+    INTERNAL_KIND,
     Door,
     DoorStatus,
     area_name,
     door_status,
-    flag_labels,
-    flag_map,
+    flag_infos,
     set_doors,
 )
 from er_save_manager.ui import dialog_style as ds
@@ -35,6 +35,7 @@ from er_save_manager.ui.utils import game_blocks_write, patch_combo_scroll
 from er_save_manager.validation.numbers import parse_whole
 
 _ALL_AREAS = "All areas"
+_ALL_KINDS = "All kinds"
 
 
 class _Page:
@@ -419,12 +420,13 @@ class DS2FlagsPanel(_Page):
     title = "Event Flags"
 
     def setup_ui(self) -> None:
-        self._labels = flag_labels()
+        self._infos = flag_infos()
         header = self._header()
         self._area_filter(
             header,
-            "Lists only the areas that have named flags (doors and fog gates). "
-            "Any other flag can be read and changed with the flag id field.",
+            "Lists only the areas that have named flags. Global flags used in "
+            "more than one area show under All areas. Any other flag can be "
+            "read and changed with the flag id field.",
         )
         self._search_var = ctk.StringVar()
         self._search_var.trace_add("write", lambda *_: self.refresh())
@@ -434,6 +436,36 @@ class DS2FlagsPanel(_Page):
             placeholder_text="Search names",
             width=200,
         ).pack(side="right", padx=(0, 12))
+
+        filters = ctk.CTkFrame(self.parent, fg_color="transparent")
+        filters.pack(fill="x", padx=10, pady=(0, 6))
+        ctk.CTkLabel(filters, text="Kind:").pack(side="left", padx=(0, 6))
+        kinds = list(dict.fromkeys(info.kind for info in self._infos.values()))
+        self._kind_var = ctk.StringVar(value=_ALL_KINDS)
+        kind_combo = ctk.CTkComboBox(
+            filters,
+            values=[_ALL_KINDS, *kinds],
+            variable=self._kind_var,
+            state="readonly",
+            width=160,
+            command=lambda _v: self.refresh(),
+        )
+        kind_combo.pack(side="left")
+        patch_combo_scroll(kind_combo)
+        self._internal_var = ctk.BooleanVar(value=False)
+        internal_box = ctk.CTkCheckBox(
+            filters,
+            text="Show internal flags",
+            variable=self._internal_var,
+            command=self.refresh,
+        )
+        internal_box.pack(side="left", padx=(12, 0))
+        add_tooltip(
+            internal_box,
+            "Internal flags are script state: cutscenes played, map connections, "
+            "set up steps and flags a script only reads. Changing one rarely has "
+            "a visible effect and can leave an event half done.",
+        )
 
         buttons = ctk.CTkFrame(self.parent, fg_color="transparent")
         buttons.pack(side="bottom", fill="x", padx=10, pady=(6, 10))
@@ -471,7 +503,8 @@ class DS2FlagsPanel(_Page):
             {
                 "flag": ("Flag", 110),
                 "area": ("Area", 200),
-                "name": ("Name", 460),
+                "kind": ("Kind", 90),
+                "name": ("Name", 400),
                 "state": ("State", 80),
             }
         )
@@ -495,14 +528,24 @@ class DS2FlagsPanel(_Page):
             self._update_buttons()
             self._update_id()
             return
-        stored = [f for f in self._labels if flags.is_stored(f)]
+        stored = [
+            f
+            for f, info in self._infos.items()
+            if flags.is_stored(f) and self._kind_matches(info.kind)
+        ]
+        stored.sort(key=self._row_order)
         self._set_areas(
-            list(dict.fromkeys(area_name(m) for f in stored if (m := flag_map(f))))
+            list(
+                dict.fromkeys(
+                    area_name(m) for f in stored if (m := self._infos[f].map_id)
+                )
+            )
         )
         query = self._search_var.get().strip().lower()
         for flag in stored:
-            map_id = flag_map(flag)
-            label = self._labels[flag]
+            info = self._infos[flag]
+            map_id = info.map_id
+            label = info.label
             if not self._area_matches(map_id) or query not in label.lower():
                 continue
             self._rows.append(flag)
@@ -512,6 +555,7 @@ class DS2FlagsPanel(_Page):
                 values=(
                     flag,
                     area_name(map_id) if map_id is not None else "Global",
+                    info.kind,
                     label,
                     "Set" if flags.get_flag(flag) else "Clear",
                 ),
@@ -519,6 +563,17 @@ class DS2FlagsPanel(_Page):
         self._summary_label.configure(text=f"{len(self._rows)} named flags")
         self._update_buttons()
         self._update_id()
+
+    def _row_order(self, flag: int) -> tuple[bool, str, int]:
+        """Area by area, global flags last."""
+        map_id = self._infos[flag].map_id
+        return map_id is None, area_name(map_id) if map_id is not None else "", flag
+
+    def _kind_matches(self, kind: str) -> bool:
+        picked = self._kind_var.get()
+        if picked != _ALL_KINDS:
+            return kind == picked
+        return kind != INTERNAL_KIND or self._internal_var.get()
 
     def _selected(self) -> list[int]:
         tree = self._tree_widget
@@ -566,8 +621,8 @@ class DS2FlagsPanel(_Page):
             text = "Not stored in the save"
         else:
             text = "Set" if flags.get_flag(flag) else "Clear"
-            if flag in self._labels:
-                text += f" - {self._labels[flag]}"
+            if flag in self._infos:
+                text += f" - {self._infos[flag].label}"
         self._id_state.configure(text=text)
         self._enable(
             (self._id_set, stored and not flags.get_flag(flag)),

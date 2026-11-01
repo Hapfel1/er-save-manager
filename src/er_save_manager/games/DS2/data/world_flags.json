@@ -1201,5 +1201,2995 @@
    "boss": false,
    "near": "Inner Wall"
   }
+ ],
+ "flags": [
+  {
+   "flag": 100001,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by elevator and fall damage events"
+  },
+  {
+   "flag": 100002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Majula - Shaded Woods lever door"
+  },
+  {
+   "flag": 100003,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Used by the lever platform 1"
+  },
+  {
+   "flag": 100004,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Used by the lever platform 2"
+  },
+  {
+   "flag": 100005,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Used by the lever platform 3"
+  },
+  {
+   "flag": 100010,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by ship, elevator and iron bar events"
+  },
+  {
+   "flag": 100020,
+   "map": 169279488,
+   "kind": "Internal",
+   "label": "Used by the iron bars break check"
+  },
+  {
+   "flag": 100210,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, later playthroughs 1"
+  },
+  {
+   "flag": 100211,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, first playthrough 1"
+  },
+  {
+   "flag": 100220,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, later playthroughs 2"
+  },
+  {
+   "flag": 100221,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, first playthrough 2"
+  },
+  {
+   "flag": 100230,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, later playthroughs 3"
+  },
+  {
+   "flag": 100231,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Crones' house, first playthrough 3"
+  },
+  {
+   "flag": 100300,
+   "map": null,
+   "kind": "Progress",
+   "label": "Lost Sinner's primal bonfire lit"
+  },
+  {
+   "flag": 100360,
+   "map": null,
+   "kind": "Progress",
+   "label": "Old Iron King's primal bonfire lit"
+  },
+  {
+   "flag": 100400,
+   "map": null,
+   "kind": "Progress",
+   "label": "The Rotten's primal bonfire lit"
+  },
+  {
+   "flag": 100420,
+   "map": 169869312,
+   "kind": "Internal",
+   "label": "Used by the fog door to Drangleic Castle"
+  },
+  {
+   "flag": 100450,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Laddersmith Gilligan: used by the small ladder"
+  },
+  {
+   "flag": 100451,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Laddersmith Gilligan: used by the medium ladder"
+  },
+  {
+   "flag": 100452,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Laddersmith Gilligan: used by the large ladder"
+  },
+  {
+   "flag": 100460,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the special door to Drangleic Castle"
+  },
+  {
+   "flag": 100461,
+   "map": null,
+   "kind": "Progress",
+   "label": "Duke's Dear Freja's primal bonfire lit"
+  },
+  {
+   "flag": 100500,
+   "map": 841351168,
+   "kind": "NPC",
+   "label": "Vendrick (memory): talk state 1"
+  },
+  {
+   "flag": 100600,
+   "map": 841154560,
+   "kind": "Internal",
+   "label": "Used by the DLC door (Shulva)"
+  },
+  {
+   "flag": 100601,
+   "map": 841220096,
+   "kind": "Internal",
+   "label": "Used by the DLC door (Brume Tower)"
+  },
+  {
+   "flag": 100602,
+   "map": 841285632,
+   "kind": "Internal",
+   "label": "Used by the DLC door (Eleum Loyce)"
+  },
+  {
+   "flag": 100603,
+   "map": 337117184,
+   "kind": "Internal",
+   "label": "Used by the warp to the Memory of the King"
+  },
+  {
+   "flag": 100610,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the DLC crown shop and DLC doors 1"
+  },
+  {
+   "flag": 100611,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the DLC crown shop and DLC doors 2"
+  },
+  {
+   "flag": 100612,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the DLC crown shop and DLC doors 3"
+  },
+  {
+   "flag": 100613,
+   "map": 337117184,
+   "kind": "Internal",
+   "label": "Used by the warp to the Memory of the King 2"
+  },
+  {
+   "flag": 100620,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 1"
+  },
+  {
+   "flag": 100621,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 2"
+  },
+  {
+   "flag": 100622,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 3"
+  },
+  {
+   "flag": 100623,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 4"
+  },
+  {
+   "flag": 100624,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 5"
+  },
+  {
+   "flag": 100625,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "DLC crown shop stock 6"
+  },
+  {
+   "flag": 100700,
+   "map": 841154560,
+   "kind": "Progress",
+   "label": "Shulva: first enemy group wiped out"
+  },
+  {
+   "flag": 100701,
+   "map": 841154560,
+   "kind": "Progress",
+   "label": "Shulva: Dragon blood knights wiped out"
+  },
+  {
+   "flag": 100702,
+   "map": 841154560,
+   "kind": "Progress",
+   "label": "Shulva: petrification route cleared"
+  },
+  {
+   "flag": 100710,
+   "map": 841220096,
+   "kind": "Internal",
+   "label": "Brume Tower: used by the Ashen Idol count"
+  },
+  {
+   "flag": 100711,
+   "map": 841220096,
+   "kind": "Progress",
+   "label": "Brume Tower: split route cleared"
+  },
+  {
+   "flag": 100712,
+   "map": 841220096,
+   "kind": "Progress",
+   "label": "Brume Tower: memory route cleared"
+  },
+  {
+   "flag": 100730,
+   "map": null,
+   "kind": "NPC",
+   "label": "Vendrick (memory): talk state 2"
+  },
+  {
+   "flag": 100731,
+   "map": 841351168,
+   "kind": "NPC",
+   "label": "Vendrick (memory): talk state 3"
+  },
+  {
+   "flag": 100740,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: talk state"
+  },
+  {
+   "flag": 100741,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (Brightstone Cove Tseldora)"
+  },
+  {
+   "flag": 100742,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (The Lost Bastille)"
+  },
+  {
+   "flag": 100743,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (Iron Keep)"
+  },
+  {
+   "flag": 100744,
+   "map": 169410560,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (Black Gulch)"
+  },
+  {
+   "flag": 100745,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: talk state (Dragon Aerie, Undead Crypt)"
+  },
+  {
+   "flag": 100746,
+   "map": 337117184,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (Undead Crypt)"
+  },
+  {
+   "flag": 100747,
+   "map": null,
+   "kind": "NPC",
+   "label": "Aldia: talk state (Dragon Aerie, Drangleic Castle)"
+  },
+  {
+   "flag": 100748,
+   "map": 169541632,
+   "kind": "NPC",
+   "label": "Aldia: used by his appearance (Dragon Aerie)"
+  },
+  {
+   "flag": 100760,
+   "map": 168689664,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (Brightstone Cove Tseldora)"
+  },
+  {
+   "flag": 100761,
+   "map": 168820736,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (The Lost Bastille)"
+  },
+  {
+   "flag": 100762,
+   "map": 169017344,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (Iron Keep)"
+  },
+  {
+   "flag": 100763,
+   "map": 169410560,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (Black Gulch)"
+  },
+  {
+   "flag": 100764,
+   "map": 337117184,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (Undead Crypt)"
+  },
+  {
+   "flag": 100765,
+   "map": 169541632,
+   "kind": "NPC",
+   "label": "Aldia: used by his talk (Dragon Aerie)"
+  },
+  {
+   "flag": 100780,
+   "map": 168820736,
+   "kind": "Shop",
+   "label": "Steady Hand McDuff: Agape Ring on sale"
+  },
+  {
+   "flag": 100790,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the guide white phantom summon"
+  },
+  {
+   "flag": 100804,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the King's Ring pickup and world map events"
+  },
+  {
+   "flag": 100866,
+   "map": 169541632,
+   "kind": "Internal",
+   "label": "Used by the Dragon Aerie egg pickup"
+  },
+  {
+   "flag": 100904,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the King's Soul pickup and Ornifex's menu"
+  },
+  {
+   "flag": 100905,
+   "map": null,
+   "kind": "Internal",
+   "label": "Set by the memory warp item pickups"
+  },
+  {
+   "flag": 101010,
+   "map": 168427520,
+   "kind": "Internal",
+   "label": "Used by the Pursuer's eagle ride"
+  },
+  {
+   "flag": 101020,
+   "map": 168427520,
+   "kind": "Boss",
+   "label": "The Last Giant: used by the cutscene"
+  },
+  {
+   "flag": 101030,
+   "map": 168427520,
+   "kind": "Boss",
+   "label": "The Pursuer: used by the cutscene"
+  },
+  {
+   "flag": 101060,
+   "map": 168427520,
+   "kind": "Internal",
+   "label": "Used by the giant memory warp (chandelier)"
+  },
+  {
+   "flag": 101100,
+   "map": 168689664,
+   "kind": "Shop",
+   "label": "Shop stock after Duke's Dear Freja"
+  },
+  {
+   "flag": 101101,
+   "map": 169017344,
+   "kind": "Shop",
+   "label": "Shop stock after Smelter Demon"
+  },
+  {
+   "flag": 101102,
+   "map": 168820736,
+   "kind": "Shop",
+   "label": "Shop stock after The Lost Sinner"
+  },
+  {
+   "flag": 101103,
+   "map": 169410560,
+   "kind": "Shop",
+   "label": "Shop stock after The Rotten"
+  },
+  {
+   "flag": 101200,
+   "map": 841154560,
+   "kind": "Shop",
+   "label": "Shop stock after Elana, the Squalid Queen"
+  },
+  {
+   "flag": 101201,
+   "map": 841154560,
+   "kind": "Shop",
+   "label": "Shop stock after Sinh, the Slumbering Dragon"
+  },
+  {
+   "flag": 101210,
+   "map": 841220096,
+   "kind": "Progress",
+   "label": "Nadalia's soul curse lifted"
+  },
+  {
+   "flag": 101211,
+   "map": 841220096,
+   "kind": "Shop",
+   "label": "Shop stock after Fume Knight"
+  },
+  {
+   "flag": 101212,
+   "map": 841220096,
+   "kind": "Shop",
+   "label": "Shop stock after Sir Alonne"
+  },
+  {
+   "flag": 101213,
+   "map": 168689664,
+   "kind": "Shop",
+   "label": "Shop stock after a DLC boss (Brightstone Cove Tseldora)"
+  },
+  {
+   "flag": 101220,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: talk state"
+  },
+  {
+   "flag": 101221,
+   "map": 841285632,
+   "kind": "Shop",
+   "label": "Shop stock after Aava, the King's Pet"
+  },
+  {
+   "flag": 101222,
+   "map": 841285632,
+   "kind": "Shop",
+   "label": "Shop stock after Lud and Zallen"
+  },
+  {
+   "flag": 101223,
+   "map": 841285632,
+   "kind": "Shop",
+   "label": "Shop stock after Burnt Ivory King"
+  },
+  {
+   "flag": 101410,
+   "map": 168689664,
+   "kind": "Boss",
+   "label": "Duke's Dear Freja: used by the cutscene"
+  },
+  {
+   "flag": 101420,
+   "map": 168689664,
+   "kind": "Internal",
+   "label": "Used by the warp to the Ancient Dragon memory"
+  },
+  {
+   "flag": 101610,
+   "map": 168820736,
+   "kind": "Boss",
+   "label": "The Lost Sinner: used by the cutscene"
+  },
+  {
+   "flag": 101620,
+   "map": 168427520,
+   "kind": "Internal",
+   "label": "Used by the Pursuer's eagle ride 2"
+  },
+  {
+   "flag": 101710,
+   "map": 168886272,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by the Harvest Valley ladder cutscene"
+  },
+  {
+   "flag": 101820,
+   "map": 168951808,
+   "kind": "Internal",
+   "label": "Used by the ship leaving with the compass"
+  },
+  {
+   "flag": 101910,
+   "map": 169017344,
+   "kind": "Boss",
+   "label": "Smelter Demon: used by the cutscene"
+  },
+  {
+   "flag": 102020,
+   "map": 337117184,
+   "kind": "NPC",
+   "label": "Grave Warden Agdayne: used by his state change"
+  },
+  {
+   "flag": 102174,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Laddersmith Gilligan: ladder menu option"
+  },
+  {
+   "flag": 102181,
+   "map": null,
+   "kind": "NPC",
+   "label": "Emerald Herald: level up unlocked"
+  },
+  {
+   "flag": 102310,
+   "map": 169279488,
+   "kind": "Boss",
+   "label": "Executioner's Chariot: used by the cutscene"
+  },
+  {
+   "flag": 102325,
+   "map": 169410560,
+   "kind": "NPC",
+   "label": "Darkdiver Grandahl: magic circle (Black Gulch)"
+  },
+  {
+   "flag": 102326,
+   "map": 336920576,
+   "kind": "NPC",
+   "label": "Darkdiver Grandahl: magic circle (Drangleic Castle)"
+  },
+  {
+   "flag": 102327,
+   "map": 169869312,
+   "kind": "NPC",
+   "label": "Darkdiver Grandahl: magic circle (Shaded Woods)"
+  },
+  {
+   "flag": 102328,
+   "map": null,
+   "kind": "Internal",
+   "label": "Darkdiver Grandahl: magic circle opened 1"
+  },
+  {
+   "flag": 102329,
+   "map": null,
+   "kind": "Internal",
+   "label": "Darkdiver Grandahl: magic circle opened 2"
+  },
+  {
+   "flag": 102330,
+   "map": null,
+   "kind": "Internal",
+   "label": "Darkdiver Grandahl: magic circle opened 3"
+  },
+  {
+   "flag": 102346,
+   "map": 168886272,
+   "kind": "NPC",
+   "label": "Lonesome Gavlan: used by his Harvest Valley talk"
+  },
+  {
+   "flag": 102349,
+   "map": 169934848,
+   "kind": "NPC",
+   "label": "Lonesome Gavlan: used by his Doors of Pharros talk"
+  },
+  {
+   "flag": 102402,
+   "map": 168689664,
+   "kind": "NPC",
+   "label": "Creighton the Wanderer: talk state (Tseldora)"
+  },
+  {
+   "flag": 102404,
+   "map": 168689664,
+   "kind": "Shop",
+   "label": "Cromwell the Pardoner: shop stock"
+  },
+  {
+   "flag": 102443,
+   "map": 168427520,
+   "kind": "NPC",
+   "label": "Mild Mannered Pate: used by his door switch and talk"
+  },
+  {
+   "flag": 102445,
+   "map": 168689664,
+   "kind": "NPC",
+   "label": "Mild Mannered Pate: talk state (Tseldora)"
+  },
+  {
+   "flag": 102601,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: shop stock 1"
+  },
+  {
+   "flag": 102602,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: shop stock 2"
+  },
+  {
+   "flag": 102603,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: shop stock 3"
+  },
+  {
+   "flag": 102604,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: later shop stock 1"
+  },
+  {
+   "flag": 102605,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: later shop stock 2"
+  },
+  {
+   "flag": 102606,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: later shop stock 3"
+  },
+  {
+   "flag": 102607,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Maughlin the Armourer: later shop stock 4"
+  },
+  {
+   "flag": 102610,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Maughlin the Armourer: state 1"
+  },
+  {
+   "flag": 102611,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Maughlin the Armourer: state 2"
+  },
+  {
+   "flag": 102612,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Maughlin the Armourer: state 3"
+  },
+  {
+   "flag": 102651,
+   "map": 169672704,
+   "kind": "NPC",
+   "label": "Rosabeth of Melfia: appearance set"
+  },
+  {
+   "flag": 102652,
+   "map": null,
+   "kind": "NPC",
+   "label": "Rosabeth of Melfia: menu state"
+  },
+  {
+   "flag": 102653,
+   "map": null,
+   "kind": "NPC",
+   "label": "Rosabeth of Melfia: appearance check"
+  },
+  {
+   "flag": 102682,
+   "map": 168820736,
+   "kind": "Shop",
+   "label": "Steady Hand McDuff: shop stock"
+  },
+  {
+   "flag": 102750,
+   "map": null,
+   "kind": "Internal",
+   "label": "Wandering enemy killed 1"
+  },
+  {
+   "flag": 102751,
+   "map": null,
+   "kind": "Internal",
+   "label": "Wandering enemy killed 2"
+  },
+  {
+   "flag": 102752,
+   "map": null,
+   "kind": "Internal",
+   "label": "Wandering enemy killed 3"
+  },
+  {
+   "flag": 102753,
+   "map": null,
+   "kind": "Internal",
+   "label": "Wandering enemy killed 4"
+  },
+  {
+   "flag": 102754,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the wandering enemy kill check 1"
+  },
+  {
+   "flag": 102755,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the wandering enemy kill check 2"
+  },
+  {
+   "flag": 102770,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Licia of Lindeldt: invasion item used"
+  },
+  {
+   "flag": 102820,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: used by his menu"
+  },
+  {
+   "flag": 102821,
+   "map": 169017344,
+   "kind": "NPC",
+   "label": "Magerold of Lanafir: petrified egg talk"
+  },
+  {
+   "flag": 102822,
+   "map": 169017344,
+   "kind": "Shop",
+   "label": "Magerold of Lanafir: shop stock"
+  },
+  {
+   "flag": 102830,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: menu option 1"
+  },
+  {
+   "flag": 102831,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: menu option 2"
+  },
+  {
+   "flag": 102832,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: menu option 3"
+  },
+  {
+   "flag": 102833,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: menu option 4"
+  },
+  {
+   "flag": 102860,
+   "map": 168034304,
+   "kind": "Shop",
+   "label": "Sweet Shalquoir: shop stock"
+  },
+  {
+   "flag": 102880,
+   "map": 169279488,
+   "kind": "Covenant",
+   "label": "Titchy Gren: used by his covenant talk"
+  },
+  {
+   "flag": 102920,
+   "map": 169803776,
+   "kind": "Covenant",
+   "label": "Blue Sentinel Targray: used by his covenant talk"
+  },
+  {
+   "flag": 102960,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Rat King: used by his covenant talk"
+  },
+  {
+   "flag": 102961,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Rat King: covenant item reward 1"
+  },
+  {
+   "flag": 102962,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Rat King: covenant item reward 2"
+  },
+  {
+   "flag": 102963,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Rat King: used by his menu"
+  },
+  {
+   "flag": 102970,
+   "map": 170000384,
+   "kind": "Internal",
+   "label": "Rat King: used by his Grave of Saints talk"
+  },
+  {
+   "flag": 102971,
+   "map": 169934848,
+   "kind": "Internal",
+   "label": "Rat King: used by his Doors of Pharros talk"
+  },
+  {
+   "flag": 102980,
+   "map": 169869312,
+   "kind": "NPC",
+   "label": "Manscorpion Tark: talk before Najka is defeated"
+  },
+  {
+   "flag": 102981,
+   "map": 169869312,
+   "kind": "NPC",
+   "label": "Manscorpion Tark: talk after Najka is defeated 1"
+  },
+  {
+   "flag": 102982,
+   "map": 169869312,
+   "kind": "NPC",
+   "label": "Manscorpion Tark: talk after Najka is defeated 2"
+  },
+  {
+   "flag": 102983,
+   "map": 169869312,
+   "kind": "NPC",
+   "label": "Manscorpion Tark: talk after Najka is defeated 3"
+  },
+  {
+   "flag": 103100,
+   "map": 168034304,
+   "kind": "Covenant",
+   "label": "Covenant of Champions: used by the tablet 1"
+  },
+  {
+   "flag": 103110,
+   "map": 168034304,
+   "kind": "Covenant",
+   "label": "Covenant of Champions: used by the tablet 2"
+  },
+  {
+   "flag": 103111,
+   "map": 168034304,
+   "kind": "Covenant",
+   "label": "Covenant of Champions: used by the tablet 3"
+  },
+  {
+   "flag": 103112,
+   "map": 168034304,
+   "kind": "Covenant",
+   "label": "Covenant of Champions: offering reward"
+  },
+  {
+   "flag": 103120,
+   "map": 168886272,
+   "kind": "Covenant",
+   "label": "Heirs of the Sun: used by the altar 1"
+  },
+  {
+   "flag": 103130,
+   "map": 168886272,
+   "kind": "Covenant",
+   "label": "Heirs of the Sun: used by the altar 2"
+  },
+  {
+   "flag": 103131,
+   "map": 168886272,
+   "kind": "Covenant",
+   "label": "Heirs of the Sun: used by the altar 3"
+  },
+  {
+   "flag": 103132,
+   "map": 168886272,
+   "kind": "Covenant",
+   "label": "Heirs of the Sun: used by the altar 4"
+  },
+  {
+   "flag": 103140,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by Ancient Dragon and Vendrick talk"
+  },
+  {
+   "flag": 103200,
+   "map": 841351168,
+   "kind": "NPC",
+   "label": "Vendrick (memory): talk state 4"
+  },
+  {
+   "flag": 103201,
+   "map": null,
+   "kind": "NPC",
+   "label": "Vendrick (memory): talk state 5"
+  },
+  {
+   "flag": 103300,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: used by her talk 1"
+  },
+  {
+   "flag": 103301,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: used by her talk 2"
+  },
+  {
+   "flag": 103302,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: used by her talk 3"
+  },
+  {
+   "flag": 103303,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: used by her talk and death"
+  },
+  {
+   "flag": 103310,
+   "map": 841285632,
+   "kind": "NPC",
+   "label": "Alsanna: used by her talk 4"
+  },
+  {
+   "flag": 103400,
+   "map": 841285632,
+   "kind": "Progress",
+   "label": "Brume Tower: dark spirit invader defeated"
+  },
+  {
+   "flag": 103500,
+   "map": null,
+   "kind": "NPC",
+   "label": "Head of Vengarl: hostile"
+  },
+  {
+   "flag": 103540,
+   "map": 336920576,
+   "kind": "NPC",
+   "label": "Nashandra: hostile"
+  },
+  {
+   "flag": 103970,
+   "map": 169541632,
+   "kind": "NPC",
+   "label": "Ancient Dragon: hostile"
+  },
+  {
+   "flag": 103980,
+   "map": 841351168,
+   "kind": "NPC",
+   "label": "Vendrick (memory): hostile"
+  },
+  {
+   "flag": 103999,
+   "map": null,
+   "kind": "NPC",
+   "label": "An NPC turned hostile (first time)"
+  },
+  {
+   "flag": 104000,
+   "map": null,
+   "kind": "NPC",
+   "label": "Head of Vengarl: dead"
+  },
+  {
+   "flag": 104040,
+   "map": 336920576,
+   "kind": "NPC",
+   "label": "Nashandra: dead"
+  },
+  {
+   "flag": 104470,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a black phantom invader"
+  },
+  {
+   "flag": 104480,
+   "map": 841220096,
+   "kind": "Internal",
+   "label": "Used by a Brume Tower dark spirit invader"
+  },
+  {
+   "flag": 105300,
+   "map": null,
+   "kind": "Internal",
+   "label": "Giant memory invasion state 1"
+  },
+  {
+   "flag": 105301,
+   "map": null,
+   "kind": "Internal",
+   "label": "Giant memory invasion state 2"
+  },
+  {
+   "flag": 105302,
+   "map": null,
+   "kind": "Internal",
+   "label": "Giant memory invasion state 3"
+  },
+  {
+   "flag": 105310,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the King's Gate navmesh change"
+  },
+  {
+   "flag": 105400,
+   "map": null,
+   "kind": "Internal",
+   "label": "Majula revolving door state"
+  },
+  {
+   "flag": 105405,
+   "map": null,
+   "kind": "Internal",
+   "label": "Lever door connection state"
+  },
+  {
+   "flag": 105415,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator map connection 1"
+  },
+  {
+   "flag": 105420,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator map connection 2"
+  },
+  {
+   "flag": 105425,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator map connection 3"
+  },
+  {
+   "flag": 105430,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator map connection 4"
+  },
+  {
+   "flag": 105440,
+   "map": null,
+   "kind": "Internal",
+   "label": "Huntsman's Copse map unload state"
+  },
+  {
+   "flag": 105501,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Used by the crones' house event"
+  },
+  {
+   "flag": 105528,
+   "map": 168034304,
+   "kind": "NPC",
+   "label": "Cartographer Cale: talk state"
+  },
+  {
+   "flag": 106100,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Used by the crones' house event 2"
+  },
+  {
+   "flag": 106200,
+   "map": 168427520,
+   "kind": "Internal",
+   "label": "Used by the giant tree fruit event"
+  },
+  {
+   "flag": 106300,
+   "map": 168689664,
+   "kind": "NPC",
+   "label": "Cromwell the Pardoner: pardon given"
+  },
+  {
+   "flag": 109990,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the wandering enemy spawn roll"
+  },
+  {
+   "flag": 111012,
+   "map": 169869312,
+   "kind": "Internal",
+   "label": "Head of Vengarl: used by the grave prompt"
+  },
+  {
+   "flag": 111022,
+   "map": 337117184,
+   "kind": "Internal",
+   "label": "Grave Warden Agdayne: used by the grave prompt"
+  },
+  {
+   "flag": 111052,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Emerald Herald: used by the grave prompt"
+  },
+  {
+   "flag": 111092,
+   "map": null,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by the grave prompt"
+  },
+  {
+   "flag": 111095,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by his ladder menu 1"
+  },
+  {
+   "flag": 111096,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by his ladder menu 2"
+  },
+  {
+   "flag": 111097,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by his ladder menu 3"
+  },
+  {
+   "flag": 111099,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: used by his appearance check"
+  },
+  {
+   "flag": 111102,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Firekeeper 1: used by the grave prompt"
+  },
+  {
+   "flag": 111112,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Firekeeper 2: used by the grave prompt"
+  },
+  {
+   "flag": 111122,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Firekeeper 3: used by the grave prompt"
+  },
+  {
+   "flag": 111152,
+   "map": 167903232,
+   "kind": "Internal",
+   "label": "Milibeth: used by the grave prompt"
+  },
+  {
+   "flag": 111162,
+   "map": 336199680,
+   "kind": "Internal",
+   "label": "Captain Drummond: used by the grave prompt"
+  },
+  {
+   "flag": 111182,
+   "map": null,
+   "kind": "Internal",
+   "label": "Darkdiver Grandahl: used by the grave prompt"
+  },
+  {
+   "flag": 111202,
+   "map": null,
+   "kind": "Internal",
+   "label": "Lonesome Gavlan: used by the grave prompt"
+  },
+  {
+   "flag": 111222,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Saulden: used by the grave prompt"
+  },
+  {
+   "flag": 111232,
+   "map": null,
+   "kind": "Internal",
+   "label": "Creighton the Wanderer: used by the grave prompt"
+  },
+  {
+   "flag": 111235,
+   "map": 168689664,
+   "kind": "Internal",
+   "label": "Used by the Pate and Creighton fight"
+  },
+  {
+   "flag": 111242,
+   "map": null,
+   "kind": "Internal",
+   "label": "Benhart of Jugo: used by the grave prompt"
+  },
+  {
+   "flag": 111252,
+   "map": null,
+   "kind": "Internal",
+   "label": "Mild Mannered Pate: used by the grave prompt"
+  },
+  {
+   "flag": 111255,
+   "map": 168689664,
+   "kind": "Internal",
+   "label": "Used by the Pate and Creighton death check"
+  },
+  {
+   "flag": 111256,
+   "map": 168689664,
+   "kind": "Internal",
+   "label": "Used by the Pate and Creighton fight result"
+  },
+  {
+   "flag": 111262,
+   "map": null,
+   "kind": "Internal",
+   "label": "Cartographer Cale: used by the grave prompt"
+  },
+  {
+   "flag": 111265,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Cartographer Cale: used by his move check"
+  },
+  {
+   "flag": 111266,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Cartographer Cale: used by his skeleton count"
+  },
+  {
+   "flag": 111272,
+   "map": null,
+   "kind": "Internal",
+   "label": "Lucatiel of Mirrah: used by the grave prompt"
+  },
+  {
+   "flag": 111282,
+   "map": null,
+   "kind": "Internal",
+   "label": "Bell Keeper: used by the grave prompt"
+  },
+  {
+   "flag": 111292,
+   "map": null,
+   "kind": "Internal",
+   "label": "Merchant Hag Melentia: used by the grave prompt"
+  },
+  {
+   "flag": 111302,
+   "map": 336265216,
+   "kind": "Internal",
+   "label": "Milfanito 1: used by the grave prompt"
+  },
+  {
+   "flag": 111312,
+   "map": 336265216,
+   "kind": "Internal",
+   "label": "Milfanito 2: used by the grave prompt"
+  },
+  {
+   "flag": 111322,
+   "map": 336920576,
+   "kind": "Internal",
+   "label": "Milfanito (captive): used by the grave prompt"
+  },
+  {
+   "flag": 111325,
+   "map": 336920576,
+   "kind": "Internal",
+   "label": "Milfanito (captive): used by her talk"
+  },
+  {
+   "flag": 111332,
+   "map": null,
+   "kind": "Internal",
+   "label": "Maughlin the Armourer: used by the grave prompt"
+  },
+  {
+   "flag": 111334,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Maughlin the Armourer: used by his shop list"
+  },
+  {
+   "flag": 111338,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Maughlin the Armourer: used by his state change"
+  },
+  {
+   "flag": 111342,
+   "map": null,
+   "kind": "Internal",
+   "label": "Stone Trader Chloanne: used by the grave prompt"
+  },
+  {
+   "flag": 111352,
+   "map": null,
+   "kind": "Internal",
+   "label": "Rosabeth of Melfia: used by the grave prompt"
+  },
+  {
+   "flag": 111355,
+   "map": null,
+   "kind": "Internal",
+   "label": "Rosabeth of Melfia: used by her appearance"
+  },
+  {
+   "flag": 111356,
+   "map": 169672704,
+   "kind": "Internal",
+   "label": "Rosabeth of Melfia: used by her petrification"
+  },
+  {
+   "flag": 111358,
+   "map": 169672704,
+   "kind": "Internal",
+   "label": "Rosabeth of Melfia: used by her removal"
+  },
+  {
+   "flag": 111362,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Blacksmith Lenigrast: used by the grave prompt"
+  },
+  {
+   "flag": 111372,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Steady Hand McDuff: used by the grave prompt"
+  },
+  {
+   "flag": 111374,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Steady Hand McDuff: used by his appearance after moving"
+  },
+  {
+   "flag": 111377,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Steady Hand McDuff: used by his move check"
+  },
+  {
+   "flag": 111392,
+   "map": null,
+   "kind": "Internal",
+   "label": "Carhillion of the Fold: used by the grave prompt"
+  },
+  {
+   "flag": 111395,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Carhillion of the Fold: used by the trophy check"
+  },
+  {
+   "flag": 111402,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Straid of Olaphis: used by the grave prompt"
+  },
+  {
+   "flag": 111404,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Straid of Olaphis: used by his petrified appearance"
+  },
+  {
+   "flag": 111405,
+   "map": 168820736,
+   "kind": "Internal",
+   "label": "Straid of Olaphis: used by the unpetrify prompt"
+  },
+  {
+   "flag": 111412,
+   "map": null,
+   "kind": "Internal",
+   "label": "Licia of Lindeldt: used by the grave prompt"
+  },
+  {
+   "flag": 111422,
+   "map": 169279488,
+   "kind": "Internal",
+   "label": "Felkin the Outcast: used by the grave prompt"
+  },
+  {
+   "flag": 111432,
+   "map": 168755200,
+   "kind": "Internal",
+   "label": "Royal Sorcerer Navlaan: used by the grave prompt"
+  },
+  {
+   "flag": 111442,
+   "map": 169017344,
+   "kind": "Internal",
+   "label": "Magerold of Lanafir: used by the grave prompt"
+  },
+  {
+   "flag": 111452,
+   "map": null,
+   "kind": "Internal",
+   "label": "Weaponsmith Ornifex: used by the grave prompt"
+  },
+  {
+   "flag": 111468,
+   "map": 168034304,
+   "kind": "Internal",
+   "label": "Sweet Shalquoir: used by her spawn"
+  },
+  {
+   "flag": 111472,
+   "map": 169279488,
+   "kind": "Internal",
+   "label": "Titchy Gren: used by the grave prompt"
+  },
+  {
+   "flag": 111482,
+   "map": 168689664,
+   "kind": "Internal",
+   "label": "Cromwell the Pardoner: used by the grave prompt"
+  },
+  {
+   "flag": 111492,
+   "map": 169803776,
+   "kind": "Internal",
+   "label": "Blue Sentinel Targray: used by the grave prompt"
+  },
+  {
+   "flag": 111512,
+   "map": null,
+   "kind": "Internal",
+   "label": "Rat King: used by the grave prompt"
+  },
+  {
+   "flag": 111522,
+   "map": 169869312,
+   "kind": "Internal",
+   "label": "Manscorpion Tark: used by the grave prompt"
+  },
+  {
+   "flag": 100000010,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Altar of the living (Shrine of Amana)"
+  },
+  {
+   "flag": 100000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the crones' house, first playthrough"
+  },
+  {
+   "flag": 102000010,
+   "map": null,
+   "kind": "Internal",
+   "label": "Crones' house cutscene 1"
+  },
+  {
+   "flag": 102000011,
+   "map": null,
+   "kind": "Internal",
+   "label": "Crones' house cutscene 2"
+  },
+  {
+   "flag": 102000012,
+   "map": null,
+   "kind": "Internal",
+   "label": "Crones' house cutscene 3"
+  },
+  {
+   "flag": 102000015,
+   "map": null,
+   "kind": "Internal",
+   "label": "Crones' house event finished"
+  },
+  {
+   "flag": 102000030,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the body type coffin"
+  },
+  {
+   "flag": 102000040,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a line drawing event"
+  },
+  {
+   "flag": 102000050,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 102000061,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the item reward for the Pursuer kill 1"
+  },
+  {
+   "flag": 102000062,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the item reward for the Pursuer kill 2"
+  },
+  {
+   "flag": 102000065,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the all braziers lit check"
+  },
+  {
+   "flag": 104000001,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the pig respawn 1"
+  },
+  {
+   "flag": 104000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the pig respawn 2"
+  },
+  {
+   "flag": 104000060,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 1)"
+  },
+  {
+   "flag": 104000061,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 2)"
+  },
+  {
+   "flag": 104000062,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 3)"
+  },
+  {
+   "flag": 104000063,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 4)"
+  },
+  {
+   "flag": 104000064,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 5)"
+  },
+  {
+   "flag": 104000065,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 6)"
+  },
+  {
+   "flag": 104000066,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 7)"
+  },
+  {
+   "flag": 104000067,
+   "map": null,
+   "kind": "Progress",
+   "label": "Majula skeleton killed (playthrough 8)"
+  },
+  {
+   "flag": 104000107,
+   "map": null,
+   "kind": "NPC",
+   "label": "Cartographer Cale: skeleton kill counted"
+  },
+  {
+   "flag": 110000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 110000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Pursuer's eagle arrival"
+  },
+  {
+   "flag": 110000024,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Pursuer's eagle arrival reward"
+  },
+  {
+   "flag": 110000025,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Pursuer's eagle arrival enemies"
+  },
+  {
+   "flag": 110000074,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the breakable Soldier Key door"
+  },
+  {
+   "flag": 110000079,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the King's Gate"
+  },
+  {
+   "flag": 110000082,
+   "map": null,
+   "kind": "Boss",
+   "label": "The Last Giant: cutscene played"
+  },
+  {
+   "flag": 110000087,
+   "map": null,
+   "kind": "Boss",
+   "label": "The Pursuer: cutscene played"
+  },
+  {
+   "flag": 114000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 114000052,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the pigs eating mushrooms"
+  },
+  {
+   "flag": 114000070,
+   "map": null,
+   "kind": "World",
+   "label": "Alarm chest triggered (spiders)"
+  },
+  {
+   "flag": 114000082,
+   "map": null,
+   "kind": "Boss",
+   "label": "Duke's Dear Freja: cutscene played"
+  },
+  {
+   "flag": 114000083,
+   "map": null,
+   "kind": "Boss",
+   "label": "Duke's Dear Freja: retreated after the first fight"
+  },
+  {
+   "flag": 114000085,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 1"
+  },
+  {
+   "flag": 114000086,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 2"
+  },
+  {
+   "flag": 114000087,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 3"
+  },
+  {
+   "flag": 114000088,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 4"
+  },
+  {
+   "flag": 114000089,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 5"
+  },
+  {
+   "flag": 114000090,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 6"
+  },
+  {
+   "flag": 114000091,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 7"
+  },
+  {
+   "flag": 114000092,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 8"
+  },
+  {
+   "flag": 114000093,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 9"
+  },
+  {
+   "flag": 114000094,
+   "map": null,
+   "kind": "Internal",
+   "label": "Duke's Dear Freja: saved health 10"
+  },
+  {
+   "flag": 114000114,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: result"
+  },
+  {
+   "flag": 114000118,
+   "map": null,
+   "kind": "NPC",
+   "label": "Creighton the Wanderer: fight appearance check"
+  },
+  {
+   "flag": 114000119,
+   "map": null,
+   "kind": "NPC",
+   "label": "Creighton the Wanderer: appearance after Pate died"
+  },
+  {
+   "flag": 114000124,
+   "map": null,
+   "kind": "NPC",
+   "label": "Mild Mannered Pate: talk state (Tseldora fight)"
+  },
+  {
+   "flag": 114000128,
+   "map": null,
+   "kind": "NPC",
+   "label": "Mild Mannered Pate: fight appearance check"
+  },
+  {
+   "flag": 114000140,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: outcome 1"
+  },
+  {
+   "flag": 114000141,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: outcome 2"
+  },
+  {
+   "flag": 114000142,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: outcome 3"
+  },
+  {
+   "flag": 114000143,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: outcome 4"
+  },
+  {
+   "flag": 114000144,
+   "map": null,
+   "kind": "NPC",
+   "label": "Pate and Creighton fight: outcome 5"
+  },
+  {
+   "flag": 114000150,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by Creighton's Tseldora talk"
+  },
+  {
+   "flag": 114000151,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by Pate's Tseldora talk"
+  },
+  {
+   "flag": 114000152,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by Ornifex, Pate and Creighton talk"
+  },
+  {
+   "flag": 115000015,
+   "map": null,
+   "kind": "Internal",
+   "label": "Cart broken, enemies spawned 1"
+  },
+  {
+   "flag": 115000016,
+   "map": null,
+   "kind": "Internal",
+   "label": "Cart broken, enemies spawned 2"
+  },
+  {
+   "flag": 115000017,
+   "map": null,
+   "kind": "Internal",
+   "label": "Cart broken, enemies spawned 3"
+  },
+  {
+   "flag": 115000050,
+   "map": null,
+   "kind": "World",
+   "label": "Ogre unpetrified"
+  },
+  {
+   "flag": 115000051,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 115000052,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 115000070,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by an enemy linked to a lantern 1"
+  },
+  {
+   "flag": 115000071,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by an enemy linked to a lantern 2"
+  },
+  {
+   "flag": 115000072,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by an enemy linked to a lantern 3"
+  },
+  {
+   "flag": 115000073,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by an enemy linked to a lantern 4"
+  },
+  {
+   "flag": 115000079,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the all lanterns lit check"
+  },
+  {
+   "flag": 116000005,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator below the boss room: start position"
+  },
+  {
+   "flag": 116000011,
+   "map": null,
+   "kind": "World",
+   "label": "Rolling fire barrel (first floor stairs) used"
+  },
+  {
+   "flag": 116000014,
+   "map": null,
+   "kind": "World",
+   "label": "Old key taken"
+  },
+  {
+   "flag": 116000016,
+   "map": null,
+   "kind": "World",
+   "label": "Stone hit, enemy cage raised from the well"
+  },
+  {
+   "flag": 116000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 1"
+  },
+  {
+   "flag": 116000021,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 2"
+  },
+  {
+   "flag": 116000031,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 116000035,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the flying gargoyle"
+  },
+  {
+   "flag": 116000036,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the flying gargoyle 2"
+  },
+  {
+   "flag": 116000037,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the flying gargoyle 3"
+  },
+  {
+   "flag": 116000038,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the flying gargoyle 4"
+  },
+  {
+   "flag": 116000039,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the flying gargoyle 5"
+  },
+  {
+   "flag": 116000061,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 116000087,
+   "map": null,
+   "kind": "Boss",
+   "label": "The Lost Sinner: cutscene played"
+  },
+  {
+   "flag": 117000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 117000055,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the windmill and the poison water drain"
+  },
+  {
+   "flag": 117000056,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the giant windmill"
+  },
+  {
+   "flag": 117000118,
+   "map": null,
+   "kind": "Internal",
+   "label": "Laddersmith Gilligan: ladder cutscene played"
+  },
+  {
+   "flag": 117000148,
+   "map": null,
+   "kind": "NPC",
+   "label": "Mild Mannered Pate: treasure taken"
+  },
+  {
+   "flag": 118000010,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the ship and its bell"
+  },
+  {
+   "flag": 118000012,
+   "map": null,
+   "kind": "World",
+   "label": "Lights lit by the lighthouse brazier"
+  },
+  {
+   "flag": 119000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 119000087,
+   "map": null,
+   "kind": "Boss",
+   "label": "Smelter Demon: start position changed"
+  },
+  {
+   "flag": 119000088,
+   "map": null,
+   "kind": "Boss",
+   "label": "Smelter Demon: cutscene played"
+  },
+  {
+   "flag": 123000042,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 123000050,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 1"
+  },
+  {
+   "flag": 123000051,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 2"
+  },
+  {
+   "flag": 123000082,
+   "map": null,
+   "kind": "Boss",
+   "label": "Executioner's Chariot: cutscene played"
+  },
+  {
+   "flag": 125000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 1"
+  },
+  {
+   "flag": 125000021,
+   "map": null,
+   "kind": "Internal",
+   "label": "Torture lift set up 2"
+  },
+  {
+   "flag": 125000027,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 125000029,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the all braziers lit check and an invader"
+  },
+  {
+   "flag": 125000052,
+   "map": null,
+   "kind": "World",
+   "label": "Item from the last enemy received"
+  },
+  {
+   "flag": 125000061,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 125000082,
+   "map": null,
+   "kind": "Boss",
+   "label": "The Rotten: cutscene played"
+  },
+  {
+   "flag": 127000030,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 127000041,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 130000001,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator set up"
+  },
+  {
+   "flag": 130000010,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 131000020,
+   "map": null,
+   "kind": "World",
+   "label": "Floor lever raised: boss arena platform 1"
+  },
+  {
+   "flag": 131000021,
+   "map": null,
+   "kind": "World",
+   "label": "Floor lever raised: boss arena platform 2"
+  },
+  {
+   "flag": 131000022,
+   "map": null,
+   "kind": "World",
+   "label": "Floor lever raised: drawbridge"
+  },
+  {
+   "flag": 131000025,
+   "map": null,
+   "kind": "World",
+   "label": "Boss arena platform extended 1"
+  },
+  {
+   "flag": 131000026,
+   "map": null,
+   "kind": "World",
+   "label": "Boss arena platform extended 2"
+  },
+  {
+   "flag": 132000010,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 1 unpetrified"
+  },
+  {
+   "flag": 132000012,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 2 unpetrified"
+  },
+  {
+   "flag": 132000014,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 3 unpetrified"
+  },
+  {
+   "flag": 132000016,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 4: used by the unpetrify prompt"
+  },
+  {
+   "flag": 132000017,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 5: used by the unpetrify prompt"
+  },
+  {
+   "flag": 132000018,
+   "map": null,
+   "kind": "World",
+   "label": "Lion Warrior 6: used by the unpetrify prompt"
+  },
+  {
+   "flag": 132000044,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 132000051,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the invisible enemies near the Shrine of Winter"
+  },
+  {
+   "flag": 132000055,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the King's Gate (Shaded Woods)"
+  },
+  {
+   "flag": 132000075,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a summon sign after the ruin phantoms"
+  },
+  {
+   "flag": 170000000,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the hollow lock-on rules"
+  },
+  {
+   "flag": 201000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the swinging chandelier"
+  },
+  {
+   "flag": 210000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Return from the giant: after the King's Gate"
+  },
+  {
+   "flag": 210000021,
+   "map": null,
+   "kind": "Internal",
+   "label": "Return from the giant: by Pate's passage"
+  },
+  {
+   "flag": 210000022,
+   "map": null,
+   "kind": "Internal",
+   "label": "Return from the giant: the Pursuer"
+  },
+  {
+   "flag": 210000070,
+   "map": null,
+   "kind": "World",
+   "label": "Giant soldier broke the wall 1"
+  },
+  {
+   "flag": 210000072,
+   "map": null,
+   "kind": "World",
+   "label": "Giant soldier broke the wall 2"
+  },
+  {
+   "flag": 211000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 211000010,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the banshee ascension and the hollow door"
+  },
+  {
+   "flag": 211000015,
+   "map": null,
+   "kind": "World",
+   "label": "Lizardmen in the cave all killed"
+  },
+  {
+   "flag": 211000016,
+   "map": null,
+   "kind": "World",
+   "label": "Lizardmen in the square all killed"
+  },
+  {
+   "flag": 211000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator set up"
+  },
+  {
+   "flag": 211000030,
+   "map": null,
+   "kind": "World",
+   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+  },
+  {
+   "flag": 221000001,
+   "map": null,
+   "kind": "Boss",
+   "label": "Aldia: fight started"
+  },
+  {
+   "flag": 221000007,
+   "map": null,
+   "kind": "Boss",
+   "label": "Aldia: fight start position set"
+  },
+  {
+   "flag": 221000010,
+   "map": null,
+   "kind": "World",
+   "label": "Elevator golem activated 1"
+  },
+  {
+   "flag": 221000015,
+   "map": null,
+   "kind": "Internal",
+   "label": "Elevator set up"
+  },
+  {
+   "flag": 221000021,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the King's Gate (Drangleic Castle)"
+  },
+  {
+   "flag": 221000025,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the mask chest trap"
+  },
+  {
+   "flag": 221000030,
+   "map": null,
+   "kind": "World",
+   "label": "Soul-drinking golem 1 activated (lights)"
+  },
+  {
+   "flag": 221000031,
+   "map": null,
+   "kind": "World",
+   "label": "Soul-drinking golem 2 activated (lights)"
+  },
+  {
+   "flag": 221000032,
+   "map": null,
+   "kind": "World",
+   "label": "Elevator golem activated 2"
+  },
+  {
+   "flag": 221000034,
+   "map": null,
+   "kind": "World",
+   "label": "Golem door 2"
+  },
+  {
+   "flag": 221000035,
+   "map": null,
+   "kind": "World",
+   "label": "Golem door 3"
+  },
+  {
+   "flag": 221000038,
+   "map": null,
+   "kind": "World",
+   "label": "Golem door 6"
+  },
+  {
+   "flag": 221000044,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 221000093,
+   "map": null,
+   "kind": "Internal",
+   "label": "Retry point after Nashandra"
+  },
+  {
+   "flag": 221000094,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the end credits"
+  },
+  {
+   "flag": 221000097,
+   "map": null,
+   "kind": "Internal",
+   "label": "Throne Watcher and Nashandra cutscene 1"
+  },
+  {
+   "flag": 221000098,
+   "map": null,
+   "kind": "Internal",
+   "label": "Throne Watcher and Nashandra cutscene 2"
+  },
+  {
+   "flag": 224000001,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the crown unlock message"
+  },
+  {
+   "flag": 224000005,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 224000020,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 1 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000021,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 2 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000022,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 3 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000023,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 4 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000024,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 5 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000025,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 6 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000026,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 7 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000027,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 8 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000028,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 9 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000029,
+   "map": null,
+   "kind": "World",
+   "label": "Gravestone 10 destroyed, enemies stop spawning"
+  },
+  {
+   "flag": 224000050,
+   "map": null,
+   "kind": "World",
+   "label": "Used by the giant candlestick lighting"
+  },
+  {
+   "flag": 224000051,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 1"
+  },
+  {
+   "flag": 224000052,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 2"
+  },
+  {
+   "flag": 224000053,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 3"
+  },
+  {
+   "flag": 224000054,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 4"
+  },
+  {
+   "flag": 224000055,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 5"
+  },
+  {
+   "flag": 224000056,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 6"
+  },
+  {
+   "flag": 224000057,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 7"
+  },
+  {
+   "flag": 224000058,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 8"
+  },
+  {
+   "flag": 224000059,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 9"
+  },
+  {
+   "flag": 224000060,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 10"
+  },
+  {
+   "flag": 224000061,
+   "map": null,
+   "kind": "World",
+   "label": "Giant candlestick lit 11"
+  },
+  {
+   "flag": 224000065,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by enemies that appear when a brazier is lit"
+  },
+  {
+   "flag": 224000082,
+   "map": null,
+   "kind": "Boss",
+   "label": "Velstadt: cutscene played"
+  },
+  {
+   "flag": 224000088,
+   "map": null,
+   "kind": "Boss",
+   "label": "Vendrick: used by his hostility check"
+  },
+  {
+   "flag": 226000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the warp to Tseldora"
+  },
+  {
+   "flag": 290000130,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the ballista soul reward"
+  },
+  {
+   "flag": 403000001,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Dark Chasm brazier 1"
+  },
+  {
+   "flag": 403000002,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Dark Chasm brazier 2"
+  },
+  {
+   "flag": 403000003,
+   "map": null,
+   "kind": "Covenant",
+   "label": "Dark Chasm brazier 3"
+  },
+  {
+   "flag": 535000011,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 535000028,
+   "map": null,
+   "kind": "World",
+   "label": "Spike floor switch"
+  },
+  {
+   "flag": 535000032,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the waking dragon 1"
+  },
+  {
+   "flag": 535000034,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the waking dragon 2"
+  },
+  {
+   "flag": 535000036,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the crown that appears after the boss"
+  },
+  {
+   "flag": 535000050,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 1"
+  },
+  {
+   "flag": 535000051,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 2"
+  },
+  {
+   "flag": 535000052,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 3"
+  },
+  {
+   "flag": 535000053,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 4"
+  },
+  {
+   "flag": 535000054,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 5"
+  },
+  {
+   "flag": 535000055,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 6"
+  },
+  {
+   "flag": 535000056,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 7"
+  },
+  {
+   "flag": 535000057,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 8"
+  },
+  {
+   "flag": 535000058,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a phantom knight taking form 9"
+  },
+  {
+   "flag": 535000083,
+   "map": null,
+   "kind": "NPC",
+   "label": "Elana: talk state"
+  },
+  {
+   "flag": 535000085,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the boss health bar and music"
+  },
+  {
+   "flag": 536000001,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the repeated invasions"
+  },
+  {
+   "flag": 536000010,
+   "map": null,
+   "kind": "World",
+   "label": "Brume Tower machinery started"
+  },
+  {
+   "flag": 536000012,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the elevator before the boss"
+  },
+  {
+   "flag": 536000013,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the elevator in the other tower"
+  },
+  {
+   "flag": 536000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the crown and Nadalia's soul"
+  },
+  {
+   "flag": 536000022,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the return from the Memory of the Old Iron King"
+  },
+  {
+   "flag": 536000024,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the other tower's lights"
+  },
+  {
+   "flag": 536000026,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by Nadalia's soul curse"
+  },
+  {
+   "flag": 536000039,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Ashen Idol count"
+  },
+  {
+   "flag": 536000040,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 1"
+  },
+  {
+   "flag": 536000041,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 2"
+  },
+  {
+   "flag": 536000042,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 3"
+  },
+  {
+   "flag": 536000043,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 4"
+  },
+  {
+   "flag": 536000044,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 5"
+  },
+  {
+   "flag": 536000046,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 6"
+  },
+  {
+   "flag": 536000047,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 7"
+  },
+  {
+   "flag": 536000048,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 8"
+  },
+  {
+   "flag": 536000049,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 9"
+  },
+  {
+   "flag": 536000050,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 10"
+  },
+  {
+   "flag": 536000051,
+   "map": null,
+   "kind": "World",
+   "label": "Ashen Idol 11"
+  },
+  {
+   "flag": 536000059,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Ashen Idol count and Nadalia's curse"
+  },
+  {
+   "flag": 536000068,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 537000001,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: talk state 1"
+  },
+  {
+   "flag": 537000002,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the crown and the boss room return"
+  },
+  {
+   "flag": 537000005,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the coffin sled"
+  },
+  {
+   "flag": 537000006,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the ice barrier"
+  },
+  {
+   "flag": 537000011,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: talk state 2"
+  },
+  {
+   "flag": 537000012,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Aava fight and invisible enemies"
+  },
+  {
+   "flag": 537000018,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the tiger roar"
+  },
+  {
+   "flag": 537000019,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the soul from Alsanna's death"
+  },
+  {
+   "flag": 537000020,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Burnt Ivory King summon signs 1"
+  },
+  {
+   "flag": 537000021,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Burnt Ivory King summon signs 2"
+  },
+  {
+   "flag": 537000022,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the Burnt Ivory King summon signs 3"
+  },
+  {
+   "flag": 537000026,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a fallen Loyce knight 1"
+  },
+  {
+   "flag": 537000027,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a fallen Loyce knight 2"
+  },
+  {
+   "flag": 537000028,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a fallen Loyce knight 3"
+  },
+  {
+   "flag": 537000029,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a fallen Loyce knight 4"
+  },
+  {
+   "flag": 537000040,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the elevator at the city entrance"
+  },
+  {
+   "flag": 537000056,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by a wandering enemy spawn (Scholar of the First Sin)"
+  },
+  {
+   "flag": 537000070,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the frozen mimic (with body)"
+  },
+  {
+   "flag": 537000071,
+   "map": null,
+   "kind": "Internal",
+   "label": "Used by the frozen mimic (without body)"
+  },
+  {
+   "flag": 537000150,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: approach state 1"
+  },
+  {
+   "flag": 537000151,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: approach state 2"
+  },
+  {
+   "flag": 537000152,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: approach state 3"
+  },
+  {
+   "flag": 537000153,
+   "map": null,
+   "kind": "NPC",
+   "label": "Alsanna: approach state 4"
+  }
  ]
 }
