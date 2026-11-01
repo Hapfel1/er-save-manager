@@ -1,5 +1,5 @@
-"""DS2 map object and treasure states (WorldObjects), door data and door
-writes."""
+"""DS2 map object and treasure states (WorldObjects), door and named flag
+data, and door writes."""
 
 from __future__ import annotations
 
@@ -9,9 +9,12 @@ from er_save_manager.games.DS2.save import EventFlags, WorldObjects
 from er_save_manager.games.DS2.world_flags import (
     AREAS,
     DOORS,
+    INTERNAL_KIND,
+    NAMED_FLAGS,
     Door,
     DoorStatus,
     door_status,
+    flag_infos,
     set_doors,
 )
 
@@ -156,3 +159,29 @@ def test_door_table():
             door.map_id >> 16 & 0xFF
         )
     assert len({d.flag for d in DOORS}) == len(DOORS)
+
+
+def test_named_flag_table():
+    assert NAMED_FLAGS
+    assert len({f.flag for f in NAMED_FLAGS}) == len(NAMED_FLAGS)
+    door_or_gate = {
+        i for i, info in flag_infos().items() if info.kind in ("Door", "Fog gate")
+    }
+    for named in NAMED_FLAGS:
+        assert named.label and named.kind
+        assert named.flag not in door_or_gate
+        if named.flag >= 100_000_000:
+            assert named.flag % 1_000_000 < 200
+            assert named.map_id is None
+        else:
+            assert 100_000 <= named.flag <= 119_999
+            assert named.map_id is None or named.map_id in AREAS
+    assert any(f.kind == INTERNAL_KIND for f in NAMED_FLAGS)
+
+
+def test_flag_infos_area_of_map_and_global_flags():
+    infos = flag_infos()
+    assert infos[224000020].map_id == 20 << 24 | 24 << 16
+    assert infos[104000060].map_id == 10 << 24 | 4 << 16
+    assert infos[102860].map_id == 10 << 24 | 4 << 16
+    assert infos[100300].map_id is None

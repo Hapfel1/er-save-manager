@@ -1,6 +1,6 @@
 """
-DS2 doors, fog gates and area names from data/world_flags.json, and the door
-open/close writes.
+DS2 doors, fog gates, other named event flags and area names from
+data/world_flags.json, and the door open/close writes.
 
 A door is open when its event flag is set and its map object holds the open
 state; the game needs both. The open state is 30 for key and one-way doors
@@ -42,6 +42,28 @@ class FogGate:
         return "Boss fog gate passed" if self.boss else "Fog gate passed"
 
 
+@dataclass(frozen=True)
+class NamedFlag:
+    """An event flag listed by itself. map_id is the area of a global flag
+    whose scripts all belong to one map, None for other globals and for map
+    flags (their map comes from the id)."""
+
+    flag: int
+    map_id: int | None
+    kind: str
+    label: str
+
+
+@dataclass(frozen=True)
+class FlagInfo:
+    kind: str
+    label: str
+    map_id: int | None
+
+
+INTERNAL_KIND = "Internal"
+
+
 class DoorStatus(Enum):
     """The values double as display labels."""
 
@@ -51,7 +73,9 @@ class DoorStatus(Enum):
     MISSING = "Not in this save"
 
 
-def _load() -> tuple[dict[int, str], tuple[Door, ...], tuple[FogGate, ...]]:
+def _load() -> tuple[
+    dict[int, str], tuple[Door, ...], tuple[FogGate, ...], tuple[NamedFlag, ...]
+]:
     data = json.loads(_DATA_FILE.read_text(encoding="utf-8"))
     areas = {int(k): v for k, v in data["areas"].items()}
     doors = tuple(
@@ -62,10 +86,13 @@ def _load() -> tuple[dict[int, str], tuple[Door, ...], tuple[FogGate, ...]]:
         FogGate(f["map"], f["flag"], f["object"], f["boss"], f["near"])
         for f in data["fog_gates"]
     )
-    return areas, doors, fog
+    named = tuple(
+        NamedFlag(f["flag"], f["map"], f["kind"], f["label"]) for f in data["flags"]
+    )
+    return areas, doors, fog, named
 
 
-AREAS, DOORS, FOG_GATES = _load()
+AREAS, DOORS, FOG_GATES, NAMED_FLAGS = _load()
 
 
 def area_name(map_id: int) -> str:
@@ -79,16 +106,23 @@ def flag_map(flag_id: int) -> int | None:
     return (flag_id // 100_000_000 * 10) << 24 | (flag_id // 1_000_000 % 100) << 16
 
 
-def flag_labels() -> dict[int, str]:
-    """Flag id -> label for every door and fog gate flag."""
-    labels = {}
+def flag_infos() -> dict[int, FlagInfo]:
+    """Flag id -> kind, label and area for every door, fog gate and named flag."""
+    infos = {}
     for gate in FOG_GATES:
         near = f" near {gate.near}" if gate.near else ""
-        labels.setdefault(gate.flag, f"{gate.label}{near}")
+        infos.setdefault(
+            gate.flag, FlagInfo("Fog gate", f"{gate.label}{near}", flag_map(gate.flag))
+        )
     for door in DOORS:
         near = f" near {door.near}" if door.near else ""
-        labels[door.flag] = f"{door.label} opened{near}"
-    return labels
+        infos[door.flag] = FlagInfo(
+            "Door", f"{door.label} opened{near}", flag_map(door.flag)
+        )
+    for named in NAMED_FLAGS:
+        map_id = named.map_id if named.map_id is not None else flag_map(named.flag)
+        infos.setdefault(named.flag, FlagInfo(named.kind, named.label, map_id))
+    return infos
 
 
 def door_status(door: Door, flags: EventFlags, objects: WorldObjects) -> DoorStatus:
