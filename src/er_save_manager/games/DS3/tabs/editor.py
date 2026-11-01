@@ -43,6 +43,8 @@ from er_save_manager.validation.names import name_problem
 
 # NG+ text for a character whose NG+ counter cannot be located
 _NG_UNKNOWN = "--"
+# Attribute that sets each resource's base max
+_RESOURCE_STAT = {"vig": "hp", "atn": "fp", "end": "stamina"}
 
 
 def _game_blocks_write(parent) -> bool:
@@ -92,6 +94,8 @@ class DS3EditorTab:
         # no row for: the level then moves by the change in the sum.
         self._loaded_level = 0
         self._loaded_sum = 0
+        # Base max HP, FP and stamina as loaded
+        self._loaded_resources = {"hp": 0, "fp": 0, "stamina": 0}
         self.inventory = None
         # Stat key -> label, filled while the Stats page is built
         self._stat_labels: dict[str, str] = {}
@@ -253,9 +257,9 @@ class DS3EditorTab:
             )
             var = tk.StringVar(value="0")
             self._stat_vars[key] = var
-            # The game derives HP, FP and stamina from the attributes on load;
-            # level follows from the class and the attributes; weapon level
-            # follows Set Upgrade in the Inventory tab.
+            # HP, FP and stamina follow vigor, attunement and endurance
+            # (written on apply), level follows the class and the attributes,
+            # weapon level follows Set Upgrade in the Inventory tab.
             derived = key in ("level", "hp", "fp", "stamina", "weapon_level")
             entry = ctk.CTkEntry(
                 rg,
@@ -383,7 +387,16 @@ class DS3EditorTab:
             self._stat_vars[key].trace_add(
                 "write", lambda *_: self._auto_recalc_level()
             )
+        for key in _RESOURCE_STAT:
+            self._stat_vars[key].trace_add(
+                "write", lambda *_: self._auto_recalc_resources()
+            )
         self._stat_vars["souls"].set(str(char.souls))
+        self._loaded_resources = {
+            "hp": char.hp,
+            "fp": char.fp,
+            "stamina": char.stamina,
+        }
         self._stat_vars["hp"].set(str(char.hp))
         self._stat_vars["fp"].set(str(char.fp))
         self._stat_vars["stamina"].set(str(char.stamina))
@@ -528,6 +541,7 @@ class DS3EditorTab:
         self._class_combo.configure(values=[c.name for c in self._classes()])
         clean = self._stats_tracker.changes() == 0
         self._show_loaded_class()
+        self._auto_recalc_resources()
         self._class_source = self._source
         # The class and level from the other class table are no edit, as on load
         if clean:
@@ -604,6 +618,27 @@ class DS3EditorTab:
             self._stat_vars["level"].set(str(self._loaded_level))
             return
         self._stat_vars["level"].set(str(self._derived_level(stats)))
+
+    def _resource_values(self, char) -> dict[str, int]:
+        """Base max HP, FP and stamina for the entered vigor, attunement and
+        endurance; the stored value where the attribute is unchanged or not a
+        valid number."""
+        values = dict(self._loaded_resources)
+        for stat, kind in _RESOURCE_STAT.items():
+            try:
+                v = int(self._stat_vars[stat].get())
+            except ValueError:
+                continue
+            if 1 <= v <= MAX_STAT and v != char.get_stat(stat):
+                values[kind] = catalog.base_resource(self._source, kind, v)
+        return values
+
+    def _auto_recalc_resources(self) -> None:
+        char = self._loaded_char()
+        if char is None:
+            return
+        for kind, v in self._resource_values(char).items():
+            self._stat_vars[kind].set(str(v))
 
     # --- Pending changes ----------------------------------------------------- #
 
@@ -689,7 +724,15 @@ class DS3EditorTab:
         if problems:
             raise StageError("\n".join(problems))
 
+        resources = {
+            kind: v
+            for kind, v in self._resource_values(char).items()
+            if v != self._loaded_resources[kind]
+        }
+
         def commit() -> None:
+            for kind, v in resources.items():
+                char.set_base_resource(kind, v)
             for key, v in stats.items():
                 char.set_stat(key, v)
             char.level = level

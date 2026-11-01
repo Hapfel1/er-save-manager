@@ -83,6 +83,46 @@ def test_starting_classes():
     assert all(sum(c.stats.values()) - c.level == 89 for c in classes)
 
 
+def test_base_resource_curves(slot):
+    assert slot.hp == catalog.base_resource("vanilla", "hp", slot.get_stat("vig"))
+    assert slot.fp == catalog.base_resource("vanilla", "fp", slot.get_stat("atn"))
+    assert slot.stamina == catalog.base_resource(
+        "vanilla", "stamina", slot.get_stat("end")
+    )
+    # Values the game wrote on vanilla and modded characters
+    for source, kind, value, base in (
+        ("vanilla", "hp", 27, 1000),
+        ("vanilla", "hp", 50, 1300),
+        ("vanilla", "fp", 6, 72),
+        ("vanilla", "fp", 14, 114),
+        ("convergence", "hp", 13, 766),
+        ("convergence", "hp", 25, 1100),
+        ("cinders", "hp", 25, 1140),
+        ("cinders", "fp", 10, 171),
+        ("vanilla", "stamina", 9, 92),
+        ("vanilla", "stamina", 28, 129),
+        ("vanilla", "stamina", 40, 160),
+        ("vanilla", "stamina", 99, 170),
+    ):
+        assert catalog.base_resource(source, kind, value) == base
+    for source in catalog.SOURCES:
+        for kind in ("hp", "fp", "stamina"):
+            values = [catalog.base_resource(source, kind, v) for v in range(1, 100)]
+            assert values == sorted(values)
+
+
+def test_set_base_resource_keeps_bonus_and_damage(slot):
+    # (current, max, base max) HP
+    hp_rel = slot._player(0x08)
+    struct.pack_into("<III", slot._data, hp_rel, 400, 500, 454)
+    slot.set_base_resource("hp", 1000)
+    assert struct.unpack_from("<III", slot._data, hp_rel) == (946, 1046, 1000)
+    assert slot.hp == 1000
+    # Lowering the base never takes the current value below 1.
+    slot.set_base_resource("hp", 1)
+    assert struct.unpack_from("<III", slot._data, hp_rel) == (1, 47, 1)
+
+
 def test_event_flags(slot, slot_bytes):
     assert slot.get_flag(50)  # playthrough lap 0
     assert slot.get_flag(14000001)  # Cemetery of Ash bonfire
