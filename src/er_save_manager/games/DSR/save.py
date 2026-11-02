@@ -223,7 +223,14 @@ OFF_PLAY_MS = 0x001C  # u32 LE, milliseconds
 OFF_HP_CURRENT = 0x0074  # u32 LE
 OFF_HP_MAX = 0x0078  # u32 LE, with equipment bonuses
 OFF_HP_BASE = 0x007C  # u32 LE, from Vitality
+OFF_STAMINA_CURRENT = 0x0090  # u32 LE
+OFF_STAMINA_MAX = 0x0094  # u32 LE, with equipment bonuses
 OFF_STAMINA = 0x0098  # u32 LE, base max from Endurance
+# (current, max, base max) of each resource
+_RESOURCE_OFFSETS = {
+    "hp": (OFF_HP_CURRENT, OFF_HP_MAX, OFF_HP_BASE),
+    "stamina": (OFF_STAMINA_CURRENT, OFF_STAMINA_MAX, OFF_STAMINA),
+}
 OFF_VIT = 0x00A0  # u8
 OFF_ATN = 0x00A8  # u8
 OFF_END = 0x00B0  # u8
@@ -968,8 +975,9 @@ class DSRCharacter:
 
     def set_stat(self, name: str, value: int, update_derived: bool = True) -> None:
         """
-        Set a base stat. With update_derived=True, also updates HP/stamina so
-        the game doesn't need to recalculate on load (it doesn't).
+        Set a base stat. With update_derived=True, a changed Vitality or
+        Endurance also writes the new base max HP or stamina; the game does
+        not recompute them on load.
         """
         offset = {
             "vit": OFF_VIT,
@@ -983,22 +991,32 @@ class DSRCharacter:
         }.get(name.lower())
         if offset is None:
             raise ValueError(f"Unknown stat: {name!r}")
+        changed = self._data[offset] != value & 0xFF
         self._data[offset] = value & 0xFF
-        if update_derived:
+        if update_derived and changed:
             if name.lower() == "vit":
                 hp = VIT_TO_HP.get(value)
                 if hp is not None:
-                    self.set_hp(hp)
+                    self.set_base_resource("hp", hp)
             elif name.lower() == "end":
                 stamina = END_TO_STAMINA.get(value)
                 if stamina is not None:
-                    struct.pack_into("<I", self._data, OFF_STAMINA, stamina)
+                    self.set_base_resource("stamina", stamina)
 
-    def set_hp(self, value: int) -> None:
-        """Set base, max and current HP to the same value (full health). The
-        max with equipment bonuses is recalculated by the game on load."""
-        for off in (OFF_HP_BASE, OFF_HP_MAX, OFF_HP_CURRENT):
-            struct.pack_into("<I", self._data, off, value & 0xFFFFFFFF)
+    def set_base_resource(self, kind: str, base: int) -> None:
+        """Write a new base max HP or stamina and move the max and the
+        current value by the same amount, keeping the equipment bonus and
+        any missing amount."""
+        cur_off, max_off, base_off = _RESOURCE_OFFSETS[kind]
+        old_base, old_max, cur = (
+            struct.unpack_from("<I", self._data, off)[0]
+            for off in (base_off, max_off, cur_off)
+        )
+        delta = base - old_base
+        new_max = max(1, old_max + delta)
+        struct.pack_into("<I", self._data, base_off, base)
+        struct.pack_into("<I", self._data, max_off, new_max)
+        struct.pack_into("<I", self._data, cur_off, min(max(cur + delta, 1), new_max))
 
     @property
     def hp_current(self) -> int:
