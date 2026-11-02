@@ -27,6 +27,8 @@ class Door:
     open_state: int
     label: str
     near: str | None
+    event: str | None = None
+    """Event Flags page label when "<label> opened" does not fit the object."""
 
 
 @dataclass(frozen=True)
@@ -79,7 +81,15 @@ def _load() -> tuple[
     data = json.loads(_DATA_FILE.read_text(encoding="utf-8"))
     areas = {int(k): v for k, v in data["areas"].items()}
     doors = tuple(
-        Door(d["map"], d["flag"], d["object"], d["open"], d["label"], d["near"])
+        Door(
+            d["map"],
+            d["flag"],
+            d["object"],
+            d["open"],
+            d["label"],
+            d["near"],
+            d.get("event"),
+        )
         for d in data["doors"]
     )
     fog = tuple(
@@ -116,9 +126,8 @@ def flag_infos() -> dict[int, FlagInfo]:
         )
     for door in DOORS:
         near = f" near {door.near}" if door.near else ""
-        infos[door.flag] = FlagInfo(
-            "Door", f"{door.label} opened{near}", flag_map(door.flag)
-        )
+        event = door.event or f"{door.label} opened"
+        infos[door.flag] = FlagInfo("Door", f"{event}{near}", flag_map(door.flag))
     for named in NAMED_FLAGS:
         map_id = named.map_id if named.map_id is not None else flag_map(named.flag)
         infos.setdefault(named.flag, FlagInfo(named.kind, named.label, map_id))
