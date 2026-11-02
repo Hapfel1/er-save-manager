@@ -220,7 +220,7 @@
    "flag": 118000014,
    "object": 10181080,
    "open": 20,
-   "label": "Bridge that can be lowered",
+   "label": "Drawbridge",
    "near": "Unseen Path to Heide"
   },
   {
@@ -228,7 +228,8 @@
    "flag": 119000040,
    "object": 10191350,
    "open": 30,
-   "label": "Lever that stops all flame statues",
+   "label": "Flame statue lever",
+   "event": "Flame statues stopped by the lever",
    "near": "Eygil's Idol"
   },
   {
@@ -1207,7 +1208,7 @@
    "flag": 100001,
    "map": null,
    "kind": "Internal",
-   "label": "Used by elevator and fall damage events"
+   "label": "Used by the elevator and fall damage events"
   },
   {
    "flag": 100002,
@@ -1237,13 +1238,13 @@
    "flag": 100010,
    "map": null,
    "kind": "Internal",
-   "label": "Used by ship, elevator and iron bar events"
+   "label": "Used by the ship, elevator and iron bar events"
   },
   {
    "flag": 100020,
    "map": 169279488,
    "kind": "Internal",
-   "label": "Used by the iron bars break check"
+   "label": "Used by the iron bar break check"
   },
   {
    "flag": 100210,
@@ -1387,7 +1388,7 @@
    "flag": 100613,
    "map": 337117184,
    "kind": "Internal",
-   "label": "Used by the warp to the Memory of the King 2"
+   "label": "Used by the warp to the Memory of the King (2)"
   },
   {
    "flag": 100620,
@@ -1435,7 +1436,7 @@
    "flag": 100701,
    "map": 841154560,
    "kind": "Progress",
-   "label": "Shulva: Dragon blood knights wiped out"
+   "label": "Shulva: Drakeblood Knights wiped out"
   },
   {
    "flag": 100702,
@@ -1729,7 +1730,7 @@
    "flag": 101620,
    "map": 168427520,
    "kind": "Internal",
-   "label": "Used by the Pursuer's eagle ride 2"
+   "label": "Used by the Pursuer's eagle ride (2)"
   },
   {
    "flag": 101710,
@@ -2143,7 +2144,7 @@
    "flag": 103140,
    "map": null,
    "kind": "Internal",
-   "label": "Used by Ancient Dragon and Vendrick talk"
+   "label": "Used by the Ancient Dragon and Vendrick talks"
   },
   {
    "flag": 103200,
@@ -2401,19 +2402,19 @@
    "flag": 111102,
    "map": 167903232,
    "kind": "Internal",
-   "label": "Firekeeper 1: used by the grave prompt"
+   "label": "Fire Keeper 1: used by the grave prompt"
   },
   {
    "flag": 111112,
    "map": 167903232,
    "kind": "Internal",
-   "label": "Firekeeper 2: used by the grave prompt"
+   "label": "Fire Keeper 2: used by the grave prompt"
   },
   {
    "flag": 111122,
    "map": 167903232,
    "kind": "Internal",
-   "label": "Firekeeper 3: used by the grave prompt"
+   "label": "Fire Keeper 3: used by the grave prompt"
   },
   {
    "flag": 111152,
@@ -2713,13 +2714,13 @@
    "flag": 100000010,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the Altar of the living (Shrine of Amana)"
+   "label": "Used by the altar that restores human form (Shrine of Amana)"
   },
   {
    "flag": 100000020,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the crones' house, first playthrough"
+   "label": "Used by the crones' house event, first playthrough"
   },
   {
    "flag": 102000010,
@@ -2761,25 +2762,25 @@
    "flag": 102000050,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 102000061,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the item reward for the Pursuer kill 1"
+   "label": "Used by the Pursuer kill reward 1"
   },
   {
    "flag": 102000062,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the item reward for the Pursuer kill 2"
+   "label": "Used by the Pursuer kill reward 2"
   },
   {
    "flag": 102000065,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the all braziers lit check"
+   "label": "Used by the all-braziers-lit check"
   },
   {
    "flag": 104000001,
@@ -3091,13 +3092,13 @@
    "flag": 115000051,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 115000052,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 115000070,
@@ -3127,7 +3128,7 @@
    "flag": 115000079,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the all lanterns lit check"
+   "label": "Used by the all-lanterns-lit check"
   },
   {
    "flag": 116000005,
@@ -3169,7 +3170,7 @@
    "flag": 116000031,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 116000035,
@@ -3313,13 +3314,13 @@
    "flag": 125000027,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 125000029,
    "map": null,
    "kind": "Internal",
-   "label": "Used by the all braziers lit check and an invader"
+   "label": "Used by an invader and the all-braziers-lit check"
   },
   {
    "flag": 125000052,
@@ -3343,7 +3344,7 @@
    "flag": 127000030,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 127000041,
@@ -3361,7 +3362,7 @@
    "flag": 130000010,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 131000020,
@@ -3469,31 +3470,31 @@
    "flag": 210000020,
    "map": null,
    "kind": "Internal",
-   "label": "Return from the giant: after the King's Gate"
+   "label": "Return from the giant memory: after the King's Gate"
   },
   {
    "flag": 210000021,
    "map": null,
    "kind": "Internal",
-   "label": "Return from the giant: by Pate's passage"
+   "label": "Return from the giant memory: beside Pate's passage"
   },
   {
    "flag": 210000022,
    "map": null,
    "kind": "Internal",
-   "label": "Return from the giant: the Pursuer"
+   "label": "Return from the giant memory: the Pursuer"
   },
   {
    "flag": 210000070,
    "map": null,
    "kind": "World",
-   "label": "Giant soldier broke the wall 1"
+   "label": "Wall broken by a giant soldier 1"
   },
   {
    "flag": 210000072,
    "map": null,
    "kind": "World",
-   "label": "Giant soldier broke the wall 2"
+   "label": "Wall broken by a giant soldier 2"
   },
   {
    "flag": 211000002,
@@ -3511,13 +3512,13 @@
    "flag": 211000015,
    "map": null,
    "kind": "World",
-   "label": "Lizardmen in the cave all killed"
+   "label": "All lizardmen in the cave killed"
   },
   {
    "flag": 211000016,
    "map": null,
    "kind": "World",
-   "label": "Lizardmen in the square all killed"
+   "label": "All lizardmen in the square killed"
   },
   {
    "flag": 211000020,
@@ -3529,7 +3530,7 @@
    "flag": 211000030,
    "map": null,
    "kind": "World",
-   "label": "Petrified traveler hollow: used by the unpetrify prompt"
+   "label": "Petrified hollow traveler: used by the unpetrify prompt"
   },
   {
    "flag": 221000001,
