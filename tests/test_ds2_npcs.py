@@ -87,3 +87,59 @@ def test_calm_clears_only_the_hostile_block():
     state = _states(data)["Rosabeth of Melfia"]
     assert not state.hostile
     assert state.dead
+
+
+# Invaders: the record lists generator ids from offset 0x10, in row order.
+IRON_KEEP = 0x0A130000
+THE_GUTTER = 0x0A190000
+INVADER_RECORDS = {IRON_KEEP: 0x3000, THE_GUTTER: 0x4000}
+
+
+def _list_generators(data: bytearray, record: int, generators: list[int]) -> None:
+    data[record + 4 : record + 8] = len(generators).to_bytes(4, "little")
+    for i, g in enumerate(generators):
+        data[record + 0x10 + 2 * i : record + 0x12 + 2 * i] = g.to_bytes(2, "little")
+
+
+def _invaders(data: bytearray) -> dict[tuple[str, int], object]:
+    view = NpcStates(data, ANCHOR, INVADER_RECORDS)
+    return {(s.invader.name, s.invader.map_id): s for s in view.invader_states()}
+
+
+def test_invader_reset_clears_only_the_selected_row():
+    data = _data()
+    record = INVADER_RECORDS[IRON_KEEP]
+    _list_generators(data, record, [10, 570, 571, 572, 573, 941])
+    data[record + KILL_COUNTS_IN_RECORD + 3] = 1  # Fencer Sharron (572)
+    data[record + KILL_COUNTS_IN_RECORD + 4] = 1  # Armorer Dennis (573)
+    data[record + 0x310 + 4 * 3 : record + 0x314 + 4 * 3] = b"\x01\x02\x03\x04"
+    data[record + 0x710 + 4 * 3] = 2
+    states = _invaders(data)
+    sharron = states[("Fencer Sharron", IRON_KEEP)]
+    assert sharron.killed
+    assert states[("Oliver the Collector", IRON_KEEP)].killed is False
+    assert states[("Forlorn", IRON_KEEP)].killed is False
+    assert states[("Melinda the Butcher", THE_GUTTER)].killed is None
+
+    view = NpcStates(data, ANCHOR, INVADER_RECORDS)
+    assert view.reset_invaders([sharron.invader]) == 1
+    assert data[record + KILL_COUNTS_IN_RECORD + 3] == 0
+    assert not any(data[record + 0x310 + 12 : record + 0x314 + 12])
+    assert not any(data[record + 0x710 + 12 : record + 0x714 + 12])
+    assert data[record + KILL_COUNTS_IN_RECORD + 4] == 1
+    assert view.reset_invaders([sharron.invader]) == 0
+
+
+def test_melinda_reset_clears_her_death_flag():
+    data = _data()
+    record = INVADER_RECORDS[THE_GUTTER]
+    _list_generators(data, record, [590, 591])
+    data[record + KILL_COUNTS_IN_RECORD] = 1
+    _set_flag(data, 104470)
+    _set_flag(data, 104471)
+    melinda = _invaders(data)[("Melinda the Butcher", THE_GUTTER)]
+    assert melinda.killed
+    NpcStates(data, ANCHOR, INVADER_RECORDS).reset_invaders([melinda.invader])
+    assert data[record + KILL_COUNTS_IN_RECORD] == 0
+    assert not _flag(data, 104470)
+    assert _flag(data, 104471)

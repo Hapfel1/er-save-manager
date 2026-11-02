@@ -72,6 +72,7 @@ from er_save_manager.games import ps_userdata
 from er_save_manager.games.DS2.bonfire_database import BONFIRES
 from er_save_manager.games.DS2.boss_arenas import ARENA_GENERATORS
 from er_save_manager.games.DS2.boss_database import BOSS_NAMES
+from er_save_manager.games.DS2.invader_database import INVADERS, Invader
 from er_save_manager.games.DS2.item_database import (
     SEAMLESS_ITEMS,
     SEAMLESS_MAX_STACK,
@@ -354,6 +355,11 @@ _MAP_GENERATOR_COUNT_IN_RECORD = 4
 _MAP_RECORD_HEADER = 0x10
 _MAP_GENERATOR_CAPACITY = 256
 _MAP_KILL_COUNTS_IN_RECORD = _MAP_RECORD_HEADER + 2 * _MAP_GENERATOR_CAPACITY
+# After the kill counts, one u32 id and one u32 state per generator row. Rows
+# of never-killed invaders hold 0 in the id; some killed ones hold the
+# generator's GeneratorRegistParam id and a state.
+_MAP_ENEMY_IDS_IN_RECORD = _MAP_KILL_COUNTS_IN_RECORD + _MAP_GENERATOR_CAPACITY
+_MAP_ENEMY_STATES_IN_RECORD = _MAP_ENEMY_IDS_IN_RECORD + 4 * _MAP_GENERATOR_CAPACITY
 # Map object and treasure state, found through the first bonfire id array.
 # - One block of _OBJECT_BLOCK_SIZE bytes per map, the blocks back to back in
 #   first-visit order somewhere after the id array (the start moves with the
@@ -589,6 +595,14 @@ class NpcState:
     dead: bool
 
 
+@dataclass(frozen=True)
+class InvaderState:
+    invader: Invader
+    # None when the map record does not list the generators yet (map not
+    # reached).
+    killed: bool | None
+
+
 class NpcStates:
     """View over the NPC states in one slot's large entry.
 
@@ -687,6 +701,59 @@ class NpcStates:
             touched = self._clear_flags(entry.hostile_flags)
             touched |= self._clear_flags(entry.death_flags)
             touched |= self._clear_kills(entry)
+            changed += touched
+        return changed
+
+    def _generator_rows(
+        self, map_id: int, generators: Iterable[int]
+    ) -> list[tuple[int, int]] | None:
+        """(record offset, row index) of each generator the map's record
+        lists, or None when the record lists none of them."""
+        record = self._map_records.get(map_id)
+        if record is None:
+            return None
+        count = struct.unpack_from(
+            "<I", self._data, record + _MAP_GENERATOR_COUNT_IN_RECORD
+        )[0]
+        listed = struct.unpack_from(
+            f"<{min(count, _MAP_GENERATOR_CAPACITY)}H",
+            self._data,
+            record + _MAP_RECORD_HEADER,
+        )
+        rows = [(record, listed.index(g)) for g in generators if g in listed]
+        return rows or None
+
+    def invader_states(self) -> list[InvaderState]:
+        states = []
+        for invader in INVADERS:
+            rows = self._generator_rows(invader.map_id, invader.generators)
+            killed = None
+            if rows is not None:
+                killed = any(
+                    self._data[record + _MAP_KILL_COUNTS_IN_RECORD + row]
+                    for record, row in rows
+                ) or self._any_flag(invader.flags)
+            states.append(InvaderState(invader, killed))
+        return states
+
+    def reset_invaders(self, invaders: Iterable[Invader]) -> int:
+        """Clear the kill counts, enemy records and death flags of the given
+        invaders, which is their state before the first invasion, and return
+        how many changed."""
+        changed = 0
+        for invader in invaders:
+            touched = self._clear_flags(invader.flags)
+            for record, row in (
+                self._generator_rows(invader.map_id, invader.generators) or []
+            ):
+                kill = record + _MAP_KILL_COUNTS_IN_RECORD + row
+                enemy = record + _MAP_ENEMY_IDS_IN_RECORD + 4 * row
+                state = record + _MAP_ENEMY_STATES_IN_RECORD + 4 * row
+                if self._data[kill]:
+                    self._data[kill] = 0
+                    self._data[enemy : enemy + 4] = bytes(4)
+                    self._data[state : state + 4] = bytes(4)
+                    touched = True
             changed += touched
         return changed
 

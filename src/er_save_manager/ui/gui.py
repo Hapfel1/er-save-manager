@@ -2015,6 +2015,7 @@ class SaveManagerGUI:
             from er_save_manager.games.DS2.bonfire_tab import DS2BonfirePanel
             from er_save_manager.games.DS2.boss_tab import DS2BossPanel
             from er_save_manager.games.DS2.editor_tab import SlotPanelPage
+            from er_save_manager.games.DS2.invader_tab import DS2InvaderPanel
             from er_save_manager.games.DS2.npc_tab import DS2NpcPanel
             from er_save_manager.games.DS2.world_flags_tab import (
                 DS2DoorsPanel,
@@ -2071,7 +2072,11 @@ class SaveManagerGUI:
             self.ds2_npcs_bosses_tab = CharacterPagesTab(
                 self.notebook.tab("NPCs & Bosses"),
                 "NPCs & Bosses",
-                [("NPCs", ds2_page(DS2NpcPanel)), ("Bosses", ds2_page(DS2BossPanel))],
+                [
+                    ("NPCs", ds2_page(DS2NpcPanel)),
+                    ("Invaders", ds2_page(DS2InvaderPanel)),
+                    ("Bosses", ds2_page(DS2BossPanel)),
+                ],
             )
             self._build_tab("NPCs & Bosses", self.ds2_npcs_bosses_tab.setup_steps)
             self._character_tabs = {
