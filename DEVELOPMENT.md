@@ -161,7 +161,9 @@ resources/
         icon.ico                # Windows icon
         icon.png                # Linux/cross-platform icon
     linux/
-        er-save-manager.desktop # Linux desktop entry
+        io.github.hapfel1.er_save_manager.desktop # Linux desktop entry
+        io.github.hapfel1.er_save_manager.appdata.xml # AppStream metadata
+        appimage-signing-key.asc # Public key for AppImage signatures
 
 data/                           # User data (gitignored)
     settings.json               # User settings and preferences

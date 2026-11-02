@@ -54,7 +54,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
 ### Platform Support
 
 - **Windows**: Executable
-- **Linux**: AppImage
+- **Linux**: AppImage, GPG-signed with key `9CAED4DC1293EB8F344228F6644FB84F88035787` ([public key](resources/linux/appimage-signing-key.asc))
   - Supports Steam (standard and Flatpak)
   - Supports SteamDeck fully
   - Auto-detects Proton compatdata locations

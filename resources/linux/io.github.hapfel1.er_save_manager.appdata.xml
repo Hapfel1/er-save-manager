@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.hapfel1.er_save_manager</id>
+  <name>ER Save Manager</name>
+  <summary>Save file editor and manager for Elden Ring and Dark Souls</summary>
+  <developer id="io.github.hapfel1">
+    <name>Hapfel</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary=https://github.com/Hapfel1/er-save-manager/blob/main/LICENSE</project_license>
+  <description>
+    <p>
+      Save file editor, backup manager and corruption fixer for Elden Ring.
+      Also edits Dark Souls Remastered, Dark Souls II: Scholar of the First Sin,
+      Dark Souls III and Nightreign saves.
+    </p>
+    <ul>
+      <li>Character, inventory, equipment and appearance editing</li>
+      <li>Copy, swap, export and import characters between saves</li>
+      <li>Save fixer for corrupted saves and checksum repair</li>
+      <li>Automatic backups</li>
+      <li>World state, map and teleport editing</li>
+      <li>SteamID patcher for using saves from other accounts</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">io.github.hapfel1.er_save_manager.desktop</launchable>
+  <provides>
+    <binary>er-save-manager</binary>
+  </provides>
+  <url type="homepage">https://github.com/Hapfel1/er-save-manager</url>
+  <url type="bugtracker">https://github.com/Hapfel1/er-save-manager/issues</url>
+  <url type="help">https://elden-ring-save-manager.readthedocs.io/en/main/</url>
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+</component>
