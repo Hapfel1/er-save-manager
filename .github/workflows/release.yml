@@ -223,7 +223,7 @@ jobs:
             git ca-certificates curl lsb-release binutils file \
             libtk8.6 libtcl8.6 libreadline8 libxft2 libxss1 libx11-6 libfontconfig1 \
             libsqlite3-0 libffi8 libssl3 libbz2-1.0 liblzma5 zlib1g libncursesw6 \
-            libuuid1 libgdbm6
+            libuuid1 libgdbm6 appstream gnupg
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -245,8 +245,19 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --dev
 
+      - name: Import AppImage signing key
+        if: matrix.os == 'ubuntu-24.04'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.APPIMAGE_GPG_PRIVATE_KEY }}
+        run: |
+          printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          fpr=$(gpg --list-secret-keys --with-colons | awk -F: '$1 == "fpr" { print $10; exit }')
+          echo "APPIMAGE_SIGN_KEY=$fpr" >> "$GITHUB_ENV"
+
       - name: Build Linux AppImage
         if: matrix.os == 'ubuntu-24.04'
+        env:
+          APPIMAGETOOL_SIGN_PASSPHRASE: ${{ secrets.APPIMAGE_GPG_PASSPHRASE }}
         run: |
           uv run ./build-linux.sh
           ./package-linux.sh

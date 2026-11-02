@@ -3,7 +3,8 @@ name = "er-save-manager"
 version = "2.4.2"
 description = "Elden Ring Save File Editor, Backup Manager, and Corruption Fixer"
 readme = "README.md"
-license = "MIT"
+license = "LicenseRef-er-save-manager-Source-Available"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
 authors = [
     { name = "Hapfel" }
