@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 _HANDLE_MASK = 0xF0000000
 _WEAPON_HANDLE = 0x80000000
 
+
 def somber_to_mm(upgrade: int) -> int:
     """Map a somber upgrade level (0-10) to the matchmaking scale (0-25).
 
