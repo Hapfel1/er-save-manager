@@ -120,6 +120,46 @@ def test_converts_one_character_without_changing_inputs(saves, tmp_path):
     assert (backup / save_name(10)).read_bytes() == original_global
 
 
+def test_accepts_standalone_ns2_savekit_backup(saves, tmp_path):
+    pc_path, backup = saves
+    standalone = tmp_path / "standalone-backup"
+    shutil.copytree(backup, standalone)
+    manifest_file = standalone / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    selection = manifest.pop("selection")
+    manifest["programId"] = manifest.pop("titleId")
+    manifest.update(
+        {key: selection[key] for key in ("uid", "space", "type", "rank", "index")}
+    )
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    result = _convert(pc_path, standalone, tmp_path)
+    assert {file.name for file in result.iterdir()} == {save_name(0), save_name(10)}
+
+
+@pytest.mark.parametrize(
+    "field,value", [("programId", "0000000000000000"), ("uid", "b" * 32)]
+)
+def test_rejects_standalone_backup_with_mismatched_identity(
+    saves, tmp_path, field, value
+):
+    pc_path, backup = saves
+    standalone = tmp_path / "standalone-backup"
+    shutil.copytree(backup, standalone)
+    manifest_file = standalone / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    selection = manifest.pop("selection")
+    manifest["programId"] = manifest.pop("titleId")
+    manifest.update(
+        {key: selection[key] for key in ("uid", "space", "type", "rank", "index")}
+    )
+    manifest[field] = value
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Elden Ring|identity"):
+        _convert(pc_path, standalone, tmp_path)
+
+
 def test_target_slot_is_selected_independently(saves, tmp_path):
     pc_path, backup = saves
     result = _convert(pc_path, backup, tmp_path, switch_slot=2)

@@ -120,13 +120,24 @@ def _verify_backup(backup: Path) -> None:
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("The SaveKit manifest could not be read.") from exc
     _require(isinstance(manifest, dict), "The SaveKit manifest is invalid.")
-    _require(
-        manifest.get("titleId") == TITLE_ID,
-        "The backup is not for Elden Ring on Switch 2.",
-    )
-    selection = manifest.get("selection")
+    if "selection" in manifest:
+        _require(
+            manifest.get("titleId") == TITLE_ID
+            and manifest.get("programId", TITLE_ID) == TITLE_ID,
+            "The backup is not for Elden Ring on Switch 2.",
+        )
+        selection = manifest["selection"]
+        fields = ("space", "type", "rank", "index", "staticId")
+    else:
+        _require(
+            manifest.get("programId") == TITLE_ID
+            and manifest.get("titleId", TITLE_ID) == TITLE_ID,
+            "The backup is not for Elden Ring on Switch 2.",
+        )
+        selection = manifest
+        fields = ("space", "type", "rank", "index")
     _require(isinstance(selection, dict), "The backup has no archive identity.")
-    for field in ("space", "type", "rank", "index", "staticId"):
+    for field in fields:
         _require(
             type(selection.get(field)) is int,
             "The backup has an invalid archive identity.",

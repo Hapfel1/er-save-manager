@@ -118,10 +118,10 @@ Automatically detects issues with your game installation, your save file and any
 
 ### Switch 2 Character Conversion
 
-1. Back up the Elden Ring Switch 2 save with [mac2jb SaveKit](https://github.com/cpypwn/mac2jb). Keep the complete export folder, including `manifest.json` and all 12 `ER_____0000_userdata*` files.
+1. Back up the Elden Ring Switch 2 save with [mac2jb SaveKit](https://github.com/cpypwn/mac2jb) or [ns2-savekit](https://github.com/cpypwn/ns2-savekit). Keep the complete export folder, including `manifest.json` and all 12 `ER_____0000_userdata*` files.
 2. In **Advanced Tools**, choose the PC `ER0000.sl2`, the Switch 2 SaveKit export, the source and destination character slots, and a new empty output folder.
 3. Convert. The tool writes only the selected character file and `ER_____0000_userdata0010` into `save-files` within the output folder. It leaves the PC save and Switch backup unchanged.
-4. Close Elden Ring on the Switch. In mac2jb, open SaveKit in a verified held RPC session, select the same title and account, and use **Back up and write save** on the converted `save-files` folder. SaveKit backs up the current save and verifies the write.
+4. Close Elden Ring on the Switch. In mac2jb, open SaveKit in a verified held RPC session, select the same title and account, and use **Back up and write save** on the converted `save-files` folder. mac2jb backs up the current save and verifies the write. Elden Ring is not yet on ns2-savekit's write allowlist, so use mac2jb for this step.
 
 The converter does not connect to the Switch or write its save directly. Keep the original complete export for recovery.
 
