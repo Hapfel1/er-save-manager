@@ -128,6 +128,11 @@ def _verify_backup(backup: Path) -> None:
         )
         selection = manifest["selection"]
         fields = ("space", "type", "rank", "index", "staticId")
+        for field in ("space", "type", "rank", "index", "uid"):
+            _require(
+                field not in manifest or manifest[field] == selection.get(field),
+                "The backup has conflicting archive identity fields.",
+            )
     else:
         _require(
             manifest.get("programId") == TITLE_ID

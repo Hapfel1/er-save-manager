@@ -137,6 +137,27 @@ def test_accepts_standalone_ns2_savekit_backup(saves, tmp_path):
     assert {file.name for file in result.iterdir()} == {save_name(0), save_name(10)}
 
 
+@pytest.mark.parametrize("field,value", [("uid", "b" * 32), ("space", 4)])
+def test_rejects_conflicting_combined_manifest_identity(saves, tmp_path, field, value):
+    pc_path, backup = saves
+    combined = tmp_path / "combined-backup"
+    shutil.copytree(backup, combined)
+    manifest_file = combined / "manifest.json"
+    manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    manifest["programId"] = manifest["titleId"]
+    manifest.update(
+        {
+            key: manifest["selection"][key]
+            for key in ("uid", "space", "type", "rank", "index")
+        }
+    )
+    manifest[field] = value
+    manifest_file.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="conflicting archive identity"):
+        _convert(pc_path, combined, tmp_path)
+
+
 @pytest.mark.parametrize(
     "field,value", [("programId", "0000000000000000"), ("uid", "b" * 32)]
 )
