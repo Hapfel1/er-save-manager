@@ -12,6 +12,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
 - **Character Management**: Export, import, and move characters between saves, copy a save to another extension (vanilla, Seamless Co-op, Convergence)
+- **Switch 2 Character Conversion**: Convert one PC Elden Ring character into a verified Switch 2 SaveKit backup without changing either source save
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Inventory Editor**: Edit your inventory, spawn in items, import builds
@@ -114,6 +115,15 @@ Automatically detects issues with your game installation, your save file and any
 - **Copy Between Saves**: Transfer characters to different save files
 - **Delete a Character**
 - **Copy to Another Extension**: Copy the save to `.sl2`, `.co2`, `.cnv` or `.cnvco2`; characters with content the target setup lacks are skipped
+
+### Switch 2 Character Conversion
+
+1. Back up the Elden Ring Switch 2 save with [mac2jb SaveKit](https://github.com/cpypwn/mac2jb). Keep the complete export folder, including `manifest.json` and all 12 `ER_____0000_userdata*` files.
+2. In **Advanced Tools**, choose the PC `ER0000.sl2`, the Switch 2 SaveKit export, the source and destination character slots, and a new empty output folder.
+3. Convert. The tool writes only the selected character file and `ER_____0000_userdata0010` into `save-files` within the output folder. It leaves the PC save and Switch backup unchanged.
+4. Close Elden Ring on the Switch. In mac2jb, open SaveKit in a verified held RPC session, select the same title and account, and use **Back up and write save** on the converted `save-files` folder. SaveKit backs up the current save and verifies the write.
+
+The converter does not connect to the Switch or write its save directly. Keep the original complete export for recovery.
 
 ### Community Character Browser
 

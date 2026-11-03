@@ -107,6 +107,13 @@ class AdvancedToolsTab:
 
         ctk.CTkButton(
             tools_frame,
+            text="Convert for Switch 2...",
+            command=self.open_switch2_converter,
+            width=200,
+        ).pack(pady=5, padx=12)
+
+        ctk.CTkButton(
+            tools_frame,
             text="Refresh Information",
             command=self.update_save_info,
             width=200,
@@ -120,6 +127,11 @@ class AdvancedToolsTab:
         open_game_settings(
             self.parent, self.get_save_file(), self.get_save_path(), self.show_toast
         )
+
+    def open_switch2_converter(self):
+        from er_save_manager.ui.dialogs.switch2_convert import open_switch2_converter
+
+        open_switch2_converter(self.parent)
 
     def update_save_info(self):
         """Update save information display."""
