@@ -148,9 +148,11 @@ class DS2NpcPanel:
                 state="normal" if enabled and self._has_character else "disabled"
             )
 
-    def _apply(self, title: str, message: str, operation: str, mutate) -> None:
+    def _apply(
+        self, title: str, message: str, operation: str, mutate, noun: str = "NPC"
+    ) -> None:
         """Confirm, then run mutate(npcs) to change NPC data, back up and write.
-        mutate returns how many NPCs it changed."""
+        mutate returns how many entries it changed, counted as noun."""
         if _game_blocks_write(self.parent):
             return
 
@@ -179,7 +181,7 @@ class DS2NpcPanel:
                 write_failed(exc, self.parent)
                 return
         self.refresh()
-        self.show_toast(f"Changed {counted(changed, 'NPC')}", duration=2500)
+        self.show_toast(f"Changed {counted(changed, noun)}", duration=2500)
 
     def _on_revive(self) -> None:
         names = [s.entry.name for s in self._selected() if s.dead or s.hostile]
