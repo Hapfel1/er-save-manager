@@ -361,3 +361,36 @@ def test_clearing_armor_without_bare_entry_creates_it():
     assert item_id == 900000 and (item.category, item.item_id) == (1, 900000)
     assert item.quantity == 1 and item.order == slot
     assert struct.unpack_from("<I", char._data, OFF_COMMON_COUNT)[0] == 2
+
+
+def test_vitality_moves_hp_by_base_delta():
+    from er_save_manager.games.DSR.save import OFF_HP_CURRENT, VIT_TO_HP
+
+    char = _character()
+    char.set_stat("vit", 30, update_derived=False)
+    # (current, max with Favor ring x1.2, base) HP
+    struct.pack_into("<III", char._data, OFF_HP_CURRENT, 891, 1320, 1100)
+    char.set_stat("vit", 30)
+    assert struct.unpack_from("<III", char._data, OFF_HP_CURRENT) == (891, 1320, 1100)
+    char.set_stat("vit", 33)
+    delta = VIT_TO_HP[33] - 1100
+    assert struct.unpack_from("<III", char._data, OFF_HP_CURRENT) == (
+        891 + delta,
+        1320 + delta,
+        VIT_TO_HP[33],
+    )
+
+
+def test_endurance_moves_stamina_max_and_current():
+    from er_save_manager.games.DSR.save import END_TO_STAMINA, OFF_STAMINA_CURRENT
+
+    char = _character()
+    char.set_stat("end", 28, update_derived=False)
+    struct.pack_into("<III", char._data, OFF_STAMINA_CURRENT, 154, 154, 129)
+    char.set_stat("end", 31)
+    delta = END_TO_STAMINA[31] - 129
+    assert struct.unpack_from("<III", char._data, OFF_STAMINA_CURRENT) == (
+        154 + delta,
+        154 + delta,
+        END_TO_STAMINA[31],
+    )
