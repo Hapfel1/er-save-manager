@@ -2,9 +2,9 @@
 Elden Ring matchmaking weapon level utilities.
 
 matchmaking_weapon_level is stored on the 0-25 standard upgrade scale.
-Somber weapons must be mapped to their standard equivalent before storing:
+Somber weapons map to floor(level * 5 / 2):
 
-  Somber +1=3, +2=5, +3=7, +4=9, +5=12, +6=15, +7=18, +8=20, +9=22, +10=25
+  Somber +1=2, +2=5, +3=7, +4=10, +5=12, +6=15, +7=17, +8=20, +9=22, +10=25
 
 The floor is the highest mapped upgrade level found across all weapons in
 held and storage inventory. The stored value may not be set lower than this.
@@ -20,25 +20,12 @@ if TYPE_CHECKING:
 _HANDLE_MASK = 0xF0000000
 _WEAPON_HANDLE = 0x80000000
 
-# Somber upgrade level -> standard matchmaking scale
-_SOMBER_TO_MM = {
-    0: 0,
-    1: 3,
-    2: 5,
-    3: 7,
-    4: 9,
-    5: 12,
-    6: 15,
-    7: 18,
-    8: 20,
-    9: 22,
-    10: 25,
-}
-
-
 def somber_to_mm(upgrade: int) -> int:
-    """Map a somber upgrade level (0-10) to the matchmaking scale (0-25)."""
-    return _SOMBER_TO_MM.get(upgrade, upgrade)
+    """Map a somber upgrade level (0-10) to the matchmaking scale (0-25).
+
+    Levels above +10 (Convergence) are returned unchanged.
+    """
+    return upgrade * 5 // 2 if upgrade <= 10 else upgrade
 
 
 def _is_somber_weapon(base_id: int) -> bool:
