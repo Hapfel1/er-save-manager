@@ -3,6 +3,38 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.5.0
+**Released:** November 03, 2026
+
+
+### ✨ New Features
+
+- DS2: Name 498 more event flags on the Event Flags page (#452) ([bd55377](https://github.com/Hapfel1/er-save-manager/commit/bd553778cfb659b48da673e355eece1c019ba3f4))
+
+- DS2: Reset NPC invaders and Forlorn (#457) ([3b971e0](https://github.com/Hapfel1/er-save-manager/commit/3b971e0290034ff57423ebbc1f9c9383c87b10b1))
+
+- General: Switch 2 saves and platform copies in Copy to Another Extension (#463) ([58fbbf3](https://github.com/Hapfel1/er-save-manager/commit/58fbbf3450089aa7c95c3aaaa8a121a5bc2df48f))
+
+
+### 🔧 Bug Fixes
+
+- ER: Added items scramble the Recent Items tab (#449) ([bce4804](https://github.com/Hapfel1/er-save-manager/commit/bce4804412c2f41d6f90fb088858deea2c5efcd8))
+
+- ER: Somber weapons raise the matchmaking level floor too high (#461) ([82be8c7](https://github.com/Hapfel1/er-save-manager/commit/82be8c7445c51136158544bb1900e10321adc4d9))
+
+- DS3: HP, FP and stamina ignore attribute edits (#453) ([8cdbc2a](https://github.com/Hapfel1/er-save-manager/commit/8cdbc2a7c33c2968e25febf1b9977400d7a8262b))
+
+- DS2: Clearer wording for event flag labels (#456) ([148cf34](https://github.com/Hapfel1/er-save-manager/commit/148cf34ffd9836698f3a82d12b1d94f8f153ec71))
+
+- DSR: Stats apply drops HP bonuses and skips max stamina (#459) ([a6338b8](https://github.com/Hapfel1/er-save-manager/commit/a6338b84bb43243d8899c62c6774177123525948))
+
+
+### 📦 Dependencies
+
+- General: Bump the github-actions group with 2 updates (#455) ([9084231](https://github.com/Hapfel1/er-save-manager/commit/9084231c4582c96d35929acf634d1c826347094b))
+
+
+---
 ## 📦 Release 2.4.2
 **Released:** October 30, 2026
 
