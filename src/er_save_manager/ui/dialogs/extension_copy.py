@@ -1,4 +1,5 @@
-"""Copy the loaded save to another mod extension (.sl2, .co2, .cnv, .cnvco2).
+"""Copy the loaded save to another mod extension (.sl2, .co2, .cnv, .cnvco2)
+or another platform (PlayStation, Switch 2).
 
 Shared by every game's Character Management tab. The checks and file writes
 live in games/extension_copy.py.
@@ -6,6 +7,7 @@ live in games/extension_copy.py.
 
 from __future__ import annotations
 
+import threading
 import tkinter as tk
 from collections.abc import Callable
 from pathlib import Path
@@ -17,16 +19,19 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import guard_before_write
 from er_save_manager.ui.toast import notify
-from er_save_manager.ui.utils import patch_combo_scroll
+from er_save_manager.ui.utils import patch_combo_scroll, pick_folder
 
 _WRAP = 520
 
 
 _CUSTOM = "Custom..."
+_OTHER_ACCOUNT = "Other SteamID..."
 
 
-def _ext_label(ext: str) -> str:
-    return f"{ext}  ({ec.FLAVORS[ext].label})"
+def _target_label(flavor: ec.Flavor) -> str:
+    if flavor.platform == ec.PC:
+        return f"{flavor.ext}  ({flavor.label})"
+    return flavor.label
 
 
 class ExtensionCopyDialog:
@@ -48,11 +53,15 @@ class ExtensionCopyDialog:
         self.slot_of_choice: dict[str, int] = {}
         self.limit_label = None
         self._pending = None
+        self._busy = False
 
-        # Only the file's own extension is left out: a .cnv.co2 save can
-        # still go to .cnvco2, which has the same flavor.
-        _, own_ext = ec.split_name(self.source)
-        self.extensions = [e for e in ec.target_extensions(game_key) if e != own_ext]
+        self.source_platform = ec.source_platform(self.source)
+        self.choices = ec.targets(game_key, self.source)
+        self.key_of_label = {_target_label(f): f.ext for f in self.choices}
+        # Chosen folder per target platform; the source's folder until changed
+        self.folders: dict[str, Path] = {}
+        self._accounts: list[tuple[str, int]] | None = None
+        self.account_of_label: dict[str, int] = {}
 
         self.dialog = ds.create(parent, "Copy to Another Extension")
         main = ctk.CTkFrame(self.dialog, fg_color="transparent")
@@ -75,14 +84,7 @@ class ExtensionCopyDialog:
         ds.header(main, "Copy to Another Extension", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
             main,
-            text=(
-                "The game picks the save by extension: "
-                + ", ".join(
-                    f"{e} {ec.FLAVORS[e].label}" for e in ec.target_extensions(game_key)
-                )
-                + ". Custom is for an extension set in the mod's own settings. "
-                "The current file stays as it is."
-            ),
+            text=self._intro(),
             font=ds.SMALL,
             text_color=ds.MUTED,
             wraplength=_WRAP,
@@ -92,7 +94,7 @@ class ExtensionCopyDialog:
         row = ctk.CTkFrame(main, fg_color="transparent")
         row.pack(fill=tk.X)
         ctk.CTkLabel(row, text="Copy to:", font=ds.FONT).pack(side=tk.LEFT)
-        labels = [_ext_label(e) for e in self.extensions] + [_CUSTOM]
+        labels = list(self.key_of_label) + [_CUSTOM]
         self.ext_var = tk.StringVar(value=labels[0])
         combo = ctk.CTkComboBox(
             row,
@@ -118,6 +120,11 @@ class ExtensionCopyDialog:
         )
         self.custom_entry.bind("<KeyRelease>", lambda _e: self._schedule_rebuild())
 
+        self.options_host = ctk.CTkFrame(main, fg_color="transparent")
+        self.options_host.pack(fill=tk.X)
+        self._build_folder_row()
+        self._build_account_row()
+
         self.body_host = ctk.CTkFrame(main, fg_color="transparent")
         self.body_host.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
@@ -125,12 +132,218 @@ class ExtensionCopyDialog:
         self._rebuild(refit=False)
         ds.finish(self.dialog, parent, min_width=600)
 
+    def _intro(self) -> str:
+        pc = [f for f in self.choices if f.platform == ec.PC]
+        consoles = [
+            "Switch 2" if f.platform == ec.SWITCH2 else f.label.split()[0]
+            for f in ec.CONSOLE_TARGETS.get(self.game_key, {}).values()
+        ]
+        text = (
+            "The game picks the save by extension: "
+            + ", ".join(
+                f"{e} {ec.FLAVORS[e].label}"
+                for e in ec.target_extensions(self.game_key)
+            )
+            + ". Custom is for an extension set in the mod's own settings."
+        )
+        if pc and consoles:
+            text += f" {' and '.join(consoles)} copies go into a folder you choose."
+        return text + " The current file stays as it is."
+
+    # ---- option rows ---------------------------------------------------
+
+    def _build_folder_row(self) -> None:
+        self.folder_row = ctk.CTkFrame(self.options_host, fg_color="transparent")
+        ctk.CTkLabel(self.folder_row, text="Folder:", font=ds.FONT).pack(side=tk.LEFT)
+        ds.button(
+            self.folder_row, "Change Folder", self._choose_folder, width=130
+        ).pack(side=tk.RIGHT)
+        self.folder_label = ctk.CTkLabel(
+            self.folder_row,
+            text="",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+            justify=tk.LEFT,
+            wraplength=_WRAP - 220,
+        )
+        self.folder_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 8))
+
+    def _build_account_row(self) -> None:
+        self.account_row = ctk.CTkFrame(self.options_host, fg_color="transparent")
+        ctk.CTkLabel(self.account_row, text="Steam account:", font=ds.FONT).pack(
+            side=tk.LEFT
+        )
+        self.account_var = tk.StringVar()
+        self.account_combo = ctk.CTkComboBox(
+            self.account_row,
+            variable=self.account_var,
+            values=[_OTHER_ACCOUNT],
+            state="readonly",
+            width=250,
+            height=32,
+            font=ds.FONT,
+            dropdown_font=ds.FONT,
+            command=lambda _v: self._on_account(),
+        )
+        self.account_combo.pack(side=tk.LEFT, padx=(10, 0))
+        patch_combo_scroll(self.account_combo)
+        self.other_id_var = tk.StringVar()
+        self.other_id_entry = ctk.CTkEntry(
+            self.account_row,
+            textvariable=self.other_id_var,
+            placeholder_text="SteamID or profile link",
+            width=190,
+            height=32,
+            font=ds.FONT,
+        )
+
+    def _target_platform(self) -> str | None:
+        try:
+            return ec.target_flavor(self.game_key, self._ext()).platform
+        except ec.ExtensionCopyError:
+            return None
+
+    def _folder(self) -> Path | None:
+        """Target folder, None for a copy next to the source."""
+        platform = self._target_platform()
+        if platform is None or platform == self.source_platform:
+            return None
+        return self.folders.get(platform, self.source.parent)
+
+    def _choose_folder(self) -> None:
+        platform = self._target_platform()
+        if platform is None:
+            return
+        current = self.folders.get(platform, self.source.parent)
+        chosen = pick_folder("Choose the Folder for the Copy", str(current))
+        if chosen:
+            self.folders[platform] = Path(chosen)
+            self._rebuild()
+
+    def _update_option_rows(self) -> None:
+        folder = self._folder()
+        if folder is not None:
+            self.folder_label.configure(text=str(folder))
+            self.folder_row.pack(fill=tk.X, pady=(8, 0))
+        else:
+            self.folder_row.pack_forget()
+        plan = self.plan
+        if plan is not None and plan.needs_steam_id and not plan.merges:
+            self._fill_accounts(plan)
+            self.account_row.pack(fill=tk.X, pady=(8, 0))
+        else:
+            self.account_row.pack_forget()
+
+    def _load_accounts(self) -> list[tuple[str, int]]:
+        if self._accounts is None:
+            from er_save_manager.platform import PlatformUtils
+
+            try:
+                found = PlatformUtils.get_loginusers_steam_accounts()
+            except Exception:
+                found = []
+            self._accounts = [(f"{name} ({sid})", sid) for sid, name in found]
+        return self._accounts
+
+    def _fill_accounts(self, plan: ec.Plan) -> None:
+        from er_save_manager.games.game_profiles import (
+            PROFILES_BY_KEY,
+            _folder_name_to_steam64,
+        )
+
+        accounts = list(self._load_accounts())
+        folder_id = _folder_name_to_steam64(
+            plan.target.parent.name, PROFILES_BY_KEY[self.game_key]
+        )
+        if folder_id and folder_id not in {sid for _, sid in accounts}:
+            accounts.insert(0, (f"Account {folder_id} (save folder)", folder_id))
+        self.account_of_label = dict(accounts)
+        labels = [label for label, _ in accounts] + [_OTHER_ACCOUNT]
+        self.account_combo.configure(values=labels)
+        if self.account_var.get() not in labels:
+            default = next(
+                (label for label, sid in accounts if sid == folder_id),
+                labels[0],
+            )
+            self.account_var.set(default)
+        self._on_account(rebuild=False)
+
+    def _on_account(self, rebuild: bool = True) -> None:
+        if self.account_var.get() == _OTHER_ACCOUNT:
+            self.other_id_entry.pack(side=tk.LEFT, padx=(10, 0))
+        else:
+            self.other_id_entry.pack_forget()
+        if rebuild:
+            ds.refit(self.dialog)
+
+    def _with_steam_id(self, then: Callable[[int | None], None]) -> None:
+        """Call then with the chosen SteamID64, None when none is needed.
+        A vanity profile link is looked up first, off the UI thread."""
+        from er_save_manager.ui.tabs.steamid_patcher_tab import (
+            fetch_vanity_steamid,
+            parse_steam_input,
+        )
+
+        plan = self.plan
+        if plan is None or not plan.needs_steam_id:
+            then(None)
+            return
+        if self.account_var.get() not in self.account_of_label:
+            # Replace Whole File on a target with characters: the row was
+            # hidden, so the account of the target's folder is used.
+            self._fill_accounts(plan)
+        label = self.account_var.get()
+        if label in self.account_of_label:
+            then(self.account_of_label[label])
+            return
+        steamid, vanity, error = parse_steam_input(
+            self.other_id_var.get(), "Steam account"
+        )
+        if error:
+            CTkMessageBox.showerror("Invalid SteamID", error, parent=self.dialog)
+            return
+        if steamid:
+            then(int(steamid))
+            return
+
+        self._busy = True
+        self.copy_btn.configure(state="disabled")
+
+        def finish(found: str | None, failure: Exception | None) -> None:
+            self._busy = False
+            self._update_buttons()
+            if failure is not None or not found:
+                CTkMessageBox.showerror(
+                    "Steam Profile Not Found",
+                    f"Could not look up the Steam profile {vanity}. Enter the "
+                    "SteamID or a /profiles/ link instead."
+                    + (f"\n\n{failure}" if failure else ""),
+                    parent=self.dialog,
+                )
+                return
+            self.other_id_var.set(found)
+            then(int(found))
+
+        def run() -> None:
+            found = failure = None
+            try:
+                found = fetch_vanity_steamid(vanity)
+            except Exception as e:
+                failure = e
+            try:
+                self.dialog.after(0, lambda: finish(found, failure))
+            except (RuntimeError, tk.TclError):
+                pass
+
+        threading.Thread(target=run, daemon=True).start()
+
     # ---- state ---------------------------------------------------------
 
     def _ext(self) -> str:
         if self.ext_var.get() == _CUSTOM:
             return self.custom_var.get()
-        return self.ext_var.get().split()[0]
+        return self.key_of_label[self.ext_var.get()]
 
     def _on_choice(self) -> None:
         if self.ext_var.get() == _CUSTOM:
@@ -147,19 +360,23 @@ class ExtensionCopyDialog:
 
     def _rebuild(self, refit: bool = True) -> None:
         self._pending = None
-        if self.ext_var.get() == _CUSTOM and not self.custom_var.get().strip():
-            self.plan = None
-            for child in self.body_host.winfo_children():
-                child.destroy()
-            self._update_buttons()
-            return
         for child in self.body_host.winfo_children():
             child.destroy()
+        if self.ext_var.get() == _CUSTOM and not self.custom_var.get().strip():
+            self.plan = None
+            self._update_option_rows()
+            self._update_buttons()
+            if refit:
+                ds.refit(self.dialog)
+            return
         try:
-            self.plan = ec.make_plan(self.game_key, self.source, self._ext())
+            self.plan = ec.make_plan(
+                self.game_key, self.source, self._ext(), self._folder()
+            )
             error = None
         except ec.ExtensionCopyError as e:
             self.plan, error = None, str(e)
+        self._update_option_rows()
         ds.content(self.body_host, lambda f: self._build_body(f, error), max_height=420)
         self._update_buttons()
         if refit:
@@ -182,10 +399,10 @@ class ExtensionCopyDialog:
 
     def _update_buttons(self) -> None:
         plan = self.plan
-        ok = plan is not None
-        if ok:
+        ok = plan is not None and not self._busy
+        if plan is not None:
             n = len(self._selected())
-            ok = n > 0
+            ok = ok and n > 0
             problem = ""
             if plan.merges:
                 for i, combo in self.dest_combos.items():
@@ -228,13 +445,23 @@ class ExtensionCopyDialog:
             self._label(frame, error, color=ds.ERROR)
             return
         plan = self.plan
-        self._label(frame, str(plan.target), color=ds.MUTED, font=ds.SMALL)
+        if not plan.cross_platform:
+            # A copy to another platform shows its folder in the folder row.
+            self._label(frame, str(plan.target), color=ds.MUTED, font=ds.SMALL)
         self._label(frame, self._target_status(plan), color=ds.INFO)
-        if plan.target_flavor.ext not in ec.FLAVORS:
+        flavor = plan.target_flavor
+        if flavor.platform == ec.PC and flavor.ext not in ec.FLAVORS:
             self._label(
                 frame,
-                f"Checked as {plan.target_flavor.label.lower()}: modded saves stay "
+                f"Checked as {flavor.label.lower()}: modded saves stay "
                 "off the official servers, so Seamless Co-op items are allowed.",
+                color=ds.MUTED,
+                font=ds.SMALL,
+            )
+        if plan.cross_platform and not plan.merges:
+            self._label(
+                frame,
+                self._platform_note(plan),
                 color=ds.MUTED,
                 font=ds.SMALL,
             )
@@ -265,8 +492,22 @@ class ExtensionCopyDialog:
                 color=ds.WARNING,
             )
 
+    @staticmethod
+    def _platform_note(plan: ec.Plan) -> str:
+        if plan.target_flavor.platform == ec.PC:
+            return (
+                "The copy is a PC save. PC-only options (window size, keyboard "
+                "keys) start at their defaults."
+                if plan.game_key in ("elden_ring", "nightreign")
+                else "The copy is a PC save."
+            )
+        return (
+            "The copy is a console save, without the Steam account. Put it "
+            "back on the console with the tool used to export the save."
+        )
+
     def _target_status(self, plan: ec.Plan) -> str:
-        name = plan.target.name
+        name = plan.target_name
         if not plan.target_exists:
             return f"{name} does not exist yet; it is created."
         if not plan.merges:
@@ -378,32 +619,41 @@ class ExtensionCopyDialog:
         plan = self.plan
         if plan is None:
             return
+        if plan.merges:
+            self._merge(plan)
+            return
         slots = self._selected()
+
+        def write(steam_id: int | None) -> None:
+            try:
+                ec.write_copy(plan, slots, steam_id)
+                self._finish(f"Copied to {plan.target_name}")
+            except Exception as e:
+                self._fail(e)
+
+        self._with_steam_id(write)
+
+    def _merge(self, plan: ec.Plan) -> None:
         try:
-            if plan.merges:
-                pairs = self._pairs()
-                occupied = dict(plan.target_characters)
-                replaced = [
-                    f"slot {j + 1} ({occupied[j]})" for _, j in pairs if j in occupied
-                ]
-                if replaced and not CTkMessageBox.askyesno(
-                    "Replace Characters",
-                    f"These characters in {plan.target.name} are overwritten: "
-                    + ", ".join(replaced)
-                    + ". A backup is made first.",
-                    parent=self.dialog,
-                ):
-                    return
-                ec.write_merge(plan, pairs)
-                where = ", ".join(str(j + 1) for _, j in pairs)
-                noun = "character" if len(pairs) == 1 else "characters"
-                self._finish(
-                    f"Copied {len(pairs)} {noun} into {plan.target.name} "
-                    f"(slots {where})"
-                )
-            else:
-                ec.write_copy(plan, slots)
-                self._finish(f"Copied to {plan.target.name}")
+            pairs = self._pairs()
+            occupied = dict(plan.target_characters)
+            replaced = [
+                f"slot {j + 1} ({occupied[j]})" for _, j in pairs if j in occupied
+            ]
+            if replaced and not CTkMessageBox.askyesno(
+                "Replace Characters",
+                f"These characters in {plan.target_name} are overwritten: "
+                + ", ".join(replaced)
+                + ". A backup is made first.",
+                parent=self.dialog,
+            ):
+                return
+            ec.write_merge(plan, pairs)
+            where = ", ".join(str(j + 1) for _, j in pairs)
+            noun = "character" if len(pairs) == 1 else "characters"
+            self._finish(
+                f"Copied {len(pairs)} {noun} into {plan.target_name} (slots {where})"
+            )
         except Exception as e:
             self._fail(e)
 
@@ -416,7 +666,7 @@ class ExtensionCopyDialog:
         if not slots:
             CTkMessageBox.showerror(
                 "Nothing to Copy",
-                f"None of the characters can be copied to {plan.target.name}.",
+                f"None of the characters can be copied to {plan.target_name}.",
                 parent=self.dialog,
             )
             return
@@ -430,16 +680,20 @@ class ExtensionCopyDialog:
             removed = f" Its {count} {noun} are removed."
         if not CTkMessageBox.askyesno(
             "Replace Whole File",
-            f"Replace all of {plan.target.name} with a copy of this save holding "
+            f"Replace all of {plan.target_name} with a copy of this save holding "
             f"{names}?{removed} A backup is made first.",
             parent=self.dialog,
         ):
             return
-        try:
-            ec.write_copy(plan, slots)
-            self._finish(f"Replaced {plan.target.name}")
-        except Exception as e:
-            self._fail(e)
+
+        def write(steam_id: int | None) -> None:
+            try:
+                ec.write_copy(plan, slots, steam_id)
+                self._finish(f"Replaced {plan.target_name}")
+            except Exception as e:
+                self._fail(e)
+
+        self._with_steam_id(write)
 
 
 def open_extension_copy(

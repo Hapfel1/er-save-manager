@@ -11,7 +11,7 @@ A comprehensive save file editor, backup manager, and corruption fixer for Elden
 ### Working Features
 
 - **Save File Fixer**: Automatically detect and fix save corruption issues and infinite loading screens
-- **Character Management**: Export, import, and move characters between saves, copy a save to another extension (vanilla, Seamless Co-op, Convergence)
+- **Character Management**: Export, import, and move characters between saves, copy a save to another extension (vanilla, Seamless Co-op, Convergence) or platform (PlayStation, Switch 2)
 - **Community Character Browser**: Browse, download, and contribute characters with likes and download tracking
 - **Character Editor**: Edit stats, runes, name, level, and build attributes
 - **Inventory Editor**: Edit your inventory, spawn in items, import builds
@@ -61,7 +61,7 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
   - Warns about non-default save locations
   - Uses the desktop's own file dialogs (zenity or kdialog)
 - **Display scaling**: UI scale setting (Auto, 100% to 300%); on Windows the app ignores the Windows display scale by default so it fits on screen
-- **PlayStation/Switch Saves**: Supports editing decrypted console Save Files.
+- **PlayStation/Switch Saves**: Supports editing decrypted console Save Files: PlayStation `memory.dat` and PS4 `userdata` folders, and Elden Ring Switch 2 `ER_____0000_userdata` folders.
 
 ## Usage
 
@@ -113,7 +113,7 @@ Automatically detects issues with your game installation, your save file and any
 - **Move Between Slots**: Reorganize characters within a save
 - **Copy Between Saves**: Transfer characters to different save files
 - **Delete a Character**
-- **Copy to Another Extension**: Copy the save to `.sl2`, `.co2`, `.cnv` or `.cnvco2`; characters with content the target setup lacks are skipped
+- **Copy to Another Extension**: Copy the save to `.sl2`, `.co2`, `.cnv` or `.cnvco2`, or to a PlayStation or Switch 2 save in a chosen folder; characters with content the target setup lacks are skipped
 
 ### Community Character Browser
 

@@ -15,8 +15,9 @@ from er_save_manager.ui import palette
 
 # Extensions of saves that reach the official servers: .sl2 on PC, the
 # PlayStation memory.dat export for Elden Ring and Nightreign. PS4 userdata
-# files (DS3, DSR, DS2) have no extension and are matched by is_ps_userdata.
-# Seamless Co-op (.co2) saves never connect to them.
+# files (DS3, DSR, DS2) and Elden Ring Switch 2 files have no extension and
+# are matched by name and size (ps_userdata). Seamless Co-op (.co2) saves
+# never connect to them.
 VANILLA_SUFFIXES = (".sl2", ".dat")
 
 _GUARANTEE_NOTE = (
@@ -222,6 +223,23 @@ _GAME_TEXT["nightreign_ps"] = (
 )
 
 
+# No ban list is confirmed for the Elden Ring consoles; the PC findings are
+# the closest guide and the ban lands on the console account.
+_GAME_TEXT["elden_ring_ps"] = (
+    "There is no confirmed list of what gets a PlayStation Elden Ring save "
+    "banned. The findings below come from PC; a ban applies to the "
+    "PlayStation Network account, not only this save.",
+    _GAME_TEXT["elden_ring"][1],
+)
+
+_GAME_TEXT["elden_ring_switch2"] = (
+    "There is no confirmed list of what gets a Switch 2 Elden Ring save "
+    "banned. The findings below come from PC; a ban applies to the "
+    "Nintendo Account, not only this save.",
+    _GAME_TEXT["elden_ring"][1],
+)
+
+
 def _nr_save_name(save_path: str) -> str:
     """File name of the save a Nightreign file belongs to: the save named by
     its .backups folder, else the file name without .bak suffixes."""
@@ -246,8 +264,18 @@ def _is_nr_ps_save(save_path: str) -> bool:
         return False
 
 
+def _is_er_ps_save(save_path: str) -> bool:
+    from er_save_manager.parser.platform import PS_MAGIC
+
+    try:
+        with Path(save_path).open("rb") as f:
+            return f.read(4) == PS_MAGIC
+    except OSError:
+        return False
+
+
 def is_vanilla_save(save_path: str) -> bool:
-    from er_save_manager.games.ps_userdata import is_ps_userdata
+    from er_save_manager.games.ps_userdata import is_userdata_file
     from er_save_manager.games.save_identify import identify_game
 
     if identify_game(save_path) == "nightreign":
@@ -255,18 +283,24 @@ def is_vanilla_save(save_path: str) -> bool:
         # only a .co2 name marks a save that never reaches the official
         # servers. Backups and renamed copies count as vanilla.
         return not _nr_save_name(save_path).lower().endswith(".co2")
-    return save_path.lower().endswith(VANILLA_SUFFIXES) or is_ps_userdata(save_path)
+    return save_path.lower().endswith(VANILLA_SUFFIXES) or is_userdata_file(save_path)
 
 
 def warning_key(game_key: str, save_path: str) -> str:
-    """_GAME_TEXT key for a save: PS4 userdata files and Nightreign
-    PlayStation saves get their own text."""
-    from er_save_manager.games.ps_userdata import is_ps_userdata
+    """_GAME_TEXT key for a save: PS4 userdata files, PlayStation saves of
+    Elden Ring and Nightreign and Elden Ring Switch 2 files get their own
+    text."""
+    from er_save_manager.games.ps_userdata import is_ps_userdata, is_switch2_userdata
 
     if is_ps_userdata(save_path, game_key):
         return f"{game_key}_ps4"
     if game_key == "nightreign" and _is_nr_ps_save(save_path):
         return "nightreign_ps"
+    if game_key == "elden_ring":
+        if is_switch2_userdata(save_path):
+            return "elden_ring_switch2"
+        if _is_er_ps_save(save_path):
+            return "elden_ring_ps"
     return game_key
 
 

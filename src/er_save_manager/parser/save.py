@@ -11,6 +11,7 @@ import logging
 import struct
 from dataclasses import dataclass, field
 from io import BytesIO
+from pathlib import Path
 
 from er_save_manager.own_writes import atomic_write
 from er_save_manager.parser.user_data_10 import UserData10
@@ -73,7 +74,12 @@ class Save:
     user_data_11: bytes = b""
 
     _user_data_10_offset: int = 0
+    _user_data_11_offset: int = 0
     _slot_offsets: list[int] = field(default_factory=list)
+    # Switch 2 save: file name of each entry, and each entry as last read
+    # or written. None for a PC or PS file.
+    _switch2_names: list[str] | None = None
+    _switch2_written: list[bytes] | None = None
 
     # Note: _raw_data and _original_filepath are set dynamically in from_file()
     # They are not dataclass fields to avoid type conversion issues
@@ -100,6 +106,13 @@ class Save:
         super().__setattr__(name, value)
 
     @property
+    def platform(self) -> str:
+        """ "pc", "ps" (memory.dat) or "switch2" (userdata folder)."""
+        if self._switch2_names is not None:
+            return "switch2"
+        return "ps" if self.is_ps else "pc"
+
+    @property
     def is_convergence(self) -> bool:
         """
         Check if this save is for the Convergence mod.
@@ -124,10 +137,28 @@ class Save:
         Returns:
             Save instance with all data parsed
         """
+        from er_save_manager.games import ps_userdata
+
+        if ps_userdata.is_switch2_userdata(filepath):
+            from er_save_manager.parser.platform import PS_HEADER
+
+            files = ps_userdata.require_folder(
+                filepath, "elden_ring", ps_userdata.SWITCH2
+            )
+            parts = [p.read_bytes() for p in files]
+            obj = cls.from_bytes(PS_HEADER + b"".join(parts), filepath)
+            obj._switch2_names = [p.name for p in files]
+            obj._switch2_written = parts
+            return obj
 
         with open(filepath, "rb") as file:
             data = file.read()
+        return cls.from_bytes(data, filepath)
 
+    @classmethod
+    def from_bytes(cls, data: bytes, filepath: str = "") -> Save:
+        """Parse a PC or PlayStation save held in memory. filepath is where
+        save() writes it back to."""
         if len(data) < 4:
             raise ValueError(f"Save file is empty or too small: {filepath}")
 
@@ -212,7 +243,9 @@ class Save:
 
             except Exception:
                 obj.character_slots.append(UserDataX())
-                correct_position = slot_start + 0x280010
+                correct_position = (
+                    slot_start + slot_data_size + (0 if obj.is_ps else 16)
+                )
                 f.seek(correct_position)
 
         obj._slot_digests = obj._digest_slots()
@@ -237,6 +270,7 @@ class Save:
         if not obj.is_ps:
             f.read(16)  # Skip checksum
 
+        obj._user_data_11_offset = f.tell()
         if obj.is_ps:
             obj.user_data_11 = f.read(0x240010)
         else:
@@ -384,11 +418,36 @@ class Save:
         if not hasattr(self, "_raw_data"):
             raise RuntimeError("Cannot write save file: raw data not available")
 
+        self.prepare_write()
+
+        if self._switch2_names is not None:
+            self._write_switch2(Path(filepath))
+            return
+        atomic_write(filepath, self._raw_data, loaded=True)
+
+    def prepare_write(self) -> None:
+        """Refresh the PlayerGameDataHash and load-screen summaries of the
+        edited slots, as every write does."""
         edited = self._edited_slots()
         self._refresh_player_data_hashes()
         self._sync_profile_summaries(edited)
 
-        atomic_write(filepath, self._raw_data, loaded=True)
+    def _write_switch2(self, filepath: Path) -> None:
+        """Write each changed entry of a Switch 2 save to its file in
+        filepath's folder; into another folder every entry is written."""
+        from er_save_manager.own_writes import check_loaded
+        from er_save_manager.parser.platform import entries
+
+        check_loaded(filepath)
+        same_folder = (
+            Path(self._original_filepath).resolve().parent == filepath.resolve().parent
+        )
+        for i, part in enumerate(entries(self)):
+            if same_folder and part == self._switch2_written[i]:
+                continue
+            atomic_write(filepath.parent / self._switch2_names[i], part, loaded=True)
+            if same_folder:
+                self._switch2_written[i] = part
 
     def get_active_slots(self) -> list[int]:
         """

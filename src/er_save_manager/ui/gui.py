@@ -127,15 +127,15 @@ _PS4_SAVE_TEXT = {
         "find userdata files."
     ),
     "dark_souls_remastered": (
-        "PS4 saves must be exported from the console as userdata files, for "
-        "example with Apollo Save Tool. Open any of them and the whole folder "
-        "is loaded: userdata0000 to userdata0009 for the characters and "
-        "userdata0010 for the load screen. All 11 files are needed; the "
-        "backup files the console keeps next to them are not. Files as copied "
-        "off the console and files run through Apollo's Decrypt userdata step "
-        "both load, and each is saved back in the form it had. Decrypted "
-        "files need Apollo's Encrypt userdata and Update MD5 Hash steps before "
-        "they go back to the console. Auto-Find does not find userdata files."
+        "PS4 saves must be exported from the console as userdata files. Open "
+        "any of them and the whole folder is loaded: userdata0000 to "
+        "userdata0009 for the characters and userdata0010 for the load "
+        "screen. All 11 files are needed; the backup files the console keeps "
+        "next to them are not. Files as copied off the console (encrypted) "
+        "and decrypted files both load, and each is saved back in the form "
+        "it had. Decrypted files must be encrypted again, with a new MD5 "
+        "hash, before they go back to the console. Auto-Find does not find "
+        "userdata files."
     ),
     "dark_souls_2": (
         "PS4 saves must be decrypted and exported as userdata files before "
@@ -148,8 +148,20 @@ _PS4_SAVE_TEXT = {
 }
 
 
+# Console save help per game: (button text, dialog title)
+_CONSOLE_LABELS = {
+    "elden_ring": ("PS / Switch Save?", "PS / Switch Saves"),
+    "nightreign": ("PS Save?", "PlayStation Saves"),
+}
+_PS4_LABELS = ("PS4 Save?", "PS4 Saves")
+
+
+def _console_labels(game_key: str) -> tuple[str, str]:
+    return _CONSOLE_LABELS.get(game_key, _PS4_LABELS)
+
+
 def _console_button_text(game_key: str) -> str:
-    return "PS4 Save?" if game_key in _PS4_USERDATA_GAMES else "PS / Switch Save?"
+    return _console_labels(game_key)[0]
 
 
 _log = logging.getLogger(__name__)
@@ -2636,7 +2648,7 @@ class SaveManagerGUI:
         from er_save_manager.ui import dialog_style as ds
 
         ps4_text = _PS4_SAVE_TEXT.get(self.active_game)
-        title = "PS4 Saves" if ps4_text else "PS / Switch Saves"
+        title = _console_labels(self.active_game)[1]
         dialog = ds.create(self.root, title)
         main_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         main_frame.pack(fill=ctk.BOTH, expand=True, padx=20, pady=16)
@@ -2653,9 +2665,17 @@ class SaveManagerGUI:
         ctk.CTkLabel(header, text=title, font=("Inter", 19, "bold")).pack(side=ctk.LEFT)
         if ps4_text:
             text = ps4_text
+        elif self.active_game == "elden_ring":
+            text = (
+                "PlayStation saves must be decrypted and exported as memory.dat "
+                "before you can load them. Switch 2 saves are a folder of "
+                "files named ER_____0000_userdata0000 to 0011: open any of "
+                "them and the whole folder is loaded. All 12 files are "
+                "needed. Auto-Find does not find console saves."
+            )
         else:
             text = (
-                "Console saves must be decrypted and exported as memory.dat "
+                "PlayStation saves must be decrypted and exported as memory.dat "
                 "before you can load them. Auto-Find does not find memory.dat files."
             )
         ctk.CTkLabel(
@@ -2719,6 +2739,8 @@ class SaveManagerGUI:
             ext_str = " ".join(f"*{e}" for e in profile.extensions)
             if profile.key in ("elden_ring", "nightreign"):
                 ext_str += " *.dat"
+            if profile.key == "elden_ring":
+                ext_str += " ER_____0000_userdata*"
             elif profile.key in _PS4_USERDATA_GAMES:
                 ext_str += " userdata*"
             filetypes = [(f"{profile.name} Saves", ext_str), ("All files", "*.*")]
@@ -2726,7 +2748,7 @@ class SaveManagerGUI:
         else:
             filetypes = [
                 ("Save Files", "*.sl2 *.co2 *.cnv *.cnvco2 *.dat"),
-                ("PlayStation (Save Wizard)", "*"),
+                ("PlayStation saves", "*"),
                 ("All files", "*.*"),
             ]
             title = "Select Save File"
@@ -3122,8 +3144,11 @@ class SaveManagerGUI:
                     self.ds2_management_tab.refresh()
             elif tab_name == "Hex Editor" and self.save_file:
                 try:
-                    with open(self.save_path, "rb") as f:
-                        self.save_file._raw_data = f.read()
+                    # A Switch 2 save spans several files; its _raw_data is
+                    # already the whole save.
+                    if getattr(self.save_file, "platform", "pc") != "switch2":
+                        with open(self.save_path, "rb") as f:
+                            self.save_file._raw_data = f.read()
                     self.hex_tab.hex_display_at_offset(0)
                 except Exception:
                     pass
