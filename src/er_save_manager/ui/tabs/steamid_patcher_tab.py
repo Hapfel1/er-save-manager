@@ -67,6 +67,48 @@ def steamid64_input_error(text: str, field: str) -> str | None:
     return None
 
 
+STEAM_URL_FORMATS = (
+    "Supported formats:\n"
+    "  https://steamcommunity.com/profiles/76561198012345678\n"
+    "  https://steamcommunity.com/id/username"
+)
+
+
+def parse_steam_input(
+    text: str, field: str
+) -> tuple[str | None, str | None, str | None]:
+    """(SteamID64, vanity name, error) for a SteamID in any format or a
+    Steam profile URL. A /id/ URL gives its vanity name, which
+    fetch_vanity_steamid resolves; exactly one of the three is set."""
+    text = text.strip()
+    if "/" not in text:
+        steamid, error = to_steamid64(text, field)
+        return steamid, None, error
+    if match := re.search(r"/profiles/([^/?#]*)", text):
+        steamid = match.group(1)
+        error = steamid64_input_error(steamid, field)
+        return (None, None, error) if error else (steamid, None, None)
+    if match := re.search(r"/id/([^/?#]+)", text):
+        return None, match.group(1), None
+    return None, None, f"Could not extract SteamID from URL.\n\n{STEAM_URL_FORMATS}"
+
+
+def fetch_vanity_steamid(custom_name: str) -> str | None:
+    """SteamID64 of a vanity profile name, None when Steam has none. Runs a
+    network request; call it off the UI thread."""
+    # Steam's XML profile endpoint requires no API key and returns
+    # a <steamID64> element directly.
+    import urllib.request
+
+    xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
+    req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=8) as resp:
+        body = resp.read().decode("utf-8", errors="replace")
+
+    match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
+    return match.group(1) if match else None
+
+
 class SteamIDPatcherTab:
     """Tab for SteamID patching operations across all supported games."""
 
@@ -714,43 +756,17 @@ class SteamIDPatcherTab:
             notify(self.parent, "Enter a Steam profile URL", "warning")
             return
 
-        field = "Steam profile URL"
-        if "/" not in url:
-            steamid, error = to_steamid64(url, field)
-            if error:
-                CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
-                return
-            self.new_steamid_var.set(steamid)
-            self.steam_url_var.set("")
-            self.show_toast(f"SteamID: {steamid}", duration=2000)
+        steamid, vanity, error = parse_steam_input(url, "Steam profile URL")
+        if vanity:
+            self._resolve_vanity_url(vanity)
             return
-
-        match = re.search(r"/profiles/([^/?#]*)", url)
-        if match:
-            steamid = match.group(1)
-            error = steamid64_input_error(steamid, field)
-            if error:
-                CTkMessageBox.showerror("Invalid SteamID", error, parent=self.parent)
-                return
-            self.new_steamid_var.set(steamid)
-            self.steam_url_var.set("")
-            self.show_toast(f"Extracted SteamID: {steamid}", duration=2500)
+        if error:
+            title = "Invalid URL" if "/" in url else "Invalid SteamID"
+            CTkMessageBox.showerror(title, error, parent=self.parent)
             return
-
-        # Try to resolve vanity URL
-        match = re.search(r"/id/([^/]+)", url)
-        if match:
-            custom_name = match.group(1)
-            self._resolve_vanity_url(custom_name)
-            return
-
-        CTkMessageBox.showerror(
-            "Invalid URL",
-            "Could not extract SteamID from URL.\n\nSupported formats:\n"
-            "  https://steamcommunity.com/profiles/76561198012345678\n"
-            "  https://steamcommunity.com/id/username",
-            parent=self.parent,
-        )
+        self.new_steamid_var.set(steamid)
+        self.steam_url_var.set("")
+        self.show_toast(f"SteamID: {steamid}", duration=2500)
 
     def _resolve_vanity_url(self, custom_name: str):
         """Look up the SteamID of a vanity URL on a worker thread."""
@@ -799,18 +815,7 @@ class SteamIDPatcherTab:
 
     @staticmethod
     def _fetch_vanity_steamid(custom_name: str) -> str | None:
-        # Steam's XML profile endpoint requires no API key and returns
-        # a <steamID64> element directly.
-        import re
-        import urllib.request
-
-        xml_url = f"https://steamcommunity.com/id/{custom_name}/?xml=1"
-        req = urllib.request.Request(xml_url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-
-        match = re.search(r"<steamID64>(\d{17})</steamID64>", body)
-        return match.group(1) if match else None
+        return fetch_vanity_steamid(custom_name)
 
     def auto_detect_steamid(self):
         """

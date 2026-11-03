@@ -849,6 +849,35 @@ def _pick_file_native_linux(
     return False
 
 
+def pick_folder(title: str, initialdir: str | None = None) -> str | None:
+    """Open a folder picker (zenity or kdialog on Linux, as pick_file).
+
+    Returns the selected folder, or None if the user cancelled.
+    """
+    if platform_module.system() == "Linux":
+        env = _get_subprocess_env()
+        kde = "KDE" in os.environ.get("XDG_CURRENT_DESKTOP", "").upper().split(":")
+        tools = ("kdialog", "zenity") if kde else ("zenity", "kdialog")
+        tool = next((t for t in tools if shutil.which(t)), None)
+        cmd = None
+        if tool == "zenity":
+            cmd = ["zenity", "--file-selection", "--directory", f"--title={title}"]
+            if initialdir:
+                cmd.append(f"--filename={os.path.join(initialdir, '')}")
+        elif tool == "kdialog":
+            cmd = ["kdialog", "--title", title, "--getexistingdirectory"]
+            cmd.append(initialdir or os.path.expanduser("~"))
+        if cmd:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, check=False, env=env
+            )
+            return (result.stdout.strip() if result.returncode == 0 else "") or None
+
+    from tkinter import filedialog
+
+    return filedialog.askdirectory(title=title, initialdir=initialdir) or None
+
+
 def _apply_default_extension(
     path: str, save: bool, defaultextension: str | None
 ) -> str:

@@ -135,7 +135,11 @@ class AdvancedToolsTab:
             info = []
             info.append("SAVE FILE INFORMATION")
             info.append("=" * 40)
-            info.append(f"Platform: {'PlayStation' if save_file.is_ps else 'PC'}")
+            platform = getattr(save_file, "platform", "pc")
+            info.append(
+                "Platform: "
+                + {"ps": "PlayStation", "switch2": "Switch 2"}.get(platform, "PC")
+            )
             info.append(f"Magic: {save_file.magic.hex()}")
 
             if save_file.user_data_10_parsed and not getattr(save_file, "is_ps", False):
@@ -266,7 +270,7 @@ class AdvancedToolsTab:
             return
 
         if getattr(save_file, "is_ps", False):
-            notify(self.parent, "PlayStation saves do not use slot checksums.", "info")
+            notify(self.parent, "Console saves do not use slot checksums.", "info")
             return
 
         save_path = self.get_save_path()

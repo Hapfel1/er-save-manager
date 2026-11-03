@@ -13,7 +13,7 @@ The Character Management tab provides complete control over your character slots
 - Move characters between slots
 - Copy characters to different save files
 - Delete characters permanently
-- Copy the save to another extension (vanilla, Seamless Co-op, Convergence)
+- Copy the save to another extension (vanilla, Seamless Co-op, Convergence) or platform (PlayStation, Switch 2)
 - Open the community Character Browser (**Browse Character Library**)
 
 The operations pick their own slots, so the **Character** bar is not used on this tab.
@@ -322,7 +322,22 @@ The game, or the mod loader, picks the save file by its extension: `.sl2` for th
 
 - The loaded file is never changed. An existing target file is backed up before it is changed.
 - **Copy** puts the chosen characters into the target file: each goes into a free slot or replaces one character, and the others in the target stay. **Replace Whole File** overwrites the target with the loaded save.
-- Characters holding content the target setup lacks are not copied: Convergence items or flags going to an extension without Convergence, Seamless Co-op items going to `.sl2`, and weapons above +15 going to Convergence.
+- Characters holding content the target setup lacks are not copied: Convergence items or flags going to an extension without Convergence, Seamless Co-op items going to `.sl2` or a console, and weapons above +15 going to Convergence.
+
+### Other platforms
+
+The list also holds the console formats of the game, and a console save lists the PC extensions:
+
+| Game | Console target |
+|---|---|
+| Elden Ring | PlayStation `memory.dat`, Switch 2 folder (`ER_____0000_userdata0000` to `0011`) |
+| Nightreign | PlayStation `memory.dat` |
+| Dark Souls III, Dark Souls Remastered, Dark Souls II | PS4 `userdata` folder |
+
+- A copy to another platform goes into a folder chosen with **Change Folder** (the save's own folder until then) and is rebuilt in that platform's layout. Consoles count as vanilla, so Seamless Co-op items block a character.
+- A PC copy of a console save needs the Steam account it is for: pick one of the accounts signed in on this PC or choose **Other SteamID...** and enter a SteamID in any format or a Steam profile link. Dark Souls Remastered saves hold no SteamID; the save folder name sets the account.
+- Elden Ring and Nightreign PC copies of a console save get the default PC options (window size and keyboard keys).
+- A Dark Souls III PS4 save cannot become a new PC save (the PC file also holds regulation data), and a Dark Souls Remastered PC save cannot become a new PS4 save (the PS4 system file holds data the PC file lacks). For these, choose a folder holding an existing save of the target platform: the characters are copied into its slots.
 
 ---
 

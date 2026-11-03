@@ -539,7 +539,8 @@ class CharacterManagementTab:
         ctk.CTkLabel(
             self.ops_scrollable,
             text=(
-                "Copy this save to another extension (vanilla, Seamless Co-op, Convergence). "
+                "Copy this save to another extension (vanilla, Seamless Co-op, "
+                "Convergence) or platform (PlayStation, Switch 2). "
                 "The current file is not changed."
             ),
             font=("Inter", 11),

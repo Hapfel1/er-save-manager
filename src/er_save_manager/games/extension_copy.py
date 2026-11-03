@@ -1,15 +1,25 @@
 """
-Copy a save file to another mod extension.
+Copy a save file to another mod extension or another platform.
 
 The game, or the mod loader, picks the save file by extension: .sl2 for the
 unmodded game, .co2 for Seamless Co-op, .cnv for Convergence and .cnvco2 for
 Convergence with Seamless Co-op. All of them hold the same format, so a copy
-under the new name loads. A character can still hold content that the other
-setup lacks, and such characters are never written to the target:
+under the new name loads.
+
+A PlayStation or Switch 2 save holds the same character data in another
+container: memory.dat (Elden Ring, Nightreign), a PS4 userdata folder (Dark
+Souls III, Remastered, II) or a Switch 2 userdata folder (Elden Ring). A copy
+to another platform goes into a chosen folder and is rebuilt in that
+platform's layout. Consoles run the unmodded game. Where a new save of the
+target platform cannot be built from the source (DS3 PS4 -> PC, DSR PC ->
+PS4), only an existing save there can receive characters.
+
+A character can still hold content that the other setup lacks, and such
+characters are never written to the target:
 
 - Convergence content (Convergence-only items or Convergence event flags)
   going to an extension without Convergence.
-- Seamless Co-op items going to the vanilla extension (.sl2).
+- Seamless Co-op items going to the vanilla extension (.sl2) or a console.
 - Weapons above +15 going to Convergence, which caps upgrades at +15.
 
 The source file is never written. An existing target is backed up before it
@@ -23,11 +33,16 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from er_save_manager.games import ps_userdata
 from er_save_manager.games.game_profiles import PROFILES_BY_KEY
 from er_save_manager.games.save_identify import KNOWN_GAMES, identify_game
 from er_save_manager.own_writes import atomic_write
 
 CHARACTER_SLOTS = 10
+
+PC = "pc"
+PS = "ps"
+SWITCH2 = "switch2"
 
 
 @dataclass(frozen=True)
@@ -36,6 +51,7 @@ class Flavor:
     label: str
     seamless: bool
     convergence: bool
+    platform: str = PC
 
 
 FLAVORS: dict[str, Flavor] = {
@@ -48,6 +64,20 @@ FLAVORS: dict[str, Flavor] = {
 # Extensions recognized on a source file only. Convergence 3.0.3 and later
 # load .cnvco2 instead of .cnv.co2.
 _SOURCE_ONLY: dict[str, Flavor] = {".cnv.co2": FLAVORS[".cnvco2"]}
+
+MEMORY_DAT = "memory.dat"
+_PS_MEMORY_DAT = Flavor(MEMORY_DAT, "PlayStation (memory.dat)", False, False, PS)
+_PS4_FOLDER = Flavor("ps4", "PS4 (userdata folder)", False, False, PS)
+_SWITCH2_FOLDER = Flavor("switch2", "Switch 2 (userdata folder)", False, False, SWITCH2)
+
+# Console targets per game, by platform
+CONSOLE_TARGETS: dict[str, dict[str, Flavor]] = {
+    "elden_ring": {PS: _PS_MEMORY_DAT, SWITCH2: _SWITCH2_FOLDER},
+    "nightreign": {PS: _PS_MEMORY_DAT},
+    "dark_souls_3": {PS: _PS4_FOLDER},
+    "dark_souls_remastered": {PS: _PS4_FOLDER},
+    "dark_souls_2": {PS: _PS4_FOLDER},
+}
 
 # Extensions of files the game and the editor write next to a save.
 _RESERVED = (".bak", ".tmp", ".backups", ".zip")
@@ -66,6 +96,44 @@ class ExtensionCopyError(Exception):
 def target_extensions(game_key: str) -> list[str]:
     """Extensions a save of this game can be copied to."""
     return [e for e in PROFILES_BY_KEY[game_key].extensions if e in FLAVORS]
+
+
+def source_platform(path: Path) -> str:
+    """PC, PS or SWITCH2 for a save file, by container (not by game)."""
+    kind = ps_userdata.userdata_kind(path)
+    if kind is not None:
+        return SWITCH2 if kind[1] == ps_userdata.SWITCH2 else PS
+    try:
+        with Path(path).open("rb") as f:
+            magic = f.read(4)
+    except OSError as e:
+        raise ExtensionCopyError(f"Could not read the save:\n{e}") from e
+    return PC if magic == b"BND4" else PS
+
+
+def targets(game_key: str, source: Path) -> list[Flavor]:
+    """Standard targets for source: the other PC extensions, then the
+    consoles other than the source's own platform."""
+    platform = source_platform(source)
+    consoles = [
+        f for p, f in CONSOLE_TARGETS.get(game_key, {}).items() if p != platform
+    ]
+    if platform == PC:
+        # Only the file's own extension is left out: a .cnv.co2 save can
+        # still go to .cnvco2, which has the same flavor.
+        _, own = split_name(source)
+        pc = [FLAVORS[e] for e in target_extensions(game_key) if e != own]
+    else:
+        pc = [FLAVORS[e] for e in target_extensions(game_key)]
+    return pc + consoles
+
+
+def target_flavor(game_key: str, key: str) -> Flavor:
+    """Flavor for a target key: a console target's ext or a PC extension."""
+    for flavor in CONSOLE_TARGETS.get(game_key, {}).values():
+        if flavor.ext == key:
+            return flavor
+    return custom_flavor(game_key, key)
 
 
 def custom_flavor(game_key: str, ext: str) -> Flavor:
@@ -112,6 +180,54 @@ def target_path(source: Path, ext: str) -> Path:
     return source.with_name(base + ext)
 
 
+def _is_folder_target(game_key: str, dst: Flavor) -> bool:
+    return dst.platform == SWITCH2 or (dst.platform == PS and dst.ext != MEMORY_DAT)
+
+
+def _folder_platform(dst: Flavor) -> str:
+    return ps_userdata.SWITCH2 if dst.platform == SWITCH2 else ps_userdata.PS4
+
+
+def platform_target(
+    game_key: str, source: Path, dst: Flavor, folder: Path | None = None
+) -> Path:
+    """Path of the target for dst in folder (the source's folder when None).
+    A folder target is named by its first userdata file."""
+    source = Path(source)
+    folder = Path(folder) if folder else source.parent
+    if dst.platform == PC:
+        if source_platform(source) == PC:
+            base, _ = split_name(source)
+        else:
+            base, _ = split_name(Path(PROFILES_BY_KEY[game_key].save_filename))
+        return folder / (base + dst.ext)
+    if _is_folder_target(game_key, dst):
+        return folder / ps_userdata.entry_file_name(0, _folder_platform(dst))
+    return folder / MEMORY_DAT
+
+
+def _target_exists(game_key: str, dst: Flavor, target: Path) -> bool:
+    """True when the target is there; a folder target only when all its
+    userdata files are. Raises for a folder holding some of them."""
+    if not _is_folder_target(game_key, dst):
+        return target.exists()
+    platform = _folder_platform(dst)
+    named = [
+        c
+        for c in ps_userdata._children(target.parent)
+        if ps_userdata.entry_index(c, platform) is not None
+    ]
+    if not named:
+        return False
+    try:
+        ps_userdata.require_folder(target, game_key, platform)
+    except ps_userdata.IncompleteFolderError as e:
+        raise ExtensionCopyError(
+            f"{e}\n\nChoose an empty folder, or one with a complete save."
+        ) from e
+    return True
+
+
 # ---- per-game access -------------------------------------------------------
 
 
@@ -135,6 +251,19 @@ class _Game:
         raise NotImplementedError
 
     def write(self, save, path: Path) -> None:
+        raise NotImplementedError
+
+    def platform(self, save) -> str:
+        return PS if save.is_ps else PC
+
+    def cannot_build(self, source: str, target: str) -> str | None:
+        """Why a new save of platform target cannot be made from a source
+        save of platform source, None when it can."""
+        return None
+
+    def write_as(self, save, dst: Flavor, target: Path, steam_id: int) -> None:
+        """Write save, in its current state, as a new save of dst.platform
+        at target (a folder target: into target's folder)."""
         raise NotImplementedError
 
     def seamless_items(self, save, i: int) -> list[str]:
@@ -175,12 +304,22 @@ class _EldenRing(_Game):
     def load(self, path):
         from er_save_manager.parser import Save
 
-        save = Save.from_file(str(path))
-        if save.is_ps:
-            raise ExtensionCopyError(
-                "PlayStation saves have no PC extension to change."
-            )
-        return save
+        return Save.from_file(str(path))
+
+    def platform(self, save):
+        return save.platform
+
+    def write_as(self, save, dst, target, steam_id):
+        from er_save_manager.parser import platform as plat
+
+        save.prepare_write()
+        parts = plat.convert(save, dst.platform, steam_id)
+        if dst.platform == SWITCH2:
+            _write_files(target.parent, plat.switch2_files(parts))
+        elif dst.platform == PS:
+            atomic_write(target, plat.ps_bytes(parts))
+        else:
+            atomic_write(target, plat.pc_bytes(parts))
 
     def occupied(self, save, i):
         return not save.character_slots[i].is_empty()
@@ -320,6 +459,21 @@ class _DarkSouls3(_Game):
     def write(self, save, path):
         save.save_to_file(path)
 
+    def cannot_build(self, source, target):
+        if source == PS and target == PC:
+            return (
+                "A PS4 save cannot become a new PC save: the PC file holds the "
+                "game's regulation data, which a PS4 save has no copy of. "
+                "Choose a folder with an existing PC save to copy the "
+                "characters into."
+            )
+        return None
+
+    def write_as(self, save, dst, target, steam_id):
+        from er_save_manager.games.DS3 import platform as ds3p
+
+        _write_files(target.parent, ds3p.to_ps4_files(save))
+
     def seamless_items(self, save, i):
         cls = type(self)
         if cls._seamless is None:
@@ -370,6 +524,21 @@ class _DarkSoulsRemastered(_Game):
     def write(self, save, path):
         save.save_to_file(path)
 
+    def cannot_build(self, source, target):
+        if source == PC and target == PS:
+            return (
+                "A PC save cannot become a new PS4 save: a PS4 save holds data "
+                "the PC file has no copy of. Choose a folder with an existing "
+                "PS4 save (exported from the console) to copy the characters "
+                "into."
+            )
+        return None
+
+    def write_as(self, save, dst, target, steam_id):
+        from er_save_manager.games.DSR import platform as dsrp
+
+        atomic_write(target, dsrp.to_pc_bytes(save))
+
     def seamless_items(self, save, i):
         from er_save_manager.games.DSR import catalog
 
@@ -410,6 +579,14 @@ class _DarkSouls2(_Game):
 
     def write(self, save, path):
         save.save_to_file(path)
+
+    def write_as(self, save, dst, target, steam_id):
+        from er_save_manager.games.DS2 import platform as ds2p
+
+        if dst.platform == PC:
+            atomic_write(target, ds2p.to_pc_bytes(save, steam_id))
+        else:
+            _write_files(target.parent, ds2p.to_ps4_files(save))
 
     def seamless_items(self, save, i):
         from er_save_manager.games.DS2.item_database import SEAMLESS_ITEMS
@@ -460,6 +637,19 @@ class _Nightreign(_Game):
     def write(self, save, path):
         save.write_file(path)
 
+    def write_as(self, save, dst, target, steam_id):
+        from er_save_manager.games.NR import platform as nrp
+
+        atomic_write(target, nrp.convert(save, dst.platform == PS, steam_id))
+
+
+def _write_files(folder: Path, files: dict[str, bytes]) -> None:
+    for name, data in files.items():
+        atomic_write(Path(folder) / name, data)
+
+
+# Games whose PC saves carry a SteamID that a copy from a console must set
+_STEAM_ID_GAMES = frozenset({"elden_ring", "nightreign", "dark_souls_2"})
 
 _NEVER_CREATED_NOTE = (
     "A slot never used by the game's character creation may stay blank on the "
@@ -503,6 +693,32 @@ class Plan:
     target_characters: list[tuple[int, str]]
     free_slots: list[int]
     free_slot_notes: dict[int, str]
+    source_platform: str = PC
+
+    @property
+    def cross_platform(self) -> bool:
+        return self.source_platform != self.target_flavor.platform
+
+    @property
+    def target_is_folder(self) -> bool:
+        return _is_folder_target(self.game_key, self.target_flavor)
+
+    @property
+    def target_name(self) -> str:
+        """The target as shown: its file, or its folder for a folder target."""
+        if self.target_is_folder:
+            return f"{self.target_flavor.label} in {self.target.parent.name}"
+        return self.target.name
+
+    @property
+    def needs_steam_id(self) -> bool:
+        """True when the copy creates a PC save from a console save and the
+        game keeps a SteamID in it."""
+        return (
+            self.target_flavor.platform == PC
+            and self.source_platform != PC
+            and self.game_key in _STEAM_ID_GAMES
+        )
 
     @property
     def blocked(self) -> list[SourceCharacter]:
@@ -565,30 +781,41 @@ def _check_content(
             )
 
 
-def make_plan(game_key: str, source: Path, ext: str) -> Plan:
-    """Check the source characters and the target file for copying source
-    to the extension ext (a standard one or a custom one). Raises
+def make_plan(
+    game_key: str, source: Path, ext: str, folder: Path | None = None
+) -> Plan:
+    """Check the source characters and the target for copying source to the
+    target ext: a PC extension (standard or custom) or a console target's
+    ext. A target on the source's own platform defaults to the source's
+    folder, as does any target when folder is None. Raises
     ExtensionCopyError when no copy is possible."""
     source = Path(source)
     game = _GAMES.get(game_key)
     if game is None:
         raise ExtensionCopyError("This game is not supported.")
-    dst = custom_flavor(game_key, ext)
+    dst = target_flavor(game_key, ext)
     ext = dst.ext
-    try:
-        with source.open("rb") as f:
-            magic = f.read(4)
-    except OSError as e:
-        raise ExtensionCopyError(f"Could not read the save:\n{e}") from e
-    if magic != b"BND4":
-        raise ExtensionCopyError("PlayStation saves have no PC extension to change.")
+    src_platform = source_platform(source)
 
-    target = target_path(source, ext)
-    if target.resolve() == source.resolve():
-        raise ExtensionCopyError(f"The save already uses {ext}.")
+    target = platform_target(game_key, source, dst, folder)
+    if ps_userdata.save_identity(target) == ps_userdata.save_identity(source) or (
+        target.resolve() == source.resolve()
+    ):
+        raise ExtensionCopyError(
+            f"The save already uses {ext}."
+            if dst.platform == PC
+            else "Choose a folder other than the save's own folder."
+        )
 
-    src = flavor_of(source, game_key)
-    target_exists = target.exists()
+    if src_platform == PC:
+        src = flavor_of(source, game_key)
+    else:
+        src = CONSOLE_TARGETS[game_key][src_platform]
+    target_exists = _target_exists(game_key, dst, target)
+    if not target_exists and dst.platform != src_platform:
+        reason = game.cannot_build(src_platform, dst.platform)
+        if reason:
+            raise ExtensionCopyError(reason)
     if target_exists and game_key in KNOWN_GAMES:
         found = identify_game(target)
         if found != game_key:
@@ -640,6 +867,7 @@ def make_plan(game_key: str, source: Path, ext: str) -> Plan:
         target_characters,
         free,
         notes,
+        src_platform,
     )
 
 
@@ -661,25 +889,35 @@ def _copy_bytes(source: Path, target: Path) -> None:
     atomic_write(target, source.read_bytes())
 
 
-def write_copy(plan: Plan, slots: list[int]) -> None:
+def write_copy(plan: Plan, slots: list[int], steam_id: int | None = None) -> None:
     """Make the target a copy of the source holding only the given slots.
-    Replaces an existing target (backed up first)."""
+    Replaces an existing target (backed up first). steam_id is required
+    when plan.needs_steam_id."""
     chosen = set(slots)
     allowed = {c.slot for c in plan.copyable}
     if not chosen <= allowed:
         raise ExtensionCopyError("A blocked character cannot be copied.")
+    if plan.needs_steam_id and not steam_id:
+        raise ExtensionCopyError("Choose the Steam account for the PC save.")
+    game = _GAMES[plan.game_key]
+    if plan.cross_platform:
+        reason = game.cannot_build(plan.source_platform, plan.target_flavor.platform)
+        if reason:
+            raise ExtensionCopyError(reason)
     _backup_target(plan)
 
     drop = [c.slot for c in plan.characters if c.slot not in chosen]
-    if not drop:
+    if not drop and not plan.cross_platform:
         _copy_bytes(plan.source, plan.target)
         return
 
-    game = _GAMES[plan.game_key]
     save = game.load(plan.source)
     for i in drop:
         game.delete(save, i)
-    game.write(save, plan.target)
+    if plan.cross_platform:
+        game.write_as(save, plan.target_flavor, plan.target, steam_id or 0)
+    else:
+        game.write(save, plan.target)
 
 
 def write_merge(plan: Plan, pairs: list[tuple[int, int]]) -> list[tuple[int, int]]:

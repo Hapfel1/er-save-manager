@@ -285,13 +285,15 @@ class MenuSystemSaveLoad:
 class PCOptionData:
     """PC-specific options - just read as raw"""
 
+    SIZE = 0xB2
+
     raw_data: bytes = b""
 
     @classmethod
     def read(cls, f: BytesIO) -> PCOptionData:
         """Read PCOptionData - 0xB2 bytes"""
         obj = cls()
-        obj.raw_data = f.read(0xB2)
+        obj.raw_data = f.read(cls.SIZE)
         return obj
 
 
@@ -367,6 +369,10 @@ class UserData10:
 
     version: int = 0
     steam_id: int = 0
+    # Absolute offsets in the parsed buffer: steam_id, and PCOptionData on
+    # PC or the position it would have on PlayStation
+    steam_id_offset: int = 0
+    pc_option_data_offset: int = 0
     settings: Settings = None
     menu_system_save_load: MenuSystemSaveLoad = None
     profile_summary: ProfileSummary = None
@@ -391,6 +397,7 @@ class UserData10:
 
         obj.version = struct.unpack("<I", f.read(4))[0]
 
+        obj.steam_id_offset = f.tell()
         obj.steam_id = struct.unpack("<Q", f.read(8))[0]
 
         # Settings (0x140 bytes based on CSV)
@@ -413,6 +420,7 @@ class UserData10:
         f.read(5)
 
         # PCOptionData (PC only, 0xB2 bytes)
+        obj.pc_option_data_offset = f.tell()
         if not is_ps:
             obj.pc_option_data = PCOptionData.read(f)
 

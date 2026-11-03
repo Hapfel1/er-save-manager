@@ -183,12 +183,12 @@ class BackupManager:
         Args:
             save_path: Path to the save file
         """
-        from er_save_manager.games.ps_userdata import is_ps_userdata
+        from er_save_manager.games.ps_userdata import is_userdata_file
 
         self.save_path = Path(save_path).resolve()
-        # A PS4 save is a folder of userdata files; one backup holds all of
-        # them, whichever file was opened.
-        self._ps_folder = is_ps_userdata(self.save_path)
+        # A PS4 or Switch 2 save is a folder of userdata files; one backup
+        # holds all of them, whichever file was opened.
+        self._ps_folder = is_userdata_file(self.save_path)
         stem = "userdata" if self._ps_folder else self.save_path.name
         self.backup_folder = self.save_path.parent / (stem + self.BACKUP_FOLDER_SUFFIX)
         self._history: BackupHistory | None = None
