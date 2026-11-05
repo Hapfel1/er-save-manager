@@ -16,24 +16,7 @@ if TYPE_CHECKING:
 
 import logging
 
-# Module logger - write detailed transfer logs to project log file for debugging
 logger = logging.getLogger(__name__)
-# Ensure there is a dedicated file handler writing to er_save_manager.log
-found = False
-for h in logger.handlers:
-    if isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith(
-        "er_save_manager.log"
-    ):
-        found = True
-        break
-if not found:
-    try:
-        fh = logging.FileHandler("er_save_manager.log", encoding="utf-8")
-        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
-    except Exception:
-        pass
 
 
 class CharacterOperations:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import contextlib
 import gzip
 import json
+import logging
 import os
 import re
 import shutil
@@ -19,6 +20,9 @@ from er_save_manager.own_writes import atomic_write
 
 if TYPE_CHECKING:
     from er_save_manager.parser import Save
+
+
+_log = logging.getLogger(__name__)
 
 
 def _atomic_write_bytes(path: Path, data: bytes) -> None:
@@ -486,6 +490,7 @@ class BackupManager:
         if pruned_backups:
             self._schedule_prune(keep)
 
+        _log.info("Backup created: %s", backup_path)
         return backup_path, pruned_backups
 
     def _schedule_prune(self, keep: tuple[str, ...]) -> None:
@@ -624,6 +629,7 @@ class BackupManager:
             data = backup_path.read_bytes()
             _atomic_write_bytes(self.save_path, data)
 
+        _log.info("Backup restored: %s -> %s", backup_path, self.save_path)
         return True
 
     def restore_to_new_file(self, backup_name: str, target_path: str | Path) -> bool:
