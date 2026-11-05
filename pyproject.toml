@@ -19,11 +19,11 @@ classifiers = [
     "Topic :: Games/Entertainment",
 ]
 dependencies = [
-    "pillow>=12.3.0",
+    "pillow>=13.0.0",
     "customtkinter>=5.2.2",
     "customtkinterthemes>=1.0.0",
     "requests>=2.32.0",
-    "certifi>=2023.7.22",
+    "certifi>=2026.10.18",
     "packaging>=23.0",
     "pycryptodome>=3.23.0",
 ]
