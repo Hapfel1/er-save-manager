@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and help
+    url: https://dsc.gg/er-saveman
+    about: Ask usage questions and get help on the Discord server.
+  - name: Documentation
+    url: https://elden-ring-save-manager.readthedocs.io/en/main/
+    about: User guides for every tab and game.
+  - name: Security vulnerability
+    url: https://github.com/Hapfel1/er-save-manager/security/advisories/new
+    about: Report security problems privately, not as an issue.

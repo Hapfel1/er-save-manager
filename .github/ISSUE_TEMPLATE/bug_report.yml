@@ -1,0 +1,74 @@
+name: Bug report
+description: Something in the app does not work as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search the open issues first. For a save that no longer loads or is corrupted, use the Save corruption form instead.
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - Elden Ring
+        - Nightreign
+        - Dark Souls Remastered
+        - Dark Souls II Scholar of the First Sin
+        - Dark Souls III
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The release you downloaded, from the file name or the Releases page.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux (AppImage)
+        - Steam Deck
+        - Run from source
+    validations:
+      required: true
+  - type: dropdown
+    id: save-type
+    attributes:
+      label: Save type
+      options:
+        - PC (Steam)
+        - Seamless Co-op
+        - PlayStation (decrypted)
+        - Switch 2
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Load the save
+        2. Open the ... tab
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and files
+      description: |
+        Attach errors.log when the app showed an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
+        Attach the save file as a .zip when the bug involves a save. GitHub does not accept .sl2 or .co2 files directly.
