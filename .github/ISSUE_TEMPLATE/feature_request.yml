@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a new feature or an improvement.
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - Elden Ring
+        - Nightreign
+        - Dark Souls Remastered
+        - Dark Souls II Scholar of the First Sin
+        - Dark Souls III
+        - All games
+    validations:
+      required: false
+  - type: textarea
+    id: problem
+    attributes:
+      label: Use case
+      description: What you want to do and why it is not possible or hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How it should work
+      description: Where it would go in the app and how it would behave.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Similar features in other tools, game wiki pages, or screenshots.

@@ -1,0 +1,91 @@
+name: Save corruption
+description: A save no longer loads, crashes the game, or lost data after using the app.
+labels: ["save corruption"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep a copy of the broken save before trying anything else. The Backup Manager keeps a backup from before every write, and restoring it is often the fastest fix.
+
+        Piracy is not supported. Issues about pirated copies of the games are closed.
+  - type: dropdown
+    id: game
+    attributes:
+      label: Game
+      options:
+        - Elden Ring
+        - Nightreign
+        - Dark Souls Remastered
+        - Dark Souls II Scholar of the First Sin
+        - Dark Souls III
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The release you downloaded, from the file name or the Releases page.
+      placeholder: "2.5.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux (AppImage)
+        - Steam Deck
+        - Run from source
+    validations:
+      required: true
+  - type: dropdown
+    id: save-type
+    attributes:
+      label: Save type
+      options:
+        - PC (Steam)
+        - Seamless Co-op
+        - PlayStation (decrypted)
+        - Switch 2
+    validations:
+      required: true
+  - type: textarea
+    id: symptom
+    attributes:
+      label: What is wrong with the save
+      description: For example infinite loading screen, game crash on load, character missing, items gone.
+    validations:
+      required: true
+  - type: textarea
+    id: last-action
+    attributes:
+      label: Last action before it broke
+      description: What was done in the app (tab, feature, Apply All) or in the game right before the problem started.
+    validations:
+      required: true
+  - type: dropdown
+    id: save-fixer
+    attributes:
+      label: Did the Save Fixer find anything?
+      options:
+        - Not tried
+        - Found issues, fixing did not help
+        - Found nothing
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Save files
+      description: |
+        Attach the broken save and, if available, the last working backup from the Backup Manager, each as a .zip. GitHub does not accept .sl2 or .co2 files directly.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        errors.log: written whenever the app shows an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
+        er_save_manager.log (detailed log): open the Settings tab and type STRAWBERRY to show the Advanced section, tick "Verbose logging to file", reproduce the problem, then attach er_save_manager.log from the same folder as errors.log.

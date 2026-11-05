@@ -6,7 +6,7 @@ Thank you for considering contributing. This document provides guidelines for co
 
 ## Code of Conduct
 
-Be respectful and constructive. We're all here to make a better tool.
+Everyone taking part follows the [Code of Conduct](https://github.com/Hapfel1/er-save-manager/blob/main/.github/CODE_OF_CONDUCT.md). Security problems go through the [security policy](https://github.com/Hapfel1/er-save-manager/blob/main/.github/SECURITY.md), not public issues.
 
 ---
 
@@ -25,14 +25,16 @@ Be respectful and constructive. We're all here to make a better tool.
 - Clear description
 - Steps to reproduce
 - Expected vs actual behavior
-- Save file
-- Error logs
+- Save file, zipped (GitHub does not accept .sl2 or .co2 directly)
+- `errors.log` from the settings data folder (`%APPDATA%\ER Save Manager` on Windows, `~/.local/share/er-save-manager` on Linux), written whenever the app shows an error dialog
+- For a detailed log, `er_save_manager.log`: on the Settings tab, type `STRAWBERRY` to show the Advanced section, tick **Verbose logging to file**, reproduce the problem, and take the file from the same folder as `errors.log`
 - Operating system and version
 - Tool version
 
 **Where to report:**
 
-- GitHub Issues
+- [GitHub Issues](https://github.com/Hapfel1/er-save-manager/issues/new/choose), using the matching form
+- Questions and help: the [Discord server](https://dsc.gg/er-saveman)
 
 ### Suggesting Features
 
@@ -60,7 +62,7 @@ Be respectful and constructive. We're all here to make a better tool.
 ### Requirements
 
 - Python 3.13+
-- uv or pip
+- [uv](https://github.com/astral-sh/uv)
 - Git
 
 ### Setup
@@ -70,12 +72,8 @@ Be respectful and constructive. We're all here to make a better tool.
 git clone https://github.com/YOUR_USERNAME/er-save-manager.git
 cd er-save-manager
 
-# Create virtual environment
-uv venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# Install dependencies
-uv pip install -e ".[dev]"
+# Create the environment with the locked dependencies
+uv sync --locked --dev
 ```
 
 ### Running
@@ -86,11 +84,12 @@ uv run python run_gui.py
 
 ---
 
-### Format & Lint
+### Format, Lint and Test
 
 ```bash
 uv run ruff check
 uv run ruff format
+uv run pytest
 ```
 
 ---
@@ -99,7 +98,7 @@ uv run ruff format
 
 ### Before Submitting
 
-1. Code follows style guidelines
+1. `ruff check`, `ruff format` and `pytest` pass
 2. Documentation updated
 3. Commit messages clear
 
@@ -113,26 +112,7 @@ uv run ruff format
 - Testing performed
 - Screenshots (if UI changes)
 
-**Template:**
-```markdown
-## Description
-Brief description of changes
-
-## Related Issues
-Fixes #123
-
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
-
-## Testing
-How was this tested?
-
-## Screenshots
-If applicable
-```
+The pull request form on GitHub prefills a short template.
 
 ---
 
@@ -140,140 +120,23 @@ If applicable
 
 ```
 src/er_save_manager/
-    __init__.py                 # Package init, version
-    preset_manager.py           # Community preset download/cache
-    preset_metrics.py           # Supabase metrics (likes/downloads)
-    supabase_api.py             # PostgREST calls for share codes and metrics
-    aes_cbc.py                  # AES-CBC for the BND4 save containers
-    
-    parser/                     # Save file parsing
-        __init__.py
-        save.py                 # Main save file parser
-        user_data_x.py          # Character slot parser (UserDataX)
-        user_data_10.py         # Common data (UserData10: SteamID, profiles)
-        character.py            # PlayerGameData structure
-        character_presets.py    # Appearance preset import/export
-        equipment.py            # Inventory, spells, equipment
-        world.py                # Coordinates, weather, DLC flags
-        event_flags.py          # Event flag read/write
-        slot_rebuild.py         # Character slot operations
-        er_types.py             # Shared types (Vector3, MapId, etc.)
-    
-    fixes/                      # Corruption fixes
-        __init__.py
-        base.py                 # BaseFix interface
-        torrent.py              # Torrent bug fix
-        steamid.py              # SteamID sync
-        weather.py              # Weather sync
-        time_sync.py            # Time sync
-        event_flags.py          # Quest/warp fixes
-        dlc.py                  # DLC flag fixes
-        teleport.py             # Safe teleport
-    
-    backup/                     # Backup system
-        __init__.py
-        manager.py              # Backup operations
-    
-    data/                       # Game data
-        __init__.py
-        boss_data.py            # Boss respawner data
-        event_flags_db.py       # Event flag database
-        gestures.py             # Gesture unlock data
-        item_database.py        # Item IDs and names
-        locations.py            # World locations for teleport
-        regions.py              # Region unlock data
-        starting_classes.py     # Character class data
-        items/                  # Item category text files
-    
-    editors/                    # High-level editors
-        __init__.py
-        world_state.py          # World state editor
-    
-    platform/                   # Platform-specific utilities
-        __init__.py
-        utils.py                # Save file detection, Steam paths
-    
-    transfer/                   # Character transfer
-        __init__.py
-        character_ops.py        # Export/import/move operations
-    
-    validation/                 # Save file validation
-        __init__.py
-    
-    ui/                         # GUI (CustomTkinter)
-        __init__.py
-        gui.py                  # Main application window
-        settings.py             # Settings manager
-        theme.py                # Custom theme configuration
-        utils.py                # UI utilities
-        messagebox.py           # Custom message boxes
-        
-        tabs/                   # Main UI tabs
-            __init__.py
-            character_management_tab.py
-            save_inspector_tab.py
-            appearance_tab.py
-            world_state_tab.py
-            steamid_patcher_tab.py
-            event_flags_tab.py
-            gestures_regions_tab.py
-            advanced_tools_tab.py
-            backup_manager_tab.py
-            settings_tab.py
-        
-        dialogs/                # Dialog windows
-            __init__.py
-            character_details.py    # Character info dialog
-            save_selector.py        # Multi-save selector
-            preset_browser.py       # Community preset browser
-            browser_submission.py   # Preset submission dialog
-            backup_pruning_warning.py
-        
-        editors/                # Inline editors
-            __init__.py
-            equipment_editor.py
-            stats_editor.py
-            character_info_editor.py
-            inventory_editor.py
-        
-        widgets/                # Custom widgets
-            __init__.py
-            scrollable_frame.py
-
-resources/
-    eventflag_bst.txt           # Event flag BST mapping
-    icon/
-        icon.ico                # Windows icon
-        icon.png                # Linux/cross-platform icon
-    linux/
-        io.github.hapfel1.er_save_manager.desktop # Linux desktop entry
-        io.github.hapfel1.er_save_manager.appdata.xml # AppStream metadata
-        appimage-signing-key.asc # Public key for AppImage signatures
-
-data/                           # User data (gitignored)
-    settings.json               # User settings and preferences
-    presets/
-        cache.json              # Preset metadata cache
-        preset_*.json           # Downloaded preset data
-        thumbnails/             # Preset thumbnail images (permanent)
-        full_images/            # Full preview images (LRU cache, 500MB, 7-day expiry)
-
-scripts/                        # Build/release scripts
-    bump_version.py
-    create_release.sh
-    extract_changelog.sh
-    prepare_artifacts.sh
-
-tests/                          # Unit tests
-    __init__.py
-    test_init.py
-
-build-windows.py                # Windows build script (cx_Freeze)
-build-linux.sh                  # Linux build script (PyInstaller)
-run_gui.py                      # GUI entry point
-main.py                         # CLI entry point (legacy)
-pyproject.toml                  # Project metadata and dependencies
-.python-version                 # Python version (3.13+)
+    parser/         # Elden Ring save parsing and write-back
+    fixes/          # Save Fixer checks (BaseFix subclasses)
+    games/          # Other games: DSR, DS2, DS3, NR, plus SteamID patchers
+    editors/        # Elden Ring world state editing
+    data/           # Game data (items, event flags, locations, bosses)
+    backup/         # Backup manager
+    transfer/       # Character export, import and copy
+    platform/       # Save location detection, Steam and Proton paths
+    validation/     # Save validation
+    addons/         # Troubleshooter add-on download
+    ui/             # CustomTkinter GUI: tabs/, dialogs/, editors/
+tests/              # pytest suite
+resources/          # Icons, fonts, Windows manifest, Linux desktop files
+scripts/            # Build, release and data generation scripts
+build-windows.py    # Windows build (cx_Freeze)
+build-linux.sh      # Linux AppImage build (PyInstaller)
+run_gui.py          # GUI entry point
 ```
 
 ---
@@ -321,7 +184,7 @@ class MyCustomFix(BaseFix):
 **When modifying UI:**
 
 1. Follow existing patterns
-2. Use Qt signals/slots properly
+2. Use CustomTkinter widgets and the shared helpers in `ui/`
 3. Handle errors gracefully
 4. Add progress indicators
 5. Test on all platforms
