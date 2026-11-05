@@ -26,7 +26,8 @@ Everyone taking part follows the [Code of Conduct](https://github.com/Hapfel1/er
 - Steps to reproduce
 - Expected vs actual behavior
 - Save file, zipped (GitHub does not accept .sl2 or .co2 directly)
-- `errors.log` from the settings data folder, when the app showed an error dialog
+- `errors.log` from the settings data folder (`%APPDATA%\ER Save Manager` on Windows, `~/.local/share/er-save-manager` on Linux), written whenever the app shows an error dialog
+- For save loading problems, `er_save_manager.log`: on the Settings tab, type `STRAWBERRY` to show the Advanced section, tick **Verbose logging to file**, load the save again, and take the file from the folder of the save
 - Operating system and version
 - Tool version
 

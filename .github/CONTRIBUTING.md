@@ -14,7 +14,15 @@ with the app. Issues are for bugs and feature requests.
 ## Reporting bugs
 
 Open an issue with the matching form. Attach the save file (zipped) when the
-bug involves a save, and `errors.log` when the app showed an error dialog.
+bug involves a save, and the logs:
+
+- `errors.log`, written whenever the app shows an error dialog, in
+  `%APPDATA%\ER Save Manager` on Windows and `~/.local/share/er-save-manager`
+  on Linux.
+- `er_save_manager.log` for save loading problems: on the Settings tab, type
+  `STRAWBERRY` to show the Advanced section, tick **Verbose logging to file**,
+  load the save again, and take the file from the folder of the save.
+
 Security problems go through the [security policy](SECURITY.md), not issues.
 
 ## Pull requests

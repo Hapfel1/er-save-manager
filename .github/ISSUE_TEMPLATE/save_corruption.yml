@@ -80,3 +80,10 @@ body:
         Attach the broken save and, if available, the last working backup from the Backup Manager, each as a .zip. GitHub does not accept .sl2 or .co2 files directly.
     validations:
       required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        errors.log: written whenever the app shows an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
+        er_save_manager.log (save loading problems): open the Settings tab and type STRAWBERRY to show the Advanced section, tick "Verbose logging to file", load the save again, then attach er_save_manager.log from the folder of the save.

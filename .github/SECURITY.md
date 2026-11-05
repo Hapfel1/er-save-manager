@@ -25,9 +25,8 @@ Include:
 - What an attacker can do and the steps to reproduce it
 - A proof of concept file if one is needed, for example a crafted save file
 
-Reports are answered within 7 days. A fix ships in the next release, and the
-advisory is published once that release is out. Reporters are credited in
-the advisory unless they ask not to be.
+Fixes ship in a release, and the advisory is published once that release
+is out. Reporters are credited in the advisory unless they ask not to be.
 
 ## Scope
 

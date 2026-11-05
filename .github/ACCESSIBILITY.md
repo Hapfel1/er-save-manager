@@ -39,4 +39,3 @@ Open a [bug report](https://github.com/Hapfel1/er-save-manager/issues/new/choose
 and start the title with "Accessibility:", or ask on the
 [Discord server](https://dsc.gg/er-saveman). Describe what you tried to do,
 which assistive technology or setting you use, and where it failed.
-Reports are answered within 14 days.

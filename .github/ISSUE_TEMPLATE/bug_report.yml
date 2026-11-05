@@ -70,5 +70,6 @@ body:
     attributes:
       label: Logs and files
       description: |
-        Attach errors.log when the app showed an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
+        errors.log: written whenever the app shows an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
+        er_save_manager.log (save loading problems): open the Settings tab and type STRAWBERRY to show the Advanced section, tick "Verbose logging to file", load the save again, then attach er_save_manager.log from the folder of the save.
         Attach the save file as a .zip when the bug involves a save. GitHub does not accept .sl2 or .co2 files directly.
