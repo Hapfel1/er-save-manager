@@ -86,4 +86,4 @@ body:
       label: Logs
       description: |
         errors.log: written whenever the app shows an error dialog. It is in %APPDATA%\ER Save Manager on Windows and ~/.local/share/er-save-manager on Linux.
-        er_save_manager.log (save loading problems): open the Settings tab and type STRAWBERRY to show the Advanced section, tick "Verbose logging to file", load the save again, then attach er_save_manager.log from the folder of the save.
+        er_save_manager.log (detailed log): open the Settings tab and type STRAWBERRY to show the Advanced section, tick "Verbose logging to file", reproduce the problem, then attach er_save_manager.log from the same folder as errors.log.
