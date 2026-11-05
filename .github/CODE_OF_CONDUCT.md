@@ -7,7 +7,8 @@ This applies to issues, pull requests, discussions and the
 - No harassment, insults, slurs or personal attacks.
 - No spam, advertising or off-topic flooding.
 - Do not share other people's private information.
-- Do not post cheats for online play, or ask for help getting around bans.
+- Piracy is not supported. Do not post or ask for pirated copies of the
+  games, and do not ask for help with them.
 
 Report problems on the [Discord server](https://dsc.gg/er-saveman).
 
