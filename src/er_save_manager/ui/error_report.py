@@ -9,6 +9,7 @@ only printed to stderr, which the packaged builds do not show.
 from __future__ import annotations
 
 import datetime
+import logging
 import sys
 import threading
 import traceback
@@ -40,6 +41,7 @@ def log_exception(exc_type, exc, tb, where: str) -> Path | None:
             path.replace(path.with_name(LOG_NAME + ".1"))
         with open(path, "a", encoding="utf-8") as f:
             f.write(f"[{stamp}] {where}\n{text}\n")
+        logging.getLogger("er_save_manager").error("%s\n%s", where, text.rstrip())
     except OSError:
         return None
     return path

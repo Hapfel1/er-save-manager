@@ -29,7 +29,7 @@ from er_save_manager.games.game_profiles import GAME_PROFILES, PROFILES_BY_KEY
 from er_save_manager.own_writes import is_own_write
 from er_save_manager.parser import Save
 from er_save_manager.platform import PlatformUtils
-from er_save_manager.ui import error_report, palette, popups
+from er_save_manager.ui import error_report, palette, popups, verbose_log
 from er_save_manager.ui.character_pages import CharacterPagesTab
 from er_save_manager.ui.dialogs.character_details import CharacterDetailsDialog
 from er_save_manager.ui.dialogs.save_selector import SaveSelectorDialog
@@ -203,6 +203,7 @@ class SaveManagerGUI:
             pass
 
         self.settings = get_settings()
+        verbose_log.set_enabled(self.settings.get("verbose_logging", False))
 
         # Configure customtkinter appearance based on saved theme (default to dark)
         theme_name = self.settings.get("theme", None)
@@ -3299,15 +3300,10 @@ class SaveManagerGUI:
     ):
         """Background thread for loading save file"""
         try:
-            verbose = self.settings.get("verbose_logging", False)
-            if verbose:
-                self._verbose_log(f"Loading save: {save_path}")
-
+            _log.info("Loading save: %s", save_path)
             signature = own_writes.file_signature(save_path)
             save_file = Save.from_file(save_path)
-
-            if verbose:
-                self._verbose_log(f"Parsed successfully: {save_path}")
+            _log.info("Parsed: %s", save_path)
 
             self.root.after(
                 0,
@@ -3319,8 +3315,6 @@ class SaveManagerGUI:
                 signature,
             )
         except Exception as e:
-            if self.settings.get("verbose_logging", False):
-                self._verbose_log(f"Load failed: {save_path}: {e}")
             self.root.after(0, self._parse_failed, save_path, e)
 
     def _has_save_parser(self) -> bool:
@@ -4097,20 +4091,6 @@ class SaveManagerGUI:
             self.root.after_idle(popups.reopen, windows)
 
         self.root.after(100, wait, 0)
-
-    def _verbose_log(self, message: str) -> None:
-        """Write a timestamped line to the verbose log file next to the current save."""
-        import datetime
-
-        save_path = self.file_path_var.get() if hasattr(self, "file_path_var") else ""
-        log_dir = Path(save_path).parent if save_path else Path.home()
-        log_path = log_dir / "er_save_manager.log"
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(f"[{timestamp}] {message}\n")
-        except OSError:
-            pass
 
 
 def _article(name: str) -> str:

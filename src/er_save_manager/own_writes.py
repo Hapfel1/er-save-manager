@@ -9,8 +9,11 @@ tool) changes mtime or size and is reported.
 from __future__ import annotations
 
 import contextlib
+import logging
 import os
 from pathlib import Path
+
+_log = logging.getLogger(__name__)
 
 _last_write: dict[str, tuple[int, int]] = {}
 
@@ -72,6 +75,7 @@ def record_load(path: str | Path | None, signature: tuple[int, int] | None) -> N
         _loaded = None
     else:
         _loaded = (_key(path), signature)
+        _log.info("Loaded %s", path)
 
 
 def check_loaded(path: str | Path) -> None:
@@ -154,6 +158,7 @@ def atomic_write(
             tmp_path.unlink()
         raise
     record_write(target)
+    _log.info("Wrote %s (%d bytes)", target, len(data))
     if loaded and _loaded is not None and _loaded[0] == _key(target):
         signature = file_signature(target)
         _loaded = (_loaded[0], signature) if signature is not None else None

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import verbose_log
 from er_save_manager.ui.dialogs.opt_out_warning import WARNINGS
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.settings import get_settings
@@ -1010,13 +1011,11 @@ class SettingsTab:
             frame,
             text="Verbose logging to file",
             variable=self.verbose_logging_var,
-            command=lambda: self.settings.set(
-                "verbose_logging", self.verbose_logging_var.get()
-            ),
+            command=self._on_verbose_logging_changed,
         ).pack(anchor="w", padx=12, pady=5)
         ctk.CTkLabel(
             frame,
-            text="Writes er_save_manager.log next to the loaded save file.",
+            text="Writes er_save_manager.log to the settings folder, next to errors.log.",
             text_color=("gray40", "gray70"),
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
@@ -1149,11 +1148,17 @@ class SettingsTab:
             justify="left",
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+    def _on_verbose_logging_changed(self) -> None:
+        enabled = self.verbose_logging_var.get()
+        self.settings.set("verbose_logging", enabled)
+        verbose_log.set_enabled(enabled)
+
     def _lock_advanced(self) -> None:
         """Hide the advanced section and clear the unlock flag."""
         self.settings.set("advanced_mode_unlocked", False)
         self.settings.set("skip_game_running_check", False)
         self.settings.set("verbose_logging", False)
+        verbose_log.set_enabled(False)
         self.settings.set("icon_export_enabled", False)
         self.settings.set("debug_warped_face_sliders", False)
         self.settings.set("show_item_ids", False)
@@ -1169,6 +1174,7 @@ class SettingsTab:
             parent=self.parent,
         ):
             self.settings.reset_to_defaults()
+            verbose_log.set_enabled(False)
             self.show_eac_warning_var.set(True)
             self.remember_location_var.set(True)
             self.show_linux_save_warning_var.set(True)
