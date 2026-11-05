@@ -13,6 +13,8 @@ with the app. Issues are for bugs and feature requests.
 
 ## Reporting bugs
 
+Piracy is not supported. Issues about pirated copies of the games are closed.
+
 Open an issue with the matching form. Attach the save file (zipped) when the
 bug involves a save, and the logs:
 

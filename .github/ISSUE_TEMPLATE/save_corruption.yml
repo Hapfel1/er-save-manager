@@ -6,6 +6,8 @@ body:
     attributes:
       value: |
         Keep a copy of the broken save before trying anything else. The Backup Manager keeps a backup from before every write, and restoring it is often the fastest fix.
+
+        Piracy is not supported. Issues about pirated copies of the games are closed.
   - type: dropdown
     id: game
     attributes:

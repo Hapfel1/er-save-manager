@@ -6,6 +6,8 @@ body:
     attributes:
       value: |
         Search the open issues first. For a save that no longer loads or is corrupted, use the Save corruption form instead.
+
+        Piracy is not supported. Issues about pirated copies of the games are closed.
   - type: dropdown
     id: game
     attributes:
