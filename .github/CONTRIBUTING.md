@@ -49,8 +49,7 @@ Security problems go through the [security policy](SECURITY.md), not issues.
    screenshots for UI changes.
 
 Save format changes must derive offsets from the parser instead of
-hardcoding them, and must keep vanilla (`.sl2`) and Seamless Co-op (`.co2`)
-saves working.
+hardcoding them.
 
 ## License
 
