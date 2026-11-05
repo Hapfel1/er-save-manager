@@ -3,21 +3,21 @@ revision = 5
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and platform_machine == 'i686' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and platform_machine == 'armv7l' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and platform_machine == 'ppc64le' and sys_platform == 'linux'",
+    "python_full_version >= '3.15' and platform_machine == 's390x' and sys_platform == 'linux'",
+    "(python_full_version >= '3.15' and platform_machine == 'ARM64') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and platform_machine != 'aarch64' and platform_machine != 'armv7l' and platform_machine != 'i686' and platform_machine != 'ppc64le' and platform_machine != 's390x' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.15' and sys_platform != 'linux' and sys_platform != 'win32')",
     "python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32'",
     "python_full_version < '3.14' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and platform_machine == 'i686' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 'i686' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and platform_machine == 'armv7l' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 'armv7l' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and platform_machine == 'ppc64le' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 'ppc64le' and sys_platform == 'linux'",
-    "python_full_version >= '3.15' and platform_machine == 's390x' and sys_platform == 'linux'",
     "python_full_version < '3.15' and platform_machine == 's390x' and sys_platform == 'linux'",
-    "(python_full_version >= '3.15' and platform_machine == 'ARM64') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and platform_machine != 'aarch64' and platform_machine != 'armv7l' and platform_machine != 'i686' and platform_machine != 'ppc64le' and platform_machine != 's390x' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.15' and sys_platform != 'linux' and sys_platform != 'win32')",
     "(python_full_version == '3.14.*' and platform_machine == 'ARM64') or (python_full_version < '3.15' and platform_machine != 'ARM64' and platform_machine != 'aarch64' and platform_machine != 'armv7l' and platform_machine != 'i686' and platform_machine != 'ppc64le' and platform_machine != 's390x' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.14' and platform_machine == 'ARM64' and sys_platform == 'linux') or (python_full_version < '3.15' and sys_platform != 'linux' and sys_platform != 'win32')",
 ]
 
@@ -317,14 +317,19 @@ wheels = [
 
 [[package]]
 name = "lief"
-version = "0.17.1"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0e/05/30df8a9af4f9b183b5e89373626cf019bd98f46fe52728ab74cacd31d76a/lief-1.0.0.tar.gz", hash = "sha256:811b2354f48fa08c49b106eafc9c1b26006371dc24d3d04bfdd9939863df6e6a", size = 7774, upload-time = "2026-07-12T14:12:09.152Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/e6/96ef47c1d1cecb6ea00ba72589d1e1de49a59981c461da020a2a4d028338/lief-0.17.1-cp313-cp313-win32.whl", hash = "sha256:571b830523037efbfb9fcd58707c715ae417e2514e5abb3b03dc67b4c50f47fe", size = 3459075, upload-time = "2025-10-25T13:15:34.723Z" },
-    { url = "https://files.pythonhosted.org/packages/29/b6/90960127904fe6120ac76376db72fab88431235e2fce591d2b763de20546/lief-0.17.1-cp313-cp313-win_amd64.whl", hash = "sha256:7ada5acf4d83b5252c5fa46da3ff20c396bcdfa7aeb800c5dd28f8faa6827184", size = 3637804, upload-time = "2025-10-25T13:15:36.823Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/7a/4c4b500dfc57e31d4fbe48f9fbb52970265c78d0c8508366957e6d679126/lief-0.17.1-cp313-cp313-win_arm64.whl", hash = "sha256:52fb1bff33cc8e2d3da8a2b426e9f8e5bdb334e351e70bc21b87db374fd4a837", size = 3472733, upload-time = "2025-10-25T13:15:38.957Z" },
-    { url = "https://files.pythonhosted.org/packages/8f/e5/a5452e109c6a55deaa73a49c34130980d99debabe3f37b8d86b67b2fb382/lief-0.17.1-cp314-cp314-win32.whl", hash = "sha256:f610d5937df9de86962733673f1a2b5255931c50b004e614728e83cbb0620057", size = 3459541, upload-time = "2025-10-25T13:15:54.877Z" },
-    { url = "https://files.pythonhosted.org/packages/7f/d0/b4c959a340dd391df1f6b4c2958920f9272bc45b6b45f8af657b9377e09b/lief-0.17.1-cp314-cp314-win_amd64.whl", hash = "sha256:3dadb33cad8cf01d78a5eb12fb660ed1a06619f0baade38b606fd151e87436e2", size = 3637731, upload-time = "2025-10-25T13:15:56.644Z" },
+    { url = "https://files.pythonhosted.org/packages/87/e5/b7bcab0256eb2f15d71652d5578f338b4cac1629a35b5bef2607f41d0be9/lief-1.0.0-cp312-abi3-win32.whl", hash = "sha256:d552235f6c7b999b1837946b61cc64537501fac4fda1663c2cb76482b27b609f", size = 3720709, upload-time = "2026-07-12T14:22:43.058Z" },
+    { url = "https://files.pythonhosted.org/packages/83/16/950c16d246c52a32b47aca19ade2919dfc9192cc4c45c92635c36d3a8b6b/lief-1.0.0-cp312-abi3-win_amd64.whl", hash = "sha256:ca7774b0d88f4528a1c153d7a9d2798800d6389847b966861fad9f2edb17a593", size = 4018974, upload-time = "2026-07-12T14:10:59.857Z" },
+    { url = "https://files.pythonhosted.org/packages/91/2a/cc514b5ec9ec187335f2e8ab545d7b110a5f931d430a0bd2917563aefae4/lief-1.0.0-cp312-abi3-win_arm64.whl", hash = "sha256:956ee963e2a2ed318d08fd9fe4ff948906c483db1b88f7a62dac24db76ffa4b0", size = 3771788, upload-time = "2026-07-12T14:11:01.607Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/4d/0797e4e048179c31400322a2765a30f9dd11d1c968b829578b909452566f/lief-1.0.0-cp314-cp314t-win32.whl", hash = "sha256:b5f954b86f6c99437a461ed794bbc2d5e003e6a24e462b49f4978bce228b3801", size = 3787154, upload-time = "2026-07-12T14:22:44.99Z" },
+    { url = "https://files.pythonhosted.org/packages/13/51/b80054950752fd581c60f9c01fbca3f700a3fdd47307d0f6ae19714bb550/lief-1.0.0-cp314-cp314t-win_amd64.whl", hash = "sha256:4680aeaa0eb9f21540f37ab5f97820fdf8f08b9c67c42b4435e232ca8cc22a27", size = 4073853, upload-time = "2026-07-12T14:11:21.286Z" },
+    { url = "https://files.pythonhosted.org/packages/03/c5/3e8dab85764e5eafa8812ef5914acde47981d01c131084bcbdda9893c449/lief-1.0.0-cp314-cp314t-win_arm64.whl", hash = "sha256:7677a7b8fffd4de096d7ca1db64d1a6c3007e02650ed256fb93b2f3f9ea74097", size = 3804579, upload-time = "2026-07-12T14:11:23.349Z" },
+    { url = "https://files.pythonhosted.org/packages/46/72/2755e9afde286bef1a1501b02a1025487bcac0ad857be6e24f8ab22d5ab9/lief-1.0.0-cp315-cp315t-win32.whl", hash = "sha256:7a9c376fd607a9480777d0928ae37fd48547937b3a54bb5d130512061e5e953c", size = 3787315, upload-time = "2026-07-12T14:22:46.611Z" },
+    { url = "https://files.pythonhosted.org/packages/b8/46/bd2e04e3b8afa0a7068d80218add90ebb9a4b90fbad60987312d934d7a9f/lief-1.0.0-cp315-cp315t-win_amd64.whl", hash = "sha256:4d49b2fa555163692dbecba147a55847abf641fee3c6d72315db14d084b4a160", size = 4073797, upload-time = "2026-07-12T14:11:45.671Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/ce/dea3c1f1a2c04b6de4a8040bd16c5a081d06db8ea18e15dc715988b8df58/lief-1.0.0-cp315-cp315t-win_arm64.whl", hash = "sha256:580e786d72fc34a0402b0af66ed755e668293946705b8193b766c501f00bc448", size = 3804488, upload-time = "2026-07-12T14:11:47.346Z" },
 ]
 
 [[package]]
