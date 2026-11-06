@@ -3,6 +3,35 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.6.0
+**Released:** November 06, 2026
+
+
+### ✨ New Features
+
+- General: Link the submission terms in preset and character submissions (#471) ([3a6be75](https://github.com/Hapfel1/er-save-manager/commit/3a6be7545977c99614ef46598711f6bc74da254d))
+
+
+### 🔧 Bug Fixes
+
+- General: One verbose log in the settings folder (#468) ([48e08bb](https://github.com/Hapfel1/er-save-manager/commit/48e08bb038f4d1f6c6e1dfb8cadf66ade0ae0825))
+
+
+### 📖 Documentation
+
+- General: State that versions before 22 July 2026 were MIT (#470) ([3d50aa5](https://github.com/Hapfel1/er-save-manager/commit/3d50aa5125beebb6d9354fb31a4a4972cf6901a0))
+
+
+### 📦 Dependencies
+
+- General: Fix open security advisories and let Dependabot update uv (#464) ([5a8ccca](https://github.com/Hapfel1/er-save-manager/commit/5a8ccca88cbf1e8f6f74af0d7ff71ed50cefb7cd))
+
+- General: Update lief to 1.0.0 for GHSA-mjjp-xjfg-97wg (#467) ([c373417](https://github.com/Hapfel1/er-save-manager/commit/c3734175962358360bf487a289b62e0c42bd7a13))
+
+- General: Bump taiki-e/install-action (#466) ([bcba97d](https://github.com/Hapfel1/er-save-manager/commit/bcba97ddd6a7ca4db3eccec0ccbe34d039e81c0d))
+
+
+---
 ## 📦 Release 2.5.0
 **Released:** November 03, 2026
 
