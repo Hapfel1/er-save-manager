@@ -259,6 +259,8 @@ Attach your character files manually:
 ---
 
 **Submitted via ER Save Manager Character Browser**
+
+By submitting, I confirm that I made this character and agree to the submission terms: https://github.com/Hapfel1/er-character-library/blob/main/LICENSE
 """
 
     return body
@@ -300,6 +302,8 @@ def _create_compact_issue_body(
 ---
 
 **Submitted via ER Save Manager**
+
+By submitting, I confirm that I made this character and agree to the submission terms: https://github.com/Hapfel1/er-character-library/blob/main/LICENSE
 """
 
     return body

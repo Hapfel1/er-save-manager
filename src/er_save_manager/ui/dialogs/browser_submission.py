@@ -222,6 +222,8 @@ You can still attach images manually if you have them:
 ---
 
 **Submitted via ER Save Manager Preset Browser**
+
+By submitting, I confirm that I made this preset and agree to the submission terms: https://github.com/Hapfel1/er-character-presets/blob/main/LICENSE
 """
 
     return body
@@ -272,6 +274,8 @@ Drag `{zip_filename}` into this text box.
 ---
 
 **Submitted via ER Save Manager**
+
+By submitting, I confirm that I made this preset and agree to the submission terms: https://github.com/Hapfel1/er-character-presets/blob/main/LICENSE
 """
 
     return body
