@@ -122,6 +122,10 @@ _PIN_RADIUS_MIN = 4.0
 _PIN_RADIUS_MAX = 60.0
 # Search radius for the floor a pickup, boss, NPC or object teleport lands on
 _PIN_FLOOR_RADIUS = 32.0
+# Horizontal distance kept from a location-only pickup (flag 0): its position
+# is the object or NPC that gives the item, and navmesh can run under it
+# (the Convergence forge anvil)
+_PIN_CLEARANCE = 2.0
 # What a click on empty map selects: a pin on the nearest floor (the tile
 # when there is none), or the small overworld tile.
 _TARGET_PINS = "Pins"
@@ -5047,6 +5051,9 @@ class MapWindow:
             _PIN_FLOOR_RADIUS,
             pin.map_no,
             pin.point,
+            _PIN_CLEARANCE
+            if pin.pickup is not None and not pin.pickup.flag_id
+            else 0.0,
         )
         return floor or FloorPoint(map_id, x, y, z, pin.map_no, *pin.point)
 

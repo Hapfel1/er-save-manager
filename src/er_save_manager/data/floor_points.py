@@ -447,11 +447,14 @@ def floor_near(
     radius: float,
     map_no: int,
     point: tuple[float, float],
+    clearance: float = 0.0,
 ) -> FloorPoint | None:
     """Floor point or anchor nearest in 3D to a position in the map's own
     frame, with its boss arena flag. map_no and point are the world map
-    placement given to the result."""
-    hit = _nearest_floor(map_id_str, x, y, z, convergence, radius)
+    placement given to the result. clearance skips points closer than that
+    horizontally, for positions of objects with collision but navmesh
+    underneath."""
+    hit = _nearest_floor(map_id_str, x, y, z, convergence, radius, clearance)
     if hit is None:
         return None
     _d, map_id, px, py, pz, flag = hit
@@ -459,7 +462,13 @@ def floor_near(
 
 
 def _nearest_floor(
-    map_id_str: str, x: float, y: float, z: float, convergence: bool, radius: float
+    map_id_str: str,
+    x: float,
+    y: float,
+    z: float,
+    convergence: bool,
+    radius: float,
+    clearance: float = 0.0,
 ) -> tuple[float, str, float, float, float, int] | None:
     area, tx, tz, lod = parse_map_id(map_id_str)
     frames = [(map_id_str, x, z)]
@@ -486,6 +495,8 @@ def _nearest_floor(
             if math.hypot(ax - lx, az - lz) <= radius
         ]
         for px, py, pz, flag in cands:
+            if clearance and math.hypot(px - lx, pz - lz) < clearance:
+                continue
             d = math.sqrt((px - lx) ** 2 + (py - y) ** 2 + (pz - lz) ** 2)
             if best is None or d < best[0]:
                 best = (d, map_id, px, py, pz, flag)
