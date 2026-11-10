@@ -93,3 +93,29 @@ def test_dlc_escape(sanitized_save):
         slot = sanitized_save.character_slots[0]
         assert slot.map_id.is_dlc() is False
         assert slot.has_dlc_flag() is False
+
+
+def test_world_state_teleport_refills_zero_hp(sanitized_save):
+    """A slot saved during a death (HP 0) gets max HP when teleported; the
+    rest of PlayerGameData is unchanged."""
+    from io import BytesIO
+
+    from er_save_manager.editors.world_state import WorldStateEditor
+    from er_save_manager.parser.er_types import FloatVector3
+
+    slot = sanitized_save.character_slots[0]
+    pgd, off = slot.player_game_data, slot.player_game_data_offset
+    pgd.hp = 0
+    buf = BytesIO()
+    pgd.write(buf)
+    sanitized_save._raw_data[off : off + len(buf.getvalue())] = buf.getvalue()
+    before = bytes(sanitized_save._raw_data[off : off + 432])
+
+    editor = WorldStateEditor(sanitized_save, 0)
+    ok, _ = editor.teleport_to_custom(
+        TELEPORT_LOCATIONS["roundtable"].map_id, FloatVector3(1.0, 2.0, 3.0)
+    )
+    after = bytes(sanitized_save._raw_data[off : off + 432])
+    assert ok and pgd.hp == pgd.max_hp > 0
+    assert int.from_bytes(after[8:12], "little") == pgd.max_hp
+    assert before[:8] + before[12:] == after[:8] + after[12:]

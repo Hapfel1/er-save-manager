@@ -1,5 +1,6 @@
 flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
-0,60000,m10_00_00_00,71000,reward,0,weapon:3300000:1|weapon:11200000:1,Prime Maliketh's Black Blade|Prime Marika's Hammer,-268.66,79.26,423.48
+0,60000,m10_00_00_00,71000,reward,0,weapon:3300000:1,Prime Maliketh's Black Blade,-268.66,79.26,423.48
+0,61000,m10_00_00_00,71000,reward,0,weapon:11200000:1,Prime Marika's Hammer,-268.66,79.26,423.48
 0,107800,m61_51_46_00,76905,other,1,goods:2220000:1,Jolán and Anna,88.50,517.18,141.75
 114,101590,m13_00_00_00,71310,reward,0,goods:8121:1,Dark Moon Ring,147.63,-126.29,487.79
 171,10010,m10_00_00_00,71000,reward,0,goods:191:1,Godrick's Great Rune,-231.52,73.78,347.29

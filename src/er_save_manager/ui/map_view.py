@@ -2691,17 +2691,25 @@ class MapWindow:
         return self._pickup_states.get(pickup.key)
 
     def _pickup_at(self, sx: int, sy: int) -> _Pin | None:
-        """Pickup whose glow core is under the screen point."""
+        """Pickup whose glow core is under the screen point. Pickups on the
+        same point (the Convergence forge's two weapons) take turns: with
+        one of them selected, the next one is returned."""
         if not self._show_pickups.get():
             return None
         mx, my = self._to_map(sx, sy)
         r = max(4, self._pickup_size() * 0.6) / self._zoom
         near = list(self._pins_near(self._map_no, mx - r, my - r, mx + r, my + r))
-        return min(
+        best = min(
             near,
             key=lambda p: (p.point[0] - mx) ** 2 + (p.point[1] - my) ** 2,
             default=None,
         )
+        if best is None:
+            return None
+        same = [p for p in near if p.point == best.point]
+        if self._selected_pin in same:
+            return same[(same.index(self._selected_pin) + 1) % len(same)]
+        return best
 
     def _draw_pins(self):
         c = self._canvas
@@ -3943,7 +3951,12 @@ class MapWindow:
                 return hit
             if found is None:
                 found = hit
-        if found is None:
+        # The selected pickup is drawn as a canvas item; the pickup hit test
+        # passes to the next pickup on the same point
+        sel = self._selected_pin
+        if found is None or (
+            found[0] == "pin" and found[1] is sel and sel.pickup is not None
+        ):
             pin = self._pickup_at(sx, sy)
             if pin is not None:
                 found = ("pin", pin)
