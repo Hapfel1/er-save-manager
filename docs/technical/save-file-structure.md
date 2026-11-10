@@ -454,7 +454,7 @@ the gesture table is `2k + 1` (1 Bow, 15 Wave, 41 Point Forwards). Each structur
 
 | Structure | Stored value |
 |---|---|
-| gestures (unlocked list, 64 x uint32) | `2k` or `2k + 1` (low bit unknown), -2 = empty |
+| gestures (list, 64 x uint32) | one entry per gesture, sorted by k: `2k + 1` once obtained, `2k` before; then -2 (or 0) |
 | equipped_gestures (wheel) | `2k`, -2 = empty |
 | message gesture (NetMan) | `k`, 0xFF = none |
 

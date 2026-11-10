@@ -170,3 +170,63 @@ def get_all_unlockable_gestures(include_cut_content: bool = False) -> list[int]:
             continue
         gestures.append(gesture_id)
     return sorted(gestures)
+
+
+# Gesture list (64 x u32 after the storage box): one entry per gesture,
+# sorted, then the empty value (-2, or 0 on some slots). Gesture id 2k + 1 is
+# stored as 2k + 1 once obtained and as 2k before that.
+GESTURE_LIST_SIZE = 64
+GESTURE_LIST_EMPTY = 0xFFFFFFFE
+_NOT_GESTURES = (0xFFFFFFFF, GESTURE_LIST_EMPTY)
+
+
+def _entries(stored: list[int]) -> list[int]:
+    """Stored values that are gestures. 0 is Bow (id 1, not obtained) when it
+    is the first entry and a gesture follows; elsewhere 0 is padding."""
+    return [
+        g
+        for i, g in enumerate(stored)
+        if (g != 0 and g not in _NOT_GESTURES)
+        or (
+            g == 0
+            and i == 0
+            and len(stored) > 1
+            and stored[1] not in (0, *_NOT_GESTURES)
+        )
+    ]
+
+
+def unlocked_gestures(stored: list[int]) -> set[int]:
+    """Ids of the obtained gestures in a stored gesture list."""
+    return {g for g in _entries(stored) if g & 1}
+
+
+def merge_unlocked_gestures(
+    stored: list[int], selected: set[int], editable: set[int]
+) -> list[int]:
+    """Gesture list with the editable gestures obtained exactly when selected.
+
+    Every entry stays in the list; only the obtained bit changes. Selected
+    gestures missing from the list are added. Entries outside editable keep
+    their value.
+    """
+    entries: dict[int, int] = {}
+    for g in _entries(stored):
+        gid = g | 1
+        if gid in editable:
+            g = gid if gid in selected else gid - 1
+        entries.setdefault(gid, g)
+    for gid in selected:
+        entries.setdefault(gid, gid)
+    if len(entries) > GESTURE_LIST_SIZE:
+        raise ValueError(
+            f"At most {GESTURE_LIST_SIZE} gestures fit in the list ({len(entries)})."
+        )
+    values = [entries[gid] for gid in sorted(entries)]
+    # Keep the slot's own empty value (some slots pad with 0)
+    pad = (
+        stored[-1]
+        if stored and stored[-1] in (0, GESTURE_LIST_EMPTY)
+        else GESTURE_LIST_EMPTY
+    )
+    return values + [pad] * (GESTURE_LIST_SIZE - len(values))
