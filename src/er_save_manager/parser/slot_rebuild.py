@@ -121,10 +121,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
 
     # Unknown fields
     write_section(
-        "unk_gamedataman_0x120_or_gamedataman_0x130",
-        lambda: buf.write(
-            struct.pack("<I", slot.unk_gamedataman_0x120_or_gamedataman_0x130)
-        ),
+        "clear_count",
+        lambda: buf.write(struct.pack("<I", slot.clear_count)),
     )
     write_section(
         "unk_gamedataman_0x88",
@@ -141,7 +139,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
 
     # GameMan bytes
     write_section(
-        "gameman_0x8c", lambda: buf.write(struct.pack("<B", slot.gameman_0x8c))
+        "request_full_recovery",
+        lambda: buf.write(struct.pack("<B", slot.request_full_recovery)),
     )
     write_section(
         "gameman_0x8d", lambda: buf.write(struct.pack("<B", slot.gameman_0x8d))
@@ -156,7 +155,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         lambda: buf.write(struct.pack("<I", slot.total_deaths_count)),
     )
     write_section(
-        "character_type", lambda: buf.write(struct.pack("<i", slot.character_type))
+        "post_map_load_chr_type",
+        lambda: buf.write(struct.pack("<i", slot.post_map_load_chr_type)),
     )
     write_section(
         "in_online_session_flag",
@@ -178,10 +178,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
         lambda: buf.write(struct.pack("<I", slot.in_game_countdown_timer)),
     )
     write_section(
-        "unk_gamedataman_0x124_or_gamedataman_0x134",
-        lambda: buf.write(
-            struct.pack("<I", slot.unk_gamedataman_0x124_or_gamedataman_0x134)
-        ),
+        "random_appear_lot_slot",
+        lambda: buf.write(struct.pack("<I", slot.random_appear_lot_slot)),
     )
 
     write_section("event_flags", lambda: buf.write(slot.event_flags))

@@ -120,21 +120,21 @@ Fields in file order:
 | horse | RideGameData | 0x28 |
 | control_byte_maybe | uint8 | 1 |
 | blood_stain | BloodStain | 0x44 |
-| unk_gamedataman_0x120_or_gamedataman_0x130 | uint32 | 4 |
+| clear_count | uint32 | 4 |
 | unk_gamedataman_0x88 | uint32 | 4 |
 | menu_profile_save_load | MenuSaveLoad | variable |
 | trophy_equip_data | TrophyEquipData | 0x34 |
 | gaitem_game_data | GaitemGameData | 0x1B588 |
 | tutorial_data | TutorialData | variable |
-| gameman_0x8c, 0x8d, 0x8e | uint8 x 3 | 3 |
+| request_full_recovery, gameman_0x8d, gameman_0x8e | uint8 x 3 | 3 |
 | total_deaths_count | uint32 | 4 |
-| character_type | int32 | 4 |
+| post_map_load_chr_type | int32 | 4 |
 | in_online_session_flag | uint8 | 1 |
 | character_type_online | uint32 | 4 |
 | last_rested_grace | uint32 | 4 |
 | not_alone_flag | uint8 | 1 |
 | in_game_countdown_timer | uint32 | 4 |
-| unk_gamedataman_0x124_or_gamedataman_0x134 | uint32 | 4 |
+| random_appear_lot_slot | uint32 | 4 |
 | event_flags | bytes | 0x1BF99F |
 | event_flags_terminator | uint8 | 1 |
 | field_area | FieldArea | variable |
@@ -159,7 +159,8 @@ Fields in file order:
 | rest | bytes | to 0x280000 |
 
 The gaitem map has 5118 entries when `version <= 81`, 5120 otherwise. `rest` is leftover serializer
-buffer: it is never read by the game and absorbs size changes of the blocks before it.
+buffer: it is never read by the game and absorbs size changes of the blocks before it. It holds zeros or
+stale data (float arrays, random bytes) and changes only when its slot is written.
 
 **MapId** (used throughout): 4 bytes `[DD, CC, BB, AA]` naming map `mAA_BB_CC_DD`. `00 24 2A 3C` is
 `m60_42_36_00`.
@@ -171,15 +172,16 @@ buffer: it is never read by the game and absorbs size changes of the blocks befo
 | map_id | map the character is in (load screen map) |
 | play_time_ms | play time in milliseconds |
 | unk0x10 | 16 bytes rewritten with a new value whenever the game writes the slot; not a digest of the slot |
-| control_byte_maybe | unknown |
-| unk_gamedataman_0x120_or_gamedataman_0x130 | NG+ cycle (0 = first playthrough) |
-| unk_gamedataman_0x88 | always 0 |
-| gameman_0x8c-0x8e | unknown |
+| control_byte_maybe | 1, independent of whether a bloodstain exists |
+| clear_count | NG+ cycle (0 = first playthrough), GameDataMan+0x120 |
+| unk_gamedataman_0x88 | 0, GameDataMan+0x88 |
+| request_full_recovery | 0 or 1, GameDataMan+0x8C |
+| gameman_0x8d, gameman_0x8e | 0, GameDataMan+0x8D |
 | total_deaths_count | deaths |
-| character_type | -1 by default |
+| post_map_load_chr_type | character type to switch to after the next map load, -1 = none |
 | character_type_online | 8 by default |
 | last_rested_grace | BonfireWarpParam `bonfireEntityId` + 1000 of the last grace rested at, 0 if none |
-| unk_gamedataman_0x124_or_gamedataman_0x134 | random 0-99, rerolled on every area load |
+| random_appear_lot_slot | random 0-99, rerolled on every area load |
 | game_man_0x5bf | 1 after warping to a grace, 0 after resting at one |
 | spawn_point_entity_id | entity id the character respawns at |
 | game_man_0xb64 | 0, or a spawn point entity id |
@@ -189,69 +191,84 @@ buffer: it is never read by the game and absorbs size changes of the blocks befo
 
 ## PlayerGameData
 
-0x1B0 bytes: the in-memory `CS::PlayerGameData` from its offset 0x8.
+0x1B0 bytes: the in-memory `CS::PlayerGameData` from its offset 0x8. Fields marked "0 in saves" hold
+session state that the game writes as 0.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
-| 0x00 | 4 | unk0x0 | |
-| 0x04 | 4 | unk0x4 | |
+| 0x00 | 4 | character_event_id | 0 in saves |
+| 0x04 | 4 | player_id | 0 in saves |
 | 0x08 | 4 | hp | |
 | 0x0C | 4 | max_hp | |
 | 0x10 | 4 | base_max_hp | |
 | 0x14 | 4 | fp | |
 | 0x18 | 4 | max_fp | |
 | 0x1C | 4 | base_max_fp | |
-| 0x20 | 4 | unk0x20 | |
+| 0x20 | 4 | unk0x20 | f32, 0 in saves |
 | 0x24 | 4 | sp | stamina |
 | 0x28 | 4 | max_sp | |
 | 0x2C | 4 | base_max_sp | |
-| 0x30 | 4 | unk0x30 | |
+| 0x30 | 4 | unk0x30 | f32, 0 in saves |
 | 0x34 | 4 x 8 | vigor, mind, endurance, strength, dexterity, intelligence, faith, arcane | |
-| 0x54 | 4 | unk0x54 | |
-| 0x58 | 4 | unk0x58 | |
-| 0x5C | 4 | unk0x5c | humanity, always 0 |
+| 0x54 | 4 | base_hero_point | f32, 0 in saves; hash input with the attributes |
+| 0x58 | 4 | base_hero_point_2 | f32, 0 in saves |
+| 0x5C | 4 | unk0x5c | 0 in saves |
 | 0x60 | 4 | level | |
 | 0x64 | 4 | runes | runes held |
 | 0x68 | 4 | runes_memory | total runes ever gained |
-| 0x6C | 4 | unk0x6c | |
+| 0x6C | 4 | unk0x6c | 0 in saves |
 | 0x70 | 4 x 7 | poison, rot, bleed, death, frost, sleep, madness buildup | |
-| 0x8C | 4 | unk0x8c | |
-| 0x90 | 4 | unk0x90 | character type, 0 |
+| 0x8C | 4 | pending_block_clear_bonus | f32, 0 in saves |
+| 0x90 | 4 | chr_type | 0 in saves |
 | 0x94 | 32 | character_name | UTF-16LE, 16 characters |
 | 0xB4 | 2 | terminator | |
 | 0xB6 | 1 | body_type | 0 Type B, 1 Type A |
 | 0xB7 | 1 | archetype | starting class |
-| 0xB8 | 1 | unk0xb8 | "appearance", 0 |
-| 0xB9 | 1 | unk0xb9 | |
+| 0xB8 | 1 | vow_type | 0 in saves; hash input |
+| 0xB9 | 1 | unk0xb9 | 0 |
 | 0xBA | 1 | voice_type | 0-5: Young 1, Young 2, Mature 1, Mature 2, Aged 1, Aged 2 |
 | 0xBB | 1 | gift | starting keepsake |
-| 0xBC | 1 | unk0xbc | |
+| 0xBC | 1 | unk0xbc | 0 |
 | 0xBD | 1 | memory_stone_count | Memory Stones used, 0-8 |
 | 0xBE | 1 | additional_talisman_slot_count | |
 | 0xBF | 1 | summon_spirit_level | spirit ash upgrade level |
-| 0xC0 | 4 | online session count | +1 per online session: co-op host, summoned phantom, invasion |
-| 0xC4 | 4 | unknown counter | grows with play time, not changed by online sessions |
-| 0xC8 | 16 | unknown | almost always 0 |
+| 0xC0 | 4 | total_summon_count | +1 per online session: co-op host, summoned phantom, invasion |
+| 0xC4 | 4 | coop_success_count | grows with play time; not changed by joining or hosting a session |
+| 0xC8 | 4 | game_data_man_index | 0 in saves |
+| 0xCC | 12 | unk0xcc | 0 |
 | 0xD8 | 1 | furl_calling_finger_on | |
-| 0xD9 | 1 | unk0xd9 | |
+| 0xD9 | 1 | unk0xd9 | 0 |
 | 0xDA | 1 | matchmaking_weapon_level | highest weapon upgrade reached |
 | 0xDB | 1 | white_cipher_ring_on | |
 | 0xDC | 1 | blue_cipher_ring_on | |
-| 0xDD | 23 | unk0xdd | |
+| 0xDD | 1 | multiplay_role | 0 in saves (host) |
+| 0xDE | 1 | unk0xde | 0 |
+| 0xDF | 1 | is_my_world | 0 in saves |
+| 0xE0 | 4 | unk0xe0 | 0 |
+| 0xE4 | 4 | character_id | small counter |
+| 0xE8 | 4 | invasions_success_count | |
+| 0xEC | 4 | solo_breakin_point | 0 |
+| 0xF0 | 4 | invaders_killed | |
 | 0xF4 | 1 | scadutree_blessing | 0-20 |
 | 0xF5 | 1 | revered_spirit_ash_blessing | 0-10 |
-| 0xF6 | 1 | unk0xf6 | |
+| 0xF6 | 1 | resist_curse_item_count | 0 in saves |
 | 0xF7 | 1 | great_rune_on | Great Rune activated with a Rune Arc; cleared on death |
-| 0xF8 | 1 | unk0xf8 | |
+| 0xF8 | 1 | unk0xf8 | 0 |
 | 0xF9 | 1 | max_crimson_flask_count | |
 | 0xFA | 1 | max_cerulean_flask_count | |
-| 0xFB | 13 | unk0xfb | |
-| 0x108 | 4 | saved HP | written when the character leaves for another world (summoned or invading) |
-| 0x10C | 4 | saved FP | written together with 0x108 |
+| 0xFB | 4 | unk0xfb | 0 |
+| 0xFF | 1 | sell_region | 0 in saves |
+| 0x100 | 1 | unk0x100 | 0 |
+| 0x101 | 1 | reached_max_rune_memory | 0 in saves |
+| 0x102 | 6 | unk0x102 | 0 |
+| 0x108 | 4 | multiplay_saved_hp | HP written when the character leaves for another world (summoned or invading) |
+| 0x10C | 4 | multiplay_saved_fp | FP written together with 0x108 |
 | 0x110 | 18 | password | multiplayer password, UTF-16LE, 8 characters + terminator |
 | 0x122 | 18 x 5 | group_password1-5 | |
-| 0x17C | 3 | unknown | crimson / cerulean charges and a flag; 0x17C changes together with 0x108 |
-| 0x17F | 49 | unknown | 0x180 and 0x184 hold small values |
+| 0x17C | 1 | multiplay_saved_crimson_flasks | written together with 0x108 |
+| 0x17D | 1 | multiplay_saved_cerulean_flasks | written together with 0x108 |
+| 0x17E | 1 | unk0x17e | 0 or 1 |
+| 0x17F | 49 | unk0x17f | 0x180 and 0x184 hold small values (20-28), the rest is 0 |
 
 **Runes memory:** the game only ever adds to `runes_memory`, so a consistent character satisfies
 `runes_memory >= cost(class start level -> level) + runes`. The cost of level L to L + 1 is
@@ -284,7 +301,7 @@ The item instance table. Entry size depends on the handle, so the table has to b
 | 0x08 | 4 | unk0x10 | weapons and armor (0) |
 | 0x0C | 4 | unk0x14 | weapons and armor (0) |
 | 0x10 | 4 | gem_gaitem_handle | weapons: handle of the equipped Ash of War |
-| 0x14 | 1 | unk0x1c | weapons |
+| 0x14 | 1 | unk0x1c | weapons (0) |
 
 | Handle top nibble | Kind | Entry size |
 |---|---|---|
@@ -391,7 +408,7 @@ Wondrous Physick tears: slot 1, slot 2, int32 -1.
 ## Appearance (FaceData)
 
 0x12F bytes. The `FACE` block uses the same layout as the USER_DATA_10 appearance presets
-(`FacePreset`, whose field names such as `unk0x14` are offsets from the `FACE` magic).
+(`FacePreset`, whose `unk` field names are offsets from the `FACE` magic).
 
 | Offset | Size | Field |
 |---|---|---|
@@ -400,19 +417,19 @@ Wondrous Physick tears: slot 1, slot 2, int32 -1.
 | 0x008 | 4 | uint32 4 |
 | 0x00C | 4 | uint32 block size (0x120) |
 | 0x010 | 32 | 8 model ids (uint8 + 3 padding each): face, hair, eye, eyebrow, beard, accessory, decal, eyelash |
-| 0x030 | 64 | facial structure sliders |
+| 0x030 | 64 | facial structure sliders; 0x033 is 0 or 128, 0x049, 0x04E and 0x051 are 0 |
 | 0x070 | 64 | FaceGen parameters not exposed in character creation (128 or 0; 0x070 and 0x08E vary) |
 | 0x0B0 | 7 | body scale: head, chest, abdomen, right arm, right leg, left arm, left leg |
-| 0x0B7 | 91 | colors: skin, cosmetics, tattoo, body hair, eyes, hair, beard, eyebrows, eyelashes, accessory |
+| 0x0B7 | 91 | colors: skin, cosmetics, tattoo, body hair, eyes, hair, beard, eyebrows, eyelashes, accessory; 0x0DC is 128 |
 | 0x112 | 1 | eye effect (255 = Frenzied Flame); only set in the ProfileSummary copy |
 | 0x113 | 17 | padding |
 | 0x124 | 1 | uint8 1 |
 | 0x125 | 1 | uint8 Eye Alterations (Face Edit option): 1 shown, 0 hidden |
-| 0x126 | 1 | uint8 0/1, unknown |
+| 0x126 | 1 | uint8 0/1, unknown; independent of 0x125 |
 | 0x127 | 4 | int32 face param override slot 0 (FaceParam id, -1 = none) |
 | 0x12B | 4 | int32 face param override slot 1 (FaceParam id, -1 = none) |
 
-The preset field `unk0xb1` (2 bytes) holds the left arm and left leg scale.
+The preset fields `arms_size` and `legs_size` are the right arm and leg; `left_arm_leg_size` (2 bytes) holds the left arm and leg.
 
 **Face param overrides** are set by the EMEVD instruction Set Character Face Param Override. common.emevd
 event 1800 sets slot 0 together with event flag 9420; event 1801 sets slot 1 to 80000 together with flag
@@ -469,12 +486,12 @@ Same layout as the in-memory bloodstain at GameDataMan+0x48.
 | Offset | Type | Field |
 |---|---|---|
 | 0x00 | float[3] | coordinates |
-| 0x0C | float[4] | angle |
-| 0x1C | uint32 x 5 | unknown; 0, or values with 0x24 = 0x2C and 0x28 = 1 |
+| 0x0C | float[3] | angle |
+| 0x18 | uint32 x 6 | 0 when written by the base game |
 | 0x30 | int32 | 0 while a bloodstain exists, -1 otherwise |
 | 0x34 | int32 | runes (-1 = none) |
 | 0x38 | MapId | map_id |
-| 0x3C | uint32 | 0, or unknown values |
+| 0x3C | uint32 | 0 when written by the base game |
 | 0x40 | uint32 | unknown; a death writes `0x8FF0 << 16 \| n` with n different per death location. Other values: -1, 0, `0x0FF0xxxx` and values with a high half below 0x200 |
 
 On death the game writes position, angle, map, runes and 0x40, and sets 0x30 to 0. Recovering the runes
@@ -706,7 +723,7 @@ entries, including every part of a defeated boss, are written again whenever the
 | 0x00 | MapId | map (0xFFFFFFFF = terminator) |
 | 0x04 | uint32 | record size (16 + 8n) |
 | 0x08 | uint32 | n |
-| 0x0C | uint32 | per-map constant, unknown |
+| 0x0C | uint32 | unknown; fixed per map and game version |
 | 0x10 | 8n | entries |
 
 **Entry:** `uint32 key = instance << 15 | state`, `uint32 model = 10000000 + AEG id` (AEG id = AssetEnvironmentGeometryParam
@@ -741,7 +758,8 @@ Other pickups (Rowa Fruit, Erdleaf Flower, ...) respawn and only appear in World
 | 0x00 | uint32 | DecalParam row |
 | 0x04 | int16[9] | three points (x, y, z) in 1/8 units, local to the player's map |
 | 0x16 | uint16 | 0 |
-| 0x18 | uint32[4] | unknown (the first three are equal on point decals) |
+| 0x18 | uint32[3] | one value per point; triangles that share a point share its value |
+| 0x24 | uint32 | unknown, between 0x08000000 and 0x0FFFFFFF |
 
 Persistent decals around the player: blood (445000, 610003), black liquid (442204, 443400), burn marks
 (442600), point trails (3000xxxxx, one point repeated) and triangles (6001xxxxx).
@@ -758,12 +776,13 @@ Persistent decals around the player: blood (445000, 610003), black liquid (44220
 | 0x0C | MapId | map_id |
 | 0x10 | float[4] | angle |
 | 0x20 | uint8 | game_man_0xbf0 |
-| 0x21 | float[3] | unk_coordinates |
-| 0x2D | float[4] | unk_angle |
+| 0x21 | float[3] | multiplay_saved_coordinates |
+| 0x2D | float[4] | multiplay_saved_angle |
 
 On `m60` / `m61` the coordinates are local to the small (`_00`) tile; the global position is
-`tile * 256 + 128 + local` per axis. `unk_coordinates` / `unk_angle` are a second position without a map
-id that dying, warping and resting do not change.
+`tile * 256 + 128 + local` per axis. `multiplay_saved_coordinates` / `multiplay_saved_angle` are the
+position to return to from another world: written together with PlayerGameData 0x108 when the character is
+summoned or invades. Dying, warping and resting do not change them.
 
 ---
 
@@ -802,8 +821,8 @@ message is read.
 
 | Offset | Size | Field |
 |---|---|---|
-| 0x00 | 4 | uint32, the same on every message of one author, unknown |
-| 0x04 | 8 | ids, unknown |
+| 0x00 | 4 | uint32 author id, the same on every message of one author |
+| 0x04 | 8 | uint64 message id; the top byte holds flags (0x00, 0x40, 0x80, 0xC0) |
 | 0x0C | 4 | MapId |
 | 0x10 | 20 | unknown |
 | 0x24 | 12 | position (float[3]) |
@@ -912,13 +931,13 @@ checksum is an Adler-32 variant over little-endian bytes: `lo` starts at 1 and a
 | 0x00 | 0 | level (uint32) |
 | 0x04 | 1 | vigor..arcane (8 x uint32) + PlayerGameData 0x54 (uint32) |
 | 0x08 | 2 | archetype (uint8 as uint32) |
-| 0x0C | 3 | PlayerGameData 0xB8 (1 byte) |
-| 0x10 | 4 | unknown |
+| 0x0C | 3 | vow_type, PlayerGameData 0xB8 (1 byte) |
+| 0x10 | 4 | unknown; 0, or a value that changes when warping |
 | 0x14 | 5 | runes held |
 | 0x18 | 6 | runes memory |
 | 0x1C | 7 | weapon item ids: L1, L2, L3, R1, R2, R3, arrows 1, arrows 2, bolts 1, bolts 2 |
 | 0x20 | 8 | item id slots 12-15 (armor), 17-20 (talismans), 21 (talisman 5) |
-| 0x24 | 9 | quick items (inputs unknown) |
+| 0x24 | 9 | EquippedArmamentsAndItems quick items 1-10 and pouch items 1-6 (16 x uint32), each `id & 0x0FFFFFFF` unless it is -1 |
 | 0x28 | 10 | 14 equipped spell ids |
 | 0x2C | | 0x54 bytes, uninitialized |
 
@@ -938,10 +957,10 @@ The hash sits at the position reached by parsing, not at the end of the slot.
 | 0x1C | 0x140 | Settings |
 | 0x15C | 0x1808 | MenuSystemSaveLoad (appearance presets) |
 | 0x1964 | 0x1702 | ProfileSummary |
-| 0x3066 | 5 | GameMan bytes |
+| 0x3066 | 5 | GameDataMan bytes |
 | 0x306B | 0xB2 | PCOptionData (PC only) |
 | | 8 + 0x2000 | KeyConfigSaveLoad |
-| | 8 | game_man_0x118 |
+| | 8 | net penalty (GameDataMan+0x118) |
 | | | remainder |
 
 The remainder (about 0x5AEE0 bytes) is leftover buffer content (random bytes or old float data) with no
@@ -959,12 +978,12 @@ data at GameDataMan+0x58.
 |---|---|---|---|
 | 0x00 | camera speed | 0x18 | launch setting |
 | 0x01 | controller vibration | 0x19 | send summon sign |
-| 0x02 | brightness | 0x1A | unknown (default 1) |
+| 0x02 | brightness | 0x1A | unused option (default 1) |
 | 0x03 | sound type | 0x1B | HDR |
 | 0x04 | music volume | 0x1C | HDR brightness |
 | 0x05 | sound effects volume | 0x1D | HDR maximum brightness |
 | 0x06 | voice volume | 0x1E | HDR saturation |
-| 0x07 | display blood | 0x1F | unknown (default 1) |
+| 0x07 | display blood | 0x1F | performance setting: 0 quality, 1 frame rate (default 1) |
 | 0x08 | subtitles | 0x20 | master volume |
 | 0x09 | HUD | 0x21 | ray tracing (0 off, 1 any quality) |
 | 0x0A | camera X axis | 0x22 | mark new items |
@@ -972,7 +991,7 @@ data at GameDataMan+0x58.
 | 0x0C | toggle auto lock-on | 0x24-0x2D | 0 |
 | 0x0D | camera auto wall recovery | 0x2E | show tutorials |
 | 0x0E | unknown (0) | 0x2F | camera auto rotation |
-| 0x0F | unknown (default 1) | | |
+| 0x0F | jump button L3, unused (default 1) | | |
 | 0x10 | reset camera Y axis | | |
 | 0x11 | cinematic effects | | |
 | 0x12 | unknown (0) | | |
@@ -1028,9 +1047,14 @@ character.
 | 53-54 | -1, or the same id twice (69000000, 69001000, 69100000); meaning unknown |
 | 55-57 | 0 |
 
-### GameMan bytes (5)
+### GameDataMan bytes (5)
 
-Unknown.
+`uint32` GameDataMan+0xD0 (0), then a `uint8` (0 or 1), unknown.
+
+### Net penalty (8)
+
+The disconnect penalty state at GameDataMan+0x118: `uint8 is_net_penalized`, `uint8 net_penalty_requested`,
+`uint16 net_penalty_points`, `float net_penalty_forgive_item_limit_time`. It follows KeyConfigSaveLoad.
 
 ### PCOptionData (0xB2, PC only)
 

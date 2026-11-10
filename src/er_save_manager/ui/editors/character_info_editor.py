@@ -542,10 +542,8 @@ class CharacterInfoEditor:
 
         # Load NG+ level from ClearCount if possible, else from event flags
         clearcount = None
-        if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
-            clearcount = getattr(
-                slot, "unk_gamedataman_0x120_or_gamedataman_0x130", None
-            )
+        if hasattr(slot, "clear_count"):
+            clearcount = getattr(slot, "clear_count", None)
         if clearcount is not None and 0 <= clearcount <= 7:
             self.char_ng_level_var.set(_NG_LABELS[clearcount])
         else:
@@ -663,8 +661,8 @@ class CharacterInfoEditor:
             char.gift = gift
 
             # ClearCount (NG+ playthroughs, raw field)
-            if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
-                slot.unk_gamedataman_0x120_or_gamedataman_0x130 = target_level
+            if hasattr(slot, "clear_count"):
+                slot.clear_count = target_level
 
             char_bytes = BytesIO()
             char.write(char_bytes)
@@ -749,11 +747,11 @@ class CharacterInfoEditor:
 
             # Update ClearCount (the actual playthrough counter)
             # If force_clearcount is provided, use it, else set to target_level
-            if hasattr(slot, "unk_gamedataman_0x120_or_gamedataman_0x130"):
+            if hasattr(slot, "clear_count"):
                 cc_val = (
                     force_clearcount if force_clearcount is not None else target_level
                 )
-                slot.unk_gamedataman_0x120_or_gamedataman_0x130 = cc_val
+                slot.clear_count = cc_val
 
         except Exception:
             raise

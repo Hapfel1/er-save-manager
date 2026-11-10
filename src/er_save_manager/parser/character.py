@@ -27,8 +27,8 @@ class PlayerGameData:
     """
 
     # Health, FP, Stamina (0x00-0x33)
-    unk0x0: int = 0
-    unk0x4: int = 0
+    character_event_id: int = 0
+    player_id: int = 0
     hp: int = 0
     max_hp: int = 0
     base_max_hp: int = 0
@@ -50,8 +50,8 @@ class PlayerGameData:
     intelligence: int = 0
     faith: int = 0
     arcane: int = 0
-    unk0x54: int = 0
-    unk0x58: int = 0
+    base_hero_point: int = 0  # f32 bits
+    base_hero_point_2: int = 0  # f32 bits
     unk0x5c: int = 0
 
     # Level and Runes (0x60-0x6B)
@@ -68,8 +68,8 @@ class PlayerGameData:
     frost_buildup: int = 0
     sleep_buildup: int = 0
     madness_buildup: int = 0
-    unk0x8c: int = 0
-    unk0x90: int = 0
+    pending_block_clear_bonus: int = 0  # f32 bits
+    chr_type: int = 0
 
     # Character name (0x94-0xB3) - UTF-16LE, 16 chars max
     character_name: str = ""
@@ -80,7 +80,7 @@ class PlayerGameData:
     # Character creation (0xB4-0xBF)
     gender: int = 0
     archetype: int = 0
-    unk0xb8: int = 0
+    vow_type: int = 0
     unk0xb9: int = 0
     voice_type: int = 0
     gift: int = 0
@@ -88,7 +88,12 @@ class PlayerGameData:
     memory_stone_count: int = 0
     additional_talisman_slot_count: int = 0
     summon_spirit_level: int = 0
-    unk0xc0: bytes = field(default_factory=lambda: b"\x00" * 0x18)
+
+    # Online counters (0xC0-0xD7)
+    total_summon_count: int = 0
+    coop_success_count: int = 0
+    game_data_man_index: int = 0
+    unk0xcc: bytes = field(default_factory=lambda: b"\x00" * 0xC)
 
     # Online settings (0xD8-0xF7)
     furl_calling_finger_on: bool = False
@@ -96,17 +101,31 @@ class PlayerGameData:
     matchmaking_weapon_level: int = 0
     white_cipher_ring_on: bool = False
     blue_cipher_ring_on: bool = False
-    unk0xdd: bytes = field(default_factory=lambda: b"\x00" * 0x17)
+    multiplay_role: int = 0
+    unk0xde: int = 0
+    is_my_world: int = 0
+    unk0xe0: bytes = field(default_factory=lambda: b"\x00" * 4)
+    character_id: int = 0
+    invasions_success_count: int = 0
+    solo_breakin_point: int = 0
+    invaders_killed: int = 0
     scadutree_blessing: int = 0
     revered_spirit_ash_blessing: int = 0
-    unk0xf6: int = 0
+    resist_curse_item_count: int = 0
     great_rune_on: bool = False
     unk0xf8: int = 0
 
     # Flask counts (0xF9-0xFA)
     max_crimson_flask_count: int = 0
     max_cerulean_flask_count: int = 0
-    unk0xfb: bytes = field(default_factory=lambda: b"\x00" * 0x15)
+    unk0xfb: bytes = field(default_factory=lambda: b"\x00" * 4)
+    sell_region: int = 0
+    unk0x100: int = 0
+    reached_max_rune_memory: int = 0
+    unk0x102: bytes = field(default_factory=lambda: b"\x00" * 6)
+    # HP, FP and flask uses kept while the character is in another world
+    multiplay_saved_hp: int = 0
+    multiplay_saved_fp: int = 0
 
     # Passwords (0x110-0x17B) - UTF-16LE, 8 chars max each
     password: str = ""
@@ -122,8 +141,11 @@ class PlayerGameData:
     group_password5: str = ""
     group_password5_terminator: int = 0
 
-    # Padding (0x17C-0x1AF)
-    unk0x17c: bytes = field(default_factory=lambda: b"\x00" * 0x34)
+    # 0x17C-0x1AF
+    multiplay_saved_crimson_flasks: int = 0
+    multiplay_saved_cerulean_flasks: int = 0
+    unk0x17e: int = 0
+    unk0x17f: bytes = field(default_factory=lambda: b"\x00" * 0x31)
 
     def _read_wstring(self, f: BytesIO, attr: str, max_chars: int) -> str:
         raw = f.read(max_chars * 2)
@@ -140,8 +162,8 @@ class PlayerGameData:
         obj = cls()
 
         # Health, FP, Stamina
-        obj.unk0x0 = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x4 = struct.unpack("<I", f.read(4))[0]
+        obj.character_event_id = struct.unpack("<I", f.read(4))[0]
+        obj.player_id = struct.unpack("<I", f.read(4))[0]
         obj.hp = struct.unpack("<I", f.read(4))[0]
         obj.max_hp = struct.unpack("<I", f.read(4))[0]
         obj.base_max_hp = struct.unpack("<I", f.read(4))[0]
@@ -163,8 +185,8 @@ class PlayerGameData:
         obj.intelligence = struct.unpack("<I", f.read(4))[0]
         obj.faith = struct.unpack("<I", f.read(4))[0]
         obj.arcane = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x54 = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x58 = struct.unpack("<I", f.read(4))[0]
+        obj.base_hero_point = struct.unpack("<I", f.read(4))[0]
+        obj.base_hero_point_2 = struct.unpack("<I", f.read(4))[0]
         obj.unk0x5c = struct.unpack("<I", f.read(4))[0]
 
         # Level and Runes
@@ -181,8 +203,8 @@ class PlayerGameData:
         obj.frost_buildup = struct.unpack("<I", f.read(4))[0]
         obj.sleep_buildup = struct.unpack("<I", f.read(4))[0]
         obj.madness_buildup = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x8c = struct.unpack("<I", f.read(4))[0]
-        obj.unk0x90 = struct.unpack("<I", f.read(4))[0]
+        obj.pending_block_clear_bonus = struct.unpack("<I", f.read(4))[0]
+        obj.chr_type = struct.unpack("<I", f.read(4))[0]
 
         # Character name (UTF-16LE, 16 chars)
         obj.character_name = obj._read_wstring(f, "character_name", 16)
@@ -191,7 +213,7 @@ class PlayerGameData:
         # Character creation
         obj.gender = struct.unpack("<B", f.read(1))[0]
         obj.archetype = struct.unpack("<B", f.read(1))[0]
-        obj.unk0xb8 = struct.unpack("<B", f.read(1))[0]
+        obj.vow_type = struct.unpack("<B", f.read(1))[0]
         obj.unk0xb9 = struct.unpack("<B", f.read(1))[0]
         obj.voice_type = struct.unpack("<B", f.read(1))[0]
         obj.gift = struct.unpack("<B", f.read(1))[0]
@@ -199,7 +221,12 @@ class PlayerGameData:
         obj.memory_stone_count = struct.unpack("<B", f.read(1))[0]
         obj.additional_talisman_slot_count = struct.unpack("<B", f.read(1))[0]
         obj.summon_spirit_level = struct.unpack("<B", f.read(1))[0]
-        obj.unk0xc0 = f.read(0x18)
+        (
+            obj.total_summon_count,
+            obj.coop_success_count,
+            obj.game_data_man_index,
+        ) = struct.unpack("<3I", f.read(12))
+        obj.unk0xcc = f.read(0xC)
 
         # Online settings
         obj.furl_calling_finger_on = struct.unpack("<?", f.read(1))[0]
@@ -207,11 +234,18 @@ class PlayerGameData:
         obj.matchmaking_weapon_level = struct.unpack("<B", f.read(1))[0]
         obj.white_cipher_ring_on = struct.unpack("<?", f.read(1))[0]
         obj.blue_cipher_ring_on = struct.unpack("<?", f.read(1))[0]
-        obj.unk0xdd = f.read(0x17)
+        obj.multiplay_role, obj.unk0xde, obj.is_my_world = f.read(3)
+        obj.unk0xe0 = f.read(4)
+        (
+            obj.character_id,
+            obj.invasions_success_count,
+            obj.solo_breakin_point,
+            obj.invaders_killed,
+        ) = struct.unpack("<4I", f.read(16))
         (
             obj.scadutree_blessing,
             obj.revered_spirit_ash_blessing,
-            obj.unk0xf6,
+            obj.resist_curse_item_count,
         ) = f.read(3)
         obj.great_rune_on = struct.unpack("<?", f.read(1))[0]
         obj.unk0xf8 = struct.unpack("<B", f.read(1))[0]
@@ -219,7 +253,10 @@ class PlayerGameData:
         # Flask counts
         obj.max_crimson_flask_count = struct.unpack("<B", f.read(1))[0]
         obj.max_cerulean_flask_count = struct.unpack("<B", f.read(1))[0]
-        obj.unk0xfb = f.read(0x15)
+        obj.unk0xfb = f.read(4)
+        obj.sell_region, obj.unk0x100, obj.reached_max_rune_memory = f.read(3)
+        obj.unk0x102 = f.read(6)
+        obj.multiplay_saved_hp, obj.multiplay_saved_fp = struct.unpack("<2I", f.read(8))
 
         # Passwords (UTF-16LE, 8 chars each)
         obj.password = obj._read_wstring(f, "password", 8)
@@ -235,16 +272,20 @@ class PlayerGameData:
         obj.group_password5 = obj._read_wstring(f, "group_password5", 8)
         obj.group_password5_terminator = struct.unpack("<H", f.read(2))[0]
 
-        # Padding
-        obj.unk0x17c = f.read(0x34)
+        (
+            obj.multiplay_saved_crimson_flasks,
+            obj.multiplay_saved_cerulean_flasks,
+            obj.unk0x17e,
+        ) = f.read(3)
+        obj.unk0x17f = f.read(0x31)
 
         return obj
 
     def write(self, f: BytesIO):
         """Write PlayerGameData to stream (432 bytes total)"""
         # Health, FP, Stamina
-        f.write(struct.pack("<I", self.unk0x0))
-        f.write(struct.pack("<I", self.unk0x4))
+        f.write(struct.pack("<I", self.character_event_id))
+        f.write(struct.pack("<I", self.player_id))
         f.write(struct.pack("<I", self.hp))
         f.write(struct.pack("<I", self.max_hp))
         f.write(struct.pack("<I", self.base_max_hp))
@@ -266,8 +307,8 @@ class PlayerGameData:
         f.write(struct.pack("<I", self.intelligence))
         f.write(struct.pack("<I", self.faith))
         f.write(struct.pack("<I", self.arcane))
-        f.write(struct.pack("<I", self.unk0x54))
-        f.write(struct.pack("<I", self.unk0x58))
+        f.write(struct.pack("<I", self.base_hero_point))
+        f.write(struct.pack("<I", self.base_hero_point_2))
         f.write(struct.pack("<I", self.unk0x5c))
 
         # Level and Runes
@@ -284,8 +325,8 @@ class PlayerGameData:
         f.write(struct.pack("<I", self.frost_buildup))
         f.write(struct.pack("<I", self.sleep_buildup))
         f.write(struct.pack("<I", self.madness_buildup))
-        f.write(struct.pack("<I", self.unk0x8c))
-        f.write(struct.pack("<I", self.unk0x90))
+        f.write(struct.pack("<I", self.pending_block_clear_bonus))
+        f.write(struct.pack("<I", self.chr_type))
 
         # Character name
         Util.write_wstring(
@@ -296,7 +337,7 @@ class PlayerGameData:
         # Character creation
         f.write(struct.pack("<B", self.gender))
         f.write(struct.pack("<B", self.archetype))
-        f.write(struct.pack("<B", self.unk0xb8))
+        f.write(struct.pack("<B", self.vow_type))
         f.write(struct.pack("<B", self.unk0xb9))
         f.write(struct.pack("<B", self.voice_type))
         f.write(struct.pack("<B", self.gift))
@@ -304,7 +345,15 @@ class PlayerGameData:
         f.write(struct.pack("<B", self.memory_stone_count))
         f.write(struct.pack("<B", self.additional_talisman_slot_count))
         f.write(struct.pack("<B", self.summon_spirit_level))
-        f.write(self.unk0xc0)
+        f.write(
+            struct.pack(
+                "<3I",
+                self.total_summon_count,
+                self.coop_success_count,
+                self.game_data_man_index,
+            )
+        )
+        f.write(self.unk0xcc)
 
         # Online settings
         f.write(struct.pack("<?", self.furl_calling_finger_on))
@@ -312,13 +361,23 @@ class PlayerGameData:
         f.write(struct.pack("<B", self.matchmaking_weapon_level))
         f.write(struct.pack("<?", self.white_cipher_ring_on))
         f.write(struct.pack("<?", self.blue_cipher_ring_on))
-        f.write(self.unk0xdd)
+        f.write(bytes((self.multiplay_role, self.unk0xde, self.is_my_world)))
+        f.write(self.unk0xe0)
+        f.write(
+            struct.pack(
+                "<4I",
+                self.character_id,
+                self.invasions_success_count,
+                self.solo_breakin_point,
+                self.invaders_killed,
+            )
+        )
         f.write(
             bytes(
                 (
                     self.scadutree_blessing,
                     self.revered_spirit_ash_blessing,
-                    self.unk0xf6,
+                    self.resist_curse_item_count,
                 )
             )
         )
@@ -329,6 +388,9 @@ class PlayerGameData:
         f.write(struct.pack("<B", self.max_crimson_flask_count))
         f.write(struct.pack("<B", self.max_cerulean_flask_count))
         f.write(self.unk0xfb)
+        f.write(bytes((self.sell_region, self.unk0x100, self.reached_max_rune_memory)))
+        f.write(self.unk0x102)
+        f.write(struct.pack("<2I", self.multiplay_saved_hp, self.multiplay_saved_fp))
 
         # Passwords
         Util.write_wstring(f, self.password, 8, self.wstring_raw.get("password", b""))
@@ -354,8 +416,16 @@ class PlayerGameData:
         )
         f.write(struct.pack("<H", self.group_password5_terminator))
 
-        # Padding
-        f.write(self.unk0x17c)
+        f.write(
+            bytes(
+                (
+                    self.multiplay_saved_crimson_flasks,
+                    self.multiplay_saved_cerulean_flasks,
+                    self.unk0x17e,
+                )
+            )
+        )
+        f.write(self.unk0x17f)
 
 
 # ============================================================================

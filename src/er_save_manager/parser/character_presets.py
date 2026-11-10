@@ -44,12 +44,12 @@ class FacePreset:
     # Face models (with 3-byte padding after each)
     face_model: int = 0
     hair_model: int = 0
-    unk0x14: int = 0
+    eye_model: int = 0
     eyebrow_model: int = 0
     beard_model: int = 0
     eyepatch_model: int = 0
-    unk0x24: int = 0
-    unk0x28: int = 0
+    decal_model: int = 0
+    eyelash_model: int = 0
 
     # Facial structure (68 parameters starting at 0x2C)
     apparent_age: int = 0
@@ -127,8 +127,8 @@ class FacePreset:
     arms_size: int = 0
     legs_size: int = 0
 
-    # Unknown (2 bytes at 0xB1)
-    unk0xb1: bytes = b""
+    # Left arm and left leg (2 bytes at 0xB1); arms_size / legs_size are the right side
+    left_arm_leg_size: bytes = b""
 
     # Skin and cosmetics (88 bytes starting at 0xB3)
     skin_color_r: int = 0
@@ -245,7 +245,7 @@ class FacePreset:
         f.read(3)  # padding
         obj.hair_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
-        obj.unk0x14 = struct.unpack("<B", f.read(1))[0]
+        obj.eye_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
         obj.eyebrow_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
@@ -253,9 +253,9 @@ class FacePreset:
         f.read(3)  # padding
         obj.eyepatch_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
-        obj.unk0x24 = struct.unpack("<B", f.read(1))[0]
+        obj.decal_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
-        obj.unk0x28 = struct.unpack("<B", f.read(1))[0]
+        obj.eyelash_model = struct.unpack("<B", f.read(1))[0]
         f.read(3)  # padding
 
         # Facial structure (68 bytes)
@@ -335,7 +335,7 @@ class FacePreset:
         obj.legs_size = struct.unpack("<B", f.read(1))[0]
 
         # Unknown (2 bytes)
-        obj.unk0xb1 = f.read(2)
+        obj.left_arm_leg_size = f.read(2)
 
         # Skin and cosmetics (88 bytes)
         obj.skin_color_r = struct.unpack("<B", f.read(1))[0]
@@ -451,7 +451,7 @@ class FacePreset:
         f.write(b"\x00" * 3)
         f.write(struct.pack("<B", self.hair_model))
         f.write(b"\x00" * 3)
-        f.write(struct.pack("<B", self.unk0x14))
+        f.write(struct.pack("<B", self.eye_model))
         f.write(b"\x00" * 3)
         f.write(struct.pack("<B", self.eyebrow_model))
         f.write(b"\x00" * 3)
@@ -459,9 +459,9 @@ class FacePreset:
         f.write(b"\x00" * 3)
         f.write(struct.pack("<B", self.eyepatch_model))
         f.write(b"\x00" * 3)
-        f.write(struct.pack("<B", self.unk0x24))
+        f.write(struct.pack("<B", self.decal_model))
         f.write(b"\x00" * 3)
-        f.write(struct.pack("<B", self.unk0x28))
+        f.write(struct.pack("<B", self.eyelash_model))
         f.write(b"\x00" * 3)
 
         # Facial structure
@@ -541,7 +541,7 @@ class FacePreset:
         f.write(struct.pack("<B", self.legs_size))
 
         # Unknown
-        f.write(self.unk0xb1)
+        f.write(self.left_arm_leg_size)
 
         # Skin and cosmetics
         f.write(struct.pack("<B", self.skin_color_r))
@@ -843,21 +843,22 @@ class FacePreset:
             "eye_patch_color_r": self.eye_patch_color_r,
             "eye_patch_color_g": self.eye_patch_color_g,
             "eye_patch_color_b": self.eye_patch_color_b,
-            # Unidentified fields, carried through verbatim on write
+            # Raw and model fields under their original key names, which
+            # exported presets use; carried through verbatim on write
             "_unk0x00": list(self.unk0x00),
             "_face_data_marker": self.face_data_marker,
             "_magic": self.magic.decode("ascii", errors="ignore") if self.magic else "",
             "_alignment": self.alignment,
             "_size": self.size,
-            "_unk0x14": self.unk0x14,
-            "_unk0x24": self.unk0x24,
-            "_unk0x28": self.unk0x28,
+            "_unk0x14": self.eye_model,
+            "_unk0x24": self.decal_model,
+            "_unk0x28": self.eyelash_model,
             "_unk0x2f": self.unk0x2f,
             "_unk0x45": self.unk0x45,
             "_unk0x4a": self.unk0x4a,
             "_unk0x4d": self.unk0x4d,
             "_unk0x6c": list(self.unk0x6c),
-            "_unk0xb1": list(self.unk0xb1),
+            "_unk0xb1": list(self.left_arm_leg_size),
             "_pad": list(self.pad),
         }
 
@@ -931,7 +932,7 @@ class FacePreset:
         preset.size = data.get("_size", 0x120)
 
         preset.unk0x6c = bytes(data.get("_unk0x6c", [0] * 64))
-        preset.unk0xb1 = bytes(data.get("_unk0xb1", [0, 0]))
+        preset.left_arm_leg_size = bytes(data.get("_unk0xb1", [0, 0]))
         # Some shared presets carry an 18-byte zero _pad; written as is, the
         # extra 8 bytes would land on the next slot.
         preset.pad = bytes(data.get("_pad", [0] * 10))[:10].ljust(10, b"\x00")
@@ -949,12 +950,12 @@ class FacePreset:
         # Face models
         preset.face_model = data.get("face_model", 0)
         preset.hair_model = data.get("hair_model", 0)
-        preset.unk0x14 = data.get("_unk0x14", 0)
+        preset.eye_model = data.get("_unk0x14", 0)
         preset.eyebrow_model = data.get("eyebrow_model", 0)
         preset.beard_model = data.get("beard_model", 0)
         preset.eyepatch_model = data.get("eyepatch_model", 0)
-        preset.unk0x24 = data.get("_unk0x24", 0)
-        preset.unk0x28 = data.get("_unk0x28", 3)
+        preset.decal_model = data.get("_unk0x24", 0)
+        preset.eyelash_model = data.get("_unk0x28", 3)
 
         # Facial structure
         preset.apparent_age = data.get("apparent_age", 128)
@@ -1329,9 +1330,9 @@ class FacePreset:
                 0,
             ]
         )
-        preset.unk0xb1 = bytes([128, 128])
+        preset.left_arm_leg_size = bytes([128, 128])
         preset.pad = bytes(10)
-        preset.unk0x28 = 1 if body_type == 0 else 3
+        preset.eyelash_model = 1 if body_type == 0 else 3
 
         our_unk0x00 = [0] * 20
         our_unk0x00[8] = 0x01

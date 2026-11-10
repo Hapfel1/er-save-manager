@@ -150,8 +150,8 @@ class UserDataX:
 
     blood_stain: BloodStain = field(default_factory=BloodStain)
 
-    # Unknown fields (8 bytes total)
-    unk_gamedataman_0x120_or_gamedataman_0x130: int = 0
+    # GameDataMan +0x120 (NG+ cycle) and +0x88
+    clear_count: int = 0
     unk_gamedataman_0x88: int = 0
 
     # Menu and game data
@@ -160,20 +160,21 @@ class UserDataX:
     gaitem_game_data: GaitemGameData = field(default_factory=GaitemGameData)
     tutorial_data: TutorialData = field(default_factory=TutorialData)
 
-    # GameMan bytes (3 bytes)
-    gameman_0x8c: int = 0
+    # GameDataMan +0x8C-0x8E
+    request_full_recovery: int = 0
     gameman_0x8d: int = 0
     gameman_0x8e: int = 0
 
     # Death and character info
     total_deaths_count: int = 0
-    character_type: int = 0
+    post_map_load_chr_type: int = 0
     in_online_session_flag: int = 0
     character_type_online: int = 0
     last_rested_grace: int = 0
     not_alone_flag: int = 0
     in_game_countdown_timer: int = 0
-    unk_gamedataman_0x124_or_gamedataman_0x134: int = 0
+    # GameDataMan +0x124, rerolled 0-99 on every area load
+    random_appear_lot_slot: int = 0
 
     # Event flags (0x1BF99F = 1,833,375 bytes)
     event_flags: bytes = field(default_factory=lambda: b"\x00" * 0x1BF99F)
@@ -305,9 +306,7 @@ class UserDataX:
         obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
         obj.blood_stain_offset = f.tell()
         obj.blood_stain = BloodStain.read(f)
-        obj.unk_gamedataman_0x120_or_gamedataman_0x130 = struct.unpack("<I", f.read(4))[
-            0
-        ]
+        obj.clear_count = struct.unpack("<I", f.read(4))[0]
         obj.unk_gamedataman_0x88 = struct.unpack("<I", f.read(4))[0]
 
         try:
@@ -319,20 +318,18 @@ class UserDataX:
         except Exception:
             raise
 
-        obj.gameman_0x8c = struct.unpack("<B", f.read(1))[0]
+        obj.request_full_recovery = struct.unpack("<B", f.read(1))[0]
         obj.gameman_0x8d = struct.unpack("<B", f.read(1))[0]
         obj.gameman_0x8e = struct.unpack("<B", f.read(1))[0]
 
         obj.total_deaths_count = struct.unpack("<I", f.read(4))[0]
-        obj.character_type = struct.unpack("<i", f.read(4))[0]
+        obj.post_map_load_chr_type = struct.unpack("<i", f.read(4))[0]
         obj.in_online_session_flag = struct.unpack("<B", f.read(1))[0]
         obj.character_type_online = struct.unpack("<I", f.read(4))[0]
         obj.last_rested_grace = struct.unpack("<I", f.read(4))[0]
         obj.not_alone_flag = struct.unpack("<B", f.read(1))[0]
         obj.in_game_countdown_timer = struct.unpack("<I", f.read(4))[0]
-        obj.unk_gamedataman_0x124_or_gamedataman_0x134 = struct.unpack("<I", f.read(4))[
-            0
-        ]
+        obj.random_appear_lot_slot = struct.unpack("<I", f.read(4))[0]
 
         obj.event_flags_offset = f.tell()
         obj.event_flags = f.read(0x1BF99F)
@@ -398,7 +395,7 @@ class UserDataX:
 
     def get_ng_plus(self) -> int:
         """NG+ cycle (GameDataMan ClearCount), 0 on the first playthrough."""
-        return self.unk_gamedataman_0x120_or_gamedataman_0x130
+        return self.clear_count
 
     def has_torrent_bug(self) -> bool:
         """Check if Torrent has the infinite loading bug (HP=0 with State=Active)"""

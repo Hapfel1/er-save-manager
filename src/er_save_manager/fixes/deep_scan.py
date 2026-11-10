@@ -118,7 +118,7 @@ FLAG_RELOCATION_NOTE = (
 
 
 # GameMan fields right before the event flags, in UserDataX.read order:
-# character_type i32, in_online_session u8, character_type_online u32,
+# post_map_load_chr_type i32, in_online_session u8, character_type_online u32,
 # last_rested_grace u32, not_alone u8, countdown u32, unk u32.
 _CHARACTER_TYPE_ONLINE_BEFORE_EF = 4 + 4 + 1 + 4 + 4
 _CHARACTER_TYPE_BEFORE_EF = 4 + 1 + _CHARACTER_TYPE_ONLINE_BEFORE_EF

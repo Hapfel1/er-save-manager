@@ -188,9 +188,9 @@ class WorldStateEditor:
                 try:
                     pc = slot.player_coordinates
                     pc.coordinates.x = pc.coordinates.y = pc.coordinates.z = 0.0
-                    pc.unk_coordinates.x = pc.unk_coordinates.y = (
-                        pc.unk_coordinates.z
-                    ) = 0.0
+                    pc.multiplay_saved_coordinates.x = (
+                        pc.multiplay_saved_coordinates.y
+                    ) = pc.multiplay_saved_coordinates.z = 0.0
                 except AttributeError:
                     pass
 
