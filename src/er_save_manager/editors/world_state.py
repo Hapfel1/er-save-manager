@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import struct
+from io import BytesIO
 from typing import TYPE_CHECKING
 
 from er_save_manager.data.locations import (
@@ -137,6 +138,7 @@ class WorldStateEditor:
 
             self._write_map_id_raw(MapId(loc.map_bytes), zero_coords=False)
             self._write_coordinates(coords)
+            self._refill_zero_hp()
 
             return True, f"Teleported to {loc.name}"
         except Exception as e:
@@ -152,6 +154,7 @@ class WorldStateEditor:
             self._write_map_id_raw(map_id, zero_coords=(coords is None))
             if coords is not None:
                 self._write_coordinates(coords)
+            self._refill_zero_hp()
             return True, f"Teleported to {_map_id_to_str(map_id)}"
         except Exception as e:
             return False, str(e)
@@ -159,6 +162,21 @@ class WorldStateEditor:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _refill_zero_hp(self) -> None:
+        """Set HP to max when the slot was saved during a death (HP 0):
+        moved to a new position, the character loads there at 0 HP and
+        cannot act."""
+        slot = self._slot
+        pgd = getattr(slot, "player_game_data", None)
+        off = getattr(slot, "player_game_data_offset", -1)
+        if pgd is None or off is None or off < 0 or pgd.hp != 0:
+            return
+        pgd.hp = pgd.max_hp
+        buf = BytesIO()
+        pgd.write(buf)
+        data = buf.getvalue()
+        self._save._raw_data[off : off + len(data)] = data
 
     def _write_map_id_raw(self, map_id: MapId, zero_coords: bool = True) -> None:
         """
