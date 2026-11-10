@@ -15,9 +15,13 @@ from er_save_manager.parser.event_flags import EventFlags
 def test_pickup_tables():
     for cnv in (False, True):
         pickups = get_pickups(cnv)
-        flags = [p.flag_id for p in pickups]
+        flags = [p.flag_id for p in pickups if p.flag_id]
         assert len(flags) == len(set(flags))
         assert [f for f in flags if not EventFlags.has_flag(f)] == []
+        # A row without a flag is a location only
+        assert all(p.position for p in pickups if not p.flag_id)
+        keys = [p.key for p in pickups]
+        assert len(keys) == len(set(keys))
 
         graces = {g.flag_id for g in get_graces(include_convergence=cnv)}
         assert [

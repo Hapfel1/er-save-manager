@@ -1,4 +1,6 @@
 flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
+0,60000,m10_00_00_00,71000,reward,0,weapon:3300000:1|weapon:11200000:1,Prime Maliketh's Black Blade|Prime Marika's Hammer,-268.66,79.26,423.48
+0,107800,m61_51_46_00,76905,other,1,goods:2220000:1,Jolán and Anna,88.50,517.18,141.75
 114,101590,m13_00_00_00,71310,reward,0,goods:8121:1,Dark Moon Ring,147.63,-126.29,487.79
 171,10010,m10_00_00_00,71000,reward,0,goods:191:1,Godrick's Great Rune,-231.52,73.78,347.29
 172,10301,,0,reward,0,goods:192:1|goods:20954:1,Radahn's Great Rune|Glowing Relic Remnant,,,
@@ -262,6 +264,7 @@ flag,lot,map,grace_flag,source,dlc,items,names,x,y,z
 400632,106310,m22_00_00_00,72202,reward,1,goods:20950:1,Combat Remnant,,,
 400634,106301,,0,other,0,armor:5030000:1|armor:5030100:1|armor:5030200:1|armor:5030300:1|weapon:21500000:1,Thiollier's Mask|Thiollier's Garb|Thiollier's Gloves|Thiollier's Trousers|Thiollier's Hidden Needle,,,
 400636,106330,,0,other,0,armor:5030000:1|armor:5030100:1|armor:5030200:1|armor:5030300:1,Thiollier's Mask|Thiollier's Garb|Thiollier's Gloves|Thiollier's Trousers,,,
+400640,106400,m61_45_42_00,76803,other,1,goods:2000800:3,Spirit Raisin,-102.29,392.32,93.90
 400642,106410,m61_45_42_00,76803,other,1,goods:2008019:1,Black Syrup,-102.29,392.32,93.90
 400644,106420,m61_45_42_00,76803,reward,1,goods:2008900:1,Moore's Bell Bearing,-102.29,392.32,93.90
 400645,106421,m61_45_42_00,76803,reward,1,weapon:32520000:1|armor:5010000:1,Verdigris Greatshield|Verdigris Helm,-102.29,392.32,93.90

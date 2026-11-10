@@ -3,14 +3,17 @@ Item pickup flags for Elden Ring.
 
 Every row is one ItemLotParam getItemFlagId. The game sets the flag when the
 lot is collected and stops placing or awarding the lot while it is set, so
-clearing the flag of a world pickup makes it appear again.
+clearing the flag of a world pickup makes it appear again. Rows with flag 0
+are lots without a flag, awarded every time by a map event (the Convergence
+forge in Stormveil Castle) or given by an NPC's talk script: a location
+only, with no collected state.
 
 Data lives in item_pickups.csv (vanilla) and item_pickups_convergence.csv
 (The Convergence: its regulation plus the map, event, talk and item text
 files the mod replaces). Columns:
 
     flag        ItemLotParam getItemFlagId (the event flag this checklist
-                reads and writes)
+                reads and writes), 0 for a lot without one
     lot         ItemLotParam row id (ItemLotParam_map, or ItemLotParam_enemy
                 for enemy drops). Lots with consecutive ids are rolled
                 together and share the first lot's flag.
@@ -131,6 +134,12 @@ class Pickup:
     is_dlc: bool
     item_type: str
     position: tuple[float, float, float] | None = None
+
+    @property
+    def key(self) -> int:
+        """Unique per row: the flag, or the negated lot id for a row without
+        a flag."""
+        return self.flag_id or -self.lot_id
 
     @property
     def item_label(self) -> str:
