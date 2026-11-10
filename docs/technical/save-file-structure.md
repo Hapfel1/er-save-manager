@@ -210,9 +210,9 @@ session state that the game writes as 0.
 | 0x2C | 4 | base_max_sp | |
 | 0x30 | 4 | unk0x30 | f32, 0 in saves |
 | 0x34 | 4 x 8 | vigor, mind, endurance, strength, dexterity, intelligence, faith, arcane | |
-| 0x54 | 4 | base_hero_point | f32, 0 in saves; hash input with the attributes |
+| 0x54 | 4 | base_hero_point | f32, 0 in saves |
 | 0x58 | 4 | base_hero_point_2 | f32, 0 in saves |
-| 0x5C | 4 | unk0x5c | 0 in saves |
+| 0x5C | 4 | unk0x5c | 0 in saves; hash input with the attributes |
 | 0x60 | 4 | level | |
 | 0x64 | 4 | runes | runes held |
 | 0x68 | 4 | runes_memory | total runes ever gained |
@@ -929,15 +929,15 @@ checksum is an Adler-32 variant over little-endian bytes: `lo` starts at 1 and a
 | Offset | Entry | Input |
 |---|---|---|
 | 0x00 | 0 | level (uint32) |
-| 0x04 | 1 | vigor..arcane (8 x uint32) + PlayerGameData 0x54 (uint32) |
+| 0x04 | 1 | vigor..arcane (8 x uint32) + PlayerGameData 0x5C (uint32) |
 | 0x08 | 2 | archetype (uint8 as uint32) |
 | 0x0C | 3 | vow_type, PlayerGameData 0xB8 (1 byte) |
-| 0x10 | 4 | unknown; 0, or a value that changes when warping |
+| 0x10 | 4 | not written by the game: leftover buffer content |
 | 0x14 | 5 | runes held |
 | 0x18 | 6 | runes memory |
 | 0x1C | 7 | weapon item ids: L1, L2, L3, R1, R2, R3, arrows 1, arrows 2, bolts 1, bolts 2 |
 | 0x20 | 8 | item id slots 12-15 (armor), 17-20 (talismans), 21 (talisman 5) |
-| 0x24 | 9 | EquippedArmamentsAndItems quick items 1-10 and pouch items 1-6 (16 x uint32), each `id & 0x0FFFFFFF` unless it is -1 |
+| 0x24 | 9 | quick items 1-10 and pouch items 1-6 (16 x uint32): a goods id (`0x4xxxxxxx`) as `id & 0x0FFFFFFF`, anything else as -1 |
 | 0x28 | 10 | 14 equipped spell ids |
 | 0x2C | | 0x54 bytes, uninitialized |
 

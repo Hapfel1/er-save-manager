@@ -12,7 +12,7 @@ Each checksum is an Adler-32 variant over little-endian bytes: lo starts at
 Inputs, by hash entry:
 
     0  level                        u32
-    1  stats                        vigor..arcane (8 x u32) + PGD+0x54
+    1  stats                        vigor..arcane (8 x u32) + PGD+0x5C
     2  archetype                    u32 of the u8 class
     3  vow type (PGD+0xB8)          single byte
     5  runes held                   u32
@@ -21,12 +21,12 @@ Inputs, by hash entry:
                                     arrows 1, arrows 2, bolts 1, bolts 2
     8  armor and talismans          item id slots 12-15 and 17-21
     9  quick items and pouch        EquippedArmamentsAndItems quick items 1-10
-                                    and pouch 1-6, each id & 0x0FFFFFFF
-                                    unless it is -1
+                                    and pouch 1-6: goods ids (0x4 tag) as
+                                    id & 0x0FFFFFFF, anything else as -1
     10 equipped spells              14 spell ids
 
-Entry 4 (inputs unknown) and the 0x54 bytes after entry 10 (uninitialized
-memory in game-written saves) are left untouched.
+The game never writes entry 4 or the 0x54 bytes after entry 10; they hold
+leftover buffer content and are left untouched.
 """
 
 from __future__ import annotations
@@ -34,7 +34,8 @@ from __future__ import annotations
 import struct
 
 # PlayerGameData field offsets used as hash inputs.
-_PGD_STATS = 0x34  # vigor..arcane, then the u32 at 0x54
+_PGD_STATS = 0x34  # vigor..arcane (8 x u32)
+_PGD_0x5C = 0x5C  # hashed after the attributes
 _PGD_LEVEL = 0x60
 _PGD_RUNES = 0x64
 _PGD_RUNES_MEMORY = 0x68
@@ -82,6 +83,14 @@ def _u32s_hash(values) -> int:
     return bytes_hash(b"".join(struct.pack("<I", v & 0xFFFFFFFF) for v in values))
 
 
+def _quick_pouch_value(item_id: int) -> int:
+    """Goods ids lose their 0x4 tag; empty slots and other ids hash as -1."""
+    base = item_id & 0x0FFFFFFF
+    if item_id & 0xF0000000 == 0x40000000 and base != 0x0FFFFFFF:
+        return base
+    return 0xFFFFFFFF
+
+
 def compute(raw: bytes, slot) -> dict[str, int]:
     """Hash values for a slot, read from raw at the slot's tracked offsets."""
     pgd = slot.player_game_data_offset
@@ -106,7 +115,10 @@ def compute(raw: bytes, slot) -> dict[str, int]:
 
     return {
         "level": _u32s_hash([u32(_PGD_LEVEL)]),
-        "stats": bytes_hash(bytes(raw[pgd + _PGD_STATS : pgd + _PGD_STATS + 9 * 4])),
+        "stats": bytes_hash(
+            bytes(raw[pgd + _PGD_STATS : pgd + _PGD_STATS + 8 * 4])
+            + bytes(raw[pgd + _PGD_0x5C : pgd + _PGD_0x5C + 4])
+        ),
         "archetype": _u32s_hash([raw[pgd + _PGD_ARCHETYPE]]),
         "vow_type": bytes_hash(bytes([raw[pgd + _PGD_VOW_TYPE]])),
         "runes": _u32s_hash([u32(_PGD_RUNES)]),
@@ -115,9 +127,7 @@ def compute(raw: bytes, slot) -> dict[str, int]:
         "equipped_armors_and_talismans": _u32s_hash(
             item_ids[i] for i in _ARMOR_TALISMAN_SLOTS
         ),
-        "equipped_items": _u32s_hash(
-            v if v == 0xFFFFFFFF else v & 0x0FFFFFFF for v in quick_pouch
-        ),
+        "equipped_items": _u32s_hash(_quick_pouch_value(v) for v in quick_pouch),
         "equipped_spells": _u32s_hash(spells),
     }
 
