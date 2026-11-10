@@ -63,10 +63,10 @@ _STEAM_ID_TO_NETMAN_START = _NETMAN_SIZE + _TAIL_AFTER_NETMAN  # 0x20030
 
 # Version-specific extras between sized structs and NetMan
 # PlayerCoordinates(57) + 2pad + spawn(4) + game_man(4) = 67 bytes minimum
-# version>=65 adds 4, version>=66 adds 1
+# version>=66 adds 4, version>=67 adds 1
 _PRE_NETMAN_FIXED_BASE = 57 + 2 + 4 + 4  # 67 bytes
-_PRE_NETMAN_V65_EXTRA = 4
-_PRE_NETMAN_V66_EXTRA = 1
+_PRE_NETMAN_V66_EXTRA = 4
+_PRE_NETMAN_V67_EXTRA = 1
 
 # Event flags size is fixed
 _EVENT_FLAGS_SIZE = 0x1BF99F
@@ -729,10 +729,10 @@ class DeepScanFix(BaseFix):
             ef_end_rel_early = ef_rel + _EVENT_FLAGS_SIZE + _EVENT_FLAGS_TERMINATOR
             version_early = getattr(slot, "version", 0)
             ft = _PRE_NETMAN_FIXED_BASE
-            if version_early >= 65:
-                ft += _PRE_NETMAN_V65_EXTRA
             if version_early >= 66:
                 ft += _PRE_NETMAN_V66_EXTRA
+            if version_early >= 67:
+                ft += _PRE_NETMAN_V67_EXTRA
             # First check d=0: if struct walk from ef_end_rel already lands on a SteamID,
             # the file is clean, skip EF tear detection entirely.
             pos0 = ef_end_rel_early
@@ -913,9 +913,9 @@ class DeepScanFix(BaseFix):
 
         version = getattr(slot, "version", 0)
         fixed_tail = 57 + 2 + 4 + 4  # PlayerCoords + pad + spawn + game_man
-        if version >= 65:
-            fixed_tail += 4
         if version >= 66:
+            fixed_tail += 4
+        if version >= 67:
             fixed_tail += 1
 
         if ef_end_rel <= 0 or ef_end_rel >= len(slot_raw):
@@ -1199,10 +1199,10 @@ class DeepScanFix(BaseFix):
 
         version = getattr(slot, "version", 0)
         fixed_tail = _PRE_NETMAN_FIXED_BASE
-        if version >= 65:
-            fixed_tail += _PRE_NETMAN_V65_EXTRA
         if version >= 66:
             fixed_tail += _PRE_NETMAN_V66_EXTRA
+        if version >= 67:
+            fixed_tail += _PRE_NETMAN_V67_EXTRA
         netman_start = chain_end + fixed_tail
 
         nominal_sid = netman_start + _STEAM_ID_TO_NETMAN_START

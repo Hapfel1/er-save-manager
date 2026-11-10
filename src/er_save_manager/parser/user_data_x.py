@@ -197,8 +197,8 @@ class UserDataX:
     game_man_0xb64: int = 0
 
     # Version-specific fields
-    temp_spawn_point_entity_id: int | None = None  # version >= 65
-    game_man_0xcb3: int | None = None  # version >= 66
+    temp_spawn_point_entity_id: int | None = None  # version >= 66
+    game_man_0xcb3: int | None = None  # version >= 67
 
     # Network and world state
     net_man: NetMan = field(default_factory=NetMan)
@@ -349,9 +349,9 @@ class UserDataX:
         # 4 bytes padding
         obj.game_man_0xb64 = struct.unpack("<I", f.read(4))[0]
 
-        if obj.version >= 65:
-            obj.temp_spawn_point_entity_id = struct.unpack("<I", f.read(4))[0]
         if obj.version >= 66:
+            obj.temp_spawn_point_entity_id = struct.unpack("<I", f.read(4))[0]
+        if obj.version >= 67:
             obj.game_man_0xcb3 = struct.unpack("<B", f.read(1))[0]
 
         obj.net_man_offset = f.tell()

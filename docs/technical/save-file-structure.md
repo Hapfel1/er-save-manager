@@ -146,8 +146,8 @@ Fields in file order:
 | game_man_0x5be, 0x5bf | uint8 x 2 | 2 |
 | spawn_point_entity_id | uint32 | 4 |
 | game_man_0xb64 | uint32 | 4 |
-| temp_spawn_point_entity_id | uint32 (version >= 65) | 4 or 0 |
-| game_man_0xcb3 | uint8 (version >= 66) | 1 or 0 |
+| temp_spawn_point_entity_id | uint32 (version >= 66) | 4 or 0 |
+| game_man_0xcb3 | uint8 (version >= 67) | 1 or 0 |
 | net_man | NetMan | 0x20004 |
 | world_area_weather | WorldAreaWeather | 0xC |
 | world_area_time | WorldAreaTime | 0xC |

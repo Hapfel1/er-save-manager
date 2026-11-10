@@ -275,12 +275,12 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     )
 
     # Version-specific fields
-    if slot.version >= 65 and slot.temp_spawn_point_entity_id is not None:
+    if slot.version >= 66 and slot.temp_spawn_point_entity_id is not None:
         write_section(
             "temp_spawn_point_entity_id",
             lambda: buf.write(struct.pack("<I", slot.temp_spawn_point_entity_id)),
         )
-    if slot.version >= 66 and slot.game_man_0xcb3 is not None:
+    if slot.version >= 67 and slot.game_man_0xcb3 is not None:
         write_section(
             "game_man_0xcb3", lambda: buf.write(struct.pack("<B", slot.game_man_0xcb3))
         )
