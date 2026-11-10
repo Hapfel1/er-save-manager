@@ -860,9 +860,10 @@ later field 4 bytes back (`FACE` at 0x70, name at 0x190). The list is refreshed 
 
 ### Chunk 8
 
-A 12-byte header (three uint32: 1, 1, then a value from 1 to 13, unknown) followed by entries of 12 bytes (`uint32 id`,
-`uint32 0 or 10`, 4 flag bytes). The set of entries changes rarely; the game writes them in a different
-order on each save. Meaning unknown.
+Summoning pools. A 12-byte header (three uint32: 1, 1, then a value from 1 to 13, unknown) followed by
+entries of 12 bytes: `uint32` entity id of a summoning pool asset (AEG099_060 in the map's MSB, ids ending
+in 1950-1965), `uint32 0 or 10`, 4 flag bytes. The set of entries grows with the pools the character has
+reached; the game writes them in a different order on each save.
 
 ---
 
