@@ -174,9 +174,10 @@ stale data (float arrays, random bytes) and changes only when its slot is writte
 | unk0x10 | four random uint32 from the game's random generator, new on every write of the slot |
 | has_bloodstain | the game reads `blood_stain` only when this is set; game-written slots hold 1 whether or not a bloodstain exists |
 | clear_count | NG+ cycle (0 = first playthrough), GameDataMan+0x120; clamped to 0-9999 on load |
-| unk_gamedataman_0x88 | 0, GameDataMan+0x88 |
-| request_full_recovery | 0 or 1, GameDataMan+0x8C |
-| gameman_0x8d, gameman_0x8e | 0, GameDataMan+0x8D |
+| unk_gamedataman_0x88 | GameDataMan+0x88; nothing in the game sets it, so it stays 0 |
+| request_full_recovery | 0 or 1, GameDataMan+0x8C; set by an event command |
+| gameman_0x8d | 0 or 1, GameDataMan+0x8D; set by an event command, read when the character returns from another world |
+| gameman_0x8e | 0 or 1, GameDataMan+0x8E; set while special effect state 0x147 is active, cleared when the Rune Arc state (0x115) applies |
 | total_deaths_count | deaths |
 | post_map_load_chr_type | character type to switch to after the next map load, -1 = none |
 | character_type_online | 8 by default |
@@ -265,9 +266,9 @@ session state that the game writes as 0.
 | 0x10C | 4 | multiplay_saved_fp | FP written together with 0x108 |
 | 0x110 | 18 | password | multiplayer password, UTF-16LE, 8 characters + terminator |
 | 0x122 | 18 x 5 | group_password1-5 | |
-| 0x17C | 1 | multiplay_saved_crimson_flasks | written together with 0x108 |
-| 0x17D | 1 | multiplay_saved_cerulean_flasks | written together with 0x108 |
-| 0x17E | 1 | unk0x17e | 0 or 1 |
+| 0x17C | 1 | multiplay_saved_crimson_flasks | Crimson Tears charges, written together with 0x108 |
+| 0x17D | 1 | multiplay_saved_cerulean_flasks | Cerulean Tears charges, written together with 0x108 |
+| 0x17E | 1 | multiplay_saved_physick_flasks | Wondrous Physick charges (0/1), written together with 0x108 |
 | 0x17F | 49 | unk0x17f | 0x180 and 0x184 hold small values (20-28), the rest is 0 |
 
 **Runes memory:** the game only ever adds to `runes_memory`, so a consistent character satisfies
@@ -1049,7 +1050,8 @@ character.
 
 ### GameDataMan bytes (5)
 
-`uint32` GameDataMan+0xD0 (0), then a `uint8` (0 or 1), unknown.
+`uint32` GameDataMan+0xD0 (only ever 0), then `uint8` GameMan+0xB75: a flag the game sets in its game flow and
+clears on the next title screen load; when it is 1 at load, the title screen takes a separate path.
 
 ### Net penalty (8)
 

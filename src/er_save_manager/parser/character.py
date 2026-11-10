@@ -144,7 +144,7 @@ class PlayerGameData:
     # 0x17C-0x1AF
     multiplay_saved_crimson_flasks: int = 0
     multiplay_saved_cerulean_flasks: int = 0
-    unk0x17e: int = 0
+    multiplay_saved_physick_flasks: int = 0
     unk0x17f: bytes = field(default_factory=lambda: b"\x00" * 0x31)
 
     def _read_wstring(self, f: BytesIO, attr: str, max_chars: int) -> str:
@@ -275,7 +275,7 @@ class PlayerGameData:
         (
             obj.multiplay_saved_crimson_flasks,
             obj.multiplay_saved_cerulean_flasks,
-            obj.unk0x17e,
+            obj.multiplay_saved_physick_flasks,
         ) = f.read(3)
         obj.unk0x17f = f.read(0x31)
 
@@ -421,7 +421,7 @@ class PlayerGameData:
                 (
                     self.multiplay_saved_crimson_flasks,
                     self.multiplay_saved_cerulean_flasks,
-                    self.unk0x17e,
+                    self.multiplay_saved_physick_flasks,
                 )
             )
         )
