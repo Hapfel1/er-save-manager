@@ -501,8 +501,9 @@ sets 0x30 and runes back to -1 and keeps the other fields.
 ### MenuSaveLoad (variable)
 
 Outer header `uint16 0, uint16 0, uint32 size`, then `size` bytes of data (0x1000; 0 with no data on some
-level 1 characters). The data starts with a nested chunk header `uint16 1, uint16 version, uint32 size`
-(version 2 / size 0xFDC; older characters version 0 / 0xF10, followed by the terminator chunk at 0xF18).
+level 1 characters). The data starts with a nested chunk header `uint16 1, uint16 version, uint32 size`: the
+world map save data (MENU_WORLD_MAP_SAVEDATA), version 2 / size 0xFDC; older characters version 0 / 0xF10,
+followed by the terminator chunk at 0xF18.
 Version 2 offsets below are from the start of the data, after the outer header, so
 data+0x000..0x007 is the nested header and 0x008 is its first field:
 
@@ -1006,9 +1007,16 @@ data at GameDataMan+0x58.
 
 ### MenuSystemSaveLoad (0x1808)
 
-`uint16, uint16, uint32 size` (0x1800), then 15 appearance presets of 0x130 bytes, then a list of 16-byte
-records (empty record: `FF FF 00 00 00 00 00 00 01 00 00 00 00 00 00 00`; meaning unknown). The block is
-always 0x1808 bytes, regardless of `size`.
+`uint16, uint16, uint32 size` (0x1800), then a chain of chunks, each `uint16 type, uint16 version,
+uint32 size` and `size` bytes, aligned to 4 bytes, ending with type 0xFFFF. The block is always 0x1808
+bytes, regardless of `size`.
+
+| Type | Version | Size | Content |
+|---|---|---|---|
+| 0xFACE | 0 | 0x11D0 | 15 appearance presets of 0x130 bytes |
+| 1 | 0 | 0x20 | title screen flow state (MENU_TITLEFLOW_SAVEDATA) |
+| 3 | 0 | 0x100 | status screen view state (DETAIL_STATUS_VIEW_STATE_SAVEDATA) |
+| 4 | 1 | 0x10E | menu input history (MENU_INPUT_HISTORY); version 0 is 0xB4 bytes |
 
 **Preset (0x130):** a 0x18-byte header (0x08 = 1 on a used preset, 0x09 = body type, 0x0A-0x17
 uninitialized memory that changes on every save, including 0x14 where FaceData has its marker), then the
