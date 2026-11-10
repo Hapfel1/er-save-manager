@@ -113,8 +113,8 @@ def rebuild_slot_with_map(slot: UserDataX) -> tuple[bytes, list[dict[str, Any]]]
     write_section("horse", lambda: slot.horse.write(buf))
 
     write_section(
-        "control_byte_maybe",
-        lambda: buf.write(struct.pack("<B", slot.control_byte_maybe)),
+        "has_bloodstain",
+        lambda: buf.write(struct.pack("<B", slot.has_bloodstain)),
     )
 
     write_section("blood_stain", lambda: slot.blood_stain.write(buf))

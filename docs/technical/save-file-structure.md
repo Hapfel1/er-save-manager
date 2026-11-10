@@ -118,7 +118,7 @@ Fields in file order:
 | gestures | uint32[64] | 0x100 |
 | unlocked_regions | Regions | variable |
 | horse | RideGameData | 0x28 |
-| control_byte_maybe | uint8 | 1 |
+| has_bloodstain | uint8 | 1 |
 | blood_stain | BloodStain | 0x44 |
 | clear_count | uint32 | 4 |
 | unk_gamedataman_0x88 | uint32 | 4 |
@@ -171,9 +171,9 @@ stale data (float arrays, random bytes) and changes only when its slot is writte
 |---|---|
 | map_id | map the character is in (load screen map) |
 | play_time_ms | play time in milliseconds |
-| unk0x10 | 16 bytes rewritten with a new value whenever the game writes the slot; not a digest of the slot |
-| control_byte_maybe | 1, independent of whether a bloodstain exists |
-| clear_count | NG+ cycle (0 = first playthrough), GameDataMan+0x120 |
+| unk0x10 | four random uint32 from the game's random generator, new on every write of the slot |
+| has_bloodstain | the game reads `blood_stain` only when this is set; game-written slots hold 1 whether or not a bloodstain exists |
+| clear_count | NG+ cycle (0 = first playthrough), GameDataMan+0x120; clamped to 0-9999 on load |
 | unk_gamedataman_0x88 | 0, GameDataMan+0x88 |
 | request_full_recovery | 0 or 1, GameDataMan+0x8C |
 | gameman_0x8d, gameman_0x8e | 0, GameDataMan+0x8D |
@@ -492,7 +492,7 @@ Same layout as the in-memory bloodstain at GameDataMan+0x48.
 | 0x34 | int32 | runes (-1 = none) |
 | 0x38 | MapId | map_id |
 | 0x3C | uint32 | 0 when written by the base game |
-| 0x40 | uint32 | unknown; a death writes `0x8FF0 << 16 \| n` with n different per death location. Other values: -1, 0, `0x0FF0xxxx` and values with a high half below 0x200 |
+| 0x40 | uint32 | bloodstain entity id (GameDataMan+0x50); a death writes `0x8FF0 << 16 \| n` |
 
 On death the game writes position, angle, map, runes and 0x40, and sets 0x30 to 0. Recovering the runes
 sets 0x30 and runes back to -1 and keeps the other fields.
@@ -723,7 +723,7 @@ entries, including every part of a defeated boss, are written again whenever the
 | 0x00 | MapId | map (0xFFFFFFFF = terminator) |
 | 0x04 | uint32 | record size (16 + 8n) |
 | 0x08 | uint32 | n |
-| 0x0C | uint32 | unknown; fixed per map and game version |
+| 0x0C | uint32 | number of asset instances in the loaded map block; entries are written only for instances with a state |
 | 0x10 | 8n | entries |
 
 **Entry:** `uint32 key = instance << 15 | state`, `uint32 model = 10000000 + AEG id` (AEG id = AssetEnvironmentGeometryParam

@@ -145,8 +145,9 @@ class UserDataX:
 
     horse: RideGameData = field(default_factory=RideGameData)
 
-    # Control byte (1 byte)
-    control_byte_maybe: int = 0
+    # GameDataMan has_bloodstain: the game reads the 0x44-byte bloodstain
+    # only when it is set; game-written slots always hold 1
+    has_bloodstain: int = 0
 
     blood_stain: BloodStain = field(default_factory=BloodStain)
 
@@ -303,7 +304,7 @@ class UserDataX:
         obj.unlocked_regions = Regions.read(f)
         obj.horse_offset = f.tell()
         obj.horse = RideGameData.read(f)
-        obj.control_byte_maybe = struct.unpack("<B", f.read(1))[0]
+        obj.has_bloodstain = struct.unpack("<B", f.read(1))[0]
         obj.blood_stain_offset = f.tell()
         obj.blood_stain = BloodStain.read(f)
         obj.clear_count = struct.unpack("<I", f.read(4))[0]
