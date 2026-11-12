@@ -124,3 +124,26 @@ def test_non_pc_save_and_other_game_target_are_refused(tmp_path, co2):
     co2.with_name("ER0000.sl2").write_bytes(b"BND4" + b"\x00" * 64)
     with pytest.raises(ec.ExtensionCopyError):
         ec.make_plan("elden_ring", co2, ".sl2")
+
+
+def test_save_picker_summary(sanitized_save_path, tmp_path):
+    from er_save_manager.games import bnd4
+    from er_save_manager.games.save_summary import character_summary
+
+    entries = [b"\0" * 32, b"\x01" * 16 + b"\0" * 16, b"\0" * 16 + b"\x02" * 16]
+    assert [
+        e.tobytes() for e in bnd4.read_entries(bnd4.build(entries, b"00000001"))
+    ] == entries
+
+    sekiro = tmp_path / "S0000.sl2"
+    sekiro.write_bytes(bnd4.build(entries, b"00000001"))
+    assert character_summary(sekiro, "sekiro") == "1 character"
+
+    summary = character_summary(sanitized_save_path, "elden_ring")
+    assert summary and summary != "No characters"
+    assert character_summary(sanitized_save_path, "armored_core_6") is None
+    from er_save_manager.ui.character_list import display_name
+
+    assert display_name("Hapfel") == "Hapfel"
+    assert display_name("\u30ad\u30ea\u30f3") == "\u30ad\u30ea\u30f3"  # Japanese name
+    assert display_name("\u3f02\ue699\u4737") == "Unreadable name"  # wiped slot bytes

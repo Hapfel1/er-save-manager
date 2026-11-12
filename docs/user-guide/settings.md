@@ -92,6 +92,7 @@ The Settings tab provides control over:
 ### Warning Dialogs
 
 Warnings with a **Don't show this warning again** checkbox each have a setting here, on by default.
+They are listed, with the online ban warning and the Linux save location warning, in the collapsed **Warnings and confirmations** section of General.
 Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults** turns them all back on.
 
 | Setting | Game | Warns about |
@@ -103,6 +104,10 @@ Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults**
 | Show warning before teleporting past a living boss | Elden Ring | graces that only appear after their boss, and boss arenas |
 | Show warning before teleporting to the bloodstain | Elden Ring | dying again at the death spot loses the runes |
 | Show warning before respawning a reward on the world map | Elden Ring | boss, enemy and NPC rewards are not placed back on the map |
+| Show ban warning before adding a second flask | Elden Ring | the game keeps one flask of each kind |
+| Show ban warning before adding more than the game hands out | Elden Ring | vanilla saves: Golden Seeds, Scadutree Fragments and other limited items past what one playthrough yields |
+| Show ban warning before adding a DLC spell without the DLC | Elden Ring | Shadow of the Erdtree spells on a character not loaded with the DLC |
+| Ask to patch a save from another Steam account | All games with a SteamID in the save | after loading a save whose SteamID is not the one of its SteamID folder; Patch to My SteamID writes the folder's SteamID into it |
 | Show warning before spawning cut content | Dark Souls III, Remastered | cut items are likely to be flagged online |
 | Show ban warning before adding an unsafe item | Dark Souls II | unsafe items can get the account soft-banned online |
 | Show warning before writing into an empty slot | Dark Souls III, Remastered, Nightreign | a slot never created in game stays blank |
@@ -279,6 +284,8 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 **Error log:** unexpected errors are shown in an Unexpected Error dialog and appended to `errors.log` in the same folder (moved to `errors.log.1` past 1 MB). Attach it when reporting a bug.
 
 **Verbose log:** with **Verbose logging to file** ticked in the Advanced section (type `STRAWBERRY` on the Settings tab to show it), save loads, writes, backups, restores, character transfers and errors are written to `er_save_manager.log` in the same folder (moved to `er_save_manager.log.1` past 1 MB). Attach it when reporting a bug.
+
+**Open Log Folder**, next to the verbose log setting and in **Advanced Tools**, opens this folder in the file manager.
 
 ### Settings File Structure
 

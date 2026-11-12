@@ -76,7 +76,9 @@ class DSRInspectorTab:
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 
-        self.list = CharacterList(char_frame, on_select=self._select)
+        self.list = CharacterList(
+            char_frame, get_started=self._get_dsr_save() is None, on_select=self._select
+        )
         self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def _select(self, slot_idx: int) -> None:
@@ -86,7 +88,7 @@ class DSRInspectorTab:
         self.selected_slot = None
         save = self._get_dsr_save()
         if save is None:
-            self.list.message("No save file loaded.")
+            self.list.show_get_started()
             return
 
         issues = self._get_issues() if self._get_issues else None

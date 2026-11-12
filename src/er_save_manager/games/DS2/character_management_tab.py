@@ -342,11 +342,6 @@ class DS2CharacterManagementTab:
 
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Game Is Running",
-                "Close Dark Souls II before modifying save files.",
-                parent=self.parent,
-            )
             return False
         return True
 
@@ -676,6 +671,7 @@ class DS2CharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="dark_souls_2",
             )
         return self._browse_target_save_manually()
 

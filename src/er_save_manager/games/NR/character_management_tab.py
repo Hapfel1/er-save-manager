@@ -378,11 +378,6 @@ class NRCharacterManagementTab:
 
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Game Is Running",
-                "Close Elden Ring Nightreign before modifying save files.",
-                parent=self.parent,
-            )
             return False
         return True
 
@@ -777,6 +772,7 @@ class NRCharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="nightreign",
             )
         return self._browse_target_save_manually()
 

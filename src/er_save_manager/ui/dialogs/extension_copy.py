@@ -710,10 +710,5 @@ def open_extension_copy(
         notify(parent, "Load a save file first.", "warning")
         return
     if is_game_running and is_game_running():
-        CTkMessageBox.showerror(
-            "Game is Running",
-            "Close the game before copying its save files.",
-            parent=parent,
-        )
         return
     ExtensionCopyDialog(parent, game_key, Path(save_path), on_done)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import platform
 import subprocess
 from pathlib import Path
@@ -27,55 +28,47 @@ class PlatformUtils:
         return PlatformUtils.get_platform() == "linux"
 
     @staticmethod
-    def is_game_running() -> bool:
-        """Check if Elden Ring is running."""
+    def is_game_running(process_name: str = "eldenring.exe") -> bool:
+        """Check if the game process is running."""
+        from er_save_manager.backup.process_monitor import _is_process_running
+
+        return _is_process_running(process_name)
+
+    @staticmethod
+    def kill_game_process(process_name: str = "eldenring.exe") -> bool:
+        """Force kill the game process. True when the kill command was
+        accepted or the process is no longer running (it can exit on its own
+        in the meantime, which taskkill and pkill report as a failure)."""
         try:
             if PlatformUtils.is_windows():
                 si = subprocess.STARTUPINFO()
                 si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                 si.wShowWindow = 0  # SW_HIDE
                 result = subprocess.run(
-                    ["tasklist", "/FI", "IMAGENAME eq eldenring.exe", "/NH"],
+                    ["taskkill", "/F", "/IM", process_name],
                     stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE,
+                    stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     startupinfo=si,
                     creationflags=subprocess.CREATE_NO_WINDOW,
+                    timeout=10,
                 )
-                return "eldenring.exe" in result.stdout.decode(errors="replace").lower()
-            elif PlatformUtils.is_linux():
-                result = subprocess.run(
-                    ["pgrep", "-f", "eldenring.exe"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                return result.returncode == 0
-        except Exception:
-            pass
-        return False
+                if result.returncode == 0:
+                    return True
+            else:
+                import os
+                import signal
 
-    @staticmethod
-    def kill_game_process(process_name: str = "eldenring.exe") -> bool:
-        """Force kill the given game process."""
-        try:
-            if PlatformUtils.is_windows():
-                subprocess.run(
-                    ["taskkill", "/F", "/IM", process_name],
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                    check=True,
-                )
-                return True
-            elif PlatformUtils.is_linux():
-                # -i: Proton command lines keep the exe's mixed case
-                # (DarkSoulsIII.exe), profile names are lowercase.
-                subprocess.run(
-                    ["pkill", "-9", "-if", process_name],
-                    check=True,
-                )
-                return True
+                from er_save_manager.backup.process_monitor import game_pids
+
+                # The game process itself, not wrappers or other processes
+                # that only name its exe in their arguments
+                for pid in game_pids(process_name):
+                    with contextlib.suppress(ProcessLookupError):
+                        os.kill(pid, signal.SIGKILL)
         except Exception:
             pass
-        return False
+        return not PlatformUtils.is_game_running(process_name)
 
     # ------------------------------------------------------------------
     # Game-aware methods.

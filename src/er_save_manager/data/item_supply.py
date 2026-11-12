@@ -28,8 +28,9 @@ _SEED_COST = (0, 1, 2, 4, 6, 9, 12, 16, 20, 25, 30)
 _SCADUTREE_COST = (0, 1, 3, 5, 7, 9, 11, 13, 15, 17, *range(20, 51, 3))
 _REVERED_COST = (0, 1, 2, 3, 5, 7, 10, 13, 16, 20, 25)
 
-_CRIMSON = range(1001, 1026, 2)
-_CERULEAN = range(1051, 1076, 2)
+# Flask goods ids, empty and filled: +n is 1000 + 2n (empty) and 1001 + 2n
+_CRIMSON = range(1000, 1026)
+_CERULEAN = range(1050, 1076)
 
 
 @cache
@@ -56,8 +57,8 @@ def _spent(slot, base_id: int, owned: dict[int, int]) -> int:
         return _SEED_COST[min(max(charges, 4), 14) - 4]
     if base_id == SACRED_TEAR:
         return max(
-            [(i - 1001) // 2 for i in _CRIMSON if i in owned]
-            + [(i - 1051) // 2 for i in _CERULEAN if i in owned]
+            [(i - 1000) // 2 for i in _CRIMSON if i in owned]
+            + [(i - 1050) // 2 for i in _CERULEAN if i in owned]
             + [0]
         )
     if base_id == SCADUTREE_FRAGMENT:

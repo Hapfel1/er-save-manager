@@ -6,6 +6,7 @@ import tkinter as tk
 
 import customtkinter as ctk
 
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import get_work_area
 
 _DELAY_MS = 500
@@ -16,9 +17,18 @@ _BORDER = ("gray70", "gray35")
 class Tooltip:
     """Shows text in a small borderless window while the pointer rests on widget."""
 
-    def __init__(self, widget, text: str) -> None:
+    def __init__(
+        self,
+        widget,
+        text: str,
+        rows: list[tuple[str, str]] | None = None,
+        footer: str = "",
+    ) -> None:
         self.widget = widget
         self.text = text
+        # Two-column table under text (key in the accent color), then footer
+        self.rows = rows or []
+        self.footer = footer
         self._job: str | None = None
         self._tip: tk.Toplevel | None = None
         for target in self._targets(widget):
@@ -57,17 +67,39 @@ class Tooltip:
         pick = 1 if dark else 0
         frame = tk.Frame(tip, bg=_BORDER[pick], padx=1, pady=1)
         frame.pack()
+        bg, fg = _BG[pick], "gray90" if dark else "gray10"
+        body = tk.Frame(frame, bg=bg, padx=8, pady=4)
+        body.pack()
         tk.Label(
-            frame,
+            body,
             text=self.text,
             justify="left",
-            bg=_BG[pick],
-            fg="gray90" if dark else "gray10",
-            font=("Inter", -12),
-            padx=8,
-            pady=4,
+            bg=bg,
+            fg=fg,
+            font=("Inter", -12, "bold") if self.rows else ("Inter", -12),
             wraplength=360,
-        ).pack()
+        ).pack(anchor="w")
+        if self.rows:
+            table = tk.Frame(body, bg=bg)
+            table.pack(anchor="w", pady=(4, 4))
+            key_fg = palette.PURPLE_TEXT[pick]
+            for r, (key, value) in enumerate(self.rows):
+                tk.Label(
+                    table, text=key, bg=bg, fg=key_fg, font=("Inter", -12, "bold")
+                ).grid(row=r, column=0, sticky="w", padx=(0, 12))
+                tk.Label(table, text=value, bg=bg, fg=fg, font=("Inter", -12)).grid(
+                    row=r, column=1, sticky="w"
+                )
+        if self.footer:
+            tk.Label(
+                body,
+                text=self.footer,
+                justify="left",
+                bg=bg,
+                fg="gray70" if dark else "gray35",
+                font=("Inter", -12),
+                wraplength=360,
+            ).pack(anchor="w")
         # Flip to the pointer's left (and above) when the tip would leave the
         # screen's usable area
         tip.update_idletasks()
@@ -87,6 +119,11 @@ class Tooltip:
         self.text = text
         if text:
             self._schedule()
+
+    def show_now(self, _event=None) -> None:
+        """Show at once (click on a help icon), without the hover delay."""
+        self._hide()
+        self._show()
 
     def _hide(self, _event=None) -> None:
         self._cancel()

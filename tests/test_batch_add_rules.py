@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from er_save_manager.data.item_database import get_item_database
-from er_save_manager.data.item_supply import remaining_supply
+from er_save_manager.data.item_supply import SACRED_TEAR, _spent, remaining_supply
 from er_save_manager.parser import inventory_ops
 from er_save_manager.parser.event_flags import EventFlags
 from er_save_manager.ui.editors.inventory_editor import (
@@ -50,6 +50,8 @@ def test_batch_goods_limits(sanitized_save):
     blessed.player_game_data.scadutree_blessing = 9
     assert remaining_supply(blessed, 2010000) == 50 - 17
     assert remaining_supply(blessed, 1001) is None
+    # Drained flasks are the empty ids and keep their upgrade level
+    assert _spent(blessed, SACRED_TEAR, {1024: 1, 1050: 1}) == 12
 
 
 def test_memory_stone_count_follows_held_stack(sanitized_save):
