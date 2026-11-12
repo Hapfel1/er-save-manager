@@ -1,16 +1,16 @@
 ID,Name
 220200,Page Gloves
-250200,Nomadic Merchant Gloves
+250200,Nomadic Merchant's Gloves
 293200,Night Maiden Bracelets
 293300,Night Maiden Greaves
-301200,Shaman Bracers
+301200,Shaman Bracelets
 302000,Mystic Circlet
 302200,Mystic Bracelets
 320200,Sanguine Noble Bracelets
-401000,Caimar's Helm
-401100,Caimar's Armor
-401200,Caimar's Gauntlets
-401300,Caimar's Greaves
+401000,Spiritshaper's Antlers
+401100,Spiritshaper's Cloak
+401200,Spiritshaper's Wraps
+401300,Spiritshaper's Trousers
 421000,Vulgar Militia Hood
 610000,Ragged Hat
 610100,Ragged Armor
@@ -26,12 +26,16 @@ ID,Name
 837200,Raya Lucarian Gloves
 837300,Raya Lucarian Trousers
 890200,Prisoner Chains
+930200,Raptor's Gloves
+930300,Raptor's Boots
 931200,Bandit Manchettes
 931300,Bandit Boots
 960200,Consort's Gloves
+964100,Bloodsoaked Attire
 964300,Bloodsoaked Wraps
 964200,Bloodsoaked Manchettes
 1010200,Snow Witch Gloves
+1100200,Gauntlets
 1140000,Vanguard Helm
 1140100,Vanguard Armor
 1140200,Vanguard Gauntlets
@@ -124,16 +128,16 @@ ID,Name
 1990200,High Page Gloves
 1990300,High Page Trousers
 2000200,Rotten Duelist Wraps
-3020000,Golem Helm
-3020100,Golem Armor
-3020200,Golem Gauntlets
-3020300,Golem Greaves
+3020000,Carian Golem Helm
+3020100,Carian Golem Armor
+3020200,Carian Golem Gauntlets
+3020300,Carian Golem Greaves
 5420000,Quicksilver Circlet
 5420100,Quicksilver Scale Robe
 5420200,Quicksilver Cuffs
 5420300,Quicksilver Greaves
 5252000,Divine Beast Helm
 5252100,Divine Beast Warrior Armor
-5252200,Divine Beast Warrior Gauntlets
-5252300,Divine Beast Warrior Greaves
+5252200,Divine Beast Gauntlets
+5252300,Divine Beast Greaves
 5400000,Midra's Gaze
