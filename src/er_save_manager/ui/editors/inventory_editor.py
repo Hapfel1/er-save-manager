@@ -1394,8 +1394,8 @@ class InventoryEditor:
                 return
 
             if cat == "All":
-                results = db.search_items(query) if query else []
                 is_cnv = self._is_cnv_save()
+                results = db.search_items(query, is_cnv) if query else []
                 if not is_cnv:
                     results = [
                         i
@@ -1413,7 +1413,7 @@ class InventoryEditor:
                         i for i in results if i.category_name not in self._SEAMLESS_CATS
                     ]
             else:
-                items = db.get_items_by_category(cat)
+                items = db.get_items_by_category(cat, self._is_cnv_save())
                 results = (
                     [i for i in items if query.lower() in i.name.lower()]
                     if query
@@ -2684,7 +2684,8 @@ class InventoryEditor:
 
         db = get_item_database()
         cats = self._visible_categories() if cat == "All" else [cat]
-        items = [item for c in cats for item in db.get_items_by_category(c)]
+        is_cnv = self._is_cnv_save()
+        items = [item for c in cats for item in db.get_items_by_category(c, is_cnv)]
         if not items:
             return
 

@@ -15,6 +15,11 @@ Base-game weapon and gem CSVs also carry convergence_* columns holding the
 values the Convergence params use for the same ID. They build a Convergence
 variant of the item, returned by get_item_by_id(..., is_convergence=True)
 and resolve(). A row in a Convergence CSV with the same ID replaces it.
+
+Items listed in Unobtainable.csv (Category,ID,Name,Convergence) keep their
+name lookup but are left out of the category lists and search, so no picker
+offers them. Convergence 0 marks an item that only Convergence hands out:
+it is hidden unless the lists are asked for with is_convergence=True.
 """
 
 import csv as _csv
@@ -112,6 +117,8 @@ class ItemDatabase:
         self.items_by_category: dict[str, list[Item]] = {}
         self.categories: list[tuple[str, ItemCategory]] = []
         self._convergence_overrides: dict[int, Item] = {}
+        self._unobtainable: set[int] = set()
+        self._vanilla_unobtainable: set[int] = set()
         self._loaded = False
 
     def load(self):
@@ -125,6 +132,16 @@ class ItemDatabase:
             raise FileNotFoundError(
                 f"ItemCategories.txt not found at {categories_file}"
             )
+
+        unobtainable_file = base_path / "Unobtainable.csv"
+        if unobtainable_file.exists():
+            with open(unobtainable_file, encoding="utf-8-sig") as f:
+                for r in _csv.DictReader(f):
+                    full_id = int(ItemCategory[r["Category"].upper()]) | int(r["ID"])
+                    if r["Convergence"] == "1":
+                        self._unobtainable.add(full_id)
+                    else:
+                        self._vanilla_unobtainable.add(full_id)
 
         with open(categories_file, encoding="utf-8-sig") as f:
             for line in f:
@@ -308,7 +325,8 @@ class ItemDatabase:
             self._convergence_overrides[item.full_id] = item
         else:
             self.items_by_id[item.full_id] = item
-        # Always register in the category list so browser shows all items.
+        if item.full_id in self._unobtainable:
+            return
         if item.category_name not in self.items_by_category:
             self.items_by_category[item.category_name] = []
         self.items_by_category[item.category_name].append(item)
@@ -330,15 +348,30 @@ class ItemDatabase:
             return self._convergence_overrides.get(item.full_id, item)
         return item
 
-    def get_items_by_category(self, category_name: str) -> list[Item]:
-        return self.items_by_category.get(category_name, [])
+    def _offered(self, item: Item, is_convergence: bool) -> bool:
+        return is_convergence or item.full_id not in self._vanilla_unobtainable
+
+    def get_items_by_category(
+        self, category_name: str, is_convergence: bool = False
+    ) -> list[Item]:
+        return [
+            i
+            for i in self.items_by_category.get(category_name, [])
+            if self._offered(i, is_convergence)
+        ]
 
     def get_all_categories(self) -> list[str]:
         return list(self.items_by_category.keys())
 
-    def search_items(self, query: str) -> list[Item]:
+    def search_items(self, query: str, is_convergence: bool = False) -> list[Item]:
         query_lower = query.lower()
-        return [item for item in self.items if query_lower in item.name.lower()]
+        return [
+            item
+            for item in self.items
+            if query_lower in item.name.lower()
+            and item.full_id not in self._unobtainable
+            and self._offered(item, is_convergence)
+        ]
 
     def decode_item_id(self, full_id: int) -> "tuple[int, ItemCategory]":
         raw_cat = full_id & 0xF0000000
