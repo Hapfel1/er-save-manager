@@ -710,6 +710,17 @@ def _batch_goods_qty(
     return None, qty
 
 
+def _supply_capped(save_file, save_path: str, is_cnv: bool) -> bool:
+    """True for vanilla saves, the ones played on official servers.
+
+    PC .sl2 and console saves (PS memory.dat, Switch 2) count; Seamless
+    Co-op, Convergence and other mod saves do not.
+    """
+    if is_cnv:
+        return False
+    return bool(save_file.is_ps) or Path(save_path).suffix.lower() == ".sl2"
+
+
 def _owns_sote(slot) -> bool:
     from er_save_manager.parser.event_flags import EventFlags
 
@@ -2963,10 +2974,8 @@ class InventoryEditor:
             self._create_backup(save_file, slot_idx, "batch_add_category")
 
             is_cnv = self._is_cnv_save()
-            # Supply caps apply to vanilla PC saves (.sl2) only, the ones
-            # played online on official servers.
-            supply_capped = (
-                not is_cnv and Path(self.get_save_path() or "").suffix.lower() == ".sl2"
+            supply_capped = _supply_capped(
+                save_file, self.get_save_path() or "", is_cnv
             )
             success = 0
             skipped: dict[str, int] = {}

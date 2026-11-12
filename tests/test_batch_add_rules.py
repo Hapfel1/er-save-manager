@@ -12,6 +12,7 @@ from er_save_manager.ui.editors.inventory_editor import (
     _batch_goods_qty,
     _owned_flask_names,
     _owns_sote,
+    _supply_capped,
     _sync_slot_counters,
 )
 
@@ -54,3 +55,11 @@ def test_sote_ownership(sanitized_save):
     EventFlags.set_flag(flags, _SOTE_FLAG, False)
     slot.event_flags = flags
     assert not _owns_sote(slot)
+
+
+def test_supply_caps_only_on_vanilla_saves(sanitized_save):
+    assert _supply_capped(sanitized_save, "ER0000.sl2", False)
+    assert not _supply_capped(sanitized_save, "ER0000.co2", False)
+    assert not _supply_capped(sanitized_save, "ER0000.sl2", True)
+    sanitized_save.is_ps = True
+    assert _supply_capped(sanitized_save, "memory.dat", False)
