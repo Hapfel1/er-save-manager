@@ -80,7 +80,7 @@ class DS3InspectorTab:
                 "level": str(char.level),
                 "class": classes[cls].name if cls < len(classes) else f"Class {cls}",
                 "currency": f"{char.souls:,}",
-                "ng": "NG+?" if char.layout_error else f"NG+{char.ng_plus}",
+                "ng": "Unknown" if char.layout_error else f"NG+{char.ng_plus}",
                 "playtime": format_playtime(char.play_time_ms / 1000),
             }
             name = char.name if listed else f"{char.name} (deleted)"

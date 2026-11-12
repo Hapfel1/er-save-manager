@@ -165,6 +165,25 @@ _ITEM_GIB_GAMES = (
     "dark_souls_2",
 )
 
+# Games the app only patches the SteamID of and backs up (no editor tabs)
+_STEAMID_ONLY_NOTE = (
+    "Character editing is not available for this game yet. The Backup "
+    "Manager and Auto-Find work as for the other games."
+)
+
+
+def _subtitle_text(profile) -> str:
+    """Header subtitle: the selected game and what the app does for it."""
+    if profile is None:
+        return "Save editor, backup manager and corruption fixer"
+    if profile.key in _ITEM_GIB_GAMES:
+        return (
+            f"Editing {profile.name} saves: save editor, backup manager and "
+            "corruption fixer"
+        )
+    return f"Editing {profile.name} saves: SteamID patcher and backup manager"
+
+
 # Save file kinds per extension, for the Auto-Find help tooltip
 _EXTENSION_HELP = {
     ".sl2": "Vanilla game (official servers)",
@@ -904,7 +923,7 @@ class SaveManagerGUI:
 
         self._subtitle_label = ctk.CTkLabel(
             title_frame,
-            text="Complete save editor, backup manager, and corruption fixer",
+            text=_subtitle_text(self._active_profile()),
             font=("Inter", 11),
         )
         self._subtitle_label.pack(pady=(0, 10))
@@ -1592,6 +1611,9 @@ class SaveManagerGUI:
             else:
                 self._ps_save_btn.pack_forget()
 
+        if hasattr(self, "_subtitle_label"):
+            self._subtitle_label.configure(text=_subtitle_text(profile))
+
         if hasattr(self, "_itemgib_btn"):
             # Packed again after the console button, so it stays left of it
             self._itemgib_btn.pack_forget()
@@ -2221,6 +2243,11 @@ class SaveManagerGUI:
                 self.reload_save,
                 self.show_toast,
             )
+            if profile.key not in _ITEM_GIB_GAMES:
+                self.steamid_tab.game_note = (
+                    f"{profile.name}: SteamID patching and backups",
+                    _STEAMID_ONLY_NOTE,
+                )
             steamid_tab = self.steamid_tab
             self._build_tab(
                 "SteamID Patcher",

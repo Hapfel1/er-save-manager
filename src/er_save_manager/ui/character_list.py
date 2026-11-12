@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import tkinter as tk
 import tkinter.font as tkfont
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -104,6 +105,19 @@ def _elide(label: ctk.CTkLabel, text: str) -> str:
         cut -= 1
     label.configure(text=text[:cut].rstrip() + "…")
     return text
+
+
+# Unicode categories no game writes into a character name: control,
+# private use, surrogate and unassigned code points. A name holding them is
+# slot data read as text (a wiped or damaged slot).
+_UNREADABLE = frozenset({"Cc", "Co", "Cs", "Cn"})
+
+
+def display_name(name: str) -> str:
+    """name, or "Unreadable name" when it is not text a game wrote."""
+    if any(unicodedata.category(c) in _UNREADABLE for c in name):
+        return "Unreadable name"
+    return name
 
 
 class CharacterList:
@@ -260,7 +274,7 @@ class CharacterList:
 
     def _fill_line(self, cells: dict[str, ctk.CTkLabel], row: CharacterRow) -> None:
         """Texts of one character card."""
-        cells["_name"]._tooltip.text = _elide(cells["_name"], row.name)
+        cells["_name"]._tooltip.text = _elide(cells["_name"], display_name(row.name))
         values = dict(row.values, slot=str(row.slot + 1))
         for col in self._columns:
             cells[col.key].configure(text=values.get(col.key, ""))

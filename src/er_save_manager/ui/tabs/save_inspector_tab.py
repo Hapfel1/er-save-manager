@@ -174,7 +174,7 @@ class SaveInspectorTab:
         values["currency"] = f"{pgd.runes:,}"
         # Misparsed slots read garbage here
         ng = slot.get_ng_plus()
-        values["ng"] = f"NG+{ng}" if ng < 100 else "NG+?"
+        values["ng"] = f"NG+{ng}" if ng < 100 else "Unknown"
         if getattr(slot, "map_id", None):
             values["location"] = slot.map_id.to_string_decimal()
         return CharacterRow(

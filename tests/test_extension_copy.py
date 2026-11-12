@@ -142,3 +142,8 @@ def test_save_picker_summary(sanitized_save_path, tmp_path):
     summary = character_summary(sanitized_save_path, "elden_ring")
     assert summary and summary != "No characters"
     assert character_summary(sanitized_save_path, "armored_core_6") is None
+    from er_save_manager.ui.character_list import display_name
+
+    assert display_name("Hapfel") == "Hapfel"
+    assert display_name("\u30ad\u30ea\u30f3") == "\u30ad\u30ea\u30f3"  # Japanese name
+    assert display_name("\u3f02\ue699\u4737") == "Unreadable name"  # wiped slot bytes

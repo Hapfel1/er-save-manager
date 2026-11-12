@@ -11,7 +11,11 @@ def test_undo_restores_the_edit_once(tmp_path, monkeypatch):
     save = tmp_path / "DS30000.sl2"
     save.write_bytes(b"before")
     reloaded = []
-    undo.configure(reloaded.append, lambda: ("", ""), lambda: True)
+    # Module state: edits noted by other tests in this worker
+    monkeypatch.setattr(undo, "_pending", {})
+    monkeypatch.setattr(undo, "_reload", reloaded.append)
+    monkeypatch.setattr(undo, "_game", lambda: ("", ""))
+    monkeypatch.setattr(undo, "_ready", lambda: True)
     monkeypatch.setattr(toast, "notify", lambda *a, **k: None)
 
     BackupManager(save).create_backup(operation="manual_backup")

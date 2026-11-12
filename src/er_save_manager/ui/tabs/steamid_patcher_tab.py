@@ -126,6 +126,9 @@ class SteamIDPatcherTab:
         self.reload_save = reload_callback
         self.show_toast = show_toast_callback
 
+        # (heading, text) of an info box above the patcher, for games the
+        # app only patches and backs up
+        self.game_note: tuple[str, str] | None = None
         self.current_steamid_var = None
         self.new_steamid_var = None
         self.steam_url_var = None
@@ -178,6 +181,26 @@ class SteamIDPatcherTab:
             font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 10), padx=15, anchor="w")
+
+        if self.game_note:
+            from er_save_manager.ui import palette
+
+            heading, text = self.game_note
+            note = ctk.CTkFrame(
+                main_frame, corner_radius=10, fg_color=palette.PURPLE_TINT
+            )
+            note.pack(fill=tk.X, padx=15, pady=(0, 12))
+            ctk.CTkLabel(
+                note, text=heading, font=("Inter", 13, "bold"), anchor="w"
+            ).pack(fill=tk.X, padx=12, pady=(10, 2))
+            ctk.CTkLabel(
+                note,
+                text=text,
+                font=("Inter", 12),
+                anchor="w",
+                justify="left",
+                wraplength=700,
+            ).pack(fill=tk.X, padx=12, pady=(0, 10))
 
         current_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         current_frame.pack(fill=tk.X, padx=15, pady=(0, 12))

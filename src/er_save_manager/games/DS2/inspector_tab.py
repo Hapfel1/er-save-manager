@@ -87,13 +87,19 @@ class DS2InspectorTab:
             if save.slot_state(i) is SlotState.NEVER_CREATED:
                 continue
             name = save.slot_display_name(i)
-            values = {
-                "level": str(character.get_stat("level")),
-                "class": character.starting_class_name or "",
-                "currency": f"{character.souls:,}",
-                "ng": f"NG+{character.new_game_plus}",
-                "playtime": format_playtime(save.slot_play_seconds(i)),
-            }
+            if save.slot_state(i) is SlotState.PRE_CREATION:
+                # No character yet: the stat fields hold leftover data
+                values = dict.fromkeys(
+                    ("level", "class", "currency", "ng", "playtime"), "-"
+                )
+            else:
+                values = {
+                    "level": str(character.get_stat("level")),
+                    "class": character.starting_class_name or "",
+                    "currency": f"{character.souls:,}",
+                    "ng": f"NG+{character.new_game_plus}",
+                    "playtime": format_playtime(save.slot_play_seconds(i)),
+                }
             rows.append(
                 CharacterRow(
                     i,
