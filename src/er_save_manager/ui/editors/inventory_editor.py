@@ -2963,10 +2963,10 @@ class InventoryEditor:
             self._create_backup(save_file, slot_idx, "batch_add_category")
 
             is_cnv = self._is_cnv_save()
-            # Supply caps matter only where the game checks the character
-            # online: vanilla saves, not Seamless Co-op or Convergence.
-            supply_capped = not is_cnv and not is_seamless_save(
-                self.get_save_path() or ""
+            # Supply caps apply to vanilla PC saves (.sl2) only, the ones
+            # played online on official servers.
+            supply_capped = (
+                not is_cnv and Path(self.get_save_path() or "").suffix.lower() == ".sl2"
             )
             success = 0
             skipped: dict[str, int] = {}
