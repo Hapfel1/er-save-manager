@@ -237,20 +237,34 @@ def test_validation_convergence(item_db) -> None:
 def test_unobtainable_items_named_but_not_offered(item_db) -> None:
     great_coffins = 0x40000000 | 8706
     monument_icon = 0x40000000 | 9127  # Convergence gives it, vanilla does not
+    stonesword_key = 0x40000000 | 8000  # vanilla gives it, Convergence does not
+    probe = {great_coffins, monument_icon, stonesword_key}
 
-    def offered(is_cnv: bool) -> set[int]:
+    def listed(is_cnv: bool) -> list:
         items = [
             i
             for c in item_db.get_all_categories()
             for i in item_db.get_items_by_category(c, is_cnv)
         ]
-        items += item_db.search_items("About Monument", is_cnv)
-        items += item_db.search_items("Great Coffins", is_cnv)
-        return {i.full_id for i in items}
+        for query in ("About Monument", "Great Coffins", "Stonesword Key"):
+            items += item_db.search_items(query, is_cnv)
+        return items
+
+    def offered(is_cnv: bool) -> set[int]:
+        return {i.full_id for i in listed(is_cnv)}
 
     assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
-    assert {great_coffins, monument_icon}.isdisjoint(offered(False))
-    assert offered(True) & {great_coffins, monument_icon} == {monument_icon}
+    assert offered(False) & probe == {stonesword_key}
+    assert offered(True) & probe == {monument_icon}
+
+    # Convergence lists a renamed base-game item once, under its own name
+    stone = 0x40000000 | 10101
+    names = {i.name for i in listed(True) if i.full_id == stone}
+    assert names == {"Smithing Stone"}
+    vanilla = listed(False)
+    assert {i.name for i in vanilla if i.full_id == stone} - names == {
+        "Smithing Stone [2]"
+    }
 
 
 def test_every_armor_piece_has_a_slot_type(item_db) -> None:
