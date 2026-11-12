@@ -1,9 +1,14 @@
 ID,Name
+4040,[Sorcery] Night Stars
+4050,[Sorcery] Star Swarm
 4130,[Sorcery] Terra Magicus
 4131,[Sorcery] Corpa Magica
 4150,[Sorcery] Glintbeam Orb
 4160,[Sorcery] Energy Shell
 4170,[Sorcery] Carian Acuity
+4370,[Sorcery] Dragonkin Downpour
+4390,[Sorcery] Frozen Cragbolt
+4400,[Sorcery] Icecrag Arrow
 4401,[Sorcery] Ice Dart
 4402,[Sorcery] Icecrag Spear
 4403,[Sorcery] Avalanche
@@ -18,11 +23,13 @@ ID,Name
 4423,[Sorcery] Frozen Phalanx
 4424,[Sorcery] Zamor Ice Storm (New)
 4432,[Sorcery] Freeze Solid
+4480,[Sorcery] Sorcerer's Lucidity
 4491,[Sorcery] Whiteout
 4492,[Sorcery] Divine Iceburst
 4493,[Sorcery] Shatter the Shards
 4494,[Sorcery] Mass Freeze
 4495,[Sorcery] IceQuake
+4520,[Sorcery] Cragbolt Torrent
 4530,[Sorcery] Cragbolt Wisp
 4531,[Sorcery] Cragbolt Spear
 4540,[Sorcery] Cragbolt Upwelling
@@ -39,6 +46,7 @@ ID,Name
 4604,[Sorcery] Curse of Shadow
 4605,[Sorcery] Fulminated Quicksilver
 4621,[Sorcery] Quicksilver Comet
+4640,[Sorcery] Dragonkin Retaliation
 4651,[Sorcery] Black Moon Eulogy
 4652,[Sorcery] Pure Darkness
 4671,[Sorcery] Oath of Darkness
@@ -96,6 +104,7 @@ ID,Name
 4990,[Sorcery] Aberrant Ascension
 4991,[Sorcery] Blood Revelry
 5002,[Sorcery] Rancor Bolt
+5010,[Sorcery] Ghostflame Cannon
 5011,[Sorcery] Rancorstorm
 5012,[Sorcery] Ritual of Ghostflame
 5021,[Sorcery] Lingering Blight
@@ -116,6 +125,8 @@ ID,Name
 5082,[Sorcery] Reassemble
 5090,[Sorcery] Godwyn's Vengeance
 5091,[Sorcery] Phoenix of Death
+5100,[Sorcery] Cragbolt Bubbles
+5110,[Sorcery] Great Dragonkin Bubble
 5120,[Sorcery] Great Bubble Volley
 5130,[Sorcery] Armor of Bubbles
 5131,[Sorcery] Underworld Bubbleshield
@@ -159,6 +170,7 @@ ID,Name
 6060,[Incantation] Flame Protect Me
 6070,[Incantation] Cyclopean Prophecy
 6080,[Incantation] Flaming Armament
+6100,[Incantation] Great Flame Sling
 6110,[Incantation] Flame of The Fell God
 6111,[Incantation] Anger of the Fell God
 6120,[Incantation] Burn- O Flame!
@@ -170,6 +182,7 @@ ID,Name
 6200,[Incantation] Black Flame Dart
 6201,[Incantation] Black Flame Burst
 6202,[Incantation] Godslayer Sickle
+6210,[Incantation] Black Flame Orb
 6211,[Incantation] Burrowing Black Flame
 6220,[Incantation] Surge- O Flame
 6221,[Incantation] Twilight Wisp
@@ -178,6 +191,7 @@ ID,Name
 6224,[Incantation] Soul Tether
 6225,[Incantation] Sever the Thread
 6231,[Incantation] Black Flame Wave
+6260,[Incantation] Blessing of Gloam
 6261,[Incantation] Godslayer's Devotion
 6262,[Incantation] Wrath of the Queen
 6280,[Incantation] Black Flame Mortar
@@ -189,6 +203,7 @@ ID,Name
 6302,[Incantation] Sanguine Pull
 6303,[Incantation] Boiling Blood
 6304,[Incantation] Dynastic Sacrament
+6310,[Incantation] Bloodboon Scatter
 6311,[Incantation] Bloodboon Spray
 6312,[Incantation] Bloodboon Slash
 6313,[Incantation] Bloodflame Missile
@@ -206,23 +221,28 @@ ID,Name
 6371,[Incantation] Hidden Mother's Blessing
 6431,[Incantation] Blessing of The Erdtree
 6501,[Sorcery] Night Maiden's Fog
+6600,[Incantation] Aura of Valor
 6610,[Incantation] Rune Shards
 6620,[Incantation] Golden Land
 6630,[Incantation] Elden Blade
 6640,[Incantation] Golden Spear
 6641,[Incantation] Morgott's Spear
 6741,[Incantation] Golden Displacement
+6750,[Incantation] Sacred Ground
 6790,[Incantation] Blessing of Grace
 6791,[Incantation] Blessing of Protection
 6792,[Incantation] Blessing of Wisdom
 6793,[Incantation] Blessing of Power
 6794,[Incantation] Elden Benediction
+6800,[Incantation] Gravel Sling
 6801,[Incantation] Stone Throw
 6811,[Incantation] Boulder Volley
 6821,[Incantation] Beast Talons
 6822,[Incantation] Savage Lunge
+6840,[Incantation] Crucible Vitality
 6841,[Incantation] Primal Regeneration
 6842,[Incantation] Stone Skin
+6850,[Incantation] Bestial Strength
 6851,[Incantation] Bestial Fervor
 6852,[Incantation] Source of Creation
 6860,[Incantation] Earthen Spikes
@@ -235,6 +255,7 @@ ID,Name
 6902,[Incantation] Lightning Orb
 6903,[Incantation] Ancient Lightning Spear
 6910,[Incantation] Ancient Dragons' Light Strike
+6921,[Sorcery] Frozen Lightning Stake
 6922,[Incantation] Ancient Lightning Strike
 6931,[Incantation] Ancient Honed Bolt
 6932,[Incantation] Ancient Lightning Beacon
@@ -309,7 +330,11 @@ ID,Name
 7490,[Incantation] Soothing Aura
 7491,[Incantation] Tranquility
 7492,[Incantation] Invocation of Saint Trina
+7500,[Incantation] Crucible Tail
+7510,[Incantation] Crucible Horn
 7903,[Incantation] Golden Light Fortification
+2004310,[Sorcery] Cragbolt Trio
+2004510,[Sorcery] Nail Volley
 2004520,[Sorcery] Nail Constellation
 2004530,[Sorcery] Nail Burst
 2004920,[Sorcery] Creeping Vines
@@ -319,11 +344,14 @@ ID,Name
 2006230,[Sorcery] Putrid Shardstorm
 2006250,[Sorcery] Scadu Rebirth
 2006260,[Sorcery] Shadow of Death
+2006300,[Incantation] Bloodflame Scythe
 2006310,[Incantation] Bloodboon Quagmire
 2006320,[Incantation] Seeker Swarm
 2006330,[Incantation] Sanguine Traversal
 2006340,[Incantation] Fiendish Ritual
 2006350,[Incantation] Blood of the Maiden
+2006650,[Incantation] Crucible Quills
+2006660,[Incantation] Miranda Bloom
 2007300,[Incantation] Midra's Flame of Frenzy
 2007310,[Incantation] Frenzied Lunge
 2007320,[Incantation] Maddening Orb
@@ -332,5 +360,8 @@ ID,Name
 2007430,[Sorcery] Gaze of Metyr
 2007440,[Sorcery] Microcosmic Spree
 2007610,[Incantation] Watchful Seekers
+2007700,[Incantation] Crucible Arcs
+2007710,[Incantation] Giant Crucible Arc
+2007740,[Incantation] Crucible Feathers
 2007750,[Incantation] Horn Spike
 2007760,[Incantation] Immortal Coil
