@@ -10,6 +10,7 @@ from er_save_manager.ui.editors.inventory_editor import (
     _SOTE_FLAG,
     _batch_excluded,
     _batch_goods_qty,
+    _owned_flask_names,
     _owns_sote,
     _sync_slot_counters,
 )
@@ -24,10 +25,12 @@ def test_batch_goods_limits(sanitized_save):
     assert _batch_excluded(item(1025)) is not None  # Crimson flask +12
     assert _batch_excluded(item(8148)) is not None  # Unpowered Great Rune
     assert _batch_excluded(item(191)) is None
+    assert _owned_flask_names(sanitized_save.character_slots[3], 1001)  # holds +12
+    assert not _owned_flask_names(sanitized_save.character_slots[6], 1001)
 
     fresh = sanitized_save.character_slots[6]  # NG, 4 flask charges, no seeds
-    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, False) == (None, 43)
-    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, True) == (None, 99)
+    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, True) == (None, 43)
+    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, False) == (None, 99)
 
     blessed = sanitized_save.character_slots[1]  # Scadutree Blessing 20
     assert remaining_supply(blessed, 2010000) == 0

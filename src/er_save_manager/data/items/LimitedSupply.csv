@@ -5,15 +5,6 @@ ID,Name,Supply
 2090,Deathroot,9
 2130,Celestial Dew,11
 2190,Miquella's Needle,2
-2911,Golden Rune [12],31
-2912,Golden Rune [13],16
-2913,Numen's Rune,12
-2914,Hero's Rune [1],4
-2915,Hero's Rune [2],4
-2916,Hero's Rune [3],1
-2917,Hero's Rune [4],3
-2918,Hero's Rune [5],5
-2919,Lord's Rune,5
 2950,Remembrance of the Grafted,4
 2951,Remembrance of the Starscourge,4
 2952,Remembrance of the Omen King,4
@@ -39,10 +30,6 @@ ID,Name,Supply
 10020,Sacred Tear,13
 10060,Dragon Heart,29
 10070,Lost Ashes of War,20
-10140,Ancient Dragon Smithing Stone,23
-10168,Somber Ancient Dragon Smithing Stone,15
-10909,Great Grave Glovewort,12
-10919,Great Ghost Glovewort,7
 2000900,Blessing of Marika,4
 2001105,Dragonscale Flesh,2
 2002010,Rock Heart,1
@@ -61,14 +48,6 @@ ID,Name,Supply
 2002908,Remembrance of the Lord of Frenzied Flame,3
 2002909,Remembrance of the Mother of Fingers,3
 2002910,Remembrance of Putrescence,3
-2002950,Leda's Rune,3
-2002954,Shadow Realm Rune [3],11
-2002955,Shadow Realm Rune [4],8
-2002956,Shadow Realm Rune [5],5
-2002957,Shadow Realm Rune [6],4
-2002958,Shadow Realm Rune [7],5
-2002959,Rune of an Unsung Hero,2
-2002960,Marika's Rune,2
 2003000,Bondstone,1
 2003130,Horned Bairn,1
 2003140,Perfumed Oil of Ranah,1

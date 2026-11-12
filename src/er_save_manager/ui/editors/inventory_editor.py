@@ -629,6 +629,31 @@ _MEMORY_STONE_ID = 10030
 _TALISMAN_POUCH_ID = 10040
 
 
+# Flask kinds: Crimson (+0..+12, empty and filled), Cerulean, Wondrous Physick.
+_FLASK_KINDS: tuple[range, ...] = (
+    range(1000, 1026),
+    range(1050, 1076),
+    range(250, 252),
+)
+
+
+def _owned_flask_names(slot, base_id: int) -> list[str]:
+    """Names of owned flasks of the same kind as goods base_id."""
+    from er_save_manager.data.item_database import get_item_database
+
+    kind = next((k for k in _FLASK_KINDS if base_id in k), None)
+    if kind is None:
+        return []
+    db = get_item_database()
+    names = []
+    for inv in (slot.inventory_held, slot.inventory_storage_box):
+        for i in kind:
+            if _goods_qty(inv, i):
+                item = db.get_item_by_id(0x40000000 | i)
+                names.append(item.name if item else f"Goods {i}")
+    return names
+
+
 def _batch_excluded(item) -> str | None:
     """Reason Batch Add never offers item, None if it may be added."""
     if item.id < 0:
@@ -653,12 +678,12 @@ def _goods_qty(inv, base_id: int) -> int:
 
 
 def _batch_goods_qty(
-    slot, item, location: str, qty: int, max_qty: int, is_cnv: bool
+    slot, item, location: str, qty: int, max_qty: int, supply_capped: bool
 ) -> tuple[str | None, int]:
     """(skip reason, quantity) for a Batch Add of goods item.
 
-    The quantity is lowered to the room left in the stack and, on
-    non-Convergence saves, to the copies the world still holds.
+    The quantity is lowered to the room left in the stack and, with
+    supply_capped, to the copies the world still holds.
     """
     from er_save_manager.data.item_supply import remaining_supply
 
@@ -676,7 +701,7 @@ def _batch_goods_qty(
             "already in the inventory" if max_qty == 1 else "stack already at its max"
         )
         return reason, 0
-    if not is_cnv:
+    if supply_capped:
         left = remaining_supply(slot, item.id)
         if left is not None:
             qty = min(qty, left)
@@ -2779,6 +2804,24 @@ class InventoryEditor:
             item_info["location"] = resolved_location
             self.inv_location_var.set(resolved_location)
 
+        full_id = item_info["full_id"]
+        if (full_id & 0xF0000000) == 0x40000000:
+            owned = _owned_flask_names(
+                save_file.characters[slot_idx], full_id & 0x0FFFFFFF
+            )
+            if owned and not CTkMessageBox._create_dialog(
+                self.parent,
+                "Flask Already Owned",
+                "This character already has:\n"
+                + _list_lines(owned)
+                + "\n\nThe game keeps one flask of each kind. A second one is "
+                "a state the game cannot produce and can get the character "
+                "flagged online.",
+                icon_type="warning",
+                buttons=[("Add Anyway", True), ("Cancel", False)],
+            ):
+                return
+
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "add_item")
@@ -2818,13 +2861,16 @@ class InventoryEditor:
         db = get_item_database()
         cats = self._visible_categories() if cat == "All" else [cat]
         is_cnv = self._is_cnv_save()
-        items = [
-            item
-            for c in cats
-            for item in db.get_items_by_category(c, is_cnv)
-            if _batch_excluded(item) is None
-        ]
+        listed = [item for c in cats for item in db.get_items_by_category(c, is_cnv)]
+        items = [item for item in listed if _batch_excluded(item) is None]
         if not items:
+            if listed:
+                notify(
+                    parent_window,
+                    f"Batch Add skips '{cat}': the game keeps one flask of "
+                    "each kind. Add a single flask instead.",
+                    "warning",
+                )
             return
 
         try:
@@ -2917,6 +2963,11 @@ class InventoryEditor:
             self._create_backup(save_file, slot_idx, "batch_add_category")
 
             is_cnv = self._is_cnv_save()
+            # Supply caps matter only where the game checks the character
+            # online: vanilla saves, not Seamless Co-op or Convergence.
+            supply_capped = not is_cnv and not is_seamless_save(
+                self.get_save_path() or ""
+            )
             success = 0
             skipped: dict[str, int] = {}
             for item in items:
@@ -2927,7 +2978,7 @@ class InventoryEditor:
                 item_qty = min(target_qty, max_qty)
                 if item.category == 0x40000000:
                     reason, item_qty = _batch_goods_qty(
-                        slot, item, location, item_qty, max_qty, is_cnv
+                        slot, item, location, item_qty, max_qty, supply_capped
                     )
                     if reason:
                         skipped[reason] = skipped.get(reason, 0) + 1

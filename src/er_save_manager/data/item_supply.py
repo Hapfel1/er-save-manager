@@ -2,10 +2,11 @@
 
 items/LimitedSupply.csv lists goods that only one-time sources hand out
 (flagged ItemLotParam lots, limited ShopLineupParam stock, flagged EMEVD
-item gifts) with the number one playthrough yields. Goods with an
-unflagged enemy drop, unlimited shop stock or a crafting recipe are not
-listed and have no limit beyond their stack size. The world resets on
-each NG+ cycle, so the supply scales with the cycle count.
+item gifts) with the number one playthrough yields. Goods other players
+can share in multiplayer, or with an unflagged enemy drop, unlimited shop
+stock or a crafting recipe are not listed and have no limit beyond their
+stack size. The world resets on each NG+ cycle, so the supply scales
+with the cycle count.
 
 Spent copies are derived from the character: Golden Seeds from the flask
 charge count, Sacred Tears from the flask upgrade level, Scadutree
