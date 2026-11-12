@@ -10,6 +10,7 @@ from er_save_manager.ui.editors.inventory_editor import (
     _SOTE_FLAG,
     _batch_excluded,
     _batch_goods_qty,
+    _flask_batch_plan,
     _owned_flask_names,
     _owns_sote,
     _supply_capped,
@@ -28,6 +29,17 @@ def test_batch_goods_limits(sanitized_save):
     assert _batch_excluded(item(191)) is None
     assert _owned_flask_names(sanitized_save.character_slots[3], 1001)  # holds +12
     assert not _owned_flask_names(sanitized_save.character_slots[6], 1001)
+    # One flask per missing kind, filled with the character's charges
+    holder = sanitized_save.character_slots[3]
+    assert [f for _, f, _ in _flask_batch_plan(holder)][:2] == [None, None]
+    lacking = sanitized_save.character_slots[6]
+    pgd = lacking.player_game_data
+    pgd.max_crimson_flask_count, pgd.max_cerulean_flask_count = 4, 0
+    assert [(f, q) for _, f, q in _flask_batch_plan(lacking)] == [
+        (1001, 4),
+        (1050, 1),
+        (250, 1),
+    ]
 
     fresh = sanitized_save.character_slots[6]  # NG, 4 flask charges, no seeds
     assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, True) == (None, 43)

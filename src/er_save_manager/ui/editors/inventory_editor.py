@@ -674,6 +674,33 @@ def _confirm_second_flask(parent, owned: list[str]) -> bool:
     )
 
 
+def _flask_batch_plan(slot) -> list[tuple[str, int | None, int]]:
+    """(kind, goods id or None if the kind is owned, quantity) per flask kind.
+
+    A missing Crimson or Cerulean flask comes at +0, filled with the
+    character's charges of that kind, or empty when it has none, as the
+    game shows a kind with no charges. Wondrous Physick comes empty.
+    """
+    pgd = slot.player_game_data
+    plan = []
+    for kind, ids, charges in (
+        ("Flask of Crimson Tears", _FLASK_KINDS[0], pgd.max_crimson_flask_count),
+        ("Flask of Cerulean Tears", _FLASK_KINDS[1], pgd.max_cerulean_flask_count),
+        ("Flask of Wondrous Physick", _FLASK_KINDS[2], 0),
+    ):
+        if any(
+            _goods_qty(inv, i)
+            for i in ids
+            for inv in (slot.inventory_held, slot.inventory_storage_box)
+        ):
+            plan.append((kind, None, 0))
+        elif charges:
+            plan.append((kind, ids.start + 1, charges))
+        else:
+            plan.append((kind, ids.start, 1))
+    return plan
+
+
 def _batch_excluded(item) -> str | None:
     """Reason Batch Add never offers item, None if it may be added."""
     if item.id < 0:
@@ -2916,14 +2943,8 @@ class InventoryEditor:
         is_cnv = self._is_cnv_save()
         listed = [item for c in cats for item in db.get_items_by_category(c, is_cnv)]
         items = [item for item in listed if _batch_excluded(item) is None]
-        if not items:
-            if listed:
-                notify(
-                    parent_window,
-                    f"Batch Add skips '{cat}': the game keeps one flask of "
-                    "each kind. Add a single flask instead.",
-                    "warning",
-                )
+        with_flasks = any(i.category_name == "Flasks" for i in listed)
+        if not items and not with_flasks:
             return
 
         try:
@@ -2942,6 +2963,21 @@ class InventoryEditor:
 
         is_loadout = self.loadout_mode_var.get()
         action_name = "add to Loadout" if is_loadout else "add to Inventory"
+        if is_loadout and not items:
+            notify(
+                parent_window,
+                "Flasks are not batch added to loadouts: the flask a character "
+                "needs depends on the flasks it already has.",
+                "warning",
+            )
+            return
+        flask_note = (
+            "\n\nEach flask kind the character lacks (Crimson, Cerulean, "
+            "Wondrous Physick) gets one flask at +0; kinds it already has are "
+            "left as they are."
+            if with_flasks and not is_loadout
+            else ""
+        )
 
         if cat == "All":
             confirmed = CTkMessageBox._create_dialog(
@@ -2954,18 +2990,21 @@ class InventoryEditor:
                     if is_loadout
                     else "\n\nThis fills most of the inventory. A backup is "
                     "made first; restore it in the Backup Manager to undo."
-                    "\n\nFlasks and second forms of an item are left out, and "
-                    "stacks are capped at what the game hands out. Online play "
-                    "with spawned items still risks a ban."
+                    "\n\nSecond forms of an item are left out, and stacks are "
+                    "capped at what the game hands out. Online play with "
+                    "spawned items still risks a ban." + flask_note
                 ),
                 icon_type="warning",
                 buttons=[("Add All", True), ("Cancel", False)],
             )
         else:
+            question = (
+                f"Batch {action_name} all {len(items)} items from '{cat}'?"
+                if items
+                else f"Batch {action_name} the flasks this character lacks?"
+            )
             confirmed = CTkMessageBox.askyesno(
-                "Batch Add",
-                f"Batch {action_name} all {len(items)} items from '{cat}'?",
-                parent=parent_window,
+                "Batch Add", question + flask_note, parent=parent_window
             )
         if not confirmed:
             return
@@ -3075,6 +3114,36 @@ class InventoryEditor:
                     elif "Shadow of the Erdtree" in reason:
                         reason = "Shadow of the Erdtree spell, DLC not owned"
                     skipped[reason] = skipped.get(reason, 0) + 1
+
+            if with_flasks:
+                for kind, flask_id, qty in _flask_batch_plan(slot):
+                    if flask_id is None:
+                        key = "flask of that kind already owned"
+                        skipped[key] = skipped.get(key, 0) + 1
+                        continue
+                    flask = db.get_item_by_id(0x40000000 | flask_id)
+                    try:
+                        self._process_single_add(
+                            save_file,
+                            slot_idx,
+                            slot,
+                            {
+                                "full_id": 0x40000000 | flask_id,
+                                "qty": qty,
+                                "upg": 0,
+                                "location": "held",
+                                "aow_id": 0,
+                                "is_ashes": False,
+                                "reinforcement": "standard",
+                                "convergence": is_cnv,
+                                "max_qty": qty,
+                                "name_label": flask.name if flask else kind,
+                                "base_name": flask.name if flask else kind,
+                            },
+                        )
+                        success += 1
+                    except Exception as e:
+                        skipped[str(e)] = skipped.get(str(e), 0) + 1
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
