@@ -603,6 +603,129 @@ _AOW_MENU_FLAG = 65800
 # appearance) key items, the other Tarnished Pack items are free to spawn.
 _TARNISHED_PACK_GATED_BASE_IDS: frozenset[int] = frozenset({2009600, 2009610, 2009620})
 _TARNISHED_PACK_FLAG = 6953
+# Shadow of the Erdtree ownership flag; pairs with
+# UserDataX dlc.shadow_of_erdtree as 6953 pairs with dlc.tarnished_pack.
+_SOTE_FLAG = 6951
+_DLC_MAGIC_CATEGORY = "DLC Magic"
+
+# Goods that are states of one item (unpowered and restored Great Rune,
+# quest items that change form). The game never holds two of a group, so
+# Batch Add gives the first one and only when the character has none.
+_ITEM_STATE_GROUPS: tuple[tuple[int, ...], ...] = (
+    (191, 8148),  # Godrick's Great Rune
+    (192, 8149),  # Radahn's Great Rune
+    (193, 8150),  # Morgott's Great Rune
+    (194, 8151),  # Rykard's Great Rune
+    (195, 8152),  # Mohg's Great Rune
+    (196, 8153),  # Malenia's Great Rune
+    (8154, 8155),  # Lord of Blood's Favor, soaked
+    (8146, 8187),  # Miniature Ranni, lifeless
+    (251, 250),  # Flask of Wondrous Physick, empty
+)
+_STATE_GROUP_OF = {i: g for g in _ITEM_STATE_GROUPS for i in g}
+
+# Memory Stones and Talisman Pouches stay held; PlayerGameData counts them.
+_MEMORY_STONE_ID = 10030
+_TALISMAN_POUCH_ID = 10040
+
+
+def _batch_excluded(item) -> str | None:
+    """Reason Batch Add never offers item, None if it may be added."""
+    if item.id < 0:
+        return "placeholder row"
+    if item.category != 0x40000000:
+        return None
+    if getattr(item, "category_name", "") == "Flasks":
+        return "flask (one per type is kept)"
+    group = _STATE_GROUP_OF.get(item.id)
+    if group and item.id != group[0]:
+        return "other form of an item already in the list"
+    return None
+
+
+def _goods_qty(inv, base_id: int) -> int:
+    handle = 0xB0000000 | base_id
+    return sum(
+        it.quantity
+        for it in inv.key_items + inv.common_items
+        if it.gaitem_handle == handle and it.quantity > 0
+    )
+
+
+def _batch_goods_qty(
+    slot, item, location: str, qty: int, max_qty: int, is_cnv: bool
+) -> tuple[str | None, int]:
+    """(skip reason, quantity) for a Batch Add of goods item.
+
+    The quantity is lowered to the room left in the stack and, on
+    non-Convergence saves, to the copies the world still holds.
+    """
+    from er_save_manager.data.item_supply import remaining_supply
+
+    group = _STATE_GROUP_OF.get(item.id, (item.id,))
+    if len(group) > 1 and any(
+        _goods_qty(inv, i)
+        for i in group
+        for inv in (slot.inventory_held, slot.inventory_storage_box)
+    ):
+        return "already in the inventory", 0
+    inv = slot.inventory_held if location == "held" else slot.inventory_storage_box
+    qty = min(qty, max_qty - _goods_qty(inv, item.id))
+    if qty <= 0:
+        reason = (
+            "already in the inventory" if max_qty == 1 else "stack already at its max"
+        )
+        return reason, 0
+    if not is_cnv:
+        left = remaining_supply(slot, item.id)
+        if left is not None:
+            qty = min(qty, left)
+            if qty <= 0:
+                return "every copy the game hands out is already owned or used", 0
+    return None, qty
+
+
+def _owns_sote(slot) -> bool:
+    from er_save_manager.parser.event_flags import EventFlags
+
+    if getattr(getattr(slot, "dlc", None), "shadow_of_erdtree", 0):
+        return True
+    return bool(slot.event_flags) and EventFlags.get_flag(slot.event_flags, _SOTE_FLAG)
+
+
+def _sync_slot_counters(save_file, slot_idx: int, full_item_id: int) -> None:
+    """Match memory_stone_count / additional_talisman_slot_count to the held stack."""
+    base_id = full_item_id & 0x0FFFFFFF
+    if (full_item_id & 0xF0000000) != 0x40000000 or base_id not in (
+        _MEMORY_STONE_ID,
+        _TALISMAN_POUCH_ID,
+    ):
+        return
+    from io import BytesIO
+
+    slot = save_file.characters[slot_idx]
+    handle = 0xB0000000 | base_id
+    held = sum(
+        it.quantity
+        for it in slot.inventory_held.key_items + slot.inventory_held.common_items
+        if it.gaitem_handle == handle and it.quantity > 0
+    )
+    char = slot.player_game_data
+    attr = (
+        "memory_stone_count"
+        if base_id == _MEMORY_STONE_ID
+        else "additional_talisman_slot_count"
+    )
+    if getattr(char, attr) == held:
+        return
+    setattr(char, attr, held)
+    if getattr(slot, "player_game_data_offset", -1) < 0:
+        return
+    buf = BytesIO()
+    char.write(buf)
+    data = buf.getvalue()
+    off = slot.player_game_data_offset
+    save_file._raw_data[off : off + len(data)] = data
 
 
 def _apply_item_event_flags(
@@ -2185,6 +2308,14 @@ class InventoryEditor:
                 return False, err
 
         item_for_qty, _level = self._db_item_for(full_id)
+        if getattr(
+            item_for_qty, "category_name", ""
+        ) == _DLC_MAGIC_CATEGORY and not _owns_sote(slot):
+            return (
+                False,
+                "This character does not own Shadow of the Erdtree, so it "
+                "cannot learn Shadow of the Erdtree spells.",
+            )
         if item_for_qty is not None:
             max_qty = self._max_qty_for_location(item_for_qty, location)
             if qty < 1 or qty > max_qty:
@@ -2514,6 +2645,7 @@ class InventoryEditor:
                 )
 
             set_quantity(save_file, slot_idx, full_id, new_total, location)
+            _sync_slot_counters(save_file, slot_idx, full_id)
             return {"stacked": True, "qty": new_total, "location": location}
 
         ok, err = self._validate_add_item(
@@ -2534,6 +2666,7 @@ class InventoryEditor:
             convergence=item_info.get("convergence", False),
         )
         _apply_item_event_flags(save_file, slot_idx, full_id, True)
+        _sync_slot_counters(save_file, slot_idx, full_id)
         _bump_matchmaking_level(
             save_file,
             slot_idx,
@@ -2685,7 +2818,12 @@ class InventoryEditor:
         db = get_item_database()
         cats = self._visible_categories() if cat == "All" else [cat]
         is_cnv = self._is_cnv_save()
-        items = [item for c in cats for item in db.get_items_by_category(c, is_cnv)]
+        items = [
+            item
+            for c in cats
+            for item in db.get_items_by_category(c, is_cnv)
+            if _batch_excluded(item) is None
+        ]
         if not items:
             return
 
@@ -2717,6 +2855,9 @@ class InventoryEditor:
                     if is_loadout
                     else "\n\nThis fills most of the inventory. A backup is "
                     "made first; restore it in the Backup Manager to undo."
+                    "\n\nFlasks and second forms of an item are left out, and "
+                    "stacks are capped at what the game hands out. Online play "
+                    "with spawned items still risks a ban."
                 ),
                 icon_type="warning",
                 buttons=[("Add All", True), ("Cancel", False)],
@@ -2784,6 +2925,13 @@ class InventoryEditor:
                 )
                 max_qty = self._max_qty_for_location(item, location)
                 item_qty = min(target_qty, max_qty)
+                if item.category == 0x40000000:
+                    reason, item_qty = _batch_goods_qty(
+                        slot, item, location, item_qty, max_qty, is_cnv
+                    )
+                    if reason:
+                        skipped[reason] = skipped.get(reason, 0) + 1
+                        continue
                 item_upg = 0
                 if target_upg > 0 and (
                     item.category == 0x00000000
@@ -2796,6 +2944,8 @@ class InventoryEditor:
                     explicit_cap = getattr(item, "max_upgrade", -1)
                     if explicit_cap >= 0:
                         cap = explicit_cap
+                    if reinforcement == "none":
+                        cap = 0
                     item_upg = min(target_upg, cap)
 
                 item_info = {
@@ -2820,6 +2970,8 @@ class InventoryEditor:
                         reason = "already in the inventory"
                     elif "exceeds the max stack" in reason:
                         reason = "stack already at its max"
+                    elif "Shadow of the Erdtree" in reason:
+                        reason = "Shadow of the Erdtree spell, DLC not owned"
                     skipped[reason] = skipped.get(reason, 0) + 1
 
             save_file.recalculate_checksums()
@@ -2900,6 +3052,7 @@ class InventoryEditor:
             remove_item(save_file, slot_idx, full_id, location)
 
             _apply_item_event_flags(save_file, slot_idx, full_id, False)
+            _sync_slot_counters(save_file, slot_idx, full_id)
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -3003,6 +3156,7 @@ class InventoryEditor:
                 try:
                     remove_item(save_file, slot_idx, full_id, location)
                     _apply_item_event_flags(save_file, slot_idx, full_id, False)
+                    _sync_slot_counters(save_file, slot_idx, full_id)
                     success += 1
                 except Exception as e:
                     errors.append(f"0x{full_id:08X}: {e}")
@@ -3144,6 +3298,7 @@ class InventoryEditor:
             from er_save_manager.parser.inventory_ops import set_quantity
 
             set_quantity(save_file, slot_idx, full_id, new_qty, location)
+            _sync_slot_counters(save_file, slot_idx, full_id)
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
             if save_path:
