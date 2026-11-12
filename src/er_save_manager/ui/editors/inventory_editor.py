@@ -16,6 +16,7 @@ import customtkinter as ctk
 from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify, show_toast
@@ -652,6 +653,25 @@ def _owned_flask_names(slot, base_id: int) -> list[str]:
                 item = db.get_item_by_id(0x40000000 | i)
                 names.append(item.name if item else f"Goods {i}")
     return names
+
+
+SECOND_FLASK_WARNING_SETTING = "show_second_flask_warning"
+SUPPLY_WARNING_SETTING = "show_item_supply_warning"
+
+
+def _confirm_second_flask(parent, owned: list[str]) -> bool:
+    return confirm_warning(
+        parent,
+        SECOND_FLASK_WARNING_SETTING,
+        "Flask Already Owned",
+        "Second flask",
+        [
+            "This character already has:\n" + _list_lines(owned),
+            "The game keeps one flask of each kind. A second one is a state "
+            "the game cannot produce and can get the account banned online.",
+        ],
+        confirm_text="Add Anyway",
+    )
 
 
 def _batch_excluded(item) -> str | None:
@@ -2309,6 +2329,34 @@ class InventoryEditor:
             return max_arrow
         return getattr(item, "max_num", 1)
 
+    def _confirm_supply(self, slot, base_id: int, name: str, added: int) -> bool:
+        """Ask before adding more of a limited good than the game hands out.
+
+        Vanilla saves only; True goes ahead.
+        """
+        if added <= 0 or not _supply_capped(
+            self.get_save_file(), self.get_save_path() or "", self._is_cnv_save()
+        ):
+            return True
+        from er_save_manager.data.item_supply import remaining_supply
+
+        left = remaining_supply(slot, base_id)
+        if left is None or added <= left:
+            return True
+        return confirm_warning(
+            self.parent,
+            SUPPLY_WARNING_SETTING,
+            "More Than the Game Hands Out",
+            "Online ban risk",
+            [
+                f"This character can only obtain {left} more {name} in game, "
+                f"counting what it owns and has used. Adding {added} is a "
+                "count the game cannot produce.",
+                "On a vanilla save played online this can get the account banned.",
+            ],
+            confirm_text="Add Anyway",
+        )
+
     def _validate_add_item(
         self,
         full_id: int,
@@ -2817,45 +2865,15 @@ class InventoryEditor:
 
         full_id = item_info["full_id"]
         if (full_id & 0xF0000000) == 0x40000000:
-            owned = _owned_flask_names(
-                save_file.characters[slot_idx], full_id & 0x0FFFFFFF
-            )
-            if owned and not CTkMessageBox._create_dialog(
-                self.parent,
-                "Flask Already Owned",
-                "This character already has:\n"
-                + _list_lines(owned)
-                + "\n\nThe game keeps one flask of each kind. A second one is "
-                "a state the game cannot produce and can get the character "
-                "flagged online.",
-                icon_type="warning",
-                buttons=[("Add Anyway", True), ("Cancel", False)],
+            slot = save_file.characters[slot_idx]
+            base_id = full_id & 0x0FFFFFFF
+            owned = _owned_flask_names(slot, base_id)
+            if owned and not _confirm_second_flask(self.parent, owned):
+                return
+            if not self._confirm_supply(
+                slot, base_id, item_info["base_name"], item_info["qty"]
             ):
                 return
-            if _supply_capped(
-                save_file, self.get_save_path() or "", self._is_cnv_save()
-            ):
-                from er_save_manager.data.item_supply import remaining_supply
-
-                left = remaining_supply(
-                    save_file.characters[slot_idx], full_id & 0x0FFFFFFF
-                )
-                if (
-                    left is not None
-                    and item_info["qty"] > left
-                    and not CTkMessageBox._create_dialog(
-                        self.parent,
-                        "More Than the Game Hands Out",
-                        f"Only {left} more {item_info['base_name']} can be "
-                        "obtained in game by this character, counting what it "
-                        f"owns and has used. Adding {item_info['qty']} is a "
-                        "count the game cannot produce and can get the "
-                        "character flagged online.",
-                        icon_type="warning",
-                        buttons=[("Add Anyway", True), ("Cancel", False)],
-                    )
-                ):
-                    return
 
         try:
             self.ensure_mutable()
@@ -3376,6 +3394,19 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
+        if cat == 0x40000000:
+            slot = save_file.characters[slot_idx]
+            base_id = full_id & 0x0FFFFFFF
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            name = item.name if item else f"Goods {base_id}"
+            if not self._confirm_supply(
+                slot, base_id, name, new_qty - _goods_qty(inv, base_id)
+            ):
+                return
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "set_quantity")
