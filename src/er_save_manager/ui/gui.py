@@ -1025,7 +1025,7 @@ class SaveManagerGUI:
         )
         help_icon.pack(side=tk.LEFT, padx=(2, 8), pady=10)
         title, rows, footer = _save_format_help(self._active_profile())
-        self._save_format_tip = Tooltip(help_icon, title, rows, footer)
+        self._save_format_tip = Tooltip(help_icon, title, rows, footer, anchored=True)
         for target in Tooltip._targets(help_icon):
             target.bind("<Button-1>", self._save_format_tip.show_now, add="+")
 

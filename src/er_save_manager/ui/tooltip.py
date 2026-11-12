@@ -23,9 +23,14 @@ class Tooltip:
         text: str,
         rows: list[tuple[str, str]] | None = None,
         footer: str = "",
+        anchored: bool = False,
     ) -> None:
         self.widget = widget
         self.text = text
+        # Anchored tips open under the widget, right-aligned to it, so they
+        # stay over the window instead of following the pointer to a screen
+        # edge (help icons at the right of a row)
+        self.anchored = anchored
         # Two-column table under text (key in the accent color), then footer
         self.rows = rows or []
         self.footer = footer
@@ -33,7 +38,7 @@ class Tooltip:
         self._tip: tk.Toplevel | None = None
         for target in self._targets(widget):
             target.bind("<Enter>", self._schedule, add="+")
-            target.bind("<Leave>", self._hide, add="+")
+            target.bind("<Leave>", self._on_leave, add="+")
             target.bind("<ButtonPress>", self._hide, add="+")
 
     @staticmethod
@@ -41,13 +46,30 @@ class Tooltip:
         # CTk widgets draw on inner canvases/labels that get the pointer events
         inner = [
             getattr(widget, name, None)
-            for name in ("_canvas", "_text_label", "_image_label", "_entry")
+            for name in ("_canvas", "_label", "_text_label", "_image_label", "_entry")
         ]
         return [widget, *(w for w in inner if w is not None)]
 
     def _schedule(self, _event=None) -> None:
+        if self._tip is not None:
+            # Moved between the widget's inner parts; the tip stays
+            return
         self._cancel()
         self._job = self.widget.after(_DELAY_MS, self._show)
+
+    def _on_leave(self, _event=None) -> None:
+        """Hide unless the pointer only moved onto another part of the
+        widget (a CTk widget is a frame with a canvas and a label on top)."""
+        try:
+            x, y = self.widget.winfo_pointerxy()
+            under = self.widget.winfo_containing(x, y)
+        except (tk.TclError, KeyError):
+            under = None
+        while under is not None:
+            if under is self.widget:
+                return
+            under = under.master
+        self._hide()
 
     def _cancel(self) -> None:
         if self._job is not None:
@@ -61,8 +83,9 @@ class Tooltip:
         x = self.widget.winfo_pointerx() + 14
         y = self.widget.winfo_pointery() + 18
         tip = tk.Toplevel(self.widget)
+        # Hidden until sized and placed, so it never shows off screen first
+        tip.withdraw()
         tip.wm_overrideredirect(True)
-        tip.wm_geometry(f"+{x}+{y}")
         dark = ctk.get_appearance_mode() == "Dark"
         pick = 1 if dark else 0
         frame = tk.Frame(tip, bg=_BORDER[pick], padx=1, pady=1)
@@ -100,17 +123,39 @@ class Tooltip:
                 font=("Inter", -12),
                 wraplength=360,
             ).pack(anchor="w")
-        # Flip to the pointer's left (and above) when the tip would leave the
-        # screen's usable area
         tip.update_idletasks()
-        ax, ay, aw, ah = get_work_area(self.widget, (x, y))
         w, h = tip.winfo_reqwidth(), tip.winfo_reqheight()
-        if x + w > ax + aw:
-            x = max(ax, x - w - 28)
-        if y + h > ay + ah:
-            y = max(ay, y - h - 36)
+        x, y = self._position(x, y, w, h)
         tip.wm_geometry(f"+{x}+{y}")
+        tip.deiconify()
+        tip.lift()
         self._tip = tip
+
+    def _position(self, x: int, y: int, w: int, h: int) -> tuple[int, int]:
+        """Top-left of a w x h tip, inside the usable screen area.
+
+        Pointer tips flip to the pointer's left (and above) at an edge.
+        Anchored tips sit under the widget, right-aligned to it, or above it
+        when there is no room below, and do not pass the window's left edge.
+        """
+        widget = self.widget
+        if self.anchored:
+            wx, wy = widget.winfo_rootx(), widget.winfo_rooty()
+            x = wx + widget.winfo_width() - w
+            y = wy + widget.winfo_height() + 6
+            ax, ay, aw, ah = get_work_area(widget, (wx, wy))
+            if y + h > ay + ah:
+                y = wy - h - 6
+            x = max(x, widget.winfo_toplevel().winfo_rootx())
+        else:
+            ax, ay, aw, ah = get_work_area(widget, (x, y))
+            if x + w > ax + aw:
+                x = x - w - 28
+            if y + h > ay + ah:
+                y = y - h - 36
+        x = min(max(x, ax), ax + aw - w)
+        y = min(max(y, ay), ay + ah - h)
+        return x, y
 
     def show_text(self, text: str) -> None:
         """Hide the current tip and show text after the hover delay, for a

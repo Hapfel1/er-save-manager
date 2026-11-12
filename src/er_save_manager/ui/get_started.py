@@ -73,11 +73,12 @@ class GetStartedPanel(ctk.CTkFrame):
         )
         self._text1.pack(anchor="w")
         self._force_row = ctk.CTkFrame(step1[1], fg_color="transparent")
-        ds.button(
+        # Theme font and height, as the buttons of the file row
+        ctk.CTkButton(
             self._force_row,
-            "Force Close",
-            self._force_close,
-            primary=False,
+            text="Force Close",
+            command=self._force_close,
+            fg_color=ds.SECONDARY,
             width=120,
         ).pack(side="left")
         ctk.CTkLabel(
@@ -100,8 +101,11 @@ class GetStartedPanel(ctk.CTkFrame):
         ).pack(anchor="w")
         buttons = ctk.CTkFrame(body, fg_color="transparent")
         buttons.pack(anchor="w", pady=(6, 0))
-        ds.button(buttons, "Auto-Find", auto_find, width=110).pack(side="left")
-        ds.button(buttons, "Browse", browse, primary=False, width=110).pack(
+        # Same look as Auto-Find and Browse in the file row above
+        ctk.CTkButton(buttons, text="Auto-Find", command=auto_find, width=110).pack(
+            side="left"
+        )
+        ctk.CTkButton(buttons, text="Browse", command=browse, width=110).pack(
             side="left", padx=(8, 0)
         )
 
