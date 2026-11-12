@@ -2832,6 +2832,30 @@ class InventoryEditor:
                 buttons=[("Add Anyway", True), ("Cancel", False)],
             ):
                 return
+            if _supply_capped(
+                save_file, self.get_save_path() or "", self._is_cnv_save()
+            ):
+                from er_save_manager.data.item_supply import remaining_supply
+
+                left = remaining_supply(
+                    save_file.characters[slot_idx], full_id & 0x0FFFFFFF
+                )
+                if (
+                    left is not None
+                    and item_info["qty"] > left
+                    and not CTkMessageBox._create_dialog(
+                        self.parent,
+                        "More Than the Game Hands Out",
+                        f"Only {left} more {item_info['base_name']} can be "
+                        "obtained in game by this character, counting what it "
+                        f"owns and has used. Adding {item_info['qty']} is a "
+                        "count the game cannot produce and can get the "
+                        "character flagged online.",
+                        icon_type="warning",
+                        buttons=[("Add Anyway", True), ("Cancel", False)],
+                    )
+                ):
+                    return
 
         try:
             self.ensure_mutable()
