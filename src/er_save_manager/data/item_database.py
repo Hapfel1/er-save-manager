@@ -15,6 +15,9 @@ Base-game weapon and gem CSVs also carry convergence_* columns holding the
 values the Convergence params use for the same ID. They build a Convergence
 variant of the item, returned by get_item_by_id(..., is_convergence=True)
 and resolve(). A row in a Convergence CSV with the same ID replaces it.
+
+Items listed in Unobtainable.csv (Category,ID,Name) keep their name lookup
+but are left out of the category lists and search, so no picker offers them.
 """
 
 import csv as _csv
@@ -112,6 +115,7 @@ class ItemDatabase:
         self.items_by_category: dict[str, list[Item]] = {}
         self.categories: list[tuple[str, ItemCategory]] = []
         self._convergence_overrides: dict[int, Item] = {}
+        self._unobtainable: set[int] = set()
         self._loaded = False
 
     def load(self):
@@ -125,6 +129,14 @@ class ItemDatabase:
             raise FileNotFoundError(
                 f"ItemCategories.txt not found at {categories_file}"
             )
+
+        unobtainable_file = base_path / "Unobtainable.csv"
+        if unobtainable_file.exists():
+            with open(unobtainable_file, encoding="utf-8-sig") as f:
+                self._unobtainable = {
+                    int(ItemCategory[r["Category"].upper()]) | int(r["ID"])
+                    for r in _csv.DictReader(f)
+                }
 
         with open(categories_file, encoding="utf-8-sig") as f:
             for line in f:
@@ -308,7 +320,8 @@ class ItemDatabase:
             self._convergence_overrides[item.full_id] = item
         else:
             self.items_by_id[item.full_id] = item
-        # Always register in the category list so browser shows all items.
+        if item.full_id in self._unobtainable:
+            return
         if item.category_name not in self.items_by_category:
             self.items_by_category[item.category_name] = []
         self.items_by_category[item.category_name].append(item)
@@ -338,7 +351,12 @@ class ItemDatabase:
 
     def search_items(self, query: str) -> list[Item]:
         query_lower = query.lower()
-        return [item for item in self.items if query_lower in item.name.lower()]
+        return [
+            item
+            for item in self.items
+            if query_lower in item.name.lower()
+            and item.full_id not in self._unobtainable
+        ]
 
     def decode_item_id(self, full_id: int) -> "tuple[int, ItemCategory]":
         raw_cat = full_id & 0xF0000000

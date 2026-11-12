@@ -232,3 +232,15 @@ def test_validation_convergence(item_db) -> None:
     bow_gem = next(g for g in gems.values() if bow_col in g.compatible_wep_types)
     assert _validate(item_db, True, ERDTREE_BOW, aow_id=bow_gem.full_id)
     assert not _validate(item_db, False, ERDTREE_BOW, aow_id=bow_gem.full_id)
+
+
+def test_unobtainable_items_named_but_not_offered(item_db) -> None:
+    great_coffins = 0x40000000 | 8706
+    assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
+    offered = [
+        i
+        for c in item_db.get_all_categories()
+        for i in item_db.get_items_by_category(c)
+    ]
+    offered += item_db.search_items("Great Coffins")
+    assert great_coffins not in {i.full_id for i in offered}
