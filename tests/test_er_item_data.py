@@ -236,11 +236,18 @@ def test_validation_convergence(item_db) -> None:
 
 def test_unobtainable_items_named_but_not_offered(item_db) -> None:
     great_coffins = 0x40000000 | 8706
+    monument_icon = 0x40000000 | 9127  # Convergence gives it, vanilla does not
+
+    def offered(is_cnv: bool) -> set[int]:
+        items = [
+            i
+            for c in item_db.get_all_categories()
+            for i in item_db.get_items_by_category(c, is_cnv)
+        ]
+        items += item_db.search_items("About Monument", is_cnv)
+        items += item_db.search_items("Great Coffins", is_cnv)
+        return {i.full_id for i in items}
+
     assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
-    offered = [
-        i
-        for c in item_db.get_all_categories()
-        for i in item_db.get_items_by_category(c)
-    ]
-    offered += item_db.search_items("Great Coffins")
-    assert great_coffins not in {i.full_id for i in offered}
+    assert {great_coffins, monument_icon}.isdisjoint(offered(False))
+    assert offered(True) & {great_coffins, monument_icon} == {monument_icon}

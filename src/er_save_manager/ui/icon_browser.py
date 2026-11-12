@@ -294,7 +294,10 @@ class IconBrowser(ctk.CTkToplevel):
         cats = (
             self._editor._visible_categories() if cat == ALL else [cat] if cat else []
         )
-        self._items = [item for c in cats for item in db.get_items_by_category(c)]
+        is_cnv = self._editor._is_cnv_save()
+        self._items = [
+            item for c in cats for item in db.get_items_by_category(c, is_cnv)
+        ]
         self._grid.set_entries(
             [
                 GridEntry(
