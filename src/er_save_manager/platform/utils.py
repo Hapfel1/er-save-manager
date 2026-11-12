@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import platform
 import subprocess
 from pathlib import Path
@@ -52,18 +53,19 @@ class PlatformUtils:
                     creationflags=subprocess.CREATE_NO_WINDOW,
                     timeout=10,
                 )
+                if result.returncode == 0:
+                    return True
             else:
-                # -i: Proton command lines keep the exe's mixed case
-                # (DarkSoulsIII.exe), profile names are lowercase.
-                result = subprocess.run(
-                    ["pkill", "-9", "-if", process_name],
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    timeout=10,
-                )
-            if result.returncode == 0:
-                return True
+                import os
+                import signal
+
+                from er_save_manager.backup.process_monitor import game_pids
+
+                # The game process itself, not wrappers or other processes
+                # that only name its exe in their arguments
+                for pid in game_pids(process_name):
+                    with contextlib.suppress(ProcessLookupError):
+                        os.kill(pid, signal.SIGKILL)
         except Exception:
             pass
         return not PlatformUtils.is_game_running(process_name)

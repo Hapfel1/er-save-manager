@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import threading
@@ -24,51 +25,43 @@ _PROCESS_NAMES: dict[str, str] = {
 }
 
 
-def _is_process_running(process_name: str) -> bool:
-    """
-    Check if a process is currently running.
-
-    Windows: tasklist with CREATE_NO_WINDOW to avoid CMD flash.
-    Linux: pgrep -if on the full command line, which holds the .exe name for
-    Wine/Proton games; -i because Proton keeps the exe's mixed case
-    (DarkSoulsIII.exe) and profile names are lowercase.
-    """
-    name_lower = process_name.lower()
-    try:
-        if sys.platform == "win32":
-            si = subprocess.STARTUPINFO()
-            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            si.wShowWindow = 0  # SW_HIDE
-            result = subprocess.run(
-                ["tasklist", "/FI", f"IMAGENAME eq {process_name}", "/NH"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                timeout=2.0,
-                creationflags=subprocess.CREATE_NO_WINDOW,
-                startupinfo=si,
-            )
-            return name_lower in result.stdout.decode(errors="replace").lower()
-        else:
-            result = subprocess.run(
-                ["pgrep", "-if", process_name],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=2.0,
-            )
-            return result.returncode == 0
-    except Exception:
-        return False
+# /proc/<pid>/comm holds the first 15 bytes of the program name
+_COMM_LENGTH = 15
 
 
-def _running_processes_text() -> str:
-    """Lowercased list of all running processes, from one process spawn.
+def _program_name(argv0: str) -> str:
+    """Lowercased file name of a program path, Unix or Windows (Wine/Proton
+    report the game as Z:\\...\\game.exe)."""
+    return argv0.replace("\\", "/").rsplit("/", 1)[-1].strip().lower()
 
-    Windows: image names from tasklist. Elsewhere: full command lines from
-    ps, which hold the .exe name for Wine/Proton games as pgrep -f sees it.
-    Empty when the listing fails.
-    """
+
+def _proc_programs() -> dict[int, tuple[str, str]]:
+    """pid -> (program name from argv[0], comm) of every process in /proc."""
+    programs: dict[int, tuple[str, str]] = {}
+    for entry in os.scandir("/proc"):
+        if not entry.name.isdigit():
+            continue
+        try:
+            with open(f"/proc/{entry.name}/cmdline", "rb") as f:
+                argv0 = f.read().split(b"\0", 1)[0].decode(errors="replace")
+            with open(f"/proc/{entry.name}/comm", "rb") as f:
+                comm = f.read().decode(errors="replace").strip().lower()
+        except OSError:
+            continue
+        programs[int(entry.name)] = (_program_name(argv0), comm)
+    return programs
+
+
+def _is_program(process_name: str, program: str, comm: str) -> bool:
+    """True for the game itself, not for a process that only mentions its
+    exe in the arguments (launch wrappers, a terminal, an editor)."""
+    name = process_name.lower()
+    return program == name or comm == name[:_COMM_LENGTH]
+
+
+def running_programs() -> set[str] | None:
+    """Lowercased program names of all running processes (Linux: also their
+    comm), None when the listing fails."""
     try:
         if sys.platform == "win32":
             si = subprocess.STARTUPINFO()
@@ -83,17 +76,55 @@ def _running_processes_text() -> str:
                 creationflags=subprocess.CREATE_NO_WINDOW,
                 startupinfo=si,
             )
-        else:
-            result = subprocess.run(
-                ["ps", "-A", "-o", "args="],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                timeout=2.0,
-            )
-        return result.stdout.decode(errors="replace").lower()
+            return {
+                line.split(",", 1)[0].strip('"').lower()
+                for line in result.stdout.decode(errors="replace").splitlines()
+                if line
+            }
+        if os.path.isdir("/proc"):
+            names: set[str] = set()
+            for program, comm in _proc_programs().values():
+                names.add(program)
+                names.add(comm)
+            return names
+        result = subprocess.run(
+            ["ps", "-A", "-o", "comm="],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=2.0,
+        )
+        return {
+            _program_name(line)
+            for line in result.stdout.decode(errors="replace").splitlines()
+        }
     except Exception:
-        return ""
+        return None
+
+
+def is_running_in(process_name: str, programs: set[str] | None) -> bool:
+    if not programs:
+        return False
+    name = process_name.lower()
+    return name in programs or name[:_COMM_LENGTH] in programs
+
+
+def game_pids(process_name: str) -> list[int]:
+    """Pids of the game process (Linux /proc only)."""
+    if not os.path.isdir("/proc"):
+        return []
+    return [
+        pid
+        for pid, (program, comm) in _proc_programs().items()
+        if _is_program(process_name, program, comm)
+    ]
+
+
+def _is_process_running(process_name: str) -> bool:
+    """Check if the game process is running. Matches the program itself
+    (Windows image name, Linux argv[0] or comm), so a process that only has
+    the exe name in its arguments does not count."""
+    return is_running_in(process_name, running_programs())
 
 
 class GameProcessMonitor:
@@ -214,9 +245,9 @@ class GameProcessMonitor:
                     "cpu0_exclude_on_launch", False
                 )
 
-                listing = _running_processes_text()
+                listing = running_programs()
                 for game_key, process_name in _PROCESS_NAMES.items():
-                    is_running = process_name.lower() in listing
+                    is_running = is_running_in(process_name, listing)
                     launched = is_running and not was_running[game_key]
 
                     if launched:

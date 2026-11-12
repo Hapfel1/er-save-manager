@@ -107,6 +107,7 @@ Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults**
 | Show ban warning before adding a second flask | Elden Ring | the game keeps one flask of each kind |
 | Show ban warning before adding more than the game hands out | Elden Ring | vanilla saves: Golden Seeds, Scadutree Fragments and other limited items past what one playthrough yields |
 | Show ban warning before adding a DLC spell without the DLC | Elden Ring | Shadow of the Erdtree spells on a character not loaded with the DLC |
+| Ask to patch a save from another Steam account | All games with a SteamID in the save | after loading a save whose SteamID is not the one of its SteamID folder; Patch to My SteamID writes the folder's SteamID into it |
 | Show warning before spawning cut content | Dark Souls III, Remastered | cut items are likely to be flagged online |
 | Show ban warning before adding an unsafe item | Dark Souls II | unsafe items can get the account soft-banned online |
 | Show warning before writing into an empty slot | Dark Souls III, Remastered, Nightreign | a slot never created in game stays blank |

@@ -119,6 +119,7 @@ class CharacterList:
         *,
         on_select: Callable[[int], None] | None = None,
         on_double: Callable[[int], None] | None = None,
+        get_started: bool = False,
     ) -> None:
         self.frame = ctk.CTkScrollableFrame(
             parent, width=900, height=320, corner_radius=10
@@ -140,6 +141,8 @@ class CharacterList:
         # Pending after() job that adds the next card, see show()
         self._build_job = None
         self.frame._parent_canvas.bind("<Configure>", self._fit, add="+")
+        if get_started:
+            self.show_get_started()
 
     def pack(self, **kwargs) -> None:
         self.frame.pack(**kwargs)
@@ -163,6 +166,17 @@ class CharacterList:
         ctk.CTkLabel(self.frame, text=text, text_color=ds.MUTED).pack(
             anchor="w", padx=6, pady=6
         )
+
+    def show_get_started(self) -> None:
+        """Replace the list with the first steps (close the game, load a
+        save, pick a character), for the time no save is loaded."""
+        from er_save_manager.ui import get_started
+
+        if not get_started.available():
+            self.message("No save file loaded.")
+            return
+        self.clear()
+        get_started.create(self.frame).pack(fill="both", expand=True, padx=12, pady=6)
 
     def show(self, cols: list[Column], rows: list[CharacterRow]) -> None:
         """Fill the list and select the first row. Cards are reused when the

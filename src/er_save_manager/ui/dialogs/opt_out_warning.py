@@ -59,6 +59,12 @@ WARNINGS = (
         "Elden Ring: characters not loaded with Shadow of the Erdtree.",
     ),
     (
+        "show_steamid_mismatch_warning",
+        "Ask to patch a save from another Steam account",
+        "All games with a SteamID in the save: shown after loading a save "
+        "whose SteamID differs from its folder.",
+    ),
+    (
         "show_cut_content_warning",
         "Show warning before spawning cut content",
         "Dark Souls III and Remastered: cut items are likely to be flagged online.",
@@ -89,8 +95,16 @@ def confirm_warning(
     heading: str,
     paragraphs: list[str],
     confirm_text: str = "Continue",
+    cancel_text: str = "Cancel",
+    remember_on_cancel: bool = False,
+    icon: str = "\u26a0",
+    icon_color=None,
 ) -> bool:
-    """Ask unless the warning is turned off in setting. True goes ahead."""
+    """Ask unless the warning is turned off in setting. True goes ahead.
+
+    With remember_on_cancel, the checkbox also counts when the user cancels
+    (a prompt whose cancel button is the safe default, like Not Now).
+    """
     from er_save_manager.ui.settings import get_settings
 
     settings = get_settings()
@@ -103,7 +117,7 @@ def confirm_warning(
 
     def close(go: bool):
         result["go"] = go
-        if go and dont_show.get():
+        if (go or remember_on_cancel) and dont_show.get():
             settings.set(setting, False)
             settings.save()
         dialog.destroy()
@@ -114,11 +128,14 @@ def confirm_warning(
     ds.button_row(
         main,
         [
-            {"text": "Cancel", "command": lambda: close(False), "primary": False},
+            {"text": cancel_text, "command": lambda: close(False), "primary": False},
             {"text": confirm_text, "command": lambda: close(True)},
         ],
     )
-    ds.header(main, heading, icon="⚠")
+    if icon_color is None:
+        ds.header(main, heading, icon=icon)
+    else:
+        ds.header(main, heading, icon=icon, icon_color=icon_color)
     for i, text in enumerate(paragraphs):
         ctk.CTkLabel(
             main,

@@ -155,6 +155,16 @@ _CONSOLE_LABELS = {
 _PS4_LABELS = ("PS4 Save?", "PS4 Saves")
 
 
+# Games with an item spawner (Character Editor inventory, Nightreign relics);
+# Item Gib is hidden for the others
+_ITEM_GIB_GAMES = (
+    "elden_ring",
+    "nightreign",
+    "dark_souls_3",
+    "dark_souls_remastered",
+    "dark_souls_2",
+)
+
 # Save file kinds per extension, for the Auto-Find help tooltip
 _EXTENSION_HELP = {
     ".sl2": "Vanilla game (official servers)",
@@ -234,6 +244,18 @@ class SaveManagerGUI:
 
         self.settings = get_settings()
         verbose_log.set_enabled(self.settings.get("verbose_logging", False))
+        from er_save_manager.ui import get_started, undo
+
+        undo.configure(
+            self._undo_reload,
+            self._undo_game,
+            lambda: self.pending_bar.guard("undo the last edit", apply=False),
+        )
+        get_started.configure(
+            lambda: self.auto_detect(),
+            lambda: self.browse_file(),
+            self._undo_game,
+        )
 
         # Configure customtkinter appearance based on saved theme (default to dark)
         theme_name = self.settings.get("theme", None)
@@ -284,6 +306,8 @@ class SaveManagerGUI:
         self.save_path = None
         # Vanilla saves already confirmed in the ban warning this session
         self._vanilla_warned_paths: set[str] = set()
+        # Saves already checked for a SteamID from another account
+        self._steamid_checked_paths: set[str] = set()
         self._backup_warned_paths: set[str] = set()
         self._short_warned_paths: set[str] = set()
         self.selected_slot = None
@@ -1030,7 +1054,9 @@ class SaveManagerGUI:
             command=self._open_inventory_editor,
             width=200,
         )
-        _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+        if self.active_game in _ITEM_GIB_GAMES:
+            _itemgib_btn.pack(side=tk.RIGHT, padx=6, pady=10)
+        self._itemgib_btn = _itemgib_btn
         self._file_load_buttons.append(_itemgib_btn)
         # (button, full width) for _fit_header_buttons
         self._header_buttons = [
@@ -1096,10 +1122,7 @@ class SaveManagerGUI:
             self.active_game,
             self.save_path,
             on_done=lambda message: self.show_toast(message, duration=4000),
-            is_game_running=lambda: (
-                not self.settings.get("skip_game_running_check", False)
-                and self.is_game_running(profile.process_name)
-            ),
+            is_game_running=lambda: self._game_blocks(profile),
         )
 
     # ------------------------------------------------------------------
@@ -1514,7 +1537,10 @@ class SaveManagerGUI:
         writes."""
         if self.save_path is None:
             return
-        path = str(self.save_path)
+        self._reload_from_disk(str(self.save_path))
+
+    def _reload_from_disk(self, path: str) -> None:
+        """Load path again, silently, without the unapplied edits guard."""
         self._guard_bypass = True
         try:
             if self.active_game == "elden_ring":
@@ -1527,8 +1553,22 @@ class SaveManagerGUI:
                 self._load_ds2_save(path, silent=True)
             elif self.active_game == "nightreign":
                 self._load_nr_save(path, silent=True)
+            else:
+                self._load_non_er_save(path, silent=True)
         finally:
             self._guard_bypass = False
+
+    def _undo_reload(self, path: str) -> None:
+        """Reload after Undo restored a backup, when path is the loaded save."""
+        if (
+            self.save_path is not None
+            and Path(path).resolve() == Path(self.save_path).resolve()
+        ):
+            self._reload_from_disk(path)
+
+    def _undo_game(self) -> tuple[str, str]:
+        profile = self._active_profile()
+        return (profile.process_name, profile.name) if profile else ("", "")
 
     def _on_game_changed(self, _value=None):
         """Rebuild notebook tabs for the newly selected game."""
@@ -1552,6 +1592,14 @@ class SaveManagerGUI:
             else:
                 self._ps_save_btn.pack_forget()
 
+        if hasattr(self, "_itemgib_btn"):
+            # Packed again after the console button, so it stays left of it
+            self._itemgib_btn.pack_forget()
+            if profile.key in _ITEM_GIB_GAMES:
+                self._itemgib_btn.pack(
+                    side=tk.RIGHT, padx=6, pady=4 if self._compact else 10
+                )
+
         if hasattr(self, "_save_format_tip"):
             tip = self._save_format_tip
             tip.text, tip.rows, tip.footer = _save_format_help(profile)
@@ -1568,6 +1616,7 @@ class SaveManagerGUI:
         self.save_path = None
         self._pending_file_change = False
         self.file_path_var.set("")
+        self.status_var.set("Ready")
 
         # Null out all tab references so _finalize_save_load doesn't call methods
         # on widgets that are about to be destroyed.
@@ -1659,8 +1708,6 @@ class SaveManagerGUI:
             self.reload_save,
             self.show_character_details,
             self.on_slot_selected,
-            auto_find_callback=self.auto_detect,
-            browse_callback=self.browse_file,
         )
         self._build_tab("Save Fixer", self.inspector_tab.setup_ui)
 
@@ -1672,12 +1719,8 @@ class SaveManagerGUI:
             lambda: self.save_path,
             self.reload_save,
             self.show_toast,
-            # Read at call time so toggling the advanced setting takes effect
-            # without rebuilding the tab.
-            lambda: (
-                not self.settings.get("skip_game_running_check", False)
-                and self.is_game_running()
-            ),
+            # Waits for the game to close; True when the user cancelled
+            lambda: self._game_blocks(PROFILES_BY_KEY["elden_ring"]),
         )
         self._build_tab("Character Management", self.char_mgmt_tab.setup_ui)
 
@@ -1880,10 +1923,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 reload_callback=self.reload_save,
                 show_toast=self.show_toast,
-                is_game_running=lambda: (
-                    not self.settings.get("skip_game_running_check", False)
-                    and self.is_game_running(profile.process_name)
-                ),
+                is_game_running=lambda: self._game_blocks(profile),
             )
             self._build_tab("Character Management", self.ds3_char_mgmt_tab.setup_ui)
 
@@ -2021,10 +2061,7 @@ class SaveManagerGUI:
                     str(self.save_path), silent=True
                 ),
                 show_toast=self.show_toast,
-                is_game_running=lambda: (
-                    not self.settings.get("skip_game_running_check", False)
-                    and self.is_game_running(profile.process_name)
-                ),
+                is_game_running=lambda: self._game_blocks(profile),
             )
             self._build_tab("Character Management", self.ds2_management_tab.setup_ui)
 
@@ -2219,10 +2256,7 @@ class SaveManagerGUI:
                 get_save_path=lambda: self.save_path,
                 reload_callback=self.reload_save,
                 show_toast=self.show_toast,
-                is_game_running=lambda: (
-                    not self.settings.get("skip_game_running_check", False)
-                    and self.is_game_running(profile.process_name)
-                ),
+                is_game_running=lambda: self._game_blocks(profile),
             )
             self._build_tab("Character Management", self.dsr_char_mgmt_tab.setup_ui)
 
@@ -2346,10 +2380,7 @@ class SaveManagerGUI:
             get_save_path=lambda: self.save_path,
             reload_callback=self.reload_save,
             show_toast=self.show_toast,
-            is_game_running=lambda: (
-                not self.settings.get("skip_game_running_check", False)
-                and self.is_game_running(profile.process_name)
-            ),
+            is_game_running=lambda: self._game_blocks(profile),
         )
         self._build_tab("Character Management", self.nr_char_mgmt_tab.setup_ui)
 
@@ -2498,9 +2529,6 @@ class SaveManagerGUI:
             self.ensure_raw_data_mutable,
             on_inventory_changed=self._on_inventory_changed,
             get_settings_callback=lambda: self.settings,
-            reload_save_callback=lambda: self.load_save(
-                silent=True, path=str(self.save_path)
-            ),
         )
         self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_steps)
 
@@ -2967,6 +2995,15 @@ class SaveManagerGUI:
 
         ds.finish(dialog, self.root, min_width=540)
 
+    def _game_blocks(self, profile) -> bool:
+        """True when the game runs and the user cancelled waiting for it to
+        close; the operation is then skipped."""
+        if self.settings.get("skip_game_running_check", False):
+            return False
+        if not self.is_game_running(profile.process_name):
+            return False
+        return not self._handle_game_running_dialog(profile)
+
     def is_game_running(self, process_name: str = "eldenring.exe") -> bool:
         """Check if a game process is running."""
         return PlatformUtils.is_game_running(process_name)
@@ -3208,6 +3245,7 @@ class SaveManagerGUI:
         self._update_watched_mtime()
         self._start_file_watcher()
         self.status_var.set(f"Selected: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(
                 f"Save file loaded: {os.path.basename(save_path)}", duration=2500
@@ -3421,6 +3459,56 @@ class SaveManagerGUI:
         self._vanilla_warned_paths.add(key)
         return True
 
+    def _check_steamid_after_load(self, save_path) -> None:
+        """Offer to patch a save whose SteamID belongs to another account than
+        its SteamID folder. Asked once per file per session; the check reads
+        the file on a worker thread."""
+        from er_save_manager.ui.dialogs import steamid_mismatch
+
+        profile = self._active_profile()
+        key = os.path.normcase(os.path.abspath(str(save_path)))
+        if (
+            profile is None
+            or not self.settings.get(steamid_mismatch.SETTING, True)
+            or key in self._steamid_checked_paths
+        ):
+            return
+        self._steamid_checked_paths.add(key)
+        er_save = self.save_file if profile.key == "elden_ring" else None
+
+        def work():
+            found = steamid_mismatch.mismatch(Path(save_path), profile, er_save)
+            if found:
+                self.root.after(0, ask, *found)
+
+        def ask(save_id: int, folder_id: int):
+            if (
+                profile is not self._active_profile()
+                or os.path.normcase(os.path.abspath(str(self.save_path or ""))) != key
+            ):
+                return
+            if not steamid_mismatch.ask_patch(
+                self.root, profile.name, save_id, folder_id
+            ):
+                return
+            tab = (
+                getattr(self, "nr_steamid_tab", None)
+                if profile.key == "nightreign"
+                else getattr(self, "steamid_tab", None)
+            )
+            if tab is None:
+                notify(
+                    self.root,
+                    "Patch the SteamID on the SteamID Patcher tab.",
+                    "warning",
+                )
+                return
+            tab.patch_to(profile, folder_id)
+
+        import threading
+
+        threading.Thread(target=work, daemon=True).start()
+
     def _game_issues(self):
         """save_check issues of the loaded non-ER save file."""
         from er_save_manager.games import save_check
@@ -3506,6 +3594,7 @@ class SaveManagerGUI:
         self._refresh_character_bar()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(
                 f"DSR save loaded: {os.path.basename(save_path)}", duration=2500
@@ -3613,6 +3702,7 @@ class SaveManagerGUI:
             )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(
                 f"DS3 save loaded: {os.path.basename(save_path)}", duration=2500
@@ -3673,6 +3763,7 @@ class SaveManagerGUI:
             )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(
                 f"DS2 save loaded: {os.path.basename(save_path)}", duration=2500
@@ -3757,6 +3848,7 @@ class SaveManagerGUI:
                 )
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(
                 f"Nightreign save loaded: {os.path.basename(save_path)}", duration=2500
@@ -3838,6 +3930,7 @@ class SaveManagerGUI:
                 self._rebuild_er_notebook()
 
         self.status_var.set(f"Loaded: {os.path.basename(save_path)}")
+        self._check_steamid_after_load(save_path)
         if not silent:
             self.show_toast(toast_message, duration=2500)
 

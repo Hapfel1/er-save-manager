@@ -478,10 +478,15 @@ def show_toast(
     gets a counter instead of a second toast; at most _MAX_TOASTS are shown,
     the oldest goes first. Click dismisses, hovering pauses the timer.
 
-    action (label, callback) adds a link after the message (Undo); the toast
-    then stays at least _ACTION_MS. A repeated message keeps one toast and
+    action (label, callback) adds a link after the message; the toast then
+    stays at least _ACTION_MS. A success toast right after an edit of a save
+    gets Undo (ui/undo.py). A repeated message keeps one toast and
     its action becomes the latest one."""
     _active_toasts[:] = [t for t in _active_toasts if t.win.winfo_exists()]
+    if action is None and type == "success":
+        from er_save_manager.ui import undo
+
+        action = undo.offer(root)
     if action is not None:
         duration = max(duration, _ACTION_MS)
 

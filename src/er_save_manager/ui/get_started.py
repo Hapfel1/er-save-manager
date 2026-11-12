@@ -9,6 +9,28 @@ import customtkinter as ctk
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 
+# Set by the main window: Auto-Find, Browse, and (process name, game name)
+# of the active game
+_auto_find = None
+_browse = None
+_game = None
+
+
+def configure(auto_find, browse, game) -> None:
+    global _auto_find, _browse, _game
+    _auto_find, _browse, _game = auto_find, browse, game
+
+
+def available() -> bool:
+    return _game is not None
+
+
+def create(parent) -> GetStartedPanel:
+    """Panel for the active game."""
+    process_name, game_name = _game()
+    return GetStartedPanel(parent, game_name, process_name, _auto_find, _browse)
+
+
 # Game process check interval while the panel shows
 _POLL_MS = 3000
 _DONE = (("#D6EED2", "#24392B"), palette.GREEN_TEXT)
@@ -86,8 +108,9 @@ class GetStartedPanel(ctk.CTkFrame):
         _num, body = self._step("3", "Pick a character")
         ctk.CTkLabel(
             body,
-            text="Then fix issues here, or edit it in the other tabs. A backup "
-            "is made before every change.",
+            text="Then check it here, or edit it in the other tabs. A backup "
+            "is made before every change, and the message after an edit "
+            "offers Undo.",
             font=ds.FONT,
             text_color=ds.MUTED,
             anchor="w",

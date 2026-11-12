@@ -1079,13 +1079,8 @@ class InventoryEditor:
         ensure_mutable_callback,
         on_inventory_changed=None,
         get_settings_callback=None,
-        reload_save_callback=None,
     ):
         self.parent = parent
-        # Reloads the save after an Undo restored the backup
-        self._reload_save = reload_save_callback
-        # Backup made by the last _create_backup, None when none was made
-        self._last_backup: Path | None = None
         self.get_save_file = get_save_file_callback
         self.get_char_slot = get_char_slot_callback
         self.get_save_path = get_save_path_callback
@@ -3075,7 +3070,6 @@ class InventoryEditor:
                 self.parent.winfo_toplevel(),
                 msg,
                 type="success",
-                action=self._undo(f"added {item_info['name_label']}"),
             )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -3318,7 +3312,9 @@ class InventoryEditor:
                     f"{n} x {reason}"
                     for reason, n in sorted(skipped.items(), key=lambda kv: -kv[1])
                 ]
-                undo = self._undo(f"batch add from {cat}")
+                from er_save_manager.ui import undo as undo_mod
+
+                undo = undo_mod.offer(self.parent.winfo_toplevel())
                 if CTkMessageBox._create_dialog(
                     parent_window,
                     "Batch Add",
@@ -3334,7 +3330,6 @@ class InventoryEditor:
                     self.parent.winfo_toplevel(),
                     f"Batch added {success} items from {cat}.",
                     type="success",
-                    action=self._undo(f"batch add from {cat}"),
                 )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -3402,7 +3397,6 @@ class InventoryEditor:
                 self.parent.winfo_toplevel(),
                 "Item removed.",
                 type="success",
-                action=self._undo("item removed"),
             )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -3515,7 +3509,6 @@ class InventoryEditor:
                 self.parent.winfo_toplevel(),
                 f"Batch removed {success} items from {cat} ({location}).",
                 type="success",
-                action=self._undo(f"batch remove from {cat}"),
             )
             if errors:
                 CTkMessageBox.showwarning(
@@ -3665,7 +3658,6 @@ class InventoryEditor:
                 self.parent.winfo_toplevel(),
                 f"Quantity set to {new_qty}.",
                 type="success",
-                action=self._undo("quantity change"),
             )
         except Exception as e:
             CTkMessageBox.showerror(
@@ -4462,32 +4454,16 @@ class InventoryEditor:
     # ---- helpers ------------------------------------------------------------
 
     def _create_backup(self, save_file, slot_idx, operation):
-        self._last_backup = None
         save_path = self.get_save_path()
         if not save_path:
             return
         from er_save_manager.backup.manager import BackupManager
 
         manager = BackupManager(Path(save_path))
-        self._last_backup, _pruned = manager.create_backup(
+        manager.create_backup(
             description=f"before_{operation}_slot_{slot_idx + 1}",
             operation=operation,
             save=save_file,
-        )
-
-    def _undo(self, what: str):
-        """Undo link for the toast after an edit written just now."""
-        from er_save_manager.ui.undo import undo_action
-
-        save_path = self.get_save_path()
-        if not save_path:
-            return None
-        return undo_action(
-            self.parent.winfo_toplevel(),
-            save_path,
-            self._last_backup,
-            self._reload_save,
-            what,
         )
 
 

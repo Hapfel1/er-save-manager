@@ -609,11 +609,6 @@ class CharacterManagementTab:
         if not guard_before_write("copy the character"):
             return
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
             return
 
         save_file = self.get_save_file()
@@ -707,11 +702,6 @@ class CharacterManagementTab:
         if not guard_before_write("transfer the character"):
             return
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
             return
 
         save_file = self.get_save_file()
@@ -917,11 +907,6 @@ class CharacterManagementTab:
         if not guard_before_write("swap the characters"):
             return
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
             return
         # Applying in the guard reloads the save.
         save_file = self.get_save_file()
@@ -1016,11 +1001,6 @@ class CharacterManagementTab:
         if not guard_before_write("import a character"):
             return
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
             return
 
         save_file = self.get_save_file()
@@ -1131,11 +1111,6 @@ class CharacterManagementTab:
         if not guard_before_write("delete the character"):
             return
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Elden Ring Is Running",
-                "Close Elden Ring before modifying save files.",
-                parent=self.parent,
-            )
             return
 
         save_file = self.get_save_file()

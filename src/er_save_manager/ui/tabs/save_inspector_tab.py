@@ -30,8 +30,6 @@ class SaveInspectorTab:
         reload_callback,
         show_details_callback,
         on_slot_selected_callback=None,
-        auto_find_callback=None,
-        browse_callback=None,
     ):
         """
         Initialize save inspector tab
@@ -50,10 +48,6 @@ class SaveInspectorTab:
         self.reload_save = reload_callback
         self.show_details = show_details_callback
         self.on_slot_selected = on_slot_selected_callback
-        # Buttons of the first-steps panel shown until a save is loaded
-        self._auto_find = auto_find_callback
-        self._browse = browse_callback
-        self._get_started = None
 
         self.selected_slot = None
 
@@ -96,16 +90,12 @@ class SaveInspectorTab:
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 
-        self.list = CharacterList(char_frame, on_select=self._select_slot)
-        if self.get_save_file() is None and self._auto_find and self._browse:
-            from er_save_manager.ui.get_started import GetStartedPanel
-
-            self._get_started = GetStartedPanel(
-                char_frame, "Elden Ring", "eldenring.exe", self._auto_find, self._browse
-            )
-            self._get_started.pack(fill="both", expand=True, padx=16, pady=(0, 10))
-        else:
-            self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        self.list = CharacterList(
+            char_frame,
+            on_select=self._select_slot,
+            get_started=self.get_save_file() is None,
+        )
+        self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def _select_slot(self, slot_index: int) -> None:
         self.selected_slot = slot_index
@@ -118,12 +108,8 @@ class SaveInspectorTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            self.list.clear()
+            self.list.show_get_started()
             return
-        if self._get_started is not None:
-            self._get_started.destroy()
-            self._get_started = None
-            self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         try:
             profiles = None

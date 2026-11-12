@@ -31,6 +31,9 @@ def record_write(path: str | Path) -> None:
     """Remember the stat of a file this process just finished writing."""
     with contextlib.suppress(OSError):
         _last_write[_key(path)] = _signature(path)
+    from er_save_manager.ui import undo
+
+    undo.note_write(path)
 
 
 def is_own_write(path: str | Path) -> bool:

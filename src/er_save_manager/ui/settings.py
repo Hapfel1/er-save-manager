@@ -107,6 +107,7 @@ class Settings:
             "show_second_flask_warning": True,
             "show_item_supply_warning": True,
             "show_dlc_spell_warning": True,
+            "show_steamid_mismatch_warning": True,
             "show_cut_content_warning": True,
             "show_unsafe_item_warning": True,
             "show_empty_slot_warning": True,
