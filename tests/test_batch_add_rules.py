@@ -75,3 +75,14 @@ def test_supply_caps_only_on_vanilla_saves(sanitized_save):
     assert not _supply_capped(sanitized_save, "ER0000.sl2", True)
     sanitized_save.is_ps = True
     assert _supply_capped(sanitized_save, "memory.dat", False)
+
+
+def test_tutorial_note_sets_its_award_flag(sanitized_save):
+    from er_save_manager.ui.editors.inventory_editor import _apply_item_event_flags
+
+    slot = sanitized_save.character_slots[6]
+    hunter = _GOODS | 9125  # About Hunter Multiplayer
+    _apply_item_event_flags(sanitized_save, 6, hunter, True)
+    assert EventFlags.get_flag(slot.event_flags, 69250)
+    _apply_item_event_flags(sanitized_save, 6, hunter, False)
+    assert not EventFlags.get_flag(slot.event_flags, 69250)

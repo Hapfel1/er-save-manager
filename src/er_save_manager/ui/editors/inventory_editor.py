@@ -5,6 +5,7 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 from __future__ import annotations
 
 import contextlib
+import functools
 import json
 import re
 import tkinter as tk
@@ -811,10 +812,24 @@ def _sync_slot_counters(save_file, slot_idx: int, full_item_id: int) -> None:
     save_file._raw_data[off : off + len(data)] = data
 
 
+@functools.cache
+def _tutorial_flags() -> dict[int, int]:
+    """Tutorial note goods id -> flag the game sets once it has given the note.
+
+    The tutorial events skip a note whose flag is set; with the flag clear
+    they award it again and a note already owned drops on the ground.
+    """
+    import csv
+
+    path = Path(__file__).parents[2] / "data" / "items" / "TutorialFlags.csv"
+    with open(path, encoding="utf-8") as f:
+        return {int(r["ID"]): int(r["Flag"]) for r in csv.DictReader(f)}
+
+
 def _apply_item_event_flags(
     save_file, slot_idx: int, full_item_id: int, state: bool
 ) -> None:
-    """Set or clear event flags correlated with a key item spawn/removal.
+    """Set or clear event flags correlated with a key item or tutorial note spawn/removal.
 
     For AoW gems the duplication menu flag (65800) is set on spawn and cleared
     on removal only when no other AoW-specific flags remain set.
@@ -822,7 +837,9 @@ def _apply_item_event_flags(
     from er_save_manager.parser.event_flags import EventFlags
 
     base_id = full_item_id & 0x0FFFFFFF
-    flag_ids = _ITEM_EVENT_FLAGS.get(base_id)
+    flag_ids = list(_ITEM_EVENT_FLAGS.get(base_id, ()))
+    if (full_item_id & 0xF0000000) == 0x40000000 and base_id in _tutorial_flags():
+        flag_ids.append(_tutorial_flags()[base_id])
     if not flag_ids:
         return
 
