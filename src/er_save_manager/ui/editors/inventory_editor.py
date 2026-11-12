@@ -1568,9 +1568,13 @@ class InventoryEditor:
 
     def _visible_categories(self) -> list[str]:
         try:
-            from er_save_manager.data.item_database import get_categories
+            from er_save_manager.data.item_database import (
+                get_categories,
+                get_item_database,
+            )
 
             all_cats = get_categories()
+            db = get_item_database()
         except Exception:
             return []
 
@@ -1583,6 +1587,8 @@ class InventoryEditor:
             if (c not in self._SEAMLESS_CATS or is_co2)
             and (c not in self._CONVERGENCE_CATS or is_cnv)
             and (c not in self._CONVERGENCE_HIDDEN_CATS or not is_cnv)
+            # Every item of the category may be hidden for this save type
+            and db.get_items_by_category(c, is_cnv)
         ]
 
     def _populate_search_categories(self):

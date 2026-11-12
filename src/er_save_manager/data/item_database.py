@@ -16,10 +16,12 @@ values the Convergence params use for the same ID. They build a Convergence
 variant of the item, returned by get_item_by_id(..., is_convergence=True)
 and resolve(). A row in a Convergence CSV with the same ID replaces it.
 
-Items listed in Unobtainable.csv (Category,ID,Name,Convergence) keep their
-name lookup but are left out of the category lists and search, so no picker
-offers them. Convergence 0 marks an item that only Convergence hands out:
-it is hidden unless the lists are asked for with is_convergence=True.
+Items listed in Unobtainable.csv (Category,ID,Name,Vanilla,Convergence) keep
+their name lookup but are left out of the category lists and search for the
+save types marked 1, so no picker offers them there.
+
+On Convergence saves, a base-game row whose ID also has a Convergence CSV row
+is left out of the lists; the Convergence row offers the same item.
 """
 
 import csv as _csv
@@ -117,8 +119,11 @@ class ItemDatabase:
         self.items_by_category: dict[str, list[Item]] = {}
         self.categories: list[tuple[str, ItemCategory]] = []
         self._convergence_overrides: dict[int, Item] = {}
-        self._unobtainable: set[int] = set()
-        self._vanilla_unobtainable: set[int] = set()
+        # Unobtainable.csv: full ids hidden on vanilla / Convergence saves
+        self._hidden_vanilla: set[int] = set()
+        self._hidden_convergence: set[int] = set()
+        # Full ids of Convergence CSV rows that replace a base-game row
+        self._convergence_rows: set[int] = set()
         self._loaded = False
 
     def load(self):
@@ -138,10 +143,10 @@ class ItemDatabase:
             with open(unobtainable_file, encoding="utf-8-sig") as f:
                 for r in _csv.DictReader(f):
                     full_id = int(ItemCategory[r["Category"].upper()]) | int(r["ID"])
+                    if r["Vanilla"] == "1":
+                        self._hidden_vanilla.add(full_id)
                     if r["Convergence"] == "1":
-                        self._unobtainable.add(full_id)
-                    else:
-                        self._vanilla_unobtainable.add(full_id)
+                        self._hidden_convergence.add(full_id)
 
         with open(categories_file, encoding="utf-8-sig") as f:
             for line in f:
@@ -323,9 +328,13 @@ class ItemDatabase:
             # Convergence renames a base-game item under the same ID.
             # Store it separately so non-convergence saves keep the original name.
             self._convergence_overrides[item.full_id] = item
+            self._convergence_rows.add(item.full_id)
         else:
             self.items_by_id[item.full_id] = item
-        if item.full_id in self._unobtainable:
+        if (
+            item.full_id in self._hidden_vanilla
+            and item.full_id in self._hidden_convergence
+        ):
             return
         if item.category_name not in self.items_by_category:
             self.items_by_category[item.category_name] = []
@@ -349,7 +358,16 @@ class ItemDatabase:
         return item
 
     def _offered(self, item: Item, is_convergence: bool) -> bool:
-        return is_convergence or item.full_id not in self._vanilla_unobtainable
+        if not is_convergence:
+            return item.full_id not in self._hidden_vanilla
+        if item.full_id in self._hidden_convergence:
+            return False
+        # A base-game row with a Convergence row for its ID is listed once,
+        # under the Convergence row
+        return (
+            item.full_id not in self._convergence_rows
+            or self._convergence_overrides.get(item.full_id) is item
+        )
 
     def get_items_by_category(
         self, category_name: str, is_convergence: bool = False
@@ -368,9 +386,7 @@ class ItemDatabase:
         return [
             item
             for item in self.items
-            if query_lower in item.name.lower()
-            and item.full_id not in self._unobtainable
-            and self._offered(item, is_convergence)
+            if query_lower in item.name.lower() and self._offered(item, is_convergence)
         ]
 
     def decode_item_id(self, full_id: int) -> "tuple[int, ItemCategory]":
