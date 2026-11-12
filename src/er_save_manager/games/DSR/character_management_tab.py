@@ -763,6 +763,7 @@ class DSRCharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="dark_souls_remastered",
             )
         return self._browse_target_save_manually()
 

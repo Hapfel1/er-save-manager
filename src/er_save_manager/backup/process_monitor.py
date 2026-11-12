@@ -29,7 +29,9 @@ def _is_process_running(process_name: str) -> bool:
     Check if a process is currently running.
 
     Windows: tasklist with CREATE_NO_WINDOW to avoid CMD flash.
-    Linux: pgrep -f - same approach as PlatformUtils.is_game_running(), works for Wine/Proton.
+    Linux: pgrep -if on the full command line, which holds the .exe name for
+    Wine/Proton games; -i because Proton keeps the exe's mixed case
+    (DarkSoulsIII.exe) and profile names are lowercase.
     """
     name_lower = process_name.lower()
     try:
@@ -49,7 +51,7 @@ def _is_process_running(process_name: str) -> bool:
             return name_lower in result.stdout.decode(errors="replace").lower()
         else:
             result = subprocess.run(
-                ["pgrep", "-f", process_name],
+                ["pgrep", "-if", process_name],
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -352,7 +354,10 @@ def show_auto_backup_first_run_dialog(
 
             # Closing without a pick falls through to the file dialog below
             chosen_path = SaveSelectorDialog.show(
-                parent, found_paths, lambda _path: None
+                parent,
+                found_paths,
+                lambda _path: None,
+                game_key=profile.key if profile else None,
             )
 
         if not chosen_path:

@@ -7,7 +7,6 @@ import contextlib
 import logging
 import os
 import re
-import subprocess
 import sys
 import threading
 import tkinter as tk
@@ -154,6 +153,37 @@ _CONSOLE_LABELS = {
     "nightreign": ("PS Save?", "PlayStation Saves"),
 }
 _PS4_LABELS = ("PS4 Save?", "PS4 Saves")
+
+
+# Save file kinds per extension, for the Auto-Find help tooltip
+_EXTENSION_HELP = {
+    ".sl2": "Vanilla game (official servers)",
+    ".co2": "Seamless Co-op",
+    ".cnv": "The Convergence",
+    ".cnvco2": "The Convergence + Seamless Co-op",
+}
+# Console saves per game, loaded with Browse
+_CONSOLE_HELP = {
+    "elden_ring": [
+        ("memory.dat", "PlayStation (decrypted export)"),
+        ("userdata files", "Switch 2 save folder"),
+    ],
+    "nightreign": [("memory.dat", "PlayStation (decrypted export)")],
+    "dark_souls_3": [("userdata files", "PS4 save folder")],
+    "dark_souls_remastered": [("userdata files", "PS4 save folder")],
+    "dark_souls_2": [("userdata files", "PS4 save folder")],
+}
+
+
+def _save_format_help(profile) -> tuple[str, list[tuple[str, str]], str]:
+    """(title, rows, footer) of the Auto-Find help tooltip for a game."""
+    rows = [(ext, _EXTENSION_HELP.get(ext, ext)) for ext in profile.extensions]
+    console = _CONSOLE_HELP.get(profile.key, [])
+    footer = "Edit the file of the version you play."
+    if console:
+        rows += console
+        footer = "Auto-Find finds PC saves. Load console saves with Browse. " + footer
+    return f"{profile.name} save files", rows, footer
 
 
 def _console_labels(game_key: str) -> tuple[str, str]:
@@ -651,62 +681,19 @@ class SaveManagerGUI:
         thread.start()
 
     def _handle_game_running_dialog(self, profile=None) -> bool:
-        """
-        Show dialog when game is running and handle user choice.
-        Blocks loading until game process is terminated.
+        """Wait for the game to close before a load or write.
 
-        Returns:
-            True if game was successfully terminated
-            False if user cancelled or kill failed
+        True once it has closed (by itself or Force Close), False on Cancel.
         """
+        from er_save_manager.ui.dialogs.game_running import wait_for_game_close
+
         game_name = profile.name if profile else "Elden Ring"
         process_name = (
             profile.process_name
             if profile and profile.process_name
             else "eldenring.exe"
         )
-
-        result = CTkMessageBox.askyesno(
-            "Game Is Running",
-            f"{game_name} is currently running.\n\n"
-            "The save file cannot be loaded while the game is running.\n\n"
-            "Would you like to force kill the game process?",
-            parent=self.root,
-        )
-
-        if not result:
-            return False
-
-        if not PlatformUtils.kill_game_process(process_name):
-            CTkMessageBox.showerror(
-                "Terminate Failed",
-                f"Failed to terminate {game_name} process.\n\n"
-                "The game may require manual closing or administrator permissions.",
-                parent=self.root,
-            )
-            return False
-
-        import time
-
-        max_wait = 5
-        wait_interval = 0.2
-        elapsed = 0
-
-        while elapsed < max_wait:
-            if not self.is_game_running(process_name):
-                self.show_toast(f"{game_name} closed. You can now proceed safely.")
-                return True
-            time.sleep(wait_interval)
-            elapsed += wait_interval
-            self.root.update()
-
-        CTkMessageBox.showerror(
-            "Timeout",
-            f"Game process is still running after kill attempt.\n\n"
-            f"Close {game_name} manually and try again.",
-            parent=self.root,
-        )
-        return False
+        return wait_for_game_close(self.root, game_name, process_name)
 
     def _init_process_monitor(self):
         """Initialize auto-backup process monitor"""
@@ -978,6 +965,26 @@ class SaveManagerGUI:
         )
         _autofind_btn.pack(side=tk.LEFT, padx=4, pady=10)
         self._file_load_buttons.append(_autofind_btn)
+
+        # Which extension is which game version, on hover or click
+        from er_save_manager.ui.tooltip import Tooltip
+
+        help_icon = ctk.CTkLabel(
+            path_frame,
+            text="?",
+            width=24,
+            height=24,
+            corner_radius=12,
+            fg_color=palette.PURPLE_TINT,
+            text_color=palette.PURPLE_TEXT,
+            font=("Inter", 13, "bold"),
+            cursor="hand2",
+        )
+        help_icon.pack(side=tk.LEFT, padx=(2, 8), pady=10)
+        title, rows, footer = _save_format_help(self._active_profile())
+        self._save_format_tip = Tooltip(help_icon, title, rows, footer)
+        for target in Tooltip._targets(help_icon):
+            target.bind("<Button-1>", self._save_format_tip.show_now, add="+")
 
         buttons_frame = ctk.CTkFrame(file_frame, corner_radius=8)
         buttons_frame.pack(fill=tk.X, pady=(6, 10), padx=12)
@@ -1545,6 +1552,10 @@ class SaveManagerGUI:
             else:
                 self._ps_save_btn.pack_forget()
 
+        if hasattr(self, "_save_format_tip"):
+            tip = self._save_format_tip
+            tip.text, tip.rows, tip.footer = _save_format_help(profile)
+
         if hasattr(self, "_extension_btn"):
             if profile.key in SUPPORTED_EXTENSION_GAMES:
                 self._extension_btn.pack(side=tk.RIGHT, padx=(8, 4))
@@ -1648,6 +1659,8 @@ class SaveManagerGUI:
             self.reload_save,
             self.show_character_details,
             self.on_slot_selected,
+            auto_find_callback=self.auto_detect,
+            browse_callback=self.browse_file,
         )
         self._build_tab("Save Fixer", self.inspector_tab.setup_ui)
 
@@ -2485,6 +2498,9 @@ class SaveManagerGUI:
             self.ensure_raw_data_mutable,
             on_inventory_changed=self._on_inventory_changed,
             get_settings_callback=lambda: self.settings,
+            reload_save_callback=lambda: self.load_save(
+                silent=True, path=str(self.save_path)
+            ),
         )
         self._build_tab("Character Editor/Inventory", self.inventory_editor.setup_steps)
 
@@ -2827,7 +2843,12 @@ class SaveManagerGUI:
             _on_selected(str(found_saves[0]))
             self.status_var.set(f"{game_name} save auto-detected")
         else:
-            SaveSelectorDialog.show(self.root, found_saves, _on_selected)
+            SaveSelectorDialog.show(
+                self.root,
+                found_saves,
+                _on_selected,
+                game_key=profile.key if profile else None,
+            )
 
     def show_linux_save_location_warning(self, save_path, profile=None):
         """Show warning about non-default save location on Linux."""
@@ -2948,36 +2969,7 @@ class SaveManagerGUI:
 
     def is_game_running(self, process_name: str = "eldenring.exe") -> bool:
         """Check if a game process is running."""
-        if process_name == "eldenring.exe":
-            return PlatformUtils.is_game_running()
-        try:
-            if PlatformUtils.is_windows():
-                si = subprocess.STARTUPINFO()
-                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                si.wShowWindow = 0  # SW_HIDE
-                result = subprocess.run(
-                    ["tasklist", "/FI", f"IMAGENAME eq {process_name}", "/NH"],
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    startupinfo=si,
-                    creationflags=subprocess.CREATE_NO_WINDOW,
-                )
-                return (
-                    process_name.lower()
-                    in result.stdout.decode(errors="replace").lower()
-                )
-            else:
-                # -i: Proton command lines keep the exe's mixed case
-                # (DarkSoulsIII.exe), profile names are lowercase.
-                result = subprocess.run(
-                    ["pgrep", "-if", process_name],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                return result.returncode == 0
-        except Exception:
-            return False
+        return PlatformUtils.is_game_running(process_name)
 
     def _open_inventory_editor(self):
         """Show Character Editor > Inventory for the active game; for

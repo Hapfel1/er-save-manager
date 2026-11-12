@@ -8,6 +8,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import verbose_log
 from er_save_manager.ui.dialogs.opt_out_warning import WARNINGS
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -155,25 +156,6 @@ class SettingsTab:
         ).pack(anchor="w", padx=32, pady=(0, 10))
         self.settings.add_listener(self._on_setting_changed)
 
-        # Online ban warning for vanilla saves, all games
-        self.show_eac_warning_var = tk.BooleanVar(
-            value=self.settings.get("show_eac_warning", True)
-        )
-        ctk.CTkCheckBox(
-            frame,
-            text="Show online ban warning when loading vanilla saves",
-            variable=self.show_eac_warning_var,
-            command=lambda: self.settings.set(
-                "show_eac_warning", self.show_eac_warning_var.get()
-            ),
-        ).pack(anchor="w", padx=12, pady=5)
-        ctk.CTkLabel(
-            frame,
-            text="Disabling this will skip the ban warning for .sl2 and PlayStation saves.",
-            text_color=("gray40", "gray70"),
-            font=("Inter", 11),
-        ).pack(anchor="w", padx=32, pady=(0, 10))
-
         self.remember_location_var = tk.BooleanVar(
             value=self.settings.get("remember_last_location", True)
         )
@@ -186,40 +168,70 @@ class SettingsTab:
             ),
         ).pack(anchor="w", padx=12, pady=5)
 
-        self.show_linux_save_warning_var = tk.BooleanVar(
-            value=self.settings.get("show_linux_save_warning", True)
-        )
-        ctk.CTkCheckBox(
-            frame,
-            text="Show Linux save location warnings (non-default compatdata)",
-            variable=self.show_linux_save_warning_var,
-            command=lambda: self.settings.set(
-                "show_linux_save_warning", self.show_linux_save_warning_var.get()
-            ),
-        ).pack(anchor="w", padx=12, pady=5)
-        ctk.CTkLabel(
-            frame,
-            text="Linux: Warns when save is not in the default compatdata folder.",
-            text_color=("gray40", "gray70"),
-            font=("Inter", 11),
-        ).pack(anchor="w", padx=32, pady=(0, 10))
-
+        # Warnings and confirmations: one collapsed section, the list is long
         self._warning_vars: dict[str, tk.BooleanVar] = {}
-        for key, text, hint in WARNINGS:
-            var = tk.BooleanVar(value=self.settings.get(key, True))
-            self._warning_vars[key] = var
+
+        def build_warnings(box):
+            # Online ban warning for vanilla saves, all games
+            self.show_eac_warning_var = tk.BooleanVar(
+                value=self.settings.get("show_eac_warning", True)
+            )
             ctk.CTkCheckBox(
-                frame,
-                text=text,
-                variable=var,
-                command=lambda k=key, v=var: self.settings.set(k, v.get()),
+                box,
+                text="Show online ban warning when loading vanilla saves",
+                variable=self.show_eac_warning_var,
+                command=lambda: self.settings.set(
+                    "show_eac_warning", self.show_eac_warning_var.get()
+                ),
             ).pack(anchor="w", padx=12, pady=5)
             ctk.CTkLabel(
-                frame,
-                text=hint,
+                box,
+                text="Disabling this will skip the ban warning for .sl2 and PlayStation saves.",
                 text_color=("gray40", "gray70"),
                 font=("Inter", 11),
             ).pack(anchor="w", padx=32, pady=(0, 10))
+
+            self.show_linux_save_warning_var = tk.BooleanVar(
+                value=self.settings.get("show_linux_save_warning", True)
+            )
+            ctk.CTkCheckBox(
+                box,
+                text="Show Linux save location warnings (non-default compatdata)",
+                variable=self.show_linux_save_warning_var,
+                command=lambda: self.settings.set(
+                    "show_linux_save_warning", self.show_linux_save_warning_var.get()
+                ),
+            ).pack(anchor="w", padx=12, pady=5)
+            ctk.CTkLabel(
+                box,
+                text="Linux: Warns when save is not in the default compatdata folder.",
+                text_color=("gray40", "gray70"),
+                font=("Inter", 11),
+            ).pack(anchor="w", padx=32, pady=(0, 10))
+
+            for key, text, hint in WARNINGS:
+                var = tk.BooleanVar(value=self.settings.get(key, True))
+                self._warning_vars[key] = var
+                ctk.CTkCheckBox(
+                    box,
+                    text=text,
+                    variable=var,
+                    command=lambda k=key, v=var: self.settings.set(k, v.get()),
+                ).pack(anchor="w", padx=12, pady=5)
+                ctk.CTkLabel(
+                    box,
+                    text=hint,
+                    text_color=("gray40", "gray70"),
+                    font=("Inter", 11),
+                ).pack(anchor="w", padx=32, pady=(0, 10))
+
+        ds.collapsible(
+            frame,
+            f"Warnings and confirmations ({len(WARNINGS) + 2})",
+            build_warnings,
+            pady=(4, 10),
+            fit=False,
+        ).pack_configure(padx=12)
 
         self.show_update_notifications_var = tk.BooleanVar(
             value=self.settings.get("show_update_notifications", True)
@@ -732,6 +744,7 @@ class SettingsTab:
                         lambda _p: None,
                         browse_callback=lambda: "__browse__",
                         browse_button_text="Browse...",
+                        game_key=game_key,
                     )
                 ]
 
@@ -1007,15 +1020,23 @@ class SettingsTab:
         self.verbose_logging_var = tk.BooleanVar(
             value=self.settings.get("verbose_logging", False)
         )
+        log_row = ctk.CTkFrame(frame, fg_color="transparent")
+        log_row.pack(fill="x", padx=12, pady=5)
         ctk.CTkCheckBox(
-            frame,
+            log_row,
             text="Verbose logging to file",
             variable=self.verbose_logging_var,
             command=self._on_verbose_logging_changed,
-        ).pack(anchor="w", padx=12, pady=5)
+        ).pack(side="left")
+        ctk.CTkButton(
+            log_row,
+            text="Open Log Folder",
+            width=140,
+            command=lambda: verbose_log.open_log_folder(self.parent),
+        ).pack(side="left", padx=(16, 0))
         ctk.CTkLabel(
             frame,
-            text="Writes er_save_manager.log to the settings folder, next to errors.log.",
+            text="Writes er_save_manager.log next to errors.log. Attach both to a bug report.",
             text_color=("gray40", "gray70"),
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))

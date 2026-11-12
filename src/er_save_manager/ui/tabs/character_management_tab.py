@@ -869,6 +869,7 @@ class CharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="elden_ring",
             )
         else:
             selected_path = self._browse_target_save_manually()

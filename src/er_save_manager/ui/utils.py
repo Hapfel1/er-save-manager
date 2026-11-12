@@ -890,8 +890,8 @@ def _apply_default_extension(
 def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
     """Report whether a save write must be aborted because the game is running.
 
-    Shows the standard error dialog and returns True when the write should be
-    skipped. Returns False when the advanced "skip_game_running_check" setting
+    While the game runs, waits for it to close (dialog with Force Close) and
+    returns True when the user cancels, so the write is skipped. Returns False when the advanced "skip_game_running_check" setting
     is on, so the developer bypass covers per-game tabs the same way it covers
     the actions wired up in gui.py.
 
@@ -901,7 +901,6 @@ def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
         game_name: Display name used in the error message
     """
     from er_save_manager.backup.process_monitor import _is_process_running
-    from er_save_manager.ui.messagebox import CTkMessageBox
     from er_save_manager.ui.settings import get_settings
 
     if get_settings().get("skip_game_running_check", False):
@@ -910,12 +909,9 @@ def game_blocks_write(parent, process_name: str, game_name: str) -> bool:
     if not _is_process_running(process_name):
         return False
 
-    CTkMessageBox.showerror(
-        "Game Is Running",
-        f"Close {game_name} before modifying save files.",
-        parent=parent,
-    )
-    return True
+    from er_save_manager.ui.dialogs.game_running import wait_for_game_close
+
+    return not wait_for_game_close(parent, game_name, process_name)
 
 
 def resource_path(*parts: str) -> Path:

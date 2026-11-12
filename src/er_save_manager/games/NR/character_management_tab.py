@@ -777,6 +777,7 @@ class NRCharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="nightreign",
             )
         return self._browse_target_save_manually()
 

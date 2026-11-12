@@ -54,6 +54,11 @@ WARNINGS = (
         "limited items.",
     ),
     (
+        "show_dlc_spell_warning",
+        "Show ban warning before adding a DLC spell without the DLC",
+        "Elden Ring: characters not loaded with Shadow of the Erdtree.",
+    ),
+    (
         "show_cut_content_warning",
         "Show warning before spawning cut content",
         "Dark Souls III and Remastered: cut items are likely to be flagged online.",

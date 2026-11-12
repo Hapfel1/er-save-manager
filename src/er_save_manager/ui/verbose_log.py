@@ -4,6 +4,7 @@ er_save_manager.log in the settings data folder next to errors.log while the
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import platform
 from logging.handlers import RotatingFileHandler
@@ -51,3 +52,25 @@ def set_enabled(enabled: bool) -> None:
         _handler.close()
         _handler = None
         package.setLevel(logging.NOTSET)
+
+
+def open_log_folder(parent) -> None:
+    """Open the folder of er_save_manager.log and errors.log, with the log
+    selected where the file manager supports it."""
+    from er_save_manager.ui.toast import notify
+    from er_save_manager.ui.utils import open_folder
+
+    path = log_path()
+    if path.exists():
+        target = path
+    else:
+        target = path.parent
+        with contextlib.suppress(OSError):
+            target.mkdir(parents=True, exist_ok=True)
+    if not open_folder(target):
+        notify(
+            parent,
+            f"Could not open a file manager. The log folder is {path.parent}",
+            "warning",
+            6000,
+        )

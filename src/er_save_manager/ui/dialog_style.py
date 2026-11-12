@@ -566,10 +566,11 @@ class FlowRow(ctk.CTkFrame):
                 widget.lift(frame)
 
 
-def collapsible(parent, title, build, *, expanded=False, pady=(10, 0)):
+def collapsible(parent, title, build, *, expanded=False, pady=(10, 0), fit=True):
     """Section with a clickable title that shows or hides a gray box.
 
-    build(box) fills the box once. The dialog is refitted on every toggle.
+    build(box) fills the box once. With fit, the dialog is refitted on every
+    toggle; a section inside the main window passes fit=False.
     """
     container = ctk.CTkFrame(parent, fg_color="transparent")
     container.pack(fill=tk.X, pady=pady)
@@ -587,7 +588,8 @@ def collapsible(parent, title, build, *, expanded=False, pady=(10, 0)):
         else:
             body.pack_forget()
         toggle_button.configure(text=label())
-        refit(container.winfo_toplevel())
+        if fit:
+            refit(container.winfo_toplevel())
 
     toggle_button = ctk.CTkButton(
         container,
