@@ -26,6 +26,8 @@ ID,Name
 837200,Raya Lucarian Gloves
 837300,Raya Lucarian Trousers
 890200,Prisoner Chains
+931200,Bandit Manchettes
+931300,Bandit Boots
 960200,Consort's Gloves
 964300,Bloodsoaked Wraps
 964200,Bloodsoaked Manchettes
@@ -112,9 +114,13 @@ ID,Name
 1370200,Beast Clergy Bracers
 1370300,Beast Clergy Boots
 1810000,Mausoleum Knight Helm
+1930300,Deathbed Smalls
 1940200,Fia's Bracelets
 1940300,Fia's Trousers
 1950000,Millicent's Headband
+1950100,Millicent's Robe
+1950300,Millicent's Boots
+1970200,Golden Prosthetic
 1990200,High Page Gloves
 1990300,High Page Trousers
 2000200,Rotten Duelist Wraps

@@ -251,3 +251,19 @@ def test_unobtainable_items_named_but_not_offered(item_db) -> None:
     assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
     assert {great_coffins, monument_icon}.isdisjoint(offered(False))
     assert offered(True) & {great_coffins, monument_icon} == {monument_icon}
+
+
+def test_every_armor_piece_has_a_slot_type(item_db) -> None:
+    """The equipment picker drops armor pieces armor_slot_types.csv lacks."""
+    from er_save_manager.data.item_database import ItemCategory
+
+    with open(ITEMS / "armor_slot_types.csv", encoding="utf-8") as f:
+        typed = {int(r["ID"]) for r in csv.DictReader(f)}
+    missing = [
+        item.name
+        for name, cat in item_db.categories
+        if cat == ItemCategory.ARMOR
+        for item in item_db.get_items_by_category(name, True)
+        if item.id not in typed
+    ]
+    assert not missing
