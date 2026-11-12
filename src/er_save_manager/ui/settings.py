@@ -104,6 +104,8 @@ class Settings:
             "show_boss_gate_teleport_warning": True,
             "show_bloodstain_teleport_warning": True,
             "show_reward_respawn_warning": True,
+            "show_second_flask_warning": True,
+            "show_item_supply_warning": True,
             "show_cut_content_warning": True,
             "show_unsafe_item_warning": True,
             "show_empty_slot_warning": True,

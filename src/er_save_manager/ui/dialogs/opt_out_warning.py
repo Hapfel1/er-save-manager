@@ -43,6 +43,17 @@ WARNINGS = (
         "Elden Ring: boss, enemy and NPC rewards are not placed back on the map.",
     ),
     (
+        "show_second_flask_warning",
+        "Show ban warning before adding a second flask",
+        "Elden Ring: the game keeps one flask of each kind.",
+    ),
+    (
+        "show_item_supply_warning",
+        "Show ban warning before adding more than the game hands out",
+        "Elden Ring vanilla saves: Golden Seeds, Scadutree Fragments and other "
+        "limited items.",
+    ),
+    (
         "show_cut_content_warning",
         "Show warning before spawning cut content",
         "Dark Souls III and Remastered: cut items are likely to be flagged online.",
