@@ -96,6 +96,10 @@ def test_ef_splice_fallback_repairs_removed_flags_and_oversized_netman(sanitized
     _with_steam_id(sanitized_save, 0)
     slot = sanitized_save.character_slots[0]
     start, steamid_offset = slot.data_start, slot.steamid_offset
+    # A non-zero BaseVersion unk (last u32 before the SteamID) must not block the repair
+    sanitized_save._raw_data[steamid_offset - 4 : steamid_offset] = (
+        0x01100001
+    ).to_bytes(4, "little")
     original = bytes(sanitized_save._raw_data[start : start + _SLOT_SIZE])
     ef_rel = slot.event_flags_offset - start
     run_start, run_len = _longest_inner_zero_run(original[ef_rel : ef_rel + _EF_SIZE])
