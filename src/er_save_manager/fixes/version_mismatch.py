@@ -28,6 +28,10 @@ if TYPE_CHECKING:
 CHECKSUM_SIZE = 0x10
 BASE_VERSION_SIZE = 0x10
 
+# Highest slot version whose GaitemGameData the game reads as 16-byte records;
+# above it the records are 8 bytes.
+ITEM_HISTORY_OLD_LAYOUT_MAX_VERSION = 200
+
 
 @dataclass
 class SlotVersionInfo:
@@ -86,6 +90,24 @@ def get_version_info(save: Save) -> VersionInfo:
             )
         )
     return info
+
+
+def slots_with_item_history_mismatch(save: Save, target_version: int) -> list[int]:
+    """
+    Indices of active slots whose acquired-item records are stored in a
+    different layout than the game expects at target_version.
+
+    The game picks the record size from the slot version alone, so stamping
+    such a slot makes it misread the list of items the character has acquired.
+    """
+    expected = 16 if target_version <= ITEM_HISTORY_OLD_LAYOUT_MAX_VERSION else 8
+    return [
+        i
+        for i, slot in enumerate(save.character_slots)
+        if not slot.is_empty()
+        and slot.gaitem_game_data.count > 0
+        and slot.gaitem_game_data.record_size != expected
+    ]
 
 
 def apply_version_downgrade(save: Save, target_version: int) -> VersionFixResult:

@@ -7,6 +7,7 @@ import customtkinter as ctk
 from er_save_manager.fixes.version_mismatch import (
     apply_version_downgrade,
     get_version_info,
+    slots_with_item_history_mismatch,
 )
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -236,6 +237,20 @@ class VersionMismatchDialog(ctk.CTkToplevel):
         target_version = self._validate_target()
         if target_version is None:
             return
+
+        affected = slots_with_item_history_mismatch(self._save_file, target_version)
+        if affected:
+            slots = ", ".join(str(i + 1) for i in affected)
+            if not CTkMessageBox.askyesno(
+                "Item History Format Differs",
+                f"Version {target_version} uses a different format for the list of "
+                f"acquired items than slot {slots} holds. The game will misread "
+                "that list on these characters. Inventory and storage are not "
+                "affected.\n\nApply the version anyway?",
+                parent=self,
+                icon_type="warning",
+            ):
+                return
 
         try:
             if self._save_path:
