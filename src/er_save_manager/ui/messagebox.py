@@ -24,11 +24,13 @@ class CTkMessageBox:
         buttons=None,
         font_size=13,
         position=None,
+        cancel_value=None,
     ):
         """Create base dialog, sized to its content.
 
         The first button is the primary action (Enter); Escape and the window
-        close button pick the value of the last button.
+        close button pick the value of the last button, or cancel_value when
+        given.
         """
         import tkinter.font as tkfont
 
@@ -171,7 +173,8 @@ class CTkMessageBox:
         take_focus()
         dialog.after(150, take_focus)
 
-        cancel_value = buttons[-1][1]
+        if cancel_value is None:
+            cancel_value = buttons[-1][1]
         dialog.bind("<Return>", lambda _e: choose(buttons[0][1]))
         dialog.bind("<KP_Enter>", lambda _e: choose(buttons[0][1]))
         dialog.bind("<Escape>", lambda _e: choose(cancel_value))

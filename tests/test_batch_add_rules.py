@@ -1,0 +1,90 @@
+"""Batch Add limits: excluded goods, world supply caps, held counters, DLC spells."""
+
+from __future__ import annotations
+
+from er_save_manager.data.item_database import get_item_database
+from er_save_manager.data.item_supply import SACRED_TEAR, _spent, remaining_supply
+from er_save_manager.parser import inventory_ops
+from er_save_manager.parser.event_flags import EventFlags
+from er_save_manager.ui.editors.inventory_editor import (
+    _SOTE_FLAG,
+    _batch_excluded,
+    _batch_goods_qty,
+    _flask_batch_plan,
+    _owned_flask_names,
+    _owns_sote,
+    _supply_capped,
+    _sync_slot_counters,
+)
+
+_GOODS = 0x40000000
+
+
+def test_batch_goods_limits(sanitized_save):
+    db = get_item_database()
+    item = lambda i: db.get_item_by_id(_GOODS | i)  # noqa: E731
+
+    assert _batch_excluded(item(1025)) is not None  # Crimson flask +12
+    assert _batch_excluded(item(8148)) is not None  # Unpowered Great Rune
+    assert _batch_excluded(item(191)) is None
+    assert _owned_flask_names(sanitized_save.character_slots[3], 1001)  # holds +12
+    assert not _owned_flask_names(sanitized_save.character_slots[6], 1001)
+    # One flask per missing kind, filled with the character's charges
+    holder = sanitized_save.character_slots[3]
+    assert [f for _, f, _ in _flask_batch_plan(holder)][:2] == [None, None]
+    lacking = sanitized_save.character_slots[6]
+    pgd = lacking.player_game_data
+    pgd.max_crimson_flask_count, pgd.max_cerulean_flask_count = 4, 0
+    assert [(f, q) for _, f, q in _flask_batch_plan(lacking)] == [
+        (1001, 4),
+        (1050, 1),
+        (250, 1),
+    ]
+
+    fresh = sanitized_save.character_slots[6]  # NG, 4 flask charges, no seeds
+    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, True) == (None, 43)
+    assert _batch_goods_qty(fresh, item(10010), "held", 99, 99, False) == (None, 99)
+
+    blessed = sanitized_save.character_slots[1]  # Scadutree Blessing 20
+    assert remaining_supply(blessed, 2010000) == 0
+    blessed.player_game_data.scadutree_blessing = 9
+    assert remaining_supply(blessed, 2010000) == 50 - 17
+    assert remaining_supply(blessed, 1001) is None
+    # Drained flasks are the empty ids and keep their upgrade level
+    assert _spent(blessed, SACRED_TEAR, {1024: 1, 1050: 1}) == 12
+
+
+def test_memory_stone_count_follows_held_stack(sanitized_save):
+    slot = sanitized_save.character_slots[6]
+    inventory_ops.add_item(sanitized_save, 6, _GOODS | 10030, 3)
+    _sync_slot_counters(sanitized_save, 6, _GOODS | 10030)
+    assert slot.player_game_data.memory_stone_count == 3
+
+
+def test_sote_ownership(sanitized_save):
+    slot = sanitized_save.character_slots[6]
+    assert _owns_sote(slot)
+    slot.dlc.shadow_of_erdtree = 0
+    flags = bytearray(slot.event_flags)
+    EventFlags.set_flag(flags, _SOTE_FLAG, False)
+    slot.event_flags = flags
+    assert not _owns_sote(slot)
+
+
+def test_supply_caps_only_on_vanilla_saves(sanitized_save):
+    assert _supply_capped(sanitized_save, "ER0000.sl2", False)
+    assert not _supply_capped(sanitized_save, "ER0000.co2", False)
+    assert not _supply_capped(sanitized_save, "ER0000.sl2", True)
+    sanitized_save.is_ps = True
+    assert _supply_capped(sanitized_save, "memory.dat", False)
+
+
+def test_tutorial_note_sets_its_award_flag(sanitized_save):
+    from er_save_manager.ui.editors.inventory_editor import _apply_item_event_flags
+
+    slot = sanitized_save.character_slots[6]
+    hunter = _GOODS | 9125  # About Hunter Multiplayer
+    _apply_item_event_flags(sanitized_save, 6, hunter, True)
+    assert EventFlags.get_flag(slot.event_flags, 69250)
+    _apply_item_event_flags(sanitized_save, 6, hunter, False)
+    assert not EventFlags.get_flag(slot.event_flags, 69250)

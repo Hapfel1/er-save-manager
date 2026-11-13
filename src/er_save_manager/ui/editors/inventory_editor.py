@@ -5,6 +5,7 @@ Inventory Editor - add, remove, and set quantities using inventory_ops.
 from __future__ import annotations
 
 import contextlib
+import functools
 import json
 import re
 import tkinter as tk
@@ -16,6 +17,7 @@ import customtkinter as ctk
 from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
 from er_save_manager.ui import palette
+from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.popups import reopenable
 from er_save_manager.ui.toast import notify, show_toast
@@ -603,12 +605,330 @@ _AOW_MENU_FLAG = 65800
 # appearance) key items, the other Tarnished Pack items are free to spawn.
 _TARNISHED_PACK_GATED_BASE_IDS: frozenset[int] = frozenset({2009600, 2009610, 2009620})
 _TARNISHED_PACK_FLAG = 6953
+# Shadow of the Erdtree ownership flag; pairs with
+# UserDataX dlc.shadow_of_erdtree as 6953 pairs with dlc.tarnished_pack.
+_SOTE_FLAG = 6951
+_DLC_MAGIC_CATEGORY = "DLC Magic"
+
+# Goods that are states of one item (unpowered and restored Great Rune,
+# quest items that change form). The game never holds two of a group, so
+# Batch Add gives the first one and only when the character has none.
+_ITEM_STATE_GROUPS: tuple[tuple[int, ...], ...] = (
+    (191, 8148),  # Godrick's Great Rune
+    (192, 8149),  # Radahn's Great Rune
+    (193, 8150),  # Morgott's Great Rune
+    (194, 8151),  # Rykard's Great Rune
+    (195, 8152),  # Mohg's Great Rune
+    (196, 8153),  # Malenia's Great Rune
+    (8154, 8155),  # Lord of Blood's Favor, soaked
+    (8146, 8187),  # Miniature Ranni, lifeless
+    (251, 250),  # Flask of Wondrous Physick, empty
+)
+_STATE_GROUP_OF = {i: g for g in _ITEM_STATE_GROUPS for i in g}
+
+# Memory Stones and Talisman Pouches stay held; PlayerGameData counts them.
+_MEMORY_STONE_ID = 10030
+_TALISMAN_POUCH_ID = 10040
+
+
+# Flask kinds: Crimson (+0..+12, empty and filled), Cerulean, Wondrous Physick.
+_FLASK_KINDS: tuple[range, ...] = (
+    range(1000, 1026),
+    range(1050, 1076),
+    range(250, 252),
+)
+
+
+def _owned_flask_names(slot, base_id: int) -> list[str]:
+    """Names of owned flasks of the same kind as goods base_id."""
+    from er_save_manager.data.item_database import get_item_database
+
+    kind = next((k for k in _FLASK_KINDS if base_id in k), None)
+    if kind is None:
+        return []
+    db = get_item_database()
+    names = []
+    for inv in (slot.inventory_held, slot.inventory_storage_box):
+        for i in kind:
+            if _goods_qty(inv, i):
+                item = db.get_item_by_id(0x40000000 | i)
+                names.append(item.name if item else f"Goods {i}")
+    return names
+
+
+SECOND_FLASK_WARNING_SETTING = "show_second_flask_warning"
+SUPPLY_WARNING_SETTING = "show_item_supply_warning"
+DLC_SPELL_WARNING_SETTING = "show_dlc_spell_warning"
+
+
+def _confirm_second_flask(parent, owned: list[str]) -> bool:
+    return confirm_warning(
+        parent,
+        SECOND_FLASK_WARNING_SETTING,
+        "Flask Already Owned",
+        "Second flask",
+        [
+            "This character already has:\n" + _list_lines(owned),
+            "The game keeps one flask of each kind. A second one is a state "
+            "the game cannot produce and can get the account banned online.",
+        ],
+        confirm_text="Add Anyway",
+    )
+
+
+def _confirm_dlc_spell(parent) -> bool:
+    return confirm_warning(
+        parent,
+        DLC_SPELL_WARNING_SETTING,
+        "Shadow of the Erdtree Not Found",
+        "DLC spell",
+        [
+            "This character has not been loaded with Shadow of the Erdtree "
+            "installed, so the game would not let it learn this spell.",
+            "To fix this: load the character once in game with the DLC "
+            "installed, rest at a grace, quit, then add the spell again.",
+            "Owning DLC spells without owning the DLC can get the account "
+            "banned on a vanilla save played online.",
+        ],
+        confirm_text="Add Anyway",
+    )
+
+
+BAN_NO_GUARANTEE = (
+    "There is no guarantee against a ban: FromSoftware checks items on its "
+    "own servers, and what it flags can change."
+)
+
+
+def _confirm_batch_add(
+    parent,
+    title: str,
+    question: str,
+    points: list[str],
+    online: bool,
+    confirm_text: str,
+) -> tuple[bool, bool]:
+    """Batch Add confirmation: question, points as a list, and for an online
+    (vanilla) save the ban note and the stack cap option.
+
+    Returns (go ahead, cap stacks at what the game hands out).
+    """
+    from er_save_manager.ui import dialog_style as ds
+
+    dialog = ds.create(parent, title)
+    result = {"go": False}
+    cap = tk.BooleanVar(value=online)
+
+    def close(go: bool):
+        result["go"] = go
+        dialog.destroy()
+
+    dialog.protocol("WM_DELETE_WINDOW", lambda: close(False))
+    main = ctk.CTkFrame(dialog, fg_color="transparent")
+    main.pack(fill="both", expand=True, padx=20, pady=16)
+    ds.button_row(
+        main,
+        [
+            {"text": "Cancel", "command": lambda: close(False), "primary": False},
+            {"text": confirm_text, "command": lambda: close(True)},
+        ],
+    )
+    ds.header(main, title, font=ds.TITLE_LARGE)
+    ctk.CTkLabel(
+        main, text=question, font=ds.FONT, wraplength=440, justify="left"
+    ).pack(anchor="w", pady=(10, 4))
+    for point in points:
+        # Bullet in its own column, so wrapped lines indent under the text
+        # Both labels at text height, so the bullet sits on the first line
+        row = ctk.CTkFrame(main, fg_color="transparent")
+        row.pack(fill="x", padx=(6, 0), pady=4)
+        ctk.CTkLabel(row, text="\u2022", font=ds.FONT, width=14, height=0).pack(
+            side="left", anchor="n"
+        )
+        ctk.CTkLabel(
+            row, text=point, font=ds.FONT, wraplength=410, justify="left", height=0
+        ).pack(side="left", anchor="n", padx=(4, 0))
+    if online:
+        ctk.CTkCheckBox(
+            main,
+            text="Cap stacks at what the game hands out in this playthrough",
+            font=ds.FONT,
+            variable=cap,
+        ).pack(anchor="w", pady=(10, 0))
+        ctk.CTkLabel(
+            main,
+            text="Golden Seeds, Scadutree Fragments and other limited items.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+        ).pack(anchor="w", padx=(28, 0))
+        ctk.CTkLabel(
+            main,
+            text=BAN_NO_GUARANTEE,
+            font=ds.FONT,
+            text_color=ds.WARNING,
+            wraplength=440,
+            justify="left",
+        ).pack(anchor="w", pady=(10, 0))
+    ds.finish(dialog, parent, min_width=480)
+    dialog.wait_window()
+    return result["go"], cap.get()
+
+
+def _flask_batch_plan(slot) -> list[tuple[str, int | None, int]]:
+    """(kind, goods id or None if the kind is owned, quantity) per flask kind.
+
+    A missing Crimson or Cerulean flask comes at +0, filled with the
+    character's charges of that kind, or empty when it has none, as the
+    game shows a kind with no charges. Wondrous Physick comes empty.
+    """
+    pgd = slot.player_game_data
+    plan = []
+    for kind, ids, charges in (
+        ("Flask of Crimson Tears", _FLASK_KINDS[0], pgd.max_crimson_flask_count),
+        ("Flask of Cerulean Tears", _FLASK_KINDS[1], pgd.max_cerulean_flask_count),
+        ("Flask of Wondrous Physick", _FLASK_KINDS[2], 0),
+    ):
+        if any(
+            _goods_qty(inv, i)
+            for i in ids
+            for inv in (slot.inventory_held, slot.inventory_storage_box)
+        ):
+            plan.append((kind, None, 0))
+        elif charges:
+            plan.append((kind, ids.start + 1, charges))
+        else:
+            plan.append((kind, ids.start, 1))
+    return plan
+
+
+def _batch_excluded(item) -> str | None:
+    """Reason Batch Add never offers item, None if it may be added."""
+    if item.id < 0:
+        return "placeholder row"
+    if item.category != 0x40000000:
+        return None
+    if getattr(item, "category_name", "") == "Flasks":
+        return "flask (one per type is kept)"
+    group = _STATE_GROUP_OF.get(item.id)
+    if group and item.id != group[0]:
+        return "other form of an item already in the list"
+    return None
+
+
+def _goods_qty(inv, base_id: int) -> int:
+    handle = 0xB0000000 | base_id
+    return sum(
+        it.quantity
+        for it in inv.key_items + inv.common_items
+        if it.gaitem_handle == handle and it.quantity > 0
+    )
+
+
+def _batch_goods_qty(
+    slot, item, location: str, qty: int, max_qty: int, supply_capped: bool
+) -> tuple[str | None, int]:
+    """(skip reason, quantity) for a Batch Add of goods item.
+
+    The quantity is lowered to the room left in the stack and, with
+    supply_capped, to the copies the world still holds.
+    """
+    from er_save_manager.data.item_supply import remaining_supply
+
+    group = _STATE_GROUP_OF.get(item.id, (item.id,))
+    if len(group) > 1 and any(
+        _goods_qty(inv, i)
+        for i in group
+        for inv in (slot.inventory_held, slot.inventory_storage_box)
+    ):
+        return "already in the inventory", 0
+    inv = slot.inventory_held if location == "held" else slot.inventory_storage_box
+    qty = min(qty, max_qty - _goods_qty(inv, item.id))
+    if qty <= 0:
+        reason = (
+            "already in the inventory" if max_qty == 1 else "stack already at its max"
+        )
+        return reason, 0
+    if supply_capped:
+        left = remaining_supply(slot, item.id)
+        if left is not None:
+            qty = min(qty, left)
+            if qty <= 0:
+                return "every copy the game hands out is already owned or used", 0
+    return None, qty
+
+
+def _supply_capped(save_file, save_path: str, is_cnv: bool) -> bool:
+    """True for vanilla saves, the ones played on official servers.
+
+    PC .sl2 and console saves (PS memory.dat, Switch 2) count; Seamless
+    Co-op, Convergence and other mod saves do not.
+    """
+    if is_cnv:
+        return False
+    return bool(save_file.is_ps) or Path(save_path).suffix.lower() == ".sl2"
+
+
+def _owns_sote(slot) -> bool:
+    from er_save_manager.parser.event_flags import EventFlags
+
+    if getattr(getattr(slot, "dlc", None), "shadow_of_erdtree", 0):
+        return True
+    return bool(slot.event_flags) and EventFlags.get_flag(slot.event_flags, _SOTE_FLAG)
+
+
+def _sync_slot_counters(save_file, slot_idx: int, full_item_id: int) -> None:
+    """Match memory_stone_count / additional_talisman_slot_count to the held stack."""
+    base_id = full_item_id & 0x0FFFFFFF
+    if (full_item_id & 0xF0000000) != 0x40000000 or base_id not in (
+        _MEMORY_STONE_ID,
+        _TALISMAN_POUCH_ID,
+    ):
+        return
+    from io import BytesIO
+
+    slot = save_file.characters[slot_idx]
+    handle = 0xB0000000 | base_id
+    held = sum(
+        it.quantity
+        for it in slot.inventory_held.key_items + slot.inventory_held.common_items
+        if it.gaitem_handle == handle and it.quantity > 0
+    )
+    char = slot.player_game_data
+    attr = (
+        "memory_stone_count"
+        if base_id == _MEMORY_STONE_ID
+        else "additional_talisman_slot_count"
+    )
+    if getattr(char, attr) == held:
+        return
+    setattr(char, attr, held)
+    if getattr(slot, "player_game_data_offset", -1) < 0:
+        return
+    buf = BytesIO()
+    char.write(buf)
+    data = buf.getvalue()
+    off = slot.player_game_data_offset
+    save_file._raw_data[off : off + len(data)] = data
+
+
+@functools.cache
+def _tutorial_flags() -> dict[int, int]:
+    """Tutorial note goods id -> flag the game sets once it has given the note.
+
+    The tutorial events skip a note whose flag is set; with the flag clear
+    they award it again and a note already owned drops on the ground.
+    """
+    import csv
+
+    path = Path(__file__).parents[2] / "data" / "items" / "TutorialFlags.csv"
+    with open(path, encoding="utf-8") as f:
+        return {int(r["ID"]): int(r["Flag"]) for r in csv.DictReader(f)}
 
 
 def _apply_item_event_flags(
     save_file, slot_idx: int, full_item_id: int, state: bool
 ) -> None:
-    """Set or clear event flags correlated with a key item spawn/removal.
+    """Set or clear event flags correlated with a key item or tutorial note spawn/removal.
 
     For AoW gems the duplication menu flag (65800) is set on spawn and cleared
     on removal only when no other AoW-specific flags remain set.
@@ -616,7 +936,9 @@ def _apply_item_event_flags(
     from er_save_manager.parser.event_flags import EventFlags
 
     base_id = full_item_id & 0x0FFFFFFF
-    flag_ids = _ITEM_EVENT_FLAGS.get(base_id)
+    flag_ids = list(_ITEM_EVENT_FLAGS.get(base_id, ()))
+    if (full_item_id & 0xF0000000) == 0x40000000 and base_id in _tutorial_flags():
+        flag_ids.append(_tutorial_flags()[base_id])
     if not flag_ids:
         return
 
@@ -1345,9 +1667,13 @@ class InventoryEditor:
 
     def _visible_categories(self) -> list[str]:
         try:
-            from er_save_manager.data.item_database import get_categories
+            from er_save_manager.data.item_database import (
+                get_categories,
+                get_item_database,
+            )
 
             all_cats = get_categories()
+            db = get_item_database()
         except Exception:
             return []
 
@@ -1360,6 +1686,8 @@ class InventoryEditor:
             if (c not in self._SEAMLESS_CATS or is_co2)
             and (c not in self._CONVERGENCE_CATS or is_cnv)
             and (c not in self._CONVERGENCE_HIDDEN_CATS or not is_cnv)
+            # Every item of the category may be hidden for this save type
+            and db.get_items_by_category(c, is_cnv)
         ]
 
     def _populate_search_categories(self):
@@ -1394,8 +1722,8 @@ class InventoryEditor:
                 return
 
             if cat == "All":
-                results = db.search_items(query) if query else []
                 is_cnv = self._is_cnv_save()
+                results = db.search_items(query, is_cnv) if query else []
                 if not is_cnv:
                     results = [
                         i
@@ -1413,7 +1741,7 @@ class InventoryEditor:
                         i for i in results if i.category_name not in self._SEAMLESS_CATS
                     ]
             else:
-                items = db.get_items_by_category(cat)
+                items = db.get_items_by_category(cat, self._is_cnv_save())
                 results = (
                     [i for i in items if query.lower() in i.name.lower()]
                     if query
@@ -2150,6 +2478,34 @@ class InventoryEditor:
             return max_arrow
         return getattr(item, "max_num", 1)
 
+    def _confirm_supply(self, slot, base_id: int, name: str, added: int) -> bool:
+        """Ask before adding more of a limited good than the game hands out.
+
+        Vanilla saves only; True goes ahead.
+        """
+        if added <= 0 or not _supply_capped(
+            self.get_save_file(), self.get_save_path() or "", self._is_cnv_save()
+        ):
+            return True
+        from er_save_manager.data.item_supply import remaining_supply
+
+        left = remaining_supply(slot, base_id)
+        if left is None or added <= left:
+            return True
+        return confirm_warning(
+            self.parent,
+            SUPPLY_WARNING_SETTING,
+            "More Than the Game Hands Out",
+            "Online ban risk",
+            [
+                f"{name}: this character can still find {left} more in this "
+                f"playthrough, counting what it owns and has used. Adding "
+                f"{added} gives it more than the game hands out.",
+                "On a vanilla save played online this can get the account banned.",
+            ],
+            confirm_text="Add Anyway",
+        )
+
     def _validate_add_item(
         self,
         full_id: int,
@@ -2158,8 +2514,13 @@ class InventoryEditor:
         location: str,
         slot,
         aow_id: int = 0,
+        allow_unowned_dlc: bool = False,
     ) -> tuple[bool, str]:
-        """Pre-flight validation before calling inventory_ops.add_item."""
+        """Pre-flight validation before calling inventory_ops.add_item.
+
+        allow_unowned_dlc lets Shadow of the Erdtree spells through for a
+        character without the DLC (asked for in add_item).
+        """
         from er_save_manager.data.item_database import get_item_database
         from er_save_manager.parser.event_flags import EventFlags
 
@@ -2185,6 +2546,16 @@ class InventoryEditor:
                 return False, err
 
         item_for_qty, _level = self._db_item_for(full_id)
+        if (
+            not allow_unowned_dlc
+            and getattr(item_for_qty, "category_name", "") == _DLC_MAGIC_CATEGORY
+            and not _owns_sote(slot)
+        ):
+            return (
+                False,
+                "This character does not own Shadow of the Erdtree, so it "
+                "cannot learn Shadow of the Erdtree spells.",
+            )
         if item_for_qty is not None:
             max_qty = self._max_qty_for_location(item_for_qty, location)
             if qty < 1 or qty > max_qty:
@@ -2514,10 +2885,17 @@ class InventoryEditor:
                 )
 
             set_quantity(save_file, slot_idx, full_id, new_total, location)
+            _sync_slot_counters(save_file, slot_idx, full_id)
             return {"stacked": True, "qty": new_total, "location": location}
 
         ok, err = self._validate_add_item(
-            full_id, qty, upg, location, slot, item_info.get("aow_id", 0)
+            full_id,
+            qty,
+            upg,
+            location,
+            slot,
+            item_info.get("aow_id", 0),
+            item_info.get("allow_unowned_dlc", False),
         )
         if not ok:
             raise ValueError(err)
@@ -2534,6 +2912,7 @@ class InventoryEditor:
             convergence=item_info.get("convergence", False),
         )
         _apply_item_event_flags(save_file, slot_idx, full_id, True)
+        _sync_slot_counters(save_file, slot_idx, full_id)
         _bump_matchmaking_level(
             save_file,
             slot_idx,
@@ -2646,6 +3025,25 @@ class InventoryEditor:
             item_info["location"] = resolved_location
             self.inv_location_var.set(resolved_location)
 
+        full_id = item_info["full_id"]
+        db_item, _level = self._db_item_for(full_id)
+        if getattr(
+            db_item, "category_name", ""
+        ) == _DLC_MAGIC_CATEGORY and not _owns_sote(save_file.characters[slot_idx]):
+            if not _confirm_dlc_spell(self.parent):
+                return
+            item_info["allow_unowned_dlc"] = True
+        if (full_id & 0xF0000000) == 0x40000000:
+            slot = save_file.characters[slot_idx]
+            base_id = full_id & 0x0FFFFFFF
+            owned = _owned_flask_names(slot, base_id)
+            if owned and not _confirm_second_flask(self.parent, owned):
+                return
+            if not self._confirm_supply(
+                slot, base_id, item_info["base_name"], item_info["qty"]
+            ):
+                return
+
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "add_item")
@@ -2669,7 +3067,11 @@ class InventoryEditor:
                 else ""
             )
             msg = f"Added {item_info['name_label']} x{res['qty']} to {res['location']}{note}{loc_note}."
-            show_toast(self.parent.winfo_toplevel(), msg, type="success")
+            show_toast(
+                self.parent.winfo_toplevel(),
+                msg,
+                type="success",
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Add Item Failed", f"Failed to add item:\n{e}", parent=self.parent
@@ -2684,8 +3086,11 @@ class InventoryEditor:
 
         db = get_item_database()
         cats = self._visible_categories() if cat == "All" else [cat]
-        items = [item for c in cats for item in db.get_items_by_category(c)]
-        if not items:
+        is_cnv = self._is_cnv_save()
+        listed = [item for c in cats for item in db.get_items_by_category(c, is_cnv)]
+        items = [item for item in listed if _batch_excluded(item) is None]
+        with_flasks = any(i.category_name == "Flasks" for i in listed)
+        if not items and not with_flasks:
             return
 
         try:
@@ -2703,31 +3108,68 @@ class InventoryEditor:
             return
 
         is_loadout = self.loadout_mode_var.get()
-        action_name = "add to Loadout" if is_loadout else "add to Inventory"
-
-        if cat == "All":
-            confirmed = CTkMessageBox._create_dialog(
+        if is_loadout and not items:
+            notify(
                 parent_window,
-                "Batch Add All",
-                f"Batch {action_name} all {len(items)} items from every "
-                "category?"
-                + (
-                    ""
-                    if is_loadout
-                    else "\n\nThis fills most of the inventory. A backup is "
-                    "made first; restore it in the Backup Manager to undo."
-                ),
-                icon_type="warning",
-                buttons=[("Add All", True), ("Cancel", False)],
+                "Flasks are not batch added to loadouts: the flask a character "
+                "needs depends on the flasks it already has.",
+                "warning",
             )
-        else:
-            confirmed = CTkMessageBox.askyesno(
-                "Batch Add",
-                f"Batch {action_name} all {len(items)} items from '{cat}'?",
-                parent=parent_window,
-            )
-        if not confirmed:
             return
+        flask_note = (
+            "Each flask kind the character lacks (Crimson, Cerulean, "
+            "Wondrous Physick) gets one flask at +0; owned flasks stay as "
+            "they are."
+        )
+        save_file = self.get_save_file()
+        supply_capped = False
+        if is_loadout:
+            question = (
+                f"Batch add all {len(items)} items from every category to the loadout?"
+                if cat == "All"
+                else f"Batch add all {len(items)} items from '{cat}' to the loadout?"
+            )
+            if not CTkMessageBox.askyesno("Batch Add", question, parent=parent_window):
+                return
+        else:
+            if not save_file:
+                notify(parent_window, "Load a save file first.", "warning")
+                return
+            online = _supply_capped(
+                save_file, self.get_save_path() or "", self._is_cnv_save()
+            )
+            if cat == "All":
+                question = (
+                    f"Add all {len(items)} items from every category to this "
+                    "character's inventory?"
+                )
+            elif items:
+                question = f"Add all {len(items)} items from '{cat}' to this character?"
+            else:
+                question = "Add the flasks this character lacks?"
+            points = []
+            if cat == "All":
+                points.append("This fills most of the inventory.")
+                points.append(
+                    "Second forms of an item (restored Great Runes and "
+                    "similar) are left out."
+                )
+            if with_flasks:
+                points.append(flask_note)
+            points.append(
+                "A backup is made first. Undo it from the message after the "
+                "add, or in the Backup Manager."
+            )
+            confirmed, supply_capped = _confirm_batch_add(
+                parent_window,
+                "Add All Items" if cat == "All" else "Batch Add",
+                question,
+                points,
+                online,
+                "Add All" if cat == "All" else "Add",
+            )
+            if not confirmed:
+                return
 
         if is_loadout:
             count = 0
@@ -2759,11 +3201,6 @@ class InventoryEditor:
             )
             return
 
-        save_file = self.get_save_file()
-        if not save_file:
-            notify(parent_window, "Load a save file first.", "warning")
-            return
-
         slot_idx = self.get_char_slot()
         try:
             slot = save_file.characters[slot_idx]
@@ -2783,6 +3220,13 @@ class InventoryEditor:
                 )
                 max_qty = self._max_qty_for_location(item, location)
                 item_qty = min(target_qty, max_qty)
+                if item.category == 0x40000000:
+                    reason, item_qty = _batch_goods_qty(
+                        slot, item, location, item_qty, max_qty, supply_capped
+                    )
+                    if reason:
+                        skipped[reason] = skipped.get(reason, 0) + 1
+                        continue
                 item_upg = 0
                 if target_upg > 0 and (
                     item.category == 0x00000000
@@ -2795,6 +3239,8 @@ class InventoryEditor:
                     explicit_cap = getattr(item, "max_upgrade", -1)
                     if explicit_cap >= 0:
                         cap = explicit_cap
+                    if reinforcement == "none":
+                        cap = 0
                     item_upg = min(target_upg, cap)
 
                 item_info = {
@@ -2819,7 +3265,39 @@ class InventoryEditor:
                         reason = "already in the inventory"
                     elif "exceeds the max stack" in reason:
                         reason = "stack already at its max"
+                    elif "Shadow of the Erdtree" in reason:
+                        reason = "Shadow of the Erdtree spell, DLC not owned"
                     skipped[reason] = skipped.get(reason, 0) + 1
+
+            if with_flasks:
+                for kind, flask_id, qty in _flask_batch_plan(slot):
+                    if flask_id is None:
+                        key = "flask of that kind already owned"
+                        skipped[key] = skipped.get(key, 0) + 1
+                        continue
+                    flask = db.get_item_by_id(0x40000000 | flask_id)
+                    try:
+                        self._process_single_add(
+                            save_file,
+                            slot_idx,
+                            slot,
+                            {
+                                "full_id": 0x40000000 | flask_id,
+                                "qty": qty,
+                                "upg": 0,
+                                "location": "held",
+                                "aow_id": 0,
+                                "is_ashes": False,
+                                "reinforcement": "standard",
+                                "convergence": is_cnv,
+                                "max_qty": qty,
+                                "name_label": flask.name if flask else kind,
+                                "base_name": flask.name if flask else kind,
+                            },
+                        )
+                        success += 1
+                    except Exception as e:
+                        skipped[str(e)] = skipped.get(str(e), 0) + 1
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -2835,12 +3313,19 @@ class InventoryEditor:
                     f"{n} x {reason}"
                     for reason, n in sorted(skipped.items(), key=lambda kv: -kv[1])
                 ]
-                CTkMessageBox.showwarning(
+                from er_save_manager.ui import undo as undo_mod
+
+                undo = undo_mod.offer(self.parent.winfo_toplevel())
+                if CTkMessageBox._create_dialog(
+                    parent_window,
                     "Batch Add",
                     f"Added {success} items from {cat}. Skipped "
                     f"{sum(skipped.values())}:\n{_list_lines(lines)}",
-                    parent=parent_window,
-                )
+                    icon_type="warning",
+                    buttons=[("OK", False)] + ([("Undo", True)] if undo else []),
+                    cancel_value=False,
+                ):
+                    undo[1]()
             else:
                 show_toast(
                     self.parent.winfo_toplevel(),
@@ -2899,6 +3384,7 @@ class InventoryEditor:
             remove_item(save_file, slot_idx, full_id, location)
 
             _apply_item_event_flags(save_file, slot_idx, full_id, False)
+            _sync_slot_counters(save_file, slot_idx, full_id)
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -2908,7 +3394,11 @@ class InventoryEditor:
             self.refresh_inventory()
             if self._on_inventory_changed:
                 self._on_inventory_changed()
-            show_toast(self.parent.winfo_toplevel(), "Item removed.", type="success")
+            show_toast(
+                self.parent.winfo_toplevel(),
+                "Item removed.",
+                type="success",
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Remove Item Failed", f"Failed to remove item:\n{e}", parent=self.parent
@@ -3002,6 +3492,7 @@ class InventoryEditor:
                 try:
                     remove_item(save_file, slot_idx, full_id, location)
                     _apply_item_event_flags(save_file, slot_idx, full_id, False)
+                    _sync_slot_counters(save_file, slot_idx, full_id)
                     success += 1
                 except Exception as e:
                     errors.append(f"0x{full_id:08X}: {e}")
@@ -3137,12 +3628,26 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
+        if cat == 0x40000000:
+            slot = save_file.characters[slot_idx]
+            base_id = full_id & 0x0FFFFFFF
+            inv = (
+                slot.inventory_held
+                if location == "held"
+                else slot.inventory_storage_box
+            )
+            name = item.name if item else f"Goods {base_id}"
+            if not self._confirm_supply(
+                slot, base_id, name, new_qty - _goods_qty(inv, base_id)
+            ):
+                return
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "set_quantity")
             from er_save_manager.parser.inventory_ops import set_quantity
 
             set_quantity(save_file, slot_idx, full_id, new_qty, location)
+            _sync_slot_counters(save_file, slot_idx, full_id)
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
             if save_path:
@@ -3150,6 +3655,11 @@ class InventoryEditor:
             self.refresh_inventory()
             if self._on_inventory_changed:
                 self._on_inventory_changed()
+            show_toast(
+                self.parent.winfo_toplevel(),
+                f"Quantity set to {new_qty}.",
+                type="success",
+            )
         except Exception as e:
             CTkMessageBox.showerror(
                 "Set Quantity Failed",

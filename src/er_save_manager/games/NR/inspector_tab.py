@@ -78,7 +78,9 @@ class NRInspectorTab:
             justify="left",
             anchor="w",
         )
-        self.list = CharacterList(outer, on_select=self._select_row)
+        self.list = CharacterList(
+            outer, get_started=self._get_nr_save() is None, on_select=self._select_row
+        )
         self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def refresh(self) -> None:
@@ -86,7 +88,7 @@ class NRInspectorTab:
         self._junk_note.pack_forget()
         save = self._get_nr_save()
         if save is None:
-            self.list.message("No save file loaded.")
+            self.list.show_get_started()
             return
 
         if save.trailing_bytes:

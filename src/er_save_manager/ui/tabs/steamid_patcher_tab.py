@@ -126,6 +126,9 @@ class SteamIDPatcherTab:
         self.reload_save = reload_callback
         self.show_toast = show_toast_callback
 
+        # (heading, text) of an info box above the patcher, for games the
+        # app only patches and backs up
+        self.game_note: tuple[str, str] | None = None
         self.current_steamid_var = None
         self.new_steamid_var = None
         self.steam_url_var = None
@@ -178,6 +181,26 @@ class SteamIDPatcherTab:
             font=("Inter", 11),
             text_color=("#808080", "#a0a0a0"),
         ).pack(pady=(0, 10), padx=15, anchor="w")
+
+        if self.game_note:
+            from er_save_manager.ui import palette
+
+            heading, text = self.game_note
+            note = ctk.CTkFrame(
+                main_frame, corner_radius=10, fg_color=palette.PURPLE_TINT
+            )
+            note.pack(fill=tk.X, padx=15, pady=(0, 12))
+            ctk.CTkLabel(
+                note, text=heading, font=("Inter", 13, "bold"), anchor="w"
+            ).pack(fill=tk.X, padx=12, pady=(10, 2))
+            ctk.CTkLabel(
+                note,
+                text=text,
+                font=("Inter", 12),
+                anchor="w",
+                justify="left",
+                wraplength=700,
+            ).pack(fill=tk.X, padx=12, pady=(0, 10))
 
         current_frame = ctk.CTkFrame(main_frame, corner_radius=10)
         current_frame.pack(fill=tk.X, padx=15, pady=(0, 12))
@@ -467,7 +490,22 @@ class SteamIDPatcherTab:
 
             threading.Thread(target=_run, daemon=True).start()
 
-    def _patch_er(self, new_steamid: int):
+    def patch_to(self, profile, new_steamid: int) -> None:
+        """Patch the loaded save to new_steamid without asking first (the
+        caller already asked: the SteamID mismatch prompt after a load)."""
+        if profile.key == "elden_ring":
+            self._patch_er(new_steamid, confirm=False)
+            return
+        import threading
+
+        threading.Thread(
+            target=self._patch_generic,
+            args=(profile, new_steamid),
+            kwargs={"confirm": False},
+            daemon=True,
+        ).start()
+
+    def _patch_er(self, new_steamid: int, confirm: bool = True):
         """Patch using the full ER save model (loaded save)."""
         import struct
 
@@ -484,7 +522,7 @@ class SteamIDPatcherTab:
             )
             return
 
-        if not CTkMessageBox.askyesno(
+        if confirm and not CTkMessageBox.askyesno(
             "Confirm Patch",
             f"Patch all character slots to SteamID: {new_steamid}?\n\nA backup will be created.",
             parent=self.parent,
@@ -613,7 +651,7 @@ class SteamIDPatcherTab:
             )
         return None
 
-    def _patch_generic(self, profile, new_steamid: int):
+    def _patch_generic(self, profile, new_steamid: int, confirm: bool = True):
         """Patch SteamID for non-ER games. Called from a background thread - dialogs use after(0,...)."""
         # Resolve save path (no auto-disk-scan; user must select a file first)
         selected = self.get_save_path()
@@ -653,10 +691,11 @@ class SteamIDPatcherTab:
             confirmed_result[0] = result
             confirmed.set()
 
-        self.parent.after(0, _ask)
-        confirmed.wait()
-        if not confirmed_result[0]:
-            return
+        if confirm:
+            self.parent.after(0, _ask)
+            confirmed.wait()
+            if not confirmed_result[0]:
+                return
 
         def _show_error(msg):
             self.parent.after(

@@ -90,7 +90,11 @@ class SaveInspectorTab:
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 
-        self.list = CharacterList(char_frame, on_select=self._select_slot)
+        self.list = CharacterList(
+            char_frame,
+            on_select=self._select_slot,
+            get_started=self.get_save_file() is None,
+        )
         self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def _select_slot(self, slot_index: int) -> None:
@@ -104,7 +108,7 @@ class SaveInspectorTab:
 
         save_file = self.get_save_file()
         if not save_file:
-            self.list.clear()
+            self.list.show_get_started()
             return
 
         try:
@@ -170,7 +174,7 @@ class SaveInspectorTab:
         values["currency"] = f"{pgd.runes:,}"
         # Misparsed slots read garbage here
         ng = slot.get_ng_plus()
-        values["ng"] = f"NG+{ng}" if ng < 100 else "NG+?"
+        values["ng"] = f"NG+{ng}" if ng < 100 else "Unknown"
         if getattr(slot, "map_id", None):
             values["location"] = slot.map_id.to_string_decimal()
         return CharacterRow(

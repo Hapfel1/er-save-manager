@@ -1,11 +1,86 @@
 """CustomTkinter Save Selector Dialog with Lavender theme."""
 
+import datetime
+import threading
 from pathlib import Path
 
 import customtkinter as ctk
 
 from er_save_manager.ui import dialog_style as ds
+from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window, style_window_frame, transient_to
+
+# Badge colors per save kind (light, dark): background, text
+_BADGES = {
+    "Vanilla": (palette.BLUE_TINT, palette.BLUE_TEXT),
+    "Seamless Co-op": (("#D6EED2", "#24392B"), palette.GREEN_TEXT),
+}
+_CONVERGENCE_BADGE = (palette.PURPLE_TINT, palette.PURPLE_TEXT)
+
+
+def _kind(path: Path, game_key: str | None) -> str | None:
+    """Save kind of a file by its extension (Vanilla, Seamless Co-op, ...)."""
+    from er_save_manager.games.extension_copy import flavor_of
+
+    flavor = flavor_of(path, game_key or "elden_ring")
+    return flavor.label if flavor and flavor.label else None
+
+
+def _modified(path: Path) -> str:
+    try:
+        stamp = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+    except OSError:
+        return ""
+    today = datetime.date.today()
+    if stamp.date() == today:
+        day = "Today"
+    elif stamp.date() == today - datetime.timedelta(days=1):
+        day = "Yesterday"
+    else:
+        day = stamp.strftime("%Y-%m-%d")
+    return f"{day} {stamp:%H:%M}"
+
+
+def _save_row(parent, path: Path, kind: str | None, detail: str, on_click):
+    """Card row: file name and kind badge, then detail text on a second line.
+    Returns (row, detail label)."""
+    row = ctk.CTkFrame(parent, fg_color=ds.CARD_ROW, corner_radius=8)
+    row.pack(fill="x", padx=4, pady=3)
+    top = ctk.CTkFrame(row, fg_color="transparent")
+    top.pack(fill="x", padx=12, pady=(7, 0))
+    widgets = [row, top]
+    name = ctk.CTkLabel(top, text=path.name, font=ds.BOLD, text_color=ds.ROW_TEXT)
+    name.pack(side="left")
+    widgets.append(name)
+    if kind:
+        bg, fg = _BADGES.get(
+            kind, _CONVERGENCE_BADGE if "Convergence" in kind else _BADGES["Vanilla"]
+        )
+        badge = ctk.CTkLabel(
+            top,
+            text=kind,
+            font=ds.SMALL,
+            fg_color=bg,
+            text_color=fg,
+            corner_radius=9,
+            height=20,
+        )
+        badge.pack(side="left", padx=(10, 0))
+        widgets.append(badge)
+    info = ctk.CTkLabel(
+        row,
+        text=detail,
+        font=ds.SMALL,
+        text_color=ds.MUTED,
+        anchor="w",
+        justify="left",
+    )
+    info.pack(fill="x", padx=12, pady=(0, 7))
+    widgets.append(info)
+    for widget in widgets:
+        widget.bind("<Button-1>", lambda _e: on_click(), add="+")
+    return row, info
+
 
 # Rows built before the dialog shows (about the list's visible height), then
 # per later event loop turn
@@ -23,6 +98,7 @@ class SaveSelectorDialog:
         callback,
         browse_callback=None,
         browse_button_text="Browse Manually",
+        game_key=None,
     ):
         """
         Show save selector dialog
@@ -34,6 +110,8 @@ class SaveSelectorDialog:
             browse_callback: Optional function that opens a manual browse dialog
                 and returns a selected save path.
             browse_button_text: Label for the manual browse button.
+            game_key: Game of the saves; rows then show the save kind and
+                the character names, read in the background.
         """
         dialog = ctk.CTkToplevel(parent)
         dialog.title("Select Save File")
@@ -52,11 +130,17 @@ class SaveSelectorDialog:
 
         title = ctk.CTkLabel(
             dialog,
-            text=f"Found {len(saves)} save files:",
+            text=f"Found {len(saves)} save files",
             font=("Inter", 14, "bold"),
-            pady=10,
+            pady=6,
         )
-        title.pack(padx=15, pady=(12, 6))
+        title.pack(padx=15, pady=(12, 0))
+        ctk.CTkLabel(
+            dialog,
+            text="Pick the file of the version you play.",
+            font=ds.FONT,
+            text_color=palette.PURPLE_TEXT,
+        ).pack(padx=15, pady=(0, 4))
 
         # Scrollable list with click-to-select rows
         selection_var = ctk.StringVar(value=str(saves[0]) if saves else "")
@@ -73,6 +157,21 @@ class SaveSelectorDialog:
 
         row_widgets: list[tuple[str, ctk.CTkFrame]] = []
         show_folders_var = ctk.BooleanVar(value=True)
+        # Character summary per path, filled by the worker thread
+        summaries: dict[str, str | None] = {}
+        info_labels: dict[str, ctk.CTkLabel] = {}
+
+        def detail(path: Path) -> str:
+            parts = [_modified(path)]
+            summary = summaries.get(str(path))
+            if summary:
+                parts.append(summary)
+            elif game_key and str(path) not in summaries:
+                parts.append("Reading characters...")
+            text = "  \u00b7  ".join(p for p in parts if p)
+            if show_folders_var.get():
+                text += f"\n{path.parent}"
+            return text
 
         def apply_selection(value: str):
             selection_var.set(value)
@@ -88,6 +187,7 @@ class SaveSelectorDialog:
             for _value, row in row_widgets:
                 row.destroy()
             row_widgets.clear()
+            info_labels.clear()
             add_rows(0, _FIRST_ROWS)
 
         def add_rows(start: int, count: int) -> None:
@@ -100,13 +200,14 @@ class SaveSelectorDialog:
                 # File name as the title, so its extension stays visible when
                 # a long folder path is cut off at the right edge
                 path = Path(save)
-                row = ds.card_row(
+                row, info = _save_row(
                     list_frame,
-                    path.name,
-                    str(path.parent) if show_folders_var.get() else "",
+                    path,
+                    _kind(path, game_key) if game_key else None,
+                    detail(path),
                     on_click=lambda v=str(save): apply_selection(v),
-                    font=ds.FONT,
                 )
+                info_labels[str(save)] = info
                 row_widgets.append((str(save), row))
                 ds.select_card_row(row, str(save) == selection_var.get())
             if start + count < len(saves):
@@ -119,6 +220,38 @@ class SaveSelectorDialog:
             build_job["id"] = dialog.after(1, add_rows, start, count)
 
         build_rows()
+
+        if game_key:
+            from er_save_manager.games.save_summary import character_summary
+
+            def read_summaries() -> None:
+                # Worker thread: only fills the dict; the UI polls it
+                for save in saves:
+                    if not dialog_alive["v"]:
+                        return
+                    summaries[str(save)] = character_summary(save, game_key)
+
+            dialog_alive = {"v": True}
+            shown: set[str] = set()
+
+            def poll_summaries() -> None:
+                if not dialog.winfo_exists():
+                    dialog_alive["v"] = False
+                    return
+                for key in list(summaries):
+                    if key not in shown and key in info_labels:
+                        info_labels[key].configure(text=detail(Path(key)))
+                        shown.add(key)
+                if len(shown) < len(saves):
+                    dialog.after(150, poll_summaries)
+
+            threading.Thread(target=read_summaries, daemon=True).start()
+            dialog.after(150, poll_summaries)
+            dialog.bind(
+                "<Destroy>",
+                lambda e: dialog_alive.update(v=False) if e.widget is dialog else None,
+                add="+",
+            )
 
         def select_save():
             value = selection_var.get()

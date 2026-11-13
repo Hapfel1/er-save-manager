@@ -1,10 +1,10 @@
 ID,Name,reinforcement,aow_allowed,wepType,wepTypeCol,maxArrowQuantity,allowed_affinities
 14090000,Axe Of Epiphany,somber,1,17,AxeNormal,1,Standard
 14130000,Axe Of Fell prophecy,somber,0,17,AxeNormal,1,Standard
-15090000,Axe Of Rust,somber,1,19,AxeLarge,1,Standard
+15090000,Axe Of Rust,somber,0,19,AxeLarge,1,Standard
 7160000,Blade Of Scarlet Bloom,somber,0,9,SaberNormal,1,Standard
 9090000,Blade of Distant Light,somber,0,13,katana,1,Standard
-2120000,Blade of Valor,somber,1,3,SwordNormal,1,Standard
+2120000,Blade of Valor,somber,0,3,SwordNormal,1,Standard
 1200000,Blades of the Prince,somber,0,1,Dagger,1,Standard
 18200000,Blightpole,somber,0,29,SpearAxe,1,Standard
 14170000,Bloodflame Kamas,somber,0,17,AxeNormal,1,Standard

@@ -110,7 +110,19 @@ class AdvancedToolsTab:
             text="Refresh Information",
             command=self.update_save_info,
             width=200,
+        ).pack(pady=5, padx=12)
+
+        ctk.CTkButton(
+            tools_frame,
+            text="Open Log Folder",
+            command=self._open_log_folder,
+            width=200,
         ).pack(pady=(5, 12), padx=12)
+
+    def _open_log_folder(self):
+        from er_save_manager.ui import verbose_log
+
+        verbose_log.open_log_folder(self.parent)
 
     @reopenable
     def open_game_settings(self):

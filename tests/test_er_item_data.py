@@ -232,3 +232,52 @@ def test_validation_convergence(item_db) -> None:
     bow_gem = next(g for g in gems.values() if bow_col in g.compatible_wep_types)
     assert _validate(item_db, True, ERDTREE_BOW, aow_id=bow_gem.full_id)
     assert not _validate(item_db, False, ERDTREE_BOW, aow_id=bow_gem.full_id)
+
+
+def test_unobtainable_items_named_but_not_offered(item_db) -> None:
+    great_coffins = 0x40000000 | 8706
+    monument_icon = 0x40000000 | 9127  # Convergence gives it, vanilla does not
+    stonesword_key = 0x40000000 | 8000  # vanilla gives it, Convergence does not
+    probe = {great_coffins, monument_icon, stonesword_key}
+
+    def listed(is_cnv: bool) -> list:
+        items = [
+            i
+            for c in item_db.get_all_categories()
+            for i in item_db.get_items_by_category(c, is_cnv)
+        ]
+        for query in ("About Monument", "Great Coffins", "Stonesword Key"):
+            items += item_db.search_items(query, is_cnv)
+        return items
+
+    def offered(is_cnv: bool) -> set[int]:
+        return {i.full_id for i in listed(is_cnv)}
+
+    assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
+    assert offered(False) & probe == {stonesword_key}
+    assert offered(True) & probe == {monument_icon}
+
+    # Convergence lists a renamed base-game item once, under its own name
+    stone = 0x40000000 | 10101
+    names = {i.name for i in listed(True) if i.full_id == stone}
+    assert names == {"Smithing Stone"}
+    vanilla = listed(False)
+    assert {i.name for i in vanilla if i.full_id == stone} - names == {
+        "Smithing Stone [2]"
+    }
+
+
+def test_every_armor_piece_has_a_slot_type(item_db) -> None:
+    """The equipment picker drops armor pieces armor_slot_types.csv lacks."""
+    from er_save_manager.data.item_database import ItemCategory
+
+    with open(ITEMS / "armor_slot_types.csv", encoding="utf-8") as f:
+        typed = {int(r["ID"]) for r in csv.DictReader(f)}
+    missing = [
+        item.name
+        for name, cat in item_db.categories
+        if cat == ItemCategory.ARMOR
+        for item in item_db.get_items_by_category(name, True)
+        if item.id not in typed
+    ]
+    assert not missing

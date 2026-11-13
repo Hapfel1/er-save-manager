@@ -63,3 +63,22 @@ def build(entries: list[bytes], version: bytes, record_flags: int = 0x50) -> byt
     for entry in entries:
         out += entry
     return bytes(out)
+
+
+def read_entries(data: bytes) -> list[memoryview]:
+    """Entry data of a BND4 file, in record order; ValueError when data is
+    not an unencrypted BND4."""
+    if data[:4] != b"BND4":
+        raise ValueError("not a BND4 file")
+    view = memoryview(data)
+    (count,) = struct.unpack_from("<I", data, 0x0C)
+    (header_size,) = struct.unpack_from("<Q", data, 0x10)
+    (record_size,) = struct.unpack_from("<Q", data, 0x20)
+    entries = []
+    for i in range(count):
+        record = header_size + i * record_size
+        size, offset = struct.unpack_from("<QI", data, record + 8)
+        if offset + size > len(data):
+            raise ValueError("BND4 entry past the end of the file")
+        entries.append(view[offset : offset + size])
+    return entries

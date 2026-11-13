@@ -4,6 +4,7 @@ import ctypes
 import sys
 import time
 import tkinter as tk
+from collections.abc import Callable
 from tkinter import font as tkfont
 
 import customtkinter as ctk
@@ -16,6 +17,8 @@ _USE_FADE = sys.platform == "win32"
 
 _RADIUS = 14
 _MAX_TOASTS = 4
+# Minimum display time of a toast with an action (Undo)
+_ACTION_MS = 7000
 _TOP = 20
 _SPACING = 12
 _PAD_X = 18
@@ -180,9 +183,11 @@ def _body_image(w: int, h: int, radius: int, fill: str) -> Image.Image:
 
 
 class _Toast:
-    def __init__(self, root, message: str, duration: int, type: str):
+    def __init__(self, root, message: str, duration: int, type: str, action=None):
         self.root = root
         self.message = message
+        # (label, callback) drawn as a link after the message
+        self.action = action
         self.type = type
         self.duration = duration
         self.count = 1
@@ -229,7 +234,20 @@ class _Toast:
             fill=palette.TOAST_TEXT,
             width=round(_WRAP * scale),
         )
-        self.canvas.bind("<Button-1>", lambda e: self.dismiss())
+        self._action_text = self.canvas.create_text(
+            0,
+            0,
+            anchor="nw",
+            font=tkfont.Font(
+                root=root,
+                family="Inter",
+                size=-round(12 * scale),
+                weight="bold",
+                underline=True,
+            ),
+            fill=palette.TOAST_TEXT,
+        )
+        self.canvas.bind("<Button-1>", self._on_click)
         self.canvas.bind("<Enter>", lambda e: self._pause())
         self.canvas.bind("<Leave>", lambda e: self._resume())
         self._render()
@@ -238,11 +256,19 @@ class _Toast:
         """Lay out the text and draw the body for the current count."""
         text = self.message if self.count == 1 else f"{self.message} (x{self.count})"
         self.canvas.itemconfigure(self._text, text=text)
+        self.canvas.itemconfigure(
+            self._action_text, text=self.action[0] if self.action else ""
+        )
         x0, y0, x1, y1 = self.canvas.bbox(self._text)
         pad_x, pad_y = round(_PAD_X * self.scale), round(_PAD_Y * self.scale)
-        self.w = (x1 - x0) + 2 * pad_x
+        action_w = 0
+        if self.action:
+            a0, _a1, a2, _a3 = self.canvas.bbox(self._action_text)
+            action_w = (a2 - a0) + pad_x
+        self.w = (x1 - x0) + 2 * pad_x + action_w
         self.h = (y1 - y0) + 2 * pad_y
         self.canvas.coords(self._text, pad_x, pad_y)
+        self.canvas.coords(self._action_text, pad_x + (x1 - x0) + pad_x, pad_y)
         self.canvas.configure(width=self.w, height=self.h)
         self._body = _body_image(
             self.w, self.h, min(self.radius, self.h // 2), self.fill
@@ -338,6 +364,17 @@ class _Toast:
         else:
             self._remaining = self.duration
 
+    def _on_click(self, event):
+        """A click on the action runs it; any click dismisses."""
+        if self.action and not self.dismissing:
+            bbox = self.canvas.bbox(self._action_text)
+            if bbox and bbox[0] - 6 <= event.x <= bbox[2] + 6:
+                callback = self.action[1]
+                self.dismiss()
+                callback()
+                return
+        self.dismiss()
+
     def _start_timer(self, ms: int):
         self._cancel_timer()
         self._deadline = time.monotonic() + ms / 1000
@@ -430,14 +467,32 @@ def _app_geometry(root):
     return root.winfo_rootx(), root.winfo_rooty(), root.winfo_width()
 
 
-def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "success"):
+def show_toast(
+    root: tk.Tk,
+    message: str,
+    duration: int = 3000,
+    type: str = "success",
+    action: tuple[str, Callable[[], None]] | None = None,
+):
     """Show a stacking toast notification. A message that is already showing
     gets a counter instead of a second toast; at most _MAX_TOASTS are shown,
-    the oldest goes first. Click dismisses, hovering pauses the timer."""
+    the oldest goes first. Click dismisses, hovering pauses the timer.
+
+    action (label, callback) adds a link after the message; the toast then
+    stays at least _ACTION_MS. A success toast right after an edit of a save
+    gets Undo (ui/undo.py). A repeated message keeps one toast and
+    its action becomes the latest one."""
     _active_toasts[:] = [t for t in _active_toasts if t.win.winfo_exists()]
+    if action is None and type == "success":
+        from er_save_manager.ui import undo
+
+        action = undo.offer(root)
+    if action is not None:
+        duration = max(duration, _ACTION_MS)
 
     for t in _active_toasts:
         if not t.dismissing and t.message == message and t.type == type:
+            t.action = action
             t.bump()
             _reposition_toasts(root)
             return
@@ -446,7 +501,7 @@ def show_toast(root: tk.Tk, message: str, duration: int = 3000, type: str = "suc
     for t in live[: max(0, len(live) - _MAX_TOASTS + 1)]:
         t.dismiss()
 
-    toast = _Toast(root, message, duration, type)
+    toast = _Toast(root, message, duration, type, action)
     app_x, app_y, app_width = _app_geometry(root)
     y = app_y + _TOP
     for t in _active_toasts:

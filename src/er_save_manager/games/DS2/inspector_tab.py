@@ -62,7 +62,10 @@ class DS2InspectorTab:
         ).pack(anchor="w", padx=10, pady=(0, 10))
 
         self.list = CharacterList(
-            char_frame, on_select=self._select, on_double=self._edit_slot
+            char_frame,
+            get_started=self.get_save() is None,
+            on_select=self._select,
+            on_double=self._edit_slot,
         )
         self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
@@ -75,7 +78,7 @@ class DS2InspectorTab:
         self.selected_slot = None
         save: DS2Save | None = self.get_save()
         if save is None:
-            self.list.message("No save file loaded.")
+            self.list.show_get_started()
             return
 
         issues = self._get_issues() if self._get_issues else None
@@ -84,13 +87,19 @@ class DS2InspectorTab:
             if save.slot_state(i) is SlotState.NEVER_CREATED:
                 continue
             name = save.slot_display_name(i)
-            values = {
-                "level": str(character.get_stat("level")),
-                "class": character.starting_class_name or "",
-                "currency": f"{character.souls:,}",
-                "ng": f"NG+{character.new_game_plus}",
-                "playtime": format_playtime(save.slot_play_seconds(i)),
-            }
+            if save.slot_state(i) is SlotState.PRE_CREATION:
+                # No character yet: the stat fields hold leftover data
+                values = dict.fromkeys(
+                    ("level", "class", "currency", "ng", "playtime"), "-"
+                )
+            else:
+                values = {
+                    "level": str(character.get_stat("level")),
+                    "class": character.starting_class_name or "",
+                    "currency": f"{character.souls:,}",
+                    "ng": f"NG+{character.new_game_plus}",
+                    "playtime": format_playtime(save.slot_play_seconds(i)),
+                }
             rows.append(
                 CharacterRow(
                     i,

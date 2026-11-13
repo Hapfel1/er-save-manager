@@ -114,7 +114,7 @@ _BACKGROUND_HEX = "#141416"
 _HOVER_COLOR = "#ffffff"
 _GRID_COLOR = "#d8d8c8"
 # Tile selection outline, in the hue of the select_ring sprite.
-_SELECT_COLOR = "#f0d890"
+_SELECT_COLOR = "#d8d8e0"
 # A click snaps to walkable floor within this many screen pixels, kept
 # between these map unit distances.
 _PIN_PICK_PX = 18
@@ -122,6 +122,10 @@ _PIN_RADIUS_MIN = 4.0
 _PIN_RADIUS_MAX = 60.0
 # Search radius for the floor a pickup, boss, NPC or object teleport lands on
 _PIN_FLOOR_RADIUS = 32.0
+# Horizontal distance kept from a location-only pickup (flag 0): its position
+# is the object or NPC that gives the item, and navmesh can run under it
+# (the Convergence forge anvil)
+_PIN_CLEARANCE = 2.0
 # What a click on empty map selects: a pin on the nearest floor (the tile
 # when there is none), or the small overworld tile.
 _TARGET_PINS = "Pins"
@@ -182,8 +186,8 @@ _FADE_PERCENT = 30
 _SELECTED_GLOW_GROW = 4
 # Name tag above the selected marker
 _SELECT_TAG_FONT = ("Inter", 10, "bold")
-_SELECT_TAG_TEXT = "#f0e8d2"
-_SELECT_TAG_BG = "#18161a"
+_SELECT_TAG_TEXT = "#ffffff"
+_SELECT_TAG_BG = "#1c1c22"
 _SELECT_TAG_GAP = 12
 _SELECT_TAG_MAX = 48
 # Corner radius of the name tags, route labels and hover tooltip
@@ -407,6 +411,10 @@ def _fold(text: str) -> str:
     return " ".join(re.sub(r"[^0-9a-z_]+", " ", text).split())
 
 
+def _item_text(qty: int, name: str) -> str:
+    return f"{name} x{qty}" if qty > 1 else name
+
+
 def _matches(words: list[str], text: str) -> bool:
     """Every query word appears in the folded text, in any order. A number
     matches whole numbers only, so 1 does not find Golden Rune [10]."""
@@ -519,10 +527,12 @@ def _place_pickups(convergence: bool) -> list[_Pin]:
 def _pickups_by_place(
     convergence: bool,
 ) -> tuple[dict[int, list[Pickup]], dict[str, list[Pickup]]]:
-    """Pickups by nearest grace flag and by map id."""
+    """Pickups with a flag by nearest grace flag and by map id."""
     by_grace: dict[int, list[Pickup]] = {}
     by_map: dict[str, list[Pickup]] = {}
     for p in get_pickups(convergence):
+        if not p.flag_id:
+            continue
         if p.grace_flag:
             by_grace.setdefault(p.grace_flag, []).append(p)
         if p.map_id:
@@ -1171,6 +1181,8 @@ class MapWindow:
             None
         )
         self._selected_pin: _Pin | None = None
+        # Item of the selected pickup the search named; shown first
+        self._pin_focus: str | None = None
         # NpcSpot.npc whose quest the panel shows when NPCs share a marker
         self._active_npc: str | None = None
         # id(quest step) -> (map number, map x, map y) of the shown quest
@@ -1357,7 +1369,7 @@ class MapWindow:
     def _set_pickup_pins(self, pins: list[_Pin]):
         self._pickup_pins = pins
         self._pickup_kinds = {
-            p.flag_id: _pickup_kind(p) for p in get_pickups(self._images.convergence)
+            p.key: _pickup_kind(p) for p in get_pickups(self._images.convergence)
         }
         self._pickup_grid: dict[tuple[int, int, int], list[_Pin]] = {}
         for pin in pins:
@@ -1371,10 +1383,13 @@ class MapWindow:
 
     def _read_pickup_states(self):
         """Collected state of every pickup, read once per character load;
-        the map tiles are painted again when it changes."""
+        the map tiles are painted again when it changes. None without a
+        character or for a pickup without a flag."""
         state = self._grace_state
         states = {
-            pin.pickup.flag_id: state(pin.pickup.flag_id) if state else None
+            pin.pickup.key: state(pin.pickup.flag_id)
+            if state and pin.pickup.flag_id
+            else None
             for pin in self._pickup_pins
         }
         if states != self._pickup_states:
@@ -1395,7 +1410,7 @@ class MapWindow:
                     if (
                         x0 <= px <= x1
                         and y0 <= py <= y1
-                        and self._pickup_kinds[pin.pickup.flag_id] in types
+                        and self._pickup_kinds[pin.pickup.key] in types
                     ):
                         yield pin
 
@@ -1416,13 +1431,13 @@ class MapWindow:
 
     def _pickup_fade(self) -> tuple | None:
         """None while nothing is selected or the selection is hidden, else
-        the selected pickup (map, point, flag) whose glow the canvas draws,
+        the selected pickup (map, point, key) whose glow the canvas draws,
         or () when the selection is not a pickup."""
         if not self._selection_shown():
             return None
         pin = self._selected_pin
         if pin is not None and pin.pickup is not None:
-            return (pin.map_no, pin.point, pin.pickup.flag_id)
+            return (pin.map_no, pin.point, pin.pickup.key)
         return ()
 
     def set_flag_callback(
@@ -2003,7 +2018,7 @@ class MapWindow:
         return [
             (regions.get(p.pickup.grace_flag, "Other"), p.pickup.item_label, p)
             for p in self._pickup_pins
-            if self._pickup_kinds[p.pickup.flag_id] in self._pickup_types
+            if self._pickup_kinds[p.pickup.key] in self._pickup_types
         ]
 
     def _pin_place(self, pin: _Pin) -> tuple[str, str]:
@@ -2566,11 +2581,11 @@ class MapWindow:
         for pin in self._pins_near(
             self._map_no, vx - pad, vy - pad, x1 + pad, y1 + pad
         ):
-            if fade and fade == (pin.map_no, pin.point, pin.pickup.flag_id):
+            if fade and fade == (pin.map_no, pin.point, pin.pickup.key):
                 continue
             glow = self._icons.glow_cached(
                 size,
-                bool(self._pickup_states.get(pin.pickup.flag_id)),
+                bool(self._pickup_states.get(pin.pickup.key)),
                 fade is not None,
             )
             px = round((pin.point[0] - vx) * zoom - half)
@@ -2677,20 +2692,28 @@ class MapWindow:
         return pins
 
     def _pickup_collected(self, pickup: Pickup) -> bool | None:
-        return self._pickup_states.get(pickup.flag_id)
+        return self._pickup_states.get(pickup.key)
 
     def _pickup_at(self, sx: int, sy: int) -> _Pin | None:
-        """Pickup whose glow core is under the screen point."""
+        """Pickup whose glow core is under the screen point. Pickups on the
+        same point (the Convergence forge's two weapons) take turns: with
+        one of them selected, the next one is returned."""
         if not self._show_pickups.get():
             return None
         mx, my = self._to_map(sx, sy)
         r = max(4, self._pickup_size() * 0.6) / self._zoom
         near = list(self._pins_near(self._map_no, mx - r, my - r, mx + r, my + r))
-        return min(
+        best = min(
             near,
             key=lambda p: (p.point[0] - mx) ** 2 + (p.point[1] - my) ** 2,
             default=None,
         )
+        if best is None:
+            return None
+        same = [p for p in near if p.point == best.point]
+        if self._selected_pin in same:
+            return same[(same.index(self._selected_pin) + 1) % len(same)]
+        return best
 
     def _draw_pins(self):
         c = self._canvas
@@ -3029,7 +3052,10 @@ class MapWindow:
             return "\n".join(lines)
         if pin.pickup is not None:
             p = pin.pickup
-            lines = [p.item_label, SOURCE_LABELS.get(p.source, p.source)]
+            label = ", ".join(
+                _item_text(qty, name) for _, qty, name in self._pin_items(pin)
+            )
+            lines = [label, SOURCE_LABELS.get(p.source, p.source)]
             taken = self._pickup_collected(p)
             if taken is not None:
                 lines.append("Collected" if taken else "Not collected")
@@ -3271,8 +3297,10 @@ class MapWindow:
             for g in self._placed
             if g.loc.tile_type == "grace" and g.loc.flag_id
         }
-        pins = {p.pickup.flag_id: p for p in self._pickup_pins}
+        pins = {p.pickup.flag_id: p for p in self._pickup_pins if p.pickup.flag_id}
         for p in get_pickups(self._images.convergence):
+            if not p.flag_id:
+                continue
             grace = graces.get(p.grace_flag)
             pin = pins.get(p.flag_id)
             if grace is not None:
@@ -3661,7 +3689,7 @@ class MapWindow:
                             (label, t)
                             for label, t in rows
                             if self._pickup_kinds[
-                                (t.pickup if isinstance(t, _Pin) else t).flag_id
+                                (t.pickup if isinstance(t, _Pin) else t).key
                             ]
                             in self._pickup_types
                         ]
@@ -3773,10 +3801,13 @@ class MapWindow:
         for a pickup (every other marker already shows its own icon)."""
         pin = self._selected_pin
         if pin is not None:
-            text = self._pin_text(pin).split("\n")[0]
             if pin.pickup is not None:
-                return text, self._item_photo(pin.pickup.items[0][2], _LIST_ICON)
-            return text, None
+                items = self._pin_items(pin)
+                text = _item_text(items[0][1], items[0][2])
+                if len(items) > 1:
+                    text += f" and {len(items) - 1} more"
+                return text, self._item_photo(items[0][2], _LIST_ICON)
+            return self._pin_text(pin).split("\n")[0], None
         loc = self._selected_loc
         if loc is not None:
             return loc.loc.name, None
@@ -3924,7 +3955,12 @@ class MapWindow:
                 return hit
             if found is None:
                 found = hit
-        if found is None:
+        # The selected pickup is drawn as a canvas item; the pickup hit test
+        # passes to the next pickup on the same point
+        sel = self._selected_pin
+        if found is None or (
+            found[0] == "pin" and found[1] is sel and sel.pickup is not None
+        ):
             pin = self._pickup_at(sx, sy)
             if pin is not None:
                 found = ("pin", pin)
@@ -4110,6 +4146,7 @@ class MapWindow:
 
     def _select_pin(self, pin: _Pin):
         self._selected_pin = pin
+        self._pin_focus = self._searched_item(pin)
         self._active_npc = None
         self._selected_loc = None
         self._selected_region = None
@@ -4117,6 +4154,24 @@ class MapWindow:
         self._clear_marker_selection()
         self._update_location_info()
         self._schedule_render()
+
+    def _searched_item(self, pin: _Pin) -> str | None:
+        """Name of the pickup item the search text names: the first one
+        matching every word, else the one matching the most words."""
+        words = _fold(self._search_var.get()).split()
+        if pin.pickup is None or not words or len(pin.pickup.items) < 2:
+            return None
+        names = [_fold(name) for _, _, name in pin.pickup.items]
+        hits = [sum(_matches([w], n) for w in words) for n in names]
+        best = max(range(len(names)), key=lambda k: hits[k])
+        return pin.pickup.items[best][2] if hits[best] else None
+
+    def _pin_items(self, pin: _Pin) -> list[tuple[int, int, str]]:
+        """Items of a pickup pin, the searched one first."""
+        items = list(pin.pickup.items)
+        if pin is self._selected_pin and self._pin_focus is not None:
+            items.sort(key=lambda it: it[2] != self._pin_focus)
+        return items
 
     def _show_pin_info(self, pin: _Pin):
         """Location panel for a selected pickup or NPC: what it is, and for
@@ -4185,7 +4240,7 @@ class MapWindow:
                 fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn
             )
             return
-        self._show_pin_icons([name for _id, _qty, name in p.items])
+        self._show_pin_icons([name for _id, _qty, name in self._pin_items(pin)])
         self._info_var.set(f"{self._pin_text(pin)}\n{p.map_id}")
         taken = self._pickup_collected(p)
         if taken is None or self._on_set_pickup is None:
@@ -4996,6 +5051,9 @@ class MapWindow:
             _PIN_FLOOR_RADIUS,
             pin.map_no,
             pin.point,
+            _PIN_CLEARANCE
+            if pin.pickup is not None and not pin.pickup.flag_id
+            else 0.0,
         )
         return floor or FloorPoint(map_id, x, y, z, pin.map_no, *pin.point)
 

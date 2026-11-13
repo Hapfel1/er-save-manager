@@ -52,7 +52,9 @@ class DS3InspectorTab:
             text_color=("gray40", "gray70"),
         ).pack(side="left", anchor="w")
 
-        self.list = CharacterList(outer, on_select=self._select)
+        self.list = CharacterList(
+            outer, get_started=self._get_save() is None, on_select=self._select
+        )
         self.list.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     def _select(self, slot_idx: int) -> None:
@@ -62,7 +64,7 @@ class DS3InspectorTab:
         self.selected_slot = None
         save = self._get_save()
         if save is None:
-            self.list.message("No save file loaded.")
+            self.list.show_get_started()
             return
 
         issues = self._get_issues() if self._get_issues else None
@@ -78,7 +80,7 @@ class DS3InspectorTab:
                 "level": str(char.level),
                 "class": classes[cls].name if cls < len(classes) else f"Class {cls}",
                 "currency": f"{char.souls:,}",
-                "ng": "NG+?" if char.layout_error else f"NG+{char.ng_plus}",
+                "ng": "Unknown" if char.layout_error else f"NG+{char.ng_plus}",
                 "playtime": format_playtime(char.play_time_ms / 1000),
             }
             name = char.name if listed else f"{char.name} (deleted)"

@@ -491,6 +491,9 @@ class BackupManager:
             self._schedule_prune(keep)
 
         _log.info("Backup created: %s", backup_path)
+        from er_save_manager.ui import undo
+
+        undo.note_backup(self.save_path, backup_path, operation)
         return backup_path, pruned_backups
 
     def _schedule_prune(self, keep: tuple[str, ...]) -> None:

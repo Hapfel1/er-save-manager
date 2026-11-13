@@ -56,7 +56,8 @@ class ItemPickupsDialog:
         show_toast,
     ):
         is_convergence = bool(save_file is not None and save_file.is_convergence)
-        pickups = get_pickups(is_convergence)
+        # Rows without a flag have no collected state to list or change
+        pickups = [p for p in get_pickups(is_convergence) if p.flag_id]
         graces = {g.flag_id: g for g in get_graces(include_convergence=is_convergence)}
 
         def _region(p: Pickup) -> str:

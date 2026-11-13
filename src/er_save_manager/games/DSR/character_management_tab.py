@@ -374,11 +374,6 @@ class DSRCharacterManagementTab:
 
     def _check_game_not_running(self) -> bool:
         if self.is_game_running and self.is_game_running():
-            CTkMessageBox.showerror(
-                "Game Is Running",
-                "Close Dark Souls: Remastered before modifying save files.",
-                parent=self.parent,
-            )
             return False
         return True
 
@@ -763,6 +758,7 @@ class DSRCharacterManagementTab:
                 lambda path: None,
                 browse_callback=self._browse_target_save_manually,
                 browse_button_text="Browse Manually",
+                game_key="dark_souls_remastered",
             )
         return self._browse_target_save_manually()
 
