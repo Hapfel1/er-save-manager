@@ -10,12 +10,23 @@ from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.utils import center_window, style_window_frame, transient_to
 
-# Badge colors per save kind (light, dark): background, text
+# Badge colors per save kind (light, dark): background, text. Light mode
+# text is darker than GREEN_TEXT and Catppuccin Pink to stay readable on
+# the tints.
 _BADGES = {
     "Vanilla": (palette.BLUE_TINT, palette.BLUE_TEXT),
-    "Seamless Co-op": (("#D6EED2", "#24392B"), palette.GREEN_TEXT),
+    "Seamless Co-op": (palette.PURPLE_TINT, palette.PURPLE_TEXT),
+    "Convergence": (("#D6EED2", "#24392B"), ("#2E7D1F", "#A6E3A1")),
+    "Custom": (("#F5D6EC", "#47303F"), ("#B4458F", "#F5C2E7")),
 }
-_CONVERGENCE_BADGE = (palette.PURPLE_TINT, palette.PURPLE_TEXT)
+
+
+def _badge(kind: str) -> tuple:
+    """Badge colors for a save kind; combined kinds use their first part."""
+    for name in ("Custom", "Convergence", "Seamless Co-op"):
+        if kind.startswith(name):
+            return _BADGES[name]
+    return _BADGES["Vanilla"]
 
 
 def _kind(path: Path, game_key: str | None) -> str | None:
@@ -53,9 +64,7 @@ def _save_row(parent, path: Path, kind: str | None, detail: str, on_click):
     name.pack(side="left")
     widgets.append(name)
     if kind:
-        bg, fg = _BADGES.get(
-            kind, _CONVERGENCE_BADGE if "Convergence" in kind else _BADGES["Vanilla"]
-        )
+        bg, fg = _badge(kind)
         badge = ctk.CTkLabel(
             top,
             text=kind,
