@@ -101,6 +101,14 @@
 4. Use tabs to access different features
 5. Click **Apply All** in the unapplied-changes bar to write the edits of every tab, with one backup
 
+Until a save is loaded, the Save Fixer tab shows these first steps, with **Force Close** while the game is running.
+
+## Undo and the Running Game
+
+- **Undo**: after an edit that makes a backup and writes the save, the success notice offers **Undo** for 15 seconds, in every game. It restores the backup and reloads the save, as long as the file has not changed since the edit. Older states are in the [Backup Manager](user-guide/backup-manager.md)
+- **Game running**: loading, writing, transferring or restoring a save while the game runs opens a **Close <game> First** dialog. It waits for the game to close and then continues by itself. **Force Close** ends the game at once and loses progress since its last autosave; **Cancel** skips the action
+- **Save picker**: when Auto-Find finds several saves, the picker lists each file with its save type (Vanilla, Seamless Co-op, Convergence, Custom), last change and character names
+
 !!! tip "First Time?"
     Check out the [Installation Guide](user-guide/installation.md) for platform-specific instructions.
 

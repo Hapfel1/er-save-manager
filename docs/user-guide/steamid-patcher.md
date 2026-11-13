@@ -62,6 +62,12 @@ The URL field accepts the same formats. A patch to the SteamID the save already 
 
 ---
 
+## Save From Another Steam Account
+
+After loading a save whose SteamID does not match its SteamID folder, the tool offers **Patch to My SteamID**, which patches the save to the folder's account (all games with a SteamID in the save; not Dark Souls Remastered or console saves). The question can be turned off in Settings.
+
+---
+
 ## Applying the Patch
 
 1. Once the SteamID field is filled, click **Patch SteamID**

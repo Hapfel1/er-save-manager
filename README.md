@@ -61,6 +61,10 @@ Download the latest release from [Releases](https://github.com/Hapfel1/er-save-m
   - Warns about non-default save locations
   - Uses the desktop's own file dialogs (zenity or kdialog)
 - **Display scaling**: UI scale setting (Auto, 100% to 300%); on Windows the app ignores the Windows display scale by default so it fits on screen
+- **Undo**: after edits that write the save, in every game
+- **Game running**: waits for the game to close instead of refusing, with Force Close
+- **Save picker**: shows the save type, last change and character names
+- **SteamID**: offers to patch a save from another Steam account to your SteamID
 - **PlayStation/Switch Saves**: Supports editing decrypted console Save Files: PlayStation `memory.dat` and PS4 `userdata` folders, and Elden Ring Switch 2 `ER_____0000_userdata` folders.
 
 ## Usage
@@ -96,6 +100,7 @@ Automatically detects and fixes common save corruption issues:
 - **Inventory Counters**: Fixes item counters that cause "no space" messages or crashes on load
 - **Save/Game Version Mismatch**: Lowers the save's version stamps so an older game version loads it
 - **Teleport Fallback**: Teleports your character to the roundtable for any other invalid coordinates that cause an infinite loading screen
+- **Character List**: each character shows OK or the number of issues detected, and the death count for Elden Ring
 
 ### Troubleshooting
 
@@ -140,10 +145,11 @@ Automatically detects issues with your game installation, your save file and any
 - Edit your inventory, remove items, spawn in items
 - Full Item Validation to avoid any invalid items and allow Item Spawning for Vanilla Saves
 - Supports SeamlessCoop and Convergence Items
+- Unobtainable items are left out of the item spawner
 - Visual Item Picker and Visual Inventory Editor with full Icon Support
 - Loadout Mode for creating, renaming and sharing loadouts
 - Share Loadouts via unique code
-- Batch Adding Category functionality
+- Batch Adding Category functionality, limited to items the game can produce and, on vanilla saves, to what the world hands out
 - Build Import Functionality from the Elden Ring Build & Inventory Planner
 - Auto-refill: choose which items the game refills from the chest
 
