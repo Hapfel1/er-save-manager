@@ -47,7 +47,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - **View Details** - View complete preset data
 - **Export to JSON** - Save preset to file
 - **Import from JSON** - Load preset from file
-- **Import from Clipboard** - Load preset from copied JSON text
+- **Paste JSON** - Load preset from JSON text copied to the clipboard
 - **Delete Preset** - Clear selected preset slot
 - **Copy to Another Save** - Transfer to different save file
 - **Browse Community Presets** - Open community browser
@@ -208,7 +208,7 @@ Loads preset from JSON file into selected slot.
 4. Confirm import
 5. Preset loaded into slot
 
-### Import from Clipboard
+### Paste JSON
 
 Loads preset from JSON text on the clipboard, such as the **Copy JSON** button on an Elden Sliders page.
 
@@ -216,7 +216,7 @@ Loads preset from JSON text on the clipboard, such as the **Copy JSON** button o
 
 1. Copy the preset JSON
 2. Select target preset slot (empty or occupied)
-3. Click **Import from Clipboard**
+3. Click **Paste JSON**
 4. Confirm import
 
 ### What Gets Imported
