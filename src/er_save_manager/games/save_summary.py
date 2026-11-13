@@ -13,11 +13,23 @@ _MD5_SIZE = 16
 
 
 def _join(names: list[str]) -> str:
+    from er_save_manager.ui.character_list import UNREADABLE_NAME, display_name
+
     if not names:
         return "No characters"
-    if len(names) <= _SHOWN:
-        return ", ".join(names)
-    return ", ".join(names[:_SHOWN]) + f" +{len(names) - _SHOWN} more"
+    # Slot data read as text (wiped or damaged slot) is counted, not shown
+    shown = [display_name(name) for name in names]
+    readable = [name for name in shown if name != UNREADABLE_NAME]
+    unreadable = len(shown) - len(readable)
+    parts = []
+    if readable:
+        text = ", ".join(readable[:_SHOWN])
+        if len(readable) > _SHOWN:
+            text += f" +{len(readable) - _SHOWN} more"
+        parts.append(text)
+    if unreadable:
+        parts.append(f"{unreadable} unreadable name{'s' if unreadable != 1 else ''}")
+    return ", ".join(parts)
 
 
 def _sekiro_summary(path: Path) -> str:

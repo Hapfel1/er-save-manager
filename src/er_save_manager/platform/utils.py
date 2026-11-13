@@ -5,11 +5,16 @@ from __future__ import annotations
 import contextlib
 import platform
 import subprocess
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from er_save_manager.games.game_profiles import GameProfile
+
+# How long kill_game_process waits for the killed process to leave the
+# process list
+_KILL_WAIT_S = 3.0
 
 
 class PlatformUtils:
@@ -68,7 +73,13 @@ class PlatformUtils:
                         os.kill(pid, signal.SIGKILL)
         except Exception:
             pass
-        return not PlatformUtils.is_game_running(process_name)
+        # The process list still holds a killed process for a moment
+        deadline = time.monotonic() + _KILL_WAIT_S
+        while PlatformUtils.is_game_running(process_name):
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.1)
+        return True
 
     # ------------------------------------------------------------------
     # Game-aware methods.

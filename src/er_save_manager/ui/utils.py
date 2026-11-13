@@ -205,6 +205,53 @@ def get_work_area(window, point: tuple[int, int] | None = None):
     return area
 
 
+_x11_monitors: list[tuple[int, int, int, int]] | None = None
+
+
+def _x11_monitor_at(point: tuple[int, int]):
+    """(x, y, w, h) of the monitor holding point, from xrandr, read once per
+    process. None when xrandr is missing or no monitor holds the point."""
+    global _x11_monitors
+    if _x11_monitors is None:
+        _x11_monitors = []
+        try:
+            out = subprocess.run(
+                ["xrandr", "--listmonitors"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+            ).stdout
+            # " 0: +*DP-3 2560/697x1440/392+0+720  DP-3"
+            for m in re.finditer(r"(\d+)/-?\d+x(\d+)/-?\d+\+(\d+)\+(\d+)", out):
+                w, h, x, y = (int(v) for v in m.groups())
+                _x11_monitors.append((x, y, w, h))
+        except Exception:
+            pass
+    px, py = point
+    for x, y, w, h in _x11_monitors:
+        if x <= px < x + w and y <= py < y + h:
+            return x, y, w, h
+    return None
+
+
+def get_monitor_area(window, point: tuple[int, int]):
+    """Usable area (x, y, width, height) of the one monitor holding point.
+
+    get_work_area spans all monitors on Linux; a popup placed by it can
+    straddle two of them.
+    """
+    area = get_work_area(window, point)
+    if sys.platform.startswith("linux"):
+        monitor = _x11_monitor_at(point)
+        if monitor is not None:
+            x0, y0 = max(area[0], monitor[0]), max(area[1], monitor[1])
+            x1 = min(area[0] + area[2], monitor[0] + monitor[2])
+            y1 = min(area[1] + area[3], monitor[1] + monitor[3])
+            if x1 > x0 and y1 > y0:
+                return x0, y0, x1 - x0, y1 - y0
+    return area
+
+
 def title_bar_height(window) -> int:
     """Height of the window frame above the client area, in physical pixels."""
     if sys.platform == "win32":

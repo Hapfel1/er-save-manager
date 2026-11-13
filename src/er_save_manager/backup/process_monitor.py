@@ -46,7 +46,13 @@ def _proc_programs() -> dict[int, tuple[str, str]]:
                 argv0 = f.read().split(b"\0", 1)[0].decode(errors="replace")
             with open(f"/proc/{entry.name}/comm", "rb") as f:
                 comm = f.read().decode(errors="replace").strip().lower()
-        except OSError:
+            with open(f"/proc/{entry.name}/stat", "rb") as f:
+                # State is the first field after the parenthesised comm
+                state = f.read().rsplit(b")", 1)[1].split(None, 1)[0]
+        except (OSError, IndexError):
+            continue
+        if state == b"Z":
+            # Killed or exited, not yet reaped by its parent: keeps its comm
             continue
         programs[int(entry.name)] = (_program_name(argv0), comm)
     return programs

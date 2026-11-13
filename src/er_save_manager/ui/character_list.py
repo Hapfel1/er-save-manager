@@ -113,10 +113,13 @@ def _elide(label: ctk.CTkLabel, text: str) -> str:
 _UNREADABLE = frozenset({"Cc", "Co", "Cs", "Cn"})
 
 
+UNREADABLE_NAME = "Unreadable name"
+
+
 def display_name(name: str) -> str:
-    """name, or "Unreadable name" when it is not text a game wrote."""
+    """name, or UNREADABLE_NAME when it is not text a game wrote."""
     if any(unicodedata.category(c) in _UNREADABLE for c in name):
-        return "Unreadable name"
+        return UNREADABLE_NAME
     return name
 
 

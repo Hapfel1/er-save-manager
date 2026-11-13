@@ -186,7 +186,7 @@ def _subtitle_text(profile) -> str:
 
 # Save file kinds per extension, for the Auto-Find help tooltip
 _EXTENSION_HELP = {
-    ".sl2": "Vanilla game (official servers)",
+    ".sl2": "Vanilla Save",
     ".co2": "Seamless Co-op",
     ".cnv": "The Convergence",
     ".cnvco2": "The Convergence + Seamless Co-op",
@@ -1025,7 +1025,7 @@ class SaveManagerGUI:
         )
         help_icon.pack(side=tk.LEFT, padx=(2, 8), pady=10)
         title, rows, footer = _save_format_help(self._active_profile())
-        self._save_format_tip = Tooltip(help_icon, title, rows, footer)
+        self._save_format_tip = Tooltip(help_icon, title, rows, footer, anchored=True)
         for target in Tooltip._targets(help_icon):
             target.bind("<Button-1>", self._save_format_tip.show_now, add="+")
 

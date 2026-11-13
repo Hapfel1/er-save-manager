@@ -73,11 +73,12 @@ class GetStartedPanel(ctk.CTkFrame):
         )
         self._text1.pack(anchor="w")
         self._force_row = ctk.CTkFrame(step1[1], fg_color="transparent")
-        ds.button(
+        # Theme font and height, as the buttons of the file row
+        ctk.CTkButton(
             self._force_row,
-            "Force Close",
-            self._force_close,
-            primary=False,
+            text="Force Close",
+            command=self._force_close,
+            fg_color=ds.SECONDARY,
             width=120,
         ).pack(side="left")
         ctk.CTkLabel(
@@ -100,8 +101,11 @@ class GetStartedPanel(ctk.CTkFrame):
         ).pack(anchor="w")
         buttons = ctk.CTkFrame(body, fg_color="transparent")
         buttons.pack(anchor="w", pady=(6, 0))
-        ds.button(buttons, "Auto-Find", auto_find, width=110).pack(side="left")
-        ds.button(buttons, "Browse", browse, primary=False, width=110).pack(
+        # Same look as Auto-Find and Browse in the file row above
+        ctk.CTkButton(buttons, text="Auto-Find", command=auto_find, width=110).pack(
+            side="left"
+        )
+        ctk.CTkButton(buttons, text="Browse", command=browse, width=110).pack(
             side="left", padx=(8, 0)
         )
 
@@ -124,8 +128,13 @@ class GetStartedPanel(ctk.CTkFrame):
     def _step(self, number: str, title: str):
         row = ctk.CTkFrame(self, fg_color="transparent")
         row.pack(fill="x", pady=6)
+        # Fixed column: the circle's width follows its glyph (1, 2, check
+        # mark), the step texts start at one x
+        column = ctk.CTkFrame(row, fg_color="transparent", width=36, height=28)
+        column.pack(side="left", anchor="n", padx=(0, 10))
+        column.pack_propagate(False)
         num = ctk.CTkLabel(
-            row,
+            column,
             text=number,
             width=28,
             height=28,
@@ -134,7 +143,7 @@ class GetStartedPanel(ctk.CTkFrame):
             text_color=_TODO[1],
             font=ds.BOLD,
         )
-        num.pack(side="left", anchor="n", padx=(0, 12))
+        num.pack(anchor="center")
         body = ctk.CTkFrame(row, fg_color="transparent")
         body.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(body, text=title, font=ds.BOLD, anchor="w").pack(anchor="w")

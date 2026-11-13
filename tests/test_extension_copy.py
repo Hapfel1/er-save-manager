@@ -147,3 +147,6 @@ def test_save_picker_summary(sanitized_save_path, tmp_path):
     assert display_name("Hapfel") == "Hapfel"
     assert display_name("\u30ad\u30ea\u30f3") == "\u30ad\u30ea\u30f3"  # Japanese name
     assert display_name("\u3f02\ue699\u4737") == "Unreadable name"  # wiped slot bytes
+    from er_save_manager.games.save_summary import _join
+
+    assert _join(["Hapfel", "￿￿\x00"]) == "Hapfel, 1 unreadable name"
