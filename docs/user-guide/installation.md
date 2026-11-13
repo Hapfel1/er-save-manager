@@ -155,7 +155,7 @@ After installation, verify the tool works:
 
 1. **Launch** the application
 2. Click **Auto-Find** - should find your save file
-3. Select the correct file
+3. Select the correct file; with several saves, the picker shows each file's save type, last change and character names
 4. If successful, the Save Fixer tab shows your character list and the **Character** bar selects the first character
 
 If Auto-Find fails, use **Browse** to manually locate your save file.

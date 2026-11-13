@@ -129,7 +129,8 @@ the map shows the Convergence map art, graces and locations instead.
   match in any order, ignoring case and accents, and also match a pin's region and nearest grace,
   a boss's drop, an item's source and a merchant's stock. Repeated names get their region or
   grace added. Selecting an entry switches to its map, centers on it and selects it
-- The selected entry gets a name tag; every other marker fades while it is selected
+- The selected entry gets a name tag; every other marker fades while it is selected. A pin with
+  several items shows the first one and "and N more"; after a search, the searched item comes first
 - **Character** at the top left switches the character (the same as the Character bar)
 - The bloodstain shows where the character last died, with its runes; **Move Bloodstain to
   Player** in the right panel moves it to the character's position
@@ -150,7 +151,11 @@ Each layer reads the selected character's event flags. Every write asks first an
 - **Pickups** - item pickups as golden glows, gray once collected. **Types** filters them by item
   type (bell bearings and paintings have their own type). World pickups get **Respawn** and
   **Mark Collected**; boss, enemy and NPC rewards can be marked collected or respawned too, but a
-  respawned reward is not placed back in the world
+  respawned reward is not placed back in the world. Items the game gives without an event flag
+  (the Convergence forge in Stormveil, Baldachin's and Ancient Dragon's Blessing, NPC gifts from
+  dialogue) are shown for their location only: no **Respawn** or **Mark Collected**, and they do
+  not count toward progress. Two items at one spot are separate pins; clicking the spot again
+  switches between them
 - **NPCs** - where each NPC currently stands, tinted when hostile or dead, with **Calm** and
   **Revive**. A marker shared by several NPCs opens a picker. Selecting an NPC also shows its quest
   steps as numbered pins along a dashed route; **Move Here** applies the quest up to that step
@@ -185,6 +190,9 @@ character under the ground, inside a wall or out of bounds, so a pin teleport as
 inside a boss arena warn while that boss is alive. Pickups, bosses, NPCs and other markers
 teleport to the floor nearest to them. The bloodstain teleports to its exact saved position,
 after a warning when it holds runes.
+
+Teleports to location-only pins land on floor at least 2 units from the object. A character saved
+at 0 HP (during a death) gets full HP when teleported, so it can act at the new spot.
 
 ### Locking and Unlocking Graces and Map Areas
 
