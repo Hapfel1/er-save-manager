@@ -49,6 +49,8 @@
 
 ### 📖 Documentation
 
+- General: User guide covers Undo, waiting for the game, the save picker, the Deaths column and location-only map pins (#489)
+
 - General: Code of conduct, security policy, contributing guide and issue forms (#469) ([f9742ae](https://github.com/Hapfel1/er-save-manager/commit/f9742ae53b976684213913880e9b0611e008116b))
 
 - General: State that versions before 22 July 2026 were MIT (#470) ([3d50aa5](https://github.com/Hapfel1/er-save-manager/commit/3d50aa5125beebb6d9354fb31a4a4972cf6901a0))
