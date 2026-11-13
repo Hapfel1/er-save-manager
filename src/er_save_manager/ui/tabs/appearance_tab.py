@@ -23,6 +23,7 @@ from er_save_manager.ui.pending import (
     write_failed,
 )
 from er_save_manager.ui.toast import notify
+from er_save_manager.ui.tooltip import add_tooltip
 from er_save_manager.ui.utils import bind_mousewheel, patch_combo_scroll, pick_file
 
 _EYE_CARD_WIDTH = 270
@@ -193,12 +194,19 @@ class AppearanceTab:
             width=130,
         ).pack(side=tk.LEFT, padx=(0, 6))
 
-        ctk.CTkButton(
+        paste_btn = ctk.CTkButton(
             io_row,
-            text="Import from Clipboard",
+            text="Paste JSON",
             command=self.import_preset_from_clipboard,
-            width=160,
-        ).pack(side=tk.LEFT, padx=(0, 6))
+            width=130,
+        )
+        paste_btn.pack(side=tk.LEFT, padx=(0, 6))
+        add_tooltip(
+            paste_btn,
+            "Import preset JSON copied to the clipboard, for example with "
+            "Copy JSON on an Elden Sliders page. Share codes go in "
+            "Import from Code.",
+        )
 
         ctk.CTkButton(
             io_row,
@@ -1287,7 +1295,8 @@ class AppearanceTab:
             CTkMessageBox.showerror(
                 "No Preset on Clipboard",
                 "The clipboard does not hold preset JSON. Copy the JSON first, "
-                "for example with Copy JSON on an Elden Sliders page.",
+                "for example with Copy JSON on an Elden Sliders page. "
+                "For a share code, use Import from Code.",
                 parent=self.parent,
             )
             return
