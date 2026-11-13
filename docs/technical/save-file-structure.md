@@ -269,7 +269,7 @@ session state that the game writes as 0.
 | 0x17C | 1 | multiplay_saved_crimson_flasks | Crimson Tears charges, written together with 0x108 |
 | 0x17D | 1 | multiplay_saved_cerulean_flasks | Cerulean Tears charges, written together with 0x108 |
 | 0x17E | 1 | multiplay_saved_physick_flasks | Wondrous Physick charges (0/1), written together with 0x108 |
-| 0x17F | 49 | unk0x17f | 0x180 and 0x184 hold small values (20-28), the rest is 0 |
+| 0x17F | 49 | unk0x17f | 0; `uint32` 0x180 and 0x184 hold small values (20-30) on slots created by early game versions (slot version 140 and below) and keep them through later versions |
 
 **Runes memory:** the game only ever adds to `runes_memory`, so a consistent character satisfies
 `runes_memory >= cost(class start level -> level) + runes`. The cost of level L to L + 1 is
@@ -424,9 +424,9 @@ Wondrous Physick tears: slot 1, slot 2, int32 -1.
 | 0x0B7 | 91 | colors: skin, cosmetics, tattoo, body hair, eyes, hair, beard, eyebrows, eyelashes, accessory; 0x0DC is 128 |
 | 0x112 | 1 | eye effect (255 = Frenzied Flame); only set in the ProfileSummary copy |
 | 0x113 | 17 | padding |
-| 0x124 | 1 | uint8 1 |
-| 0x125 | 1 | uint8 Eye Alterations (Face Edit option): 1 shown, 0 hidden |
-| 0x126 | 1 | uint8 0/1, unknown; independent of 0x125 |
+| 0x124 | 1 | uint8 1: the four override fields below follow (read from version 42) |
+| 0x125 | 1 | uint8 override slot 0 enabled: 1 shown, 0 hidden. The Face Edit option Eye Alterations sets it |
+| 0x126 | 1 | uint8 override slot 1 enabled: 1 shown, 0 hidden (read from version 55, 1 before) |
 | 0x127 | 4 | int32 face param override slot 0 (FaceParam id, -1 = none) |
 | 0x12B | 4 | int32 face param override slot 1 (FaceParam id, -1 = none) |
 
@@ -611,9 +611,9 @@ discarding), bit n = n-th item of the type in ascending id order.
 
 Every item type the character has ever acquired: `int64 count`, then 14000 entries of 8 bytes
 (`uint32 item_id`, `uint8 1`, 3 bytes padding). The first `count` entries are live and sorted by item id;
-the rest hold stale data. Slots written by older game versions (slot version 151 and below) use the same
+the rest hold stale data. Slots with slot version 200 and below use the same
 0x1B580 bytes as 7000 records of 16 bytes: `uint32 item_id`, `uint8 1`, 3 bytes (`FF FF FF` or 0),
-`uint32` unknown, `uint32` unknown; `count` is then the number of 16-byte records. `item_id` carries the category tag: weapons as base id, armor `0x10000000 |`,
+then 8 bytes the game discards on load; `count` is then the number of 16-byte records. `item_id` carries the category tag: weapons as base id, armor `0x10000000 |`,
 talismans `0x20000000 |`, goods `0x40000000 |`, Ashes of War `0x80000000 |`.
 
 ### TutorialData (variable)
@@ -761,7 +761,7 @@ Other pickups (Rowa Fruit, Erdleaf Flower, ...) respawn and only appear in World
 | 0x04 | int16[9] | three points (x, y, z) in 1/8 units, local to the player's map |
 | 0x16 | uint16 | 0 |
 | 0x18 | uint32[3] | one value per point; triangles that share a point share its value |
-| 0x24 | uint32 | unknown, between 0x08000000 and 0x0FFFFFFF |
+| 0x24 | uint32 | runtime value between 0x08000000 and 0x0FFFFFFF, a multiple of 4; it differs between saves for the same decal |
 
 Persistent decals around the player: blood (445000, 610003), black liquid (442204, 443400), burn marks
 (442600), point trails (3000xxxxx, one point repeated) and triangles (6001xxxxx).
@@ -826,7 +826,10 @@ message is read.
 | 0x00 | 4 | uint32 author id, the same on every message of one author |
 | 0x04 | 8 | uint64 message id; the top byte holds flags (0x00, 0x40, 0x80, 0xC0) |
 | 0x0C | 4 | MapId |
-| 0x10 | 20 | unknown |
+| 0x10 | 4 | uint32 area id (map area such as 63002, or a PlayRegionParam id) |
+| 0x14 | 4 | 0 |
+| 0x18 | 8 | uint64 that grows with the message id |
+| 0x20 | 4 | uint32 PlayRegionParam id |
 | 0x24 | 12 | position (float[3]) |
 | 0x30 | 4 | angle (float) |
 | 0x34 | 2 | uint16 template (BloodMsg FMG id, e.g. 10000 "<?bmsg?> ahead") |
@@ -1004,7 +1007,9 @@ data at GameDataMan+0x58.
 | 0x16 | manual attack aiming | | |
 | 0x17 | auto-target | | |
 
-0x03, 0x0E, 0x0F, 0x12, 0x1A and 0x1F have no option in the PC menu.
+0x03, 0x0E, 0x0F, 0x12, 0x1A and 0x1F have no option in the PC menu. 0x0E and 0x12 default to 0. On load the
+game zeroes 0x24-0x2D and 0x30-0x13F, and for older USER_DATA_10 versions adds 2 to 0x1D (version 10 and
+below), sets 0x2F to 1 (below 30) and zeroes 0x22-0x23 (below 200).
 
 ### MenuSystemSaveLoad (0x1808)
 
@@ -1070,8 +1075,9 @@ The disconnect penalty state at GameDataMan+0x118: `uint8 is_net_penalized`, `ui
 
 ### PCOptionData (0xB2, PC only)
 
-A header (`00 05 d0 02 00 00 1e 05`, then zeros to 0x12), then 40 x `(uint16 key, uint16 flag)` where `key` is a
-Windows virtual-key code. It does not hold the key bindings; its purpose is unknown.
+A header (`uint16` 1280, `uint16` 720, `uint16` 0, `uint8` 30, `uint8` 5, then zeros to 0x12), then
+40 x `(uint16 key, uint16 flag)` where `key` is a Windows virtual-key code. The game fills both parts with
+fixed defaults and only loads and saves them; the key bindings are in KeyConfigSaveLoad.
 
 ### KeyConfigSaveLoad (8 + 0x2000)
 
