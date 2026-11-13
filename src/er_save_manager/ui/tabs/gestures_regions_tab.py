@@ -14,6 +14,8 @@ from er_save_manager.data.gestures import (
     get_gesture_name,
     is_cut_content,
     is_dlc_gesture,
+    merge_unlocked_gestures,
+    unlocked_gestures,
 )
 from er_save_manager.data.regions import REGIONS
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -208,11 +210,7 @@ class GesturesRegionsTab:
         unlocked_gesture_ids = set()
 
         if hasattr(slot, "gestures") and slot.gestures:
-            unlocked_gesture_ids = {
-                g
-                for g in slot.gestures.gesture_ids
-                if g not in (0, 0xFFFFFFFF, GESTURE_SLOT_EMPTY)
-            }
+            unlocked_gesture_ids = unlocked_gestures(slot.gestures.gesture_ids)
 
         # The gesture list is the same for every character: keep the shown
         # rows (or the ones prebuild_rows made) and set their check state
@@ -300,12 +298,15 @@ class GesturesRegionsTab:
         if not hasattr(slot, "gestures_offset") or slot.gestures_offset < 0:
             raise StageError("Gesture offset not tracked. Cannot write changes.")
 
-        selected = sorted(gid for gid, var in self.gesture_states.items() if var.get())
-        if len(selected) > 64:
-            raise StageError(f"At most 64 gestures can be unlocked ({len(selected)}).")
-        new_gesture_ids = selected + [GESTURE_SLOT_EMPTY] * (64 - len(selected))
+        selected = {gid for gid, var in self.gesture_states.items() if var.get()}
+        try:
+            new_gesture_ids = merge_unlocked_gestures(
+                slot.gestures.gesture_ids, selected, set(self.gesture_states)
+            )
+        except ValueError as e:
+            raise StageError(str(e)) from e
         # A gesture that gets locked leaves the wheel too.
-        locked = self._initial_unlocked - set(selected)
+        locked = self._initial_unlocked - selected
         cleared = [(i, g) for i, g in enumerate(self._shown_wheel(slot)) if g in locked]
 
         def commit() -> list[str]:

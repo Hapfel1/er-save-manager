@@ -46,7 +46,7 @@ def test_apply_moves_map_id_and_coordinates(sanitized_save):
     TeleportFix("roundtable").apply(sanitized_save, 0)
     expected = TELEPORT_LOCATIONS["roundtable"].coordinates
     assert _coords(slot) == tuple(expected)
-    assert slot.player_coordinates.unk_coordinates.x == expected[0]
+    assert slot.player_coordinates.multiplay_saved_coordinates.x == expected[0]
 
     TeleportFix("liurnia").apply(sanitized_save, 0)
     header = slot.data_start + 0x4

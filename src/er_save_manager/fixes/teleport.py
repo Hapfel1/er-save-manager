@@ -129,7 +129,7 @@ class TeleportFix(BaseFix):
                 coords.z = self.destination.coordinates[2]
 
                 # Also update secondary coordinates to match (Rust has player_coords2)
-                unk_coords = slot.player_coordinates.unk_coordinates
+                unk_coords = slot.player_coordinates.multiplay_saved_coordinates
                 unk_coords.x = self.destination.coordinates[0]
                 unk_coords.y = self.destination.coordinates[1]
                 unk_coords.z = self.destination.coordinates[2]

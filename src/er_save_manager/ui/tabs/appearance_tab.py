@@ -509,7 +509,7 @@ class AppearanceTab:
                     new_unk[idx] = var.get()
 
                 preset.unk0x6c = bytes(new_unk)
-                preset.unk0xb1 = bytes(len(preset.unk0xb1))
+                preset.left_arm_leg_size = bytes(len(preset.left_arm_leg_size))
                 preset.face_data_marker = 0
 
                 save_path = self.get_save_path()

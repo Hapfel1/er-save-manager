@@ -41,7 +41,7 @@ class Settings:
     toggle_auto_lockon: int = 0
     camera_auto_wall_recovery: int = 0
     unk0xe: int = 0
-    unk0xf: int = 0
+    jump_button_l3: int = 0
     reset_camera_y_axis: int = 0
     cinematic_effects: int = 0
     unk0x12: int = 0
@@ -57,7 +57,7 @@ class Settings:
     hdr_adjust_brightness: int = 0
     hdr_maximum_brightness: int = 0
     hdr_adjust_saturation: int = 0
-    unk0x1f: int = 0
+    performance_setting: int = 0
     master_volume: int = 0
     is_raytracing_on: int = (
         0  # 0 = Ray Tracing Quality off; quality level is in GraphicsConfig.xml
@@ -88,7 +88,7 @@ class Settings:
         obj.toggle_auto_lockon = struct.unpack("<B", f.read(1))[0]
         obj.camera_auto_wall_recovery = struct.unpack("<B", f.read(1))[0]
         obj.unk0xe = struct.unpack("<B", f.read(1))[0]
-        obj.unk0xf = struct.unpack("<B", f.read(1))[0]
+        obj.jump_button_l3 = struct.unpack("<B", f.read(1))[0]
         obj.reset_camera_y_axis = struct.unpack("<B", f.read(1))[0]
         obj.cinematic_effects = struct.unpack("<B", f.read(1))[0]
         obj.unk0x12 = struct.unpack("<B", f.read(1))[0]
@@ -104,7 +104,7 @@ class Settings:
         obj.hdr_adjust_brightness = struct.unpack("<B", f.read(1))[0]
         obj.hdr_maximum_brightness = struct.unpack("<B", f.read(1))[0]
         obj.hdr_adjust_saturation = struct.unpack("<B", f.read(1))[0]
-        obj.unk0x1f = struct.unpack("<B", f.read(1))[0]
+        obj.performance_setting = struct.unpack("<B", f.read(1))[0]
         obj.master_volume = struct.unpack("<B", f.read(1))[0]
         obj.is_raytracing_on = struct.unpack("<B", f.read(1))[0]
         obj.mark_new_items = struct.unpack("<B", f.read(1))[0]
@@ -132,7 +132,7 @@ class Settings:
         f.write(struct.pack("<B", self.toggle_auto_lockon))
         f.write(struct.pack("<B", self.camera_auto_wall_recovery))
         f.write(struct.pack("<B", self.unk0xe))
-        f.write(struct.pack("<B", self.unk0xf))
+        f.write(struct.pack("<B", self.jump_button_l3))
         f.write(struct.pack("<B", self.reset_camera_y_axis))
         f.write(struct.pack("<B", self.cinematic_effects))
         f.write(struct.pack("<B", self.unk0x12))
@@ -148,7 +148,7 @@ class Settings:
         f.write(struct.pack("<B", self.hdr_adjust_brightness))
         f.write(struct.pack("<B", self.hdr_maximum_brightness))
         f.write(struct.pack("<B", self.hdr_adjust_saturation))
-        f.write(struct.pack("<B", self.unk0x1f))
+        f.write(struct.pack("<B", self.performance_setting))
         f.write(struct.pack("<B", self.master_volume))
         f.write(struct.pack("<B", self.is_raytracing_on))
         f.write(struct.pack("<B", self.mark_new_items))
@@ -427,7 +427,7 @@ class UserData10:
         # KeyConfigSaveLoad (variable size)
         obj.key_config_save_load = KeyConfigSaveLoad.read(f)
 
-        # game_man_0x118 (8 bytes)
+        # Net penalty state, GameDataMan+0x118 (8 bytes)
         f.read(8)
 
         # Skip rest; the PC entry is 0x60000 bytes of data after its checksum

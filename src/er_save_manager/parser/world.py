@@ -1011,8 +1011,8 @@ class PlayerCoordinates:
     map_id: MapId = field(default_factory=MapId)
     angle: FloatVector4 = field(default_factory=FloatVector4)
     game_man_0xbf0: int = 0
-    unk_coordinates: FloatVector3 = field(default_factory=FloatVector3)
-    unk_angle: FloatVector4 = field(default_factory=FloatVector4)
+    multiplay_saved_coordinates: FloatVector3 = field(default_factory=FloatVector3)
+    multiplay_saved_angle: FloatVector4 = field(default_factory=FloatVector4)
 
     @classmethod
     def read(cls, f: BytesIO) -> PlayerCoordinates:
@@ -1022,8 +1022,8 @@ class PlayerCoordinates:
             map_id=MapId.read(f),
             angle=FloatVector4.read(f),
             game_man_0xbf0=struct.unpack("<B", f.read(1))[0],
-            unk_coordinates=FloatVector3.read(f),
-            unk_angle=FloatVector4.read(f),
+            multiplay_saved_coordinates=FloatVector3.read(f),
+            multiplay_saved_angle=FloatVector4.read(f),
         )
 
     def write(self, f: BytesIO):
@@ -1032,8 +1032,8 @@ class PlayerCoordinates:
         self.map_id.write(f)
         self.angle.write(f)
         f.write(struct.pack("<B", self.game_man_0xbf0))
-        self.unk_coordinates.write(f)
-        self.unk_angle.write(f)
+        self.multiplay_saved_coordinates.write(f)
+        self.multiplay_saved_angle.write(f)
 
 
 # ============================================================================
@@ -1270,8 +1270,8 @@ class PlayerGameDataHash:
     level: int = 0
     stats: int = 0
     archetype: int = 0
-    playergame_data_0xc0: int = 0
-    padding: int = 0
+    vow_type: int = 0
+    unk_entry4: int = 0
     runes: int = 0
     runes_memory: int = 0
     equipped_weapons: int = 0
@@ -1287,8 +1287,8 @@ class PlayerGameDataHash:
             level=struct.unpack("<I", f.read(4))[0],
             stats=struct.unpack("<I", f.read(4))[0],
             archetype=struct.unpack("<I", f.read(4))[0],
-            playergame_data_0xc0=struct.unpack("<I", f.read(4))[0],
-            padding=struct.unpack("<I", f.read(4))[0],
+            vow_type=struct.unpack("<I", f.read(4))[0],
+            unk_entry4=struct.unpack("<I", f.read(4))[0],
             runes=struct.unpack("<I", f.read(4))[0],
             runes_memory=struct.unpack("<I", f.read(4))[0],
             equipped_weapons=struct.unpack("<I", f.read(4))[0],
@@ -1303,8 +1303,8 @@ class PlayerGameDataHash:
         f.write(struct.pack("<I", self.level))
         f.write(struct.pack("<I", self.stats))
         f.write(struct.pack("<I", self.archetype))
-        f.write(struct.pack("<I", self.playergame_data_0xc0))
-        f.write(struct.pack("<I", self.padding))
+        f.write(struct.pack("<I", self.vow_type))
+        f.write(struct.pack("<I", self.unk_entry4))
         f.write(struct.pack("<I", self.runes))
         f.write(struct.pack("<I", self.runes_memory))
         f.write(struct.pack("<I", self.equipped_weapons))
