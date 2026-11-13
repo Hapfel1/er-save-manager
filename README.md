@@ -156,7 +156,8 @@ Automatically detects issues with your game installation, your save file and any
 ### Appearance Editor
 
 - View Details of a Preset
-- Export/Import a Preset from/to a `.json` file (Supports importing from Elden Bling Sliders)
+- Export/Import a Preset from/to a `.json` file (Supports importing from Elden Bling and Elden Sliders)
+- Import a Preset from JSON on the clipboard, such as Copy JSON on [Elden Sliders](https://eldensliders.com)
 - Share Presets via unique Code
 - Delete a Preset
 - Copy a Preset to a different Save file

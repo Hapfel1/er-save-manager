@@ -1253,6 +1253,14 @@ class FacePreset:
             i = eb_index - 1
             return table[i] if 0 <= i < len(table) else default
 
+        # Elden Sliders exports the same layout with null for every control
+        # left untouched; dropping those keys selects the per-field defaults.
+        data = {
+            name: {k: v for k, v in section.items() if v is not None and v != ""}
+            for name, section in data.items()
+            if isinstance(section, dict)
+        }
+
         base = data.get("base", {})
         body_type = 0 if base.get("body_type", "A") == "B" else 1
 
