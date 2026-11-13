@@ -3,6 +3,71 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.6.0
+**Released:** November 13, 2026
+
+
+### ✨ New Features
+
+- ER: Deaths column in the Save Fixer character list (#488) ([164c096](https://github.com/Hapfel1/er-save-manager/commit/164c096d1078f606e87425c8d9a25fd9cf384d86))
+
+- ER: Import Elden Sliders JSON presets from a file or with Paste JSON (#485, #486) ([43c39e8](https://github.com/Hapfel1/er-save-manager/commit/43c39e83d0f74b5c610e6ee7eb15ad2e60fdc7eb)) ([b9a0c1c](https://github.com/Hapfel1/er-save-manager/commit/b9a0c1c5430cadf778d9067a00323a73047143ce))
+
+- ER: Map pins for the Convergence forge, NPC gifts and blessings that have no event flag (#474) ([b2060a8](https://github.com/Hapfel1/er-save-manager/commit/b2060a838fd9bef7577f626e37061282debef1b3))
+
+- ER: Neutral map selection tag; multi-item pins show the searched item first (#475) ([838fce9](https://github.com/Hapfel1/er-save-manager/commit/838fce99afa09c4838ae6b6e15f8203e58ae65af))
+
+- General: Undo after any edit that writes the save, in all games (#482) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87))
+
+- General: First steps panel on the Save Inspector until a save is loaded (#482) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87))
+
+- General: Wait for the game to close instead of refusing, with Force Close (#482, #483) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87)) ([637f898](https://github.com/Hapfel1/er-save-manager/commit/637f8982ac8b9988ce5eb87024d4f71f83f2fdc3))
+
+- General: Save picker shows the save kind, last change and character names, with one badge color per save kind (#482, #487) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87)) ([df42a27](https://github.com/Hapfel1/er-save-manager/commit/df42a27898aae84f6db6fb1276b97c94aca3cc8b))
+
+- General: Offer Patch to My SteamID for a save from another Steam account (#482) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87))
+
+- General: Link the submission terms in preset and character submissions (#471) ([3a6be75](https://github.com/Hapfel1/er-save-manager/commit/3a6be7545977c99614ef46598711f6bc74da254d))
+
+
+### 🔧 Bug Fixes
+
+- ER: Batch Add keeps to item states the game can produce and caps stacks on vanilla saves (#479) ([9ba2350](https://github.com/Hapfel1/er-save-manager/commit/9ba2350847ff9f9d2b27d4c8efc5f93d3877a026))
+
+- ER: Unobtainable items hidden from the item spawner; Convergence Ragged set added (#478) ([b1cba97](https://github.com/Hapfel1/er-save-manager/commit/b1cba97f18b9dd287769a7856cdff59b5c00a29d))
+
+- ER: Convergence item names, hidden items and armor slot types (#480, #481) ([0340f6e](https://github.com/Hapfel1/er-save-manager/commit/0340f6ecb42c47804cbf9e86977876d963e267ef)) ([84383c0](https://github.com/Hapfel1/er-save-manager/commit/84383c09a805108cafdb87c31d3d2de5dfdd6381))
+
+- ER: Teleport refills 0 HP and lands clear of objects; one pin per forge weapon; Convergence 3.0.4.1 Ash of War slots (#476, #477) ([364816b](https://github.com/Hapfel1/er-save-manager/commit/364816b753ab52fcc8d101fcb03a552873197b45)) ([da14f0f](https://github.com/Hapfel1/er-save-manager/commit/da14f0fa23c3585d723cf7558f4d0388739a65ea))
+
+- ER: Gestures tab keeps unobtained gestures; equipment edits keep a valid save hash (#484) ([bc47534](https://github.com/Hapfel1/er-save-manager/commit/bc47534e078b3df775895bd230aa5b43a35704f8))
+
+- General: Game detection ignores closed processes; tooltips stay on one monitor (#483) ([637f898](https://github.com/Hapfel1/er-save-manager/commit/637f8982ac8b9988ce5eb87024d4f71f83f2fdc3))
+
+- General: Verbose log records loads, writes, backups and transfers, next to errors.log (#468) ([48e08bb](https://github.com/Hapfel1/er-save-manager/commit/48e08bb038f4d1f6c6e1dfb8cadf66ade0ae0825))
+
+
+### 📖 Documentation
+
+- General: User guide covers Undo, waiting for the game, the save picker, the Deaths column and location-only map pins (#489)
+
+- General: Code of conduct, security policy, contributing guide and issue forms (#469) ([f9742ae](https://github.com/Hapfel1/er-save-manager/commit/f9742ae53b976684213913880e9b0611e008116b))
+
+- General: State that versions before 22 July 2026 were MIT (#470) ([3d50aa5](https://github.com/Hapfel1/er-save-manager/commit/3d50aa5125beebb6d9354fb31a4a4972cf6901a0))
+
+
+### 📦 Dependencies
+
+- General: Fix open security advisories and let Dependabot update uv (#464) ([5a8ccca](https://github.com/Hapfel1/er-save-manager/commit/5a8ccca88cbf1e8f6f74af0d7ff71ed50cefb7cd))
+
+- General: Update lief to 1.0.0 for GHSA-mjjp-xjfg-97wg (#467) ([c373417](https://github.com/Hapfel1/er-save-manager/commit/c3734175962358360bf487a289b62e0c42bd7a13))
+
+- General: Bump taiki-e/install-action (#466) ([bcba97d](https://github.com/Hapfel1/er-save-manager/commit/bcba97ddd6a7ca4db3eccec0ccbe34d039e81c0d))
+
+- General: Bump taiki-e/install-action (#473) ([4286b9b](https://github.com/Hapfel1/er-save-manager/commit/4286b9bf95dfbcbd6c78c176cddf8f5b1295269e))
+
+
+---
 ## 📦 Release 2.5.0
 **Released:** November 03, 2026
 

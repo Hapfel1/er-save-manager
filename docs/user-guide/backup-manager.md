@@ -113,7 +113,7 @@ Replaces current save with selected backup.
 - Current save automatically backed up (skipped when the save file no longer exists)
 - Shows characters that will be replaced
 - Requires confirmation
-- Refused while the game is running
+- Waits for the game to close first, with **Force Close**
 - The backup being restored is never pruned by the backup limit
 
 **Deleted save:** if the loaded save was deleted or moved, the editor shows a notice, and the

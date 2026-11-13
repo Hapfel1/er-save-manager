@@ -222,7 +222,17 @@ If the tear runs through NetMan, the damaged NetMan chunks are rebuilt as descri
 
 ### Character List
 
-The Save Fixer tab lists every character as a card with slot, level, class, runes, NG+, play time and location, and a status on the right: **OK**, or the number of issues detected (hover for the list). Select a character and click **View All Issues** to scan it and apply fixes.
+The Save Fixer tab lists every character as a card with slot, level, class, runes, NG+, play time, deaths and location, and a status on the right: **OK**, or the number of issues detected (hover for the list). **Deaths** is the character's total death count (Elden Ring only, read-only); on a narrow window **Location** is hidden first. Select a character and click **View All Issues** to scan it and apply fixes.
+
+### Get Started Panel
+
+Until a save is loaded, the character list shows three first steps:
+
+1. **Close the game** - shows whether the game is running. **Force Close** ends it at once; progress since its last autosave is lost
+2. **Load your save** - **Auto-Find** looks in the usual save folders, **Browse** picks a file
+3. **Pick a character** - check it here or edit it in the other tabs
+
+The panel appears on the Save Inspector of every game with a character list.
 
 ### Scan Results
 
