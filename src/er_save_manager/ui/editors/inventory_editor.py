@@ -739,14 +739,15 @@ def _confirm_batch_add(
     ).pack(anchor="w", pady=(10, 4))
     for point in points:
         # Bullet in its own column, so wrapped lines indent under the text
+        # Both labels at text height, so the bullet sits on the first line
         row = ctk.CTkFrame(main, fg_color="transparent")
-        row.pack(fill="x", padx=(6, 0), pady=1)
-        ctk.CTkLabel(row, text="\u2022", font=ds.FONT, width=14).pack(
+        row.pack(fill="x", padx=(6, 0), pady=4)
+        ctk.CTkLabel(row, text="\u2022", font=ds.FONT, width=14, height=0).pack(
             side="left", anchor="n"
         )
         ctk.CTkLabel(
-            row, text=point, font=ds.FONT, wraplength=410, justify="left"
-        ).pack(side="left", anchor="w", padx=(4, 0))
+            row, text=point, font=ds.FONT, wraplength=410, justify="left", height=0
+        ).pack(side="left", anchor="n", padx=(4, 0))
     if online:
         ctk.CTkCheckBox(
             main,

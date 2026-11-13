@@ -7,7 +7,7 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.ui import palette
-from er_save_manager.ui.utils import get_work_area
+from er_save_manager.ui.utils import get_monitor_area
 
 _DELAY_MS = 500
 _BG = ("gray90", "gray22")
@@ -86,12 +86,18 @@ class Tooltip:
         # Hidden until sized and placed, so it never shows off screen first
         tip.withdraw()
         tip.wm_overrideredirect(True)
+        # Pixel sizes follow the UI scaling of the widget's window (Windows
+        # display scaling), as CTk widgets do
+        scale = ctk.ScalingTracker.get_widget_scaling(self.widget)
+        font = ("Inter", -round(12 * scale))
+        bold = (*font, "bold")
+        wrap = round(360 * scale)
         dark = ctk.get_appearance_mode() == "Dark"
         pick = 1 if dark else 0
         frame = tk.Frame(tip, bg=_BORDER[pick], padx=1, pady=1)
         frame.pack()
         bg, fg = _BG[pick], "gray90" if dark else "gray10"
-        body = tk.Frame(frame, bg=bg, padx=8, pady=4)
+        body = tk.Frame(frame, bg=bg, padx=round(8 * scale), pady=round(4 * scale))
         body.pack()
         tk.Label(
             body,
@@ -99,18 +105,18 @@ class Tooltip:
             justify="left",
             bg=bg,
             fg=fg,
-            font=("Inter", -12, "bold") if self.rows else ("Inter", -12),
-            wraplength=360,
+            font=bold if self.rows else font,
+            wraplength=wrap,
         ).pack(anchor="w")
         if self.rows:
             table = tk.Frame(body, bg=bg)
             table.pack(anchor="w", pady=(4, 4))
             key_fg = palette.PURPLE_TEXT[pick]
             for r, (key, value) in enumerate(self.rows):
-                tk.Label(
-                    table, text=key, bg=bg, fg=key_fg, font=("Inter", -12, "bold")
-                ).grid(row=r, column=0, sticky="w", padx=(0, 12))
-                tk.Label(table, text=value, bg=bg, fg=fg, font=("Inter", -12)).grid(
+                tk.Label(table, text=key, bg=bg, fg=key_fg, font=bold).grid(
+                    row=r, column=0, sticky="w", padx=(0, round(12 * scale))
+                )
+                tk.Label(table, text=value, bg=bg, fg=fg, font=font).grid(
                     row=r, column=1, sticky="w"
                 )
         if self.footer:
@@ -120,8 +126,8 @@ class Tooltip:
                 justify="left",
                 bg=bg,
                 fg="gray70" if dark else "gray35",
-                font=("Inter", -12),
-                wraplength=360,
+                font=font,
+                wraplength=wrap,
             ).pack(anchor="w")
         tip.update_idletasks()
         w, h = tip.winfo_reqwidth(), tip.winfo_reqheight()
@@ -143,12 +149,12 @@ class Tooltip:
             wx, wy = widget.winfo_rootx(), widget.winfo_rooty()
             x = wx + widget.winfo_width() - w
             y = wy + widget.winfo_height() + 6
-            ax, ay, aw, ah = get_work_area(widget, (wx, wy))
+            ax, ay, aw, ah = get_monitor_area(widget, (wx, wy))
             if y + h > ay + ah:
                 y = wy - h - 6
             x = max(x, widget.winfo_toplevel().winfo_rootx())
         else:
-            ax, ay, aw, ah = get_work_area(widget, (x, y))
+            ax, ay, aw, ah = get_monitor_area(widget, (x, y))
             if x + w > ax + aw:
                 x = x - w - 28
             if y + h > ay + ah:

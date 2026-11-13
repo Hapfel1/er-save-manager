@@ -186,7 +186,7 @@ def _subtitle_text(profile) -> str:
 
 # Save file kinds per extension, for the Auto-Find help tooltip
 _EXTENSION_HELP = {
-    ".sl2": "Vanilla game (official servers)",
+    ".sl2": "Vanilla Save",
     ".co2": "Seamless Co-op",
     ".cnv": "The Convergence",
     ".cnvco2": "The Convergence + Seamless Co-op",

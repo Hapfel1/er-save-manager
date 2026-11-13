@@ -128,8 +128,13 @@ class GetStartedPanel(ctk.CTkFrame):
     def _step(self, number: str, title: str):
         row = ctk.CTkFrame(self, fg_color="transparent")
         row.pack(fill="x", pady=6)
+        # Fixed column: the circle's width follows its glyph (1, 2, check
+        # mark), the step texts start at one x
+        column = ctk.CTkFrame(row, fg_color="transparent", width=36, height=28)
+        column.pack(side="left", anchor="n", padx=(0, 10))
+        column.pack_propagate(False)
         num = ctk.CTkLabel(
-            row,
+            column,
             text=number,
             width=28,
             height=28,
@@ -138,7 +143,7 @@ class GetStartedPanel(ctk.CTkFrame):
             text_color=_TODO[1],
             font=ds.BOLD,
         )
-        num.pack(side="left", anchor="n", padx=(0, 12))
+        num.pack(anchor="center")
         body = ctk.CTkFrame(row, fg_color="transparent")
         body.pack(side="left", fill="x", expand=True)
         ctk.CTkLabel(body, text=title, font=ds.BOLD, anchor="w").pack(anchor="w")
