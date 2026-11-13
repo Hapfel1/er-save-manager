@@ -195,6 +195,13 @@ class AppearanceTab:
 
         ctk.CTkButton(
             io_row,
+            text="Import from Clipboard",
+            command=self.import_preset_from_clipboard,
+            width=160,
+        ).pack(side=tk.LEFT, padx=(0, 6))
+
+        ctk.CTkButton(
+            io_row,
             text="Export to Code",
             command=self.export_preset_to_code,
             width=130,
@@ -1262,6 +1269,31 @@ class AppearanceTab:
 
         self._import_preset_data(data, os.path.basename(json_path))
 
+    def import_preset_from_clipboard(self):
+        """Import preset(s) from JSON text on the clipboard."""
+        save_file = self.get_save_file()
+        if not save_file:
+            notify(self.parent, "Load a save file first.", "warning")
+            return
+
+        try:
+            text = self.parent.clipboard_get()
+        except tk.TclError:
+            text = ""
+
+        try:
+            data = json.loads(text)
+        except ValueError:
+            CTkMessageBox.showerror(
+                "No Preset on Clipboard",
+                "The clipboard does not hold preset JSON. Copy the JSON first, "
+                "for example with Copy JSON on an Elden Sliders page.",
+                parent=self.parent,
+            )
+            return
+
+        self._import_preset_data(data, "the clipboard")
+
     def import_preset_from_code(self):
         """Import preset(s) from a share code."""
         save_file = self.get_save_file()
@@ -1298,7 +1330,8 @@ class AppearanceTab:
             #   {"presets": [...]}           - UI export (raw appearance dicts)
             #   {"presets": [{"slot","data"}]} - save.py export
             #   {"description","appearance"} - single NPC preset
-            #   {"base": {...}, "skin_color": {...}, ...} - Elden Bling Auto Sliders
+            #   {"base": {...}, "skin_color": {...}, ...} - Elden Bling Auto Sliders,
+            #                                  Elden Sliders
             #   [...]                        - bare list
             if isinstance(data, dict) and "base" in data and "skin_color" in data:
                 from er_save_manager.parser.character_presets import FacePreset

@@ -9,7 +9,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - 15 preset slots available
 - View preset details (face, body, colors)
 - Export presets to JSON files
-- Import presets from JSON files (Supports importing from Elden Bling Sliders export)
+- Import presets from JSON files or the clipboard (Supports Elden Bling and Elden Sliders exports)
 - Copy presets to other saves
 - Browse and download community presets
 - Set the eye overrides of the selected character (Frenzied Flame, Bloody Finger or Dragon Communion eyes, the Frenzied Flame mark and the Eye Alterations option)
@@ -47,6 +47,7 @@ The Appearance tab manages character appearance presets stored in your save file
 - **View Details** - View complete preset data
 - **Export to JSON** - Save preset to file
 - **Import from JSON** - Load preset from file
+- **Import from Clipboard** - Load preset from copied JSON text
 - **Delete Preset** - Clear selected preset slot
 - **Copy to Another Save** - Transfer to different save file
 - **Browse Community Presets** - Open community browser
@@ -206,6 +207,17 @@ Loads preset from JSON file into selected slot.
 3. Browse to `.json` file
 4. Confirm import
 5. Preset loaded into slot
+
+### Import from Clipboard
+
+Loads preset from JSON text on the clipboard, such as the **Copy JSON** button on an Elden Sliders page.
+
+**Steps:**
+
+1. Copy the preset JSON
+2. Select target preset slot (empty or occupied)
+3. Click **Import from Clipboard**
+4. Confirm import
 
 ### What Gets Imported
 
