@@ -137,7 +137,11 @@ class SaveInspectorTab:
                     print(f"Error loading slot {slot_idx}: {e}")
 
             self.list.show(
-                columns("Runes", extras=(("location", "Location", 110),)), rows
+                columns(
+                    "Runes",
+                    extras=(("deaths", "Deaths", 60), ("location", "Location", 110)),
+                ),
+                rows,
             )
 
         except Exception as e:
@@ -177,6 +181,7 @@ class SaveInspectorTab:
         values["ng"] = f"NG+{ng}" if ng < 100 else "Unknown"
         if getattr(slot, "map_id", None):
             values["location"] = slot.map_id.to_string_decimal()
+        values["deaths"] = f"{slot.total_deaths_count:,}"
         return CharacterRow(
             slot_idx, name, values, scan_character(save_file, slot_idx).issue_texts
         )
