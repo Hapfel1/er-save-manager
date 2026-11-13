@@ -186,7 +186,7 @@ stale data (float arrays, random bytes) and changes only when its slot is writte
 | game_man_0x5bf | 1 after warping to a grace, 0 after resting at one |
 | spawn_point_entity_id | entity id the character respawns at |
 | game_man_0xb64 | 0, or a spawn point entity id |
-| game_man_0xcb3 | 0 or 1, unknown |
+| game_man_0xcb3 | GameMan+0xCB3, 0 or 1. The game sets it during a map load and clears it when a session starts; when it is 1 on load, the game discards three cached GameMan objects and clears the flag |
 
 ---
 
@@ -863,10 +863,20 @@ later field 4 bytes back (`FACE` at 0x70, name at 0x190). The list is refreshed 
 
 ### Chunk 8
 
-Summoning pools. A 12-byte header (three uint32: 1, 1, then a value from 1 to 13, unknown) followed by
-entries of 12 bytes: `uint32` entity id of a summoning pool asset (AEG099_060 in the map's MSB, ids ending
-in 1950-1965), `uint32 0 or 10`, 4 flag bytes. The set of entries grows with the pools the character has
-reached; the game writes them in a different order on each save.
+Sites of Grace. A 12-byte header (three uint32: 1, 1, then a value from 1 to 13 that rises with progress and
+does not fall), followed by entries of 12 bytes:
+
+| Offset | Size | Field |
+|---|---|---|
+| 0x00 | 4 | uint32 grace entity id (BonfireWarpParam bonfireEntityId; the AEG099_060 asset in the map's MSB) |
+| 0x04 | 4 | uint32 10 x `count` |
+| 0x08 | 1 | 0 |
+| 0x09 | 1 | 0 or 1, unknown |
+| 0x0A | 1 | `count`: 0 = not lit, 1 or more = lit |
+| 0x0B | 1 | 0xFF |
+
+All graces of a map are added when the map is first loaded, lit or not. The game writes the entries in a
+different order on each save.
 
 ---
 
