@@ -124,6 +124,9 @@ Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults**
 - Checks for new versions on startup
 - Shows notification if update available
 - Links to download page
+- Marks the version in the status bar with "update available"
+
+The app version is shown at the right end of the status bar. Clicking it checks for updates (also with this setting off), or opens the update dialog once a newer version is known.
 
 ### External Changes
 

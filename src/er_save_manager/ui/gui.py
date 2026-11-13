@@ -712,6 +712,10 @@ class SaveManagerGUI:
                     # Schedule the dialog to show on the main thread
                     self.root.after(
                         0,
+                        lambda: self._mark_update(latest_version, download_url),
+                    )
+                    self.root.after(
+                        0,
                         lambda: self._show_update_dialog(latest_version, download_url),
                     )
 
@@ -722,6 +726,76 @@ class SaveManagerGUI:
 
         thread = threading.Thread(target=check_in_thread, daemon=True)
         thread.start()
+
+    def _build_version_label(self, parent):
+        """App version at the right end of the status bar; a click checks for
+        updates, or opens the update dialog once one is known."""
+        from er_save_manager.ui import dialog_style as ds
+        from er_save_manager.ui.tooltip import add_tooltip
+
+        self._update_found: tuple[str, str] | None = None
+        self._update_check_running = False
+        self.version_label = ctk.CTkLabel(
+            parent,
+            text=f"v{__version__}",
+            text_color=ds.MUTED,
+            cursor="hand2",
+            padx=8,
+            pady=6,
+        )
+        self.version_label.pack(side=tk.RIGHT)
+        self._version_tip = add_tooltip(self.version_label, "Check for updates")
+        self.version_label.bind("<Button-1>", lambda _e: self._on_version_click())
+
+    def _mark_update(self, latest_version: str, download_url: str):
+        """Show in the status bar that a newer version is out."""
+        self._update_found = (latest_version, download_url)
+        self.version_label.configure(
+            text=f"v{__version__} - update available",
+            text_color=palette.PURPLE_TEXT,
+        )
+        self._version_tip.text = f"Version {latest_version} is available"
+
+    def _on_version_click(self):
+        if self._update_found:
+            self._show_update_dialog(*self._update_found)
+            return
+        if self._update_check_running:
+            return
+        self._update_check_running = True
+        self.version_label.configure(text="Checking for updates...")
+
+        # The worker only stores the result; Tk is touched from this thread only
+        result: list[tuple] = []
+        threading.Thread(
+            target=lambda: result.append(
+                VersionChecker(__version__).check_for_updates()
+            ),
+            daemon=True,
+        ).start()
+
+        def poll():
+            if result:
+                self._on_manual_check_done(*result[0])
+            else:
+                self.root.after(100, poll)
+
+        poll()
+
+    def _on_manual_check_done(
+        self, has_update: bool, latest_version: str | None, download_url: str | None
+    ):
+        self._update_check_running = False
+        self.version_label.configure(text=f"v{__version__}")
+        if has_update and latest_version and download_url:
+            self._mark_update(latest_version, download_url)
+            self._show_update_dialog(latest_version, download_url)
+        elif latest_version is None:
+            self.show_toast(
+                "Could not reach GitHub to check for updates.", 4000, "warning"
+            )
+        else:
+            self.show_toast(f"Version {__version__} is the latest.", type="info")
 
     def _handle_game_running_dialog(self, profile=None) -> bool:
         """Wait for the game to close before a load or write.
@@ -1122,6 +1196,7 @@ class SaveManagerGUI:
         status_frame = ctk.CTkFrame(self.root, corner_radius=0)
         status_frame.grid(row=5, column=0, sticky="ew")
 
+        self._build_version_label(status_frame)
         ctk.CTkLabel(
             status_frame,
             textvariable=self.status_var,
