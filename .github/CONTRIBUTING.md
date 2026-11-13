@@ -21,9 +21,8 @@ bug involves a save, and the logs:
 - `errors.log`, written whenever the app shows an error dialog, in
   `%APPDATA%\ER Save Manager` on Windows and `~/.local/share/er-save-manager`
   on Linux.
-- `er_save_manager.log` for a detailed log: on the Settings tab, type
-  `STRAWBERRY` to show the Advanced section, tick **Verbose logging to file**,
-  reproduce the problem, and take the file from the same folder as `errors.log`.
+- `er_save_manager.log` for a detailed log: on the Settings tab, tick
+  **Verbose logging to file** under General, reproduce the problem, and take the file from the same folder as `errors.log`.
 
 Security problems go through the [security policy](SECURITY.md), not issues.
 

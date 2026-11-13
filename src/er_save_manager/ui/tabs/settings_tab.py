@@ -290,6 +290,31 @@ class SettingsTab:
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 12))
 
+        # Verbose logging
+        self.verbose_logging_var = tk.BooleanVar(
+            value=self.settings.get("verbose_logging", False)
+        )
+        log_row = ctk.CTkFrame(frame, fg_color="transparent")
+        log_row.pack(fill="x", padx=12, pady=5)
+        ctk.CTkCheckBox(
+            log_row,
+            text="Verbose logging to file",
+            variable=self.verbose_logging_var,
+            command=self._on_verbose_logging_changed,
+        ).pack(side="left")
+        ctk.CTkButton(
+            log_row,
+            text="Open Log Folder",
+            width=140,
+            command=lambda: verbose_log.open_log_folder(self.parent),
+        ).pack(side="left", padx=(16, 0))
+        ctk.CTkLabel(
+            frame,
+            text="Writes er_save_manager.log next to errors.log. Attach both to a bug report.",
+            text_color=("gray40", "gray70"),
+            font=("Inter", 11),
+        ).pack(anchor="w", padx=32, pady=(0, 12))
+
     def _default_game_name(self) -> str:
         """Return the display name of the saved default game."""
         from er_save_manager.games.game_profiles import PROFILES_BY_KEY
@@ -1016,31 +1041,6 @@ class SettingsTab:
             font=("Inter", 11),
         ).pack(anchor="w", padx=32, pady=(0, 10))
 
-        # Verbose logging
-        self.verbose_logging_var = tk.BooleanVar(
-            value=self.settings.get("verbose_logging", False)
-        )
-        log_row = ctk.CTkFrame(frame, fg_color="transparent")
-        log_row.pack(fill="x", padx=12, pady=5)
-        ctk.CTkCheckBox(
-            log_row,
-            text="Verbose logging to file",
-            variable=self.verbose_logging_var,
-            command=self._on_verbose_logging_changed,
-        ).pack(side="left")
-        ctk.CTkButton(
-            log_row,
-            text="Open Log Folder",
-            width=140,
-            command=lambda: verbose_log.open_log_folder(self.parent),
-        ).pack(side="left", padx=(16, 0))
-        ctk.CTkLabel(
-            frame,
-            text="Writes er_save_manager.log next to errors.log. Attach both to a bug report.",
-            text_color=("gray40", "gray70"),
-            font=("Inter", 11),
-        ).pack(anchor="w", padx=32, pady=(0, 12))
-
         # Icon export in Visual Item Picker
         self._icon_export_var = tk.BooleanVar(
             value=self.settings.get("icon_export_enabled", False)
@@ -1178,8 +1178,6 @@ class SettingsTab:
         """Hide the advanced section and clear the unlock flag."""
         self.settings.set("advanced_mode_unlocked", False)
         self.settings.set("skip_game_running_check", False)
-        self.settings.set("verbose_logging", False)
-        verbose_log.set_enabled(False)
         self.settings.set("icon_export_enabled", False)
         self.settings.set("debug_warped_face_sliders", False)
         self.settings.set("show_item_ids", False)
