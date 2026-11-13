@@ -1059,8 +1059,9 @@ character.
 
 ### GameDataMan bytes (5)
 
-`uint32` GameDataMan+0xD0 (only ever 0), then `uint8` GameMan+0xB75: a flag the game sets in its game flow and
-clears on the next title screen load; when it is 1 at load, the title screen takes a separate path.
+`uint32` GameDataMan+0xD0 (only ever 0), then `uint8` GameMan+0xB75: 1 while a character is loaded, 0 after
+returning to the title screen. A file that holds 1 was last written by a session that ended in game (process
+closed without Quit Game); when it is 1 at load, the title screen takes a separate path.
 
 ### Net penalty (8)
 
