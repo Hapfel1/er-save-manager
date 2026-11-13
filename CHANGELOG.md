@@ -27,6 +27,8 @@
 
 - General: Offer Patch to My SteamID for a save from another Steam account (#482) ([4deeaac](https://github.com/Hapfel1/er-save-manager/commit/4deeaac9a4cd7a797f6ffbdbd7635fbe7e774d87))
 
+- General: App version in the status bar, click to check for updates; Verbose logging moved to the General settings (#490)
+
 - General: Link the submission terms in preset and character submissions (#471) ([3a6be75](https://github.com/Hapfel1/er-save-manager/commit/3a6be7545977c99614ef46598711f6bc74da254d))
 
 

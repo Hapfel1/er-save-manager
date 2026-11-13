@@ -124,6 +124,9 @@ Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults**
 - Checks for new versions on startup
 - Shows notification if update available
 - Links to download page
+- Marks the version in the status bar with "update available"
+
+The app version is shown at the right end of the status bar. Clicking it checks for updates (also with this setting off), or opens the update dialog once a newer version is known.
 
 ### External Changes
 
@@ -283,7 +286,7 @@ ER0000_2026-02-15_18-30-00_game_launch.bak
 
 **Error log:** unexpected errors are shown in an Unexpected Error dialog and appended to `errors.log` in the same folder (moved to `errors.log.1` past 1 MB). Attach it when reporting a bug.
 
-**Verbose log:** with **Verbose logging to file** ticked in the Advanced section (type `STRAWBERRY` on the Settings tab to show it), save loads, writes, backups, restores, character transfers and errors are written to `er_save_manager.log` in the same folder (moved to `er_save_manager.log.1` past 1 MB). Attach it when reporting a bug.
+**Verbose log:** with **Verbose logging to file** ticked in the General section of the Settings tab, save loads, writes, backups, restores, character transfers and errors are written to `er_save_manager.log` in the same folder (moved to `er_save_manager.log.1` past 1 MB). Attach it when reporting a bug.
 
 **Open Log Folder**, next to the verbose log setting and in **Advanced Tools**, opens this folder in the file manager.
 
