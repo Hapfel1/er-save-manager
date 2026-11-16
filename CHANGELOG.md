@@ -3,6 +3,21 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.6.1
+**Released:** November 16, 2026
+
+
+### 🔧 Bug Fixes
+
+- General: Accept a non-zero BaseVersion unk in the event flag splice repair (#491) ([453b74b](https://github.com/Hapfel1/er-save-manager/commit/453b74b7242288fff77e420a8ee05a439be51815))
+
+
+### 📦 Dependencies
+
+- General: Bump taiki-e/install-action (#493) ([3ac58fb](https://github.com/Hapfel1/er-save-manager/commit/3ac58fb4efeaaabb77c246ff8e2e6b61aa75c84c))
+
+
+---
 ## 📦 Release 2.6.0
 **Released:** November 13, 2026
 
