@@ -1486,11 +1486,15 @@ def _world_chain_end(slot_raw: bytes | bytearray, pos: int) -> int | None:
 
 
 def _base_version_ok(slot_raw: bytes | bytearray, pos: int, version: int) -> bool:
-    """BaseVersion sanity: both copies equal, within (0, slot version], flags clear."""
+    """
+    BaseVersion sanity: both copies equal, within (0, slot version],
+    is_latest 0 or 1. unk is not checked: torn slots can carry a non-zero
+    value there while the SteamID that follows is intact.
+    """
     if pos < 0 or pos + _BASE_VERSION_SIZE > len(slot_raw):
         return False
-    copy, base, is_latest, unk = struct.unpack_from("<4I", slot_raw, pos)
-    return copy == base and 0 < base <= version and is_latest in (0, 1) and unk == 0
+    copy, base, is_latest, _unk = struct.unpack_from("<4I", slot_raw, pos)
+    return copy == base and 0 < base <= version and is_latest in (0, 1)
 
 
 @lru_cache(maxsize=1)
