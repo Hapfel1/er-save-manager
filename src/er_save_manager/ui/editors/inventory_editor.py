@@ -658,7 +658,24 @@ def _owned_flask_names(slot, base_id: int) -> list[str]:
 
 SECOND_FLASK_WARNING_SETTING = "show_second_flask_warning"
 SUPPLY_WARNING_SETTING = "show_item_supply_warning"
+SECOND_COPY_WARNING_SETTING = "show_second_copy_warning"
 DLC_SPELL_WARNING_SETTING = "show_dlc_spell_warning"
+
+
+def _confirm_second_copy(parent, name: str, location: str) -> bool:
+    other = "storage" if location == "held" else "the inventory"
+    return confirm_warning(
+        parent,
+        SECOND_COPY_WARNING_SETTING,
+        "Item Already Owned",
+        "Second copy",
+        [
+            f"{name} is already in {other}. The game gives a second copy only "
+            "for items it hands out more than once, such as a second Lantern.",
+            "A copy the game cannot produce can get the account banned online.",
+        ],
+        confirm_text="Add Anyway",
+    )
 
 
 def _confirm_second_flask(parent, owned: list[str]) -> bool:
@@ -824,6 +841,11 @@ def _goods_qty(inv, base_id: int) -> int:
     )
 
 
+def _other_location_qty(slot, base_id: int, location: str) -> int:
+    other = slot.inventory_storage_box if location == "held" else slot.inventory_held
+    return _goods_qty(other, base_id)
+
+
 def _batch_goods_qty(
     slot, item, location: str, qty: int, max_qty: int, supply_capped: bool
 ) -> tuple[str | None, int]:
@@ -842,6 +864,8 @@ def _batch_goods_qty(
     ):
         return "already in the inventory", 0
     inv = slot.inventory_held if location == "held" else slot.inventory_storage_box
+    if item.max_num == 1 and _other_location_qty(slot, item.id, location):
+        return "already owned in the other location", 0
     qty = min(qty, max_qty - _goods_qty(inv, item.id))
     if qty <= 0:
         reason = (
@@ -3041,6 +3065,16 @@ class InventoryEditor:
                 return
             if not self._confirm_supply(
                 slot, base_id, item_info["base_name"], item_info["qty"]
+            ):
+                return
+            db_item, _level = self._db_item_for(full_id)
+            if (
+                db_item is not None
+                and db_item.max_num == 1
+                and _other_location_qty(slot, base_id, item_info["location"])
+                and not _confirm_second_copy(
+                    self.parent, db_item.name, item_info["location"]
+                )
             ):
                 return
 

@@ -106,6 +106,7 @@ class Settings:
             "show_reward_respawn_warning": True,
             "show_second_flask_warning": True,
             "show_item_supply_warning": True,
+            "show_second_copy_warning": True,
             "show_dlc_spell_warning": True,
             "show_steamid_mismatch_warning": True,
             "show_cut_content_warning": True,

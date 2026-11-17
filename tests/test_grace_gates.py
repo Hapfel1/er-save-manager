@@ -52,3 +52,24 @@ def test_filter_unlock_skips_or_keeps_closed_graces(monkeypatch):
     # boss defeated: nothing to ask
     defeated = lambda f: f == 10000800  # noqa: E731
     assert filter_unlock(flags, {}, False, defeated, None) == flags
+
+
+def test_filter_unlock_asks_about_ashen_capital_on_vanilla(monkeypatch):
+    divine_bridge, first_step = 71125, 76101  # Leyndell, Ashen Capital / Limgrave
+    flags = [divine_bridge, first_step]
+    asked = []
+
+    def ask(*a, **k):
+        asked.append(a[0])
+        return False
+
+    monkeypatch.setattr(boss_gate.CTkMessageBox, "askyesnocancel", ask)
+    maliketh_alive = lambda f: False  # noqa: E731
+    assert filter_unlock(flags, {}, False, maliketh_alive, None, vanilla=True) == [
+        first_step
+    ]
+    assert asked == ["Ashen Capital Graces Included"]
+    # Seamless Co-op and Convergence saves never reach the official servers
+    assert filter_unlock(flags, {}, False, maliketh_alive, None) == flags
+    maliketh_dead = lambda f: f == 9116  # noqa: E731
+    assert filter_unlock(flags, {}, False, maliketh_dead, None, vanilla=True) == flags

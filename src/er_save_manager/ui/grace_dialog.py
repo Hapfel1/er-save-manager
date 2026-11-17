@@ -11,6 +11,7 @@ from er_save_manager.data.grace_data import Grace, get_graces, grace_gate
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.boss_gate import filter_unlock, gate_status
+from er_save_manager.ui.dialogs.vanilla_save_warning import is_vanilla_save
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
@@ -257,6 +258,7 @@ class GraceDialog:
                     convergence,
                     _flag_state,
                     dialog,
+                    vanilla=bool(save_path) and is_vanilla_save(str(save_path)),
                 )
                 if kept is None:
                     return

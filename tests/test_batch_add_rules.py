@@ -88,3 +88,22 @@ def test_tutorial_note_sets_its_award_flag(sanitized_save):
     assert EventFlags.get_flag(slot.event_flags, 69250)
     _apply_item_event_flags(sanitized_save, 6, hunter, False)
     assert not EventFlags.get_flag(slot.event_flags, 69250)
+
+
+def test_unique_good_in_the_other_location(sanitized_save):
+    from er_save_manager.ui.editors.inventory_editor import InventoryEditor
+
+    db = get_item_database()
+    slot = sanitized_save.character_slots[6]
+    needle = db.get_item_by_id(_GOODS | 2190)  # Miquella's Needle, one copy
+    inventory_ops.add_item(sanitized_save, 6, needle.full_id, 1, "held")
+    # Batch Add leaves it out
+    assert _batch_goods_qty(slot, needle, "storage", 1, 1, False) == (
+        "already owned in the other location",
+        0,
+    )
+    # A single add only warns (the game gives some items twice)
+    ed = InventoryEditor.__new__(InventoryEditor)
+    ed.get_save_file = lambda: sanitized_save
+    ed.get_save_path = lambda: "ER0000.sl2"
+    assert ed._validate_add_item(needle.full_id, 1, 0, "storage", slot) == (True, "")
