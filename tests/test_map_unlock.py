@@ -150,3 +150,40 @@ def test_progress_overlay_shades_only_locked_pieces():
     s = images.scale
     assert box[0] >= left * s - margin and box[2] <= right * s + margin
     assert box[1] >= top * s - margin and box[3] <= bottom * s + margin
+
+
+def test_reset_fog_restores_new_character_fog_and_relocks(sanitized_save):
+    from er_save_manager.editors.map_unlock import (
+        FOG_BYTES,
+        FOG_FRESH,
+        FOG_OFFSET,
+        reset_fog,
+    )
+
+    idx = _first_slot(sanitized_save)
+    unlock(sanitized_save, idx, piece_flags=[p.flag_id for p in MAP_PIECES])
+    slot = sanitized_save.character_slots[idx]
+    tail = slot.menu_profile_save_load.data[FOG_OFFSET + len(FOG_FRESH) :]
+
+    # Lands Between only: Realm of Shadow fog, area and pieces stay
+    result = reset_fog(sanitized_save, idx, [0], relock=True)
+    data = slot.menu_profile_save_load.data
+    fog = int.from_bytes(data[FOG_OFFSET : FOG_OFFSET + FOG_BYTES], "little")
+    fresh = int.from_bytes(FOG_FRESH, "little")
+    lands = (1 << 1681) - 1
+    assert result.fog_cells and fog & lands == fresh & lands
+    assert fog >> 1681 == (1 << (FOG_BYTES * 8 - 1681)) - 1
+    assert data[FOG_OFFSET + len(FOG_FRESH) :] == tail
+    for p in MAP_PIECES:
+        hidden = p.fragment and p.map_no != 10
+        assert EventFlags.get_flag(slot.event_flags, p.flag_id) != hidden
+    left = [p.rect for p in MAP_PIECES if p.map_no == 0 and not p.fragment]
+    assert struct.unpack_from("<4f", data, 0x08) == (
+        min(r[0] for r in left),
+        min(r[1] for r in left),
+        max(r[2] for r in left),
+        max(r[3] for r in left),
+    )
+    start = slot.menu_profile_save_load_offset + 8
+    assert bytes(sanitized_save._raw_data[start : start + len(data)]) == data
+    assert reset_fog(sanitized_save, idx, [0, 1], relock=True).fog_cells == 0

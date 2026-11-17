@@ -1140,6 +1140,7 @@ class MapWindow:
         grace_state: Callable[[int], bool | None] | None = None,
         on_set_grace: Callable[[int, bool], None] | None = None,
         on_unlock: Callable[[list[int], list[int]], None] | None = None,
+        on_reset_fog: Callable[[list[int], bool], None] | None = None,
         on_select_slot: Callable[[str], None] | None = None,
         on_move_bloodstain: Callable[[], None] | None = None,
         convergence: bool = False,
@@ -1163,6 +1164,7 @@ class MapWindow:
         self._grace_state = _safe_reader(grace_state)
         self._on_set_grace = on_set_grace
         self._on_unlock = on_unlock
+        self._on_reset_fog = on_reset_fog
         # Dungeon map id -> WorldMapPointParam icon id of the nearest map point.
         self._dungeon_icons = meta["dungeon_icons"]
         self._place_locations(locations)
@@ -1299,11 +1301,13 @@ class MapWindow:
         grace_state: Callable[[int], bool | None] | None,
         on_set_grace: Callable[[int, bool], None] | None,
         on_unlock: Callable[[list[int], list[int]], None] | None = None,
+        on_reset_fog: Callable[[list[int], bool], None] | None = None,
     ):
         """grace_state reads any event flag (graces and map pieces)."""
         self._grace_state = _safe_reader(grace_state)
         self._on_set_grace = on_set_grace
         self._on_unlock = on_unlock
+        self._on_reset_fog = on_reset_fog
         self._completion_cache = None
         self._read_pickup_states()
         sel = self._selected_pin
@@ -1751,12 +1755,17 @@ class MapWindow:
         self._grace_row = grace_row
         unlock_row = ctk.CTkFrame(side, fg_color="transparent")
         unlock_row.pack(fill=tk.X, pady=(0, 6), **pad)
+        unlock_btns = ctk.CTkFrame(unlock_row, fg_color="transparent")
+        unlock_btns.pack(fill=tk.X)
         self._area_btn = ds.button(
-            unlock_row, "Unlock Area", self._unlock_area, primary=False
+            unlock_btns, "Unlock Area", self._unlock_area, primary=False
         )
         self._area_btn.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 3))
-        ds.button(unlock_row, "Unlock Whole Map", self._unlock_map, primary=False).pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(3, 0)
+        ds.button(
+            unlock_btns, "Unlock Whole Map", self._unlock_map, primary=False
+        ).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(3, 0))
+        ds.button(unlock_row, "Reset Fog", self._reset_fog, primary=False).pack(
+            fill=tk.X, pady=(6, 0)
         )
         self._unlock_row = unlock_row
         # Merchant lineup or NPC quest steps, packed under the unlock row
@@ -5001,6 +5010,114 @@ class MapWindow:
         if not chosen:
             return
         self._on_unlock(*chosen[0])
+        self._update_location_info()
+        self._schedule_render()
+
+    def _reset_fog(self):
+        """Ask which maps to cover in fog again and whether to hide their
+        map fragments too, then reset."""
+        if self._grace_state is None or self._on_reset_fog is None:
+            notify(
+                self._win, "Load a character in the World State tab first.", "warning"
+            )
+            return
+        # The Underground shows the Lands Between fog
+        choices = (
+            (MAP_LANDS_BETWEEN, "Lands Between and Underground"),
+            (MAP_REALM_OF_SHADOW, MAP_NAMES[MAP_REALM_OF_SHADOW]),
+        )
+        current = (
+            MAP_REALM_OF_SHADOW
+            if self._map_no == MAP_REALM_OF_SHADOW
+            else MAP_LANDS_BETWEEN
+        )
+        dialog = ds.create(self._win, "Reset Map Fog")
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=20, pady=16)
+        chosen: list[tuple[list[int], bool]] = []
+        map_vars = {m: tk.BooleanVar(value=m == current) for m, _name in choices}
+        relock_var = tk.BooleanVar(value=False)
+
+        def refresh():
+            reset_btn.configure(
+                state="normal"
+                if any(v.get() for v in map_vars.values())
+                else "disabled"
+            )
+
+        def confirm():
+            chosen.append(
+                ([m for m, var in map_vars.items() if var.get()], relock_var.get())
+            )
+            dialog.destroy()
+
+        _row, (_cancel, reset_btn) = ds.button_row(
+            main,
+            [
+                {"text": "Cancel", "command": dialog.destroy, "primary": False},
+                {"text": "Reset", "command": confirm},
+            ],
+        )
+        ds.header(main, "Reset map fog")
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                main,
+                text="The map is covered in fog again, as on a new character, "
+                "and clears while exploring.",
+                wraplength=340,
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+                anchor="w",
+                justify=tk.LEFT,
+            )
+        ).pack(fill=tk.X, pady=(4, 0))
+        ctk.CTkLabel(main, text="Maps", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(10, 2)
+        )
+        for map_no, name in choices:
+            ctk.CTkCheckBox(
+                main,
+                text=name,
+                variable=map_vars[map_no],
+                command=refresh,
+                font=ds.FONT,
+            ).pack(anchor="w", pady=2)
+        ctk.CTkLabel(main, text="Map fragments", font=ds.BOLD, anchor="w").pack(
+            fill=tk.X, pady=(12, 2)
+        )
+        ctk.CTkCheckBox(
+            main,
+            text="Hide the map fragments of these maps too",
+            variable=relock_var,
+            font=ds.FONT,
+        ).pack(anchor="w", pady=2)
+        ds.wrap_to_width(
+            ctk.CTkLabel(
+                main,
+                text="The map items stay in the inventory and their pickups do "
+                "not return. Unlock Whole Map reveals the fragments again.",
+                wraplength=340,
+                font=ds.SMALL,
+                text_color=ds.MUTED,
+                anchor="w",
+                justify=tk.LEFT,
+            )
+        ).pack(fill=tk.X)
+        ctk.CTkLabel(
+            main,
+            text="A backup is made before saving.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(10, 0))
+
+        refresh()
+        dialog.bind("<Escape>", lambda _e: dialog.destroy())
+        ds.finish(dialog, self._win, min_width=380)
+        dialog.wait_window()
+        if not chosen:
+            return
+        self._on_reset_fog(*chosen[0])
         self._update_location_info()
         self._schedule_render()
 
