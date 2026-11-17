@@ -88,3 +88,16 @@ def test_tutorial_note_sets_its_award_flag(sanitized_save):
     assert EventFlags.get_flag(slot.event_flags, 69250)
     _apply_item_event_flags(sanitized_save, 6, hunter, False)
     assert not EventFlags.get_flag(slot.event_flags, 69250)
+
+
+def test_unique_good_not_added_to_the_other_location(sanitized_save):
+    from er_save_manager.ui.editors.inventory_editor import InventoryEditor
+
+    ed = InventoryEditor.__new__(InventoryEditor)
+    ed.get_save_file = lambda: sanitized_save
+    ed.get_save_path = lambda: "ER0000.sl2"
+    slot = sanitized_save.character_slots[6]
+    needle = _GOODS | 2190  # Miquella's Needle, one copy
+    inventory_ops.add_item(sanitized_save, 6, needle, 1, "held")
+    ok, err = ed._validate_add_item(needle, 1, 0, "storage", slot)
+    assert not ok and "only one copy" in err

@@ -12,10 +12,12 @@ from collections.abc import Callable
 from er_save_manager.data.grace_data import (
     BossGate,
     arena_gate,
+    get_graces,
     grace_gate,
     location_gate,
 )
 from er_save_manager.data.locations import MapLocation
+from er_save_manager.parser.event_flags import FixFlags
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.dialogs.teleport_warnings import BOSS_GATE_SETTING
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -23,6 +25,7 @@ from er_save_manager.ui.messagebox import CTkMessageBox
 FlagState = Callable[[int], bool | None]
 
 _LIST_LIMIT = 10
+ASHEN_CAPITAL_REGION = "Leyndell, Ashen Capital"
 
 
 def closed_gate(
@@ -90,12 +93,56 @@ def filter_unlock(
     convergence: bool,
     flag_state: FlagState,
     parent,
+    vanilla: bool = False,
 ) -> list[int] | None:
-    """Ask whether to include graces the game has not spawned yet.
+    """Ask whether to include graces the game has not spawned yet and, on a
+    vanilla save with Maliketh alive, the Leyndell, Ashen Capital graces.
 
     Returns the grace flags to unlock, or None when cancelled. Graces that
     are already unlocked are not asked about.
     """
+    grace_flags = _filter_closed(grace_flags, names, convergence, flag_state, parent)
+    if grace_flags is None or not vanilla:
+        return grace_flags
+    return _filter_ashen(grace_flags, names, flag_state, parent)
+
+
+def _filter_ashen(
+    grace_flags: list[int], names: dict[int, str], flag_state: FlagState, parent
+) -> list[int] | None:
+    if flag_state(FixFlags.DEFEATED_MALIKETH) is not False:
+        return grace_flags
+    ashen = {g.flag_id for g in get_graces() if g.region == ASHEN_CAPITAL_REGION}
+    asked = [f for f in grace_flags if f in ashen and flag_state(f) is False]
+    if not asked:
+        return grace_flags
+    n = len(asked)
+    answer = CTkMessageBox.askyesnocancel(
+        "Ashen Capital Graces Included",
+        f"{n} of these graces are in Leyndell, Ashen Capital:\n\n"
+        + "\n".join(f"- {names.get(f, str(f))}" for f in asked[:_LIST_LIMIT])
+        + "\n\nMaliketh is alive on this character, so the rest of the world "
+        "is not ashen yet. Entering the Ashen Capital in this state on a "
+        "vanilla save can get the account banned online.\n\n"
+        f"Unlock {'it' if n == 1 else 'them'} too? No skips "
+        f"{'it' if n == 1 else 'them'} and unlocks the rest.",
+        parent=parent,
+    )
+    if answer is None:
+        return None
+    if answer:
+        return grace_flags
+    skip = set(asked)
+    return [f for f in grace_flags if f not in skip]
+
+
+def _filter_closed(
+    grace_flags: list[int],
+    names: dict[int, str],
+    convergence: bool,
+    flag_state: FlagState,
+    parent,
+) -> list[int] | None:
     closed = []
     for flag in grace_flags:
         if flag_state(flag) is not False:

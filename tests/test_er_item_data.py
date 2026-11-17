@@ -254,6 +254,8 @@ def test_unobtainable_items_named_but_not_offered(item_db) -> None:
         return {i.full_id for i in listed(is_cnv)}
 
     assert item_db.get_item_by_id(great_coffins).name == "Note: Great Coffins"
+    # Shops and the crafting recipe give goods 150; 182 has no source
+    assert [i.id for i in item_db.search_items("Furlcalling")] == [150]
     assert offered(False) & probe == {stonesword_key}
     assert offered(True) & probe == {monument_icon}
 

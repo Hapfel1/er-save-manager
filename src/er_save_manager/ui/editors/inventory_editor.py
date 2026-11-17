@@ -2563,6 +2563,20 @@ class InventoryEditor:
                     False,
                     f"Quantity must be 1-{max_qty} for this item in {location}.",
                 )
+            # A good the game caps at one copy is never in both the
+            # inventory and the storage box.
+            if cat == 0x40000000 and item_for_qty.max_num == 1:
+                other, other_name = (
+                    (slot.inventory_storage_box, "storage")
+                    if location == "held"
+                    else (slot.inventory_held, "the inventory")
+                )
+                if _goods_qty(other, base_id):
+                    return (
+                        False,
+                        f"{item_for_qty.name} is already in {other_name}; the "
+                        "game holds only one copy.",
+                    )
 
         return True, ""
 
@@ -3267,6 +3281,8 @@ class InventoryEditor:
                         reason = "stack already at its max"
                     elif "Shadow of the Erdtree" in reason:
                         reason = "Shadow of the Erdtree spell, DLC not owned"
+                    elif "game holds only one copy" in reason:
+                        reason = "already owned in the other location"
                     skipped[reason] = skipped.get(reason, 0) + 1
 
             if with_flasks:

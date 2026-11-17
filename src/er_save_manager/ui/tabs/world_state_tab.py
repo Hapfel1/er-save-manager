@@ -638,12 +638,14 @@ class WorldStateTab:
         if save is None or self.editor is None:
             return
         names = {loc.flag_id: loc.name for loc in self.all_locations if loc.flag_id}
+        save_path = self.get_save_path()
         grace_flags = filter_unlock(
             grace_flags,
             names,
             self._convergence,
             self._grace_state,
             self._dialog_parent(),
+            vanilla=bool(save_path) and is_vanilla_save(str(save_path)),
         )
         if grace_flags is None or not save_writable():
             return
