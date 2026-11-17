@@ -94,7 +94,7 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
         ),
     ]
 
-    vars: dict[str, tk.IntVar] = {}
+    vars: dict[str, tk.StringVar] = {}
 
     def build(body):
         for group, fields in groups:
@@ -106,7 +106,9 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
                 ctk.CTkLabel(box, text=label, font=ds.FONT, anchor="w").grid(
                     row=i, column=0, sticky=tk.W, padx=(12, 20), pady=pady
                 )
-                var = vars.get(field) or tk.IntVar(value=getattr(settings, field, 0))
+                var = vars.get(field) or tk.StringVar(
+                    value=str(getattr(settings, field, 0))
+                )
                 vars[field] = var
                 ctk.CTkEntry(
                     box, textvariable=var, width=60, height=28, font=ds.FONT
@@ -143,7 +145,7 @@ def open_game_settings(parent, save_file, save_path, show_toast) -> None:
 
         for field, var in vars.items():
             with contextlib.suppress(Exception):
-                setattr(settings, field, var.get())
+                setattr(settings, field, int(var.get()))
 
         # Settings follow the checksum (PC only), version and steam_id
         ud10_base = save_file._user_data_10_offset
