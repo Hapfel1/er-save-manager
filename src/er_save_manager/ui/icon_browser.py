@@ -155,7 +155,7 @@ class IconBrowser(ctk.CTkToplevel):
         ctk.CTkLabel(opts, text="Quantity:", anchor="w").grid(
             row=0, column=0, sticky=ctk.W, padx=(0, 6), pady=3
         )
-        self._qty_var = ctk.IntVar(value=1)
+        self._qty_var = ctk.StringVar(value="1")
         self._qty_entry = ctk.CTkEntry(
             opts, textvariable=self._qty_var, width=70, state="disabled"
         )
@@ -379,11 +379,11 @@ class IconBrowser(ctk.CTkToplevel):
         max_arrow = getattr(item, "max_arrow_quantity", 1)
         is_ammo = is_weapon and max_arrow > 1
         if (is_weapon and not is_ammo) or is_armor or is_gem:
-            self._qty_var.set(1)
+            self._qty_var.set("1")
             self._qty_entry.configure(state="disabled")
         else:
             max_num = max_arrow if is_ammo else getattr(item, "max_num", 1)
-            self._qty_var.set(1)
+            self._qty_var.set("1")
             self._qty_entry.configure(state="normal" if max_num > 1 else "disabled")
 
         if is_upgradable:
