@@ -4,7 +4,8 @@ Grace and map piece states are event flags. The map menu also keeps, per
 map, the area it lets the cursor show (the union of the revealed pieces'
 rectangles) and a fog of war grid; the art of a revealed piece is drawn only
 on cleared fog cells. Unlocking pieces updates both (map_menu_bounds,
-FOG_* below). A grace's play regions
+FOG_* below); reset_fog() puts the fog back and can hide the pieces again.
+A grace's play regions
 (data/grace_regions.json) go into the slot's Regions list, a u32 count plus
 that many u32 ids right before the horse data. Resizing the list moves every
 later section; the slot keeps its size by dropping bytes from the end of
@@ -53,6 +54,31 @@ FOG_GRIDS = {
     MAP_UNDERGROUND: (5928, 10232, 0, 1681),
     MAP_REALM_OF_SHADOW: (4000, 20624, 1681, FOG_BYTES * 8),
 }
+# Fog bytes of a new character: cells outside the drawn map are clear from
+# the start, together with the cells around the starting cave. The eight
+# bytes after them (up to FOG_BYTES) are not fog cells.
+FOG_FRESH = bytes.fromhex(
+    "ffffffffffffffffffffffffffffffffff1f0000feff3f0000f8ff7f0000f0ff"
+    "ff0000c0ffff010000feff030000f0ff070000c0ff0f000000ff1fc00300fc3f"
+    "800700f07f000f00f0ff000000e0ff010000c0ff03000e80ff07001c80ff0f00"
+    "7880ff1f00f0e7ff3f00e03efc7f000000f8ff010000f0ff070000c0ff0f0000"
+    "00ff1f000000feff000000f8ff030000f0ff070000e0ff0f0000c0ff1f000080"
+    "ff7f700080fffff80380ffffff3ff8ffffffffffffffffffffffffffffffffff"
+    "ffffffffffffffffffff01ffffffffffffffffffffffffffffffffffffffffff"
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1f"
+    "0000feff3f0000fcff7f0000f8ffff0000f0ffff0100e0ffff0300c0ffff0700"
+    "80ffff0f0000ffff1f0000feff3f0000fcff7f0000f8ffff0000f0ffff0100e0"
+    "ffff0300c0ffff070080ffff0f0000ffff1f0000feff3f0000fcff7f0000f8ff"
+    "ff0000f0ffff0100e0ffff0300c0ffff070080ffff0f0000ffffffffffffffff"
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffff010000"
+)
+# First and end fog bit per map choice of reset_fog(). The Underground has
+# no cells of its own.
+FOG_RESET_BITS = {
+    MAP_LANDS_BETWEEN: (0, 1681),
+    MAP_UNDERGROUND: (0, 1681),
+    MAP_REALM_OF_SHADOW: (1681, len(FOG_FRESH) * 8),
+}
 _PIECES_BY_FLAG = {p.flag_id: p for p in MAP_PIECES}
 
 # Shown map area per map: MenuSaveLoad data +0x08 + 0x20 * record, four f32
@@ -78,6 +104,12 @@ class UnlockResult:
     pieces: int = 0
     regions: int = 0
     fog_cells: int = 0
+
+
+@dataclass
+class ResetResult:
+    fog_cells: int = 0
+    pieces: int = 0
 
 
 def fog_cells(map_no: int, rect: tuple[float, float, float, float]) -> list[int]:
@@ -149,6 +181,79 @@ def update_map_menu(save: Save, slot_idx: int, piece_flags: Iterable[int]) -> in
         save._raw_data[off : off + len(data)] = data
         menu.data = bytes(data)
     return cleared
+
+
+def _shrink_bounds(data: bytearray, event_flags: bytes, records: set[int]) -> None:
+    """Set the shown area of each record to its still revealed pieces, or to
+    no area when none is left."""
+    for record in records:
+        rects = [
+            p.rect
+            for p in MAP_PIECES
+            if BOUNDS_RECORD.get(p.map_no) == record
+            and EventFlags.get_flag(event_flags, p.flag_id)
+        ]
+        off = BOUNDS_OFFSET + BOUNDS_STRIDE * record
+        state = struct.unpack_from("<I", data, off + 16)[0] & ~0xFF
+        if rects:
+            union = (
+                min(r[0] for r in rects),
+                min(r[1] for r in rects),
+                max(r[2] for r in rects),
+                max(r[3] for r in rects),
+            )
+            struct.pack_into("<4fI", data, off, *union, state | 1)
+        else:
+            struct.pack_into("<4fI", data, off, 0.0, 0.0, 0.0, 0.0, state)
+
+
+def reset_fog(
+    save: Save, slot_idx: int, map_nos: Iterable[int], relock: bool = False
+) -> ResetResult:
+    """Put the fog of the given maps back to that of a new character.
+
+    With relock, the fragment pieces of those maps are hidden again and the
+    shown map area shrinks to the pieces left. The Lands Between and the
+    Underground share fog and shown area, so either one resets both. The map
+    items stay in the inventory. Characters with the old map menu layout
+    (version 0) keep their fog and shown area.
+    """
+    slot = save.character_slots[slot_idx]
+    menu = slot.menu_profile_save_load
+    map_nos = list(map_nos)
+    records = {BOUNDS_RECORD[m] for m in map_nos}
+    result = ResetResult()
+    flags = bytearray(slot.event_flags)
+    if relock:
+        for p in MAP_PIECES:
+            if (
+                p.fragment
+                and BOUNDS_RECORD[p.map_no] in records
+                and EventFlags.get_flag(flags, p.flag_id)
+            ):
+                EventFlags.set_flag(flags, p.flag_id, False)
+                result.pieces += 1
+        if result.pieces:
+            off = slot.event_flags_offset
+            save._raw_data[off : off + len(flags)] = flags
+            slot.event_flags = bytes(flags)
+    if menu.layout_version != 2:
+        return result
+    data = bytearray(menu.data)
+    for first, end in {FOG_RESET_BITS[m] for m in map_nos}:
+        for cell in range(first, end):
+            byte, bit = cell // 8, 1 << (cell % 8)
+            if data[FOG_OFFSET + byte] & bit and not FOG_FRESH[byte] & bit:
+                data[FOG_OFFSET + byte] &= ~bit
+                result.fog_cells += 1
+    if relock:
+        _shrink_bounds(data, flags, records)
+    if data != menu.data:
+        # data follows the u16, u16, u32 MenuSaveLoad header
+        off = slot.menu_profile_save_load_offset + 8
+        save._raw_data[off : off + len(data)] = data
+        menu.data = bytes(data)
+    return result
 
 
 def set_regions(save: Save, slot_idx: int, region_ids: list[int]) -> None:

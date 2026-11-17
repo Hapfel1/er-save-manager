@@ -33,7 +33,7 @@ from er_save_manager.editors.map_markers import (
     MapMarkerEditor,
     copy_markers,
 )
-from er_save_manager.editors.map_unlock import unlock
+from er_save_manager.editors.map_unlock import reset_fog, unlock
 from er_save_manager.editors.world_state import WorldStateEditor, _map_id_to_str
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags, FixFlags
@@ -609,6 +609,7 @@ class WorldStateTab:
                 self._grace_state if loaded else None,
                 self._set_grace if loaded else None,
                 self._unlock_on_map if loaded else None,
+                self._reset_fog_on_map if loaded else None,
             )
             window.set_pickup_callback(self._set_pickup if loaded else None)
             window.set_flag_callback(self._set_flags if loaded else None)
@@ -678,6 +679,27 @@ class WorldStateTab:
                 f"Unlocked {', '.join(parts)}" if parts else "Nothing new to unlock",
                 duration=3000,
             )
+
+    def _reset_fog_on_map(self, map_nos: list[int], relock: bool):
+        """Cover the given maps in fog again; relock also hides their map
+        fragments."""
+        save = self.get_save_file()
+        if save is None or self.editor is None or not save_writable():
+            return
+        result = reset_fog(save, self.slot_var.get() - 1, map_nos, relock)
+        if not (result.fog_cells or result.pieces):
+            self.show_toast("Nothing to reset", duration=3000)
+            return
+        if self._persist("before_fog_reset", "fog_reset", reload=False):
+            parts = [
+                count_phrase(n, word)
+                for n, word in (
+                    (result.fog_cells, "fog cell"),
+                    (result.pieces, "map piece"),
+                )
+                if n
+            ]
+            self.show_toast(f"Reset {', '.join(parts)}", duration=3000)
 
     def _set_graces(self, flag_ids: list[int], state: bool):
         """Lock or unlock graces: write their event flags and save the file."""
@@ -797,6 +819,7 @@ class WorldStateTab:
             grace_state=self._grace_state if self.editor else None,
             on_set_grace=self._set_grace if self.editor else None,
             on_unlock=self._unlock_on_map if self.editor else None,
+            on_reset_fog=self._reset_fog_on_map if self.editor else None,
             on_select_slot=self._map_slot_selected,
             on_move_bloodstain=self._sync_bloodstain_to_player,
             convergence=self._convergence,
