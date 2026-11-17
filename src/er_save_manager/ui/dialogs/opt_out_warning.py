@@ -48,6 +48,11 @@ WARNINGS = (
         "Elden Ring: the game keeps one flask of each kind.",
     ),
     (
+        "show_second_copy_warning",
+        "Show ban warning before adding a second copy of a one-copy item",
+        "Elden Ring: the item is already in the inventory or storage.",
+    ),
+    (
         "show_item_supply_warning",
         "Show ban warning before adding more than the game hands out",
         "Elden Ring vanilla saves: Golden Seeds, Scadutree Fragments and other "
