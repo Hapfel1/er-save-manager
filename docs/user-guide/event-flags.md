@@ -15,7 +15,7 @@ Event flags are binary switches (ON/OFF) that track game state:
 
 The Event Flags tab provides:
 
-- 1,295 documented flags organized by category
+- 1,712 documented flags organized by category
 - Boss respawn functionality
 - Search and filter
 - Bulk operations
@@ -41,19 +41,22 @@ The **Character** bar under the file row picks the character; its flags load as 
 
 **Main Categories:**
 
-- Boss
+- Torrent
+- Ash of War (Duplication Menu)
+- Bell Bearings
+- Bosses
+- Cookbook
 - Grace
-- Quest
-- Item
-- Achievement
-- NPC
-- Area
-- Misc
+- Maps
+- System
+- Whetblades
+- Tutorials
+- Map Place Names
 
 **Subcategories:**
 
 - Varies by main category
-- Example: Boss → Demigods, Dragons, Dungeon Bosses, etc.
+- Example: Bosses, Grace and Map Place Names → map regions; System → Great Runes, Story Progress, Time & Weather, etc.
 
 ### Flag List
 
