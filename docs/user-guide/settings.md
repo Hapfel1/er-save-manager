@@ -105,6 +105,7 @@ Unchecking one (here or in the dialog) skips that warning; **Reset to Defaults**
 | Show warning before teleporting to the bloodstain | Elden Ring | dying again at the death spot loses the runes |
 | Show warning before respawning a reward on the world map | Elden Ring | boss, enemy and NPC rewards are not placed back on the map |
 | Show ban warning before adding a second flask | Elden Ring | the game keeps one flask of each kind |
+| Show ban warning before adding a second copy of a one-copy item | Elden Ring | goods the game keeps one copy of, across inventory and storage box |
 | Show ban warning before adding more than the game hands out | Elden Ring | vanilla saves: Golden Seeds, Scadutree Fragments and other limited items past what one playthrough yields |
 | Show ban warning before adding a DLC spell without the DLC | Elden Ring | Shadow of the Erdtree spells on a character not loaded with the DLC |
 | Ask to patch a save from another Steam account | All games with a SteamID in the save | after loading a save whose SteamID is not the one of its SteamID folder; Patch to My SteamID writes the folder's SteamID into it |
