@@ -8,11 +8,10 @@ import tkinter as tk
 import customtkinter as ctk
 
 from er_save_manager.backup.manager import BackupManager
-from er_save_manager.data.boss_data import (
-    BOSS_CATEGORIES,
-    BOSSES,
-    get_boss_flags,
-    get_bosses_by_category,
+from er_save_manager.data.boss_locations import (
+    OTHER_REGION,
+    boss_regions,
+    boss_spots,
 )
 from er_save_manager.data.event_flags_db import (
     CATEGORIES,
@@ -1146,17 +1145,17 @@ class EventFlagsTab:
         ds.button_row(main, [{"text": "Close", "command": dialog.destroy}])
         ds.header(main, "Boss Status", font=ds.TITLE_LARGE)
 
+        convergence = self._is_cnv_save()
         all_entries: list[tuple[str, str, str]] = []
-        for boss_name, data in BOSSES.items():
-            flags = data.get("flags", [])
+        for boss in boss_spots(convergence):
             # Only flags[0] is the documented encounter "Defeated" trigger flag.
             # Remaining flags are side effects (stat counters, reward pickups,
             # grace unlocks) and are not reliable defeat indicators on their own.
-            defeated = bool(flags) and self.current_event_flags.get_flag(flags[0])
+            defeated = self.current_event_flags.get_flag(boss.flags[0])
             all_entries.append(
                 (
-                    boss_name,
-                    data.get("category", ""),
+                    boss.name,
+                    boss.region or OTHER_REGION,
                     "Defeated" if defeated else "Alive",
                 )
             )
@@ -1191,7 +1190,7 @@ class EventFlagsTab:
             ctk.CTkComboBox(
                 filter_frame,
                 variable=region_filter_var,
-                values=["All", *BOSS_CATEGORIES],
+                values=["All", *boss_regions(convergence)],
                 state="readonly",
                 width=260,
                 font=ds.FONT,
@@ -1286,11 +1285,13 @@ class EventFlagsTab:
             side=tk.LEFT, padx=(12, 8), pady=10
         )
 
-        boss_category_var = tk.StringVar(value=BOSS_CATEGORIES[0])
+        convergence = self._is_cnv_save()
+        categories = boss_regions(convergence)
+        boss_category_var = tk.StringVar(value=categories[0])
         cat_combo = ctk.CTkComboBox(
             cat_frame,
             variable=boss_category_var,
-            values=BOSS_CATEGORIES,
+            values=categories,
             state="readonly",
             width=300,
             font=ds.FONT,
@@ -1311,12 +1312,10 @@ class EventFlagsTab:
             boss_vars.clear()
 
             category = boss_category_var.get()
-            bosses_in_cat = get_bosses_by_category(category)
-
-            for boss_name in bosses_in_cat:
-                flags = get_boss_flags(boss_name)
-                if not flags:
+            for boss in sorted(boss_spots(convergence), key=lambda b: b.name):
+                if (boss.region or OTHER_REGION) != category:
                     continue
+                boss_name, flags = boss.name, boss.flags
 
                 is_defeated = self.current_event_flags.get_flag(flags[0])
                 var = tk.BooleanVar(value=False)

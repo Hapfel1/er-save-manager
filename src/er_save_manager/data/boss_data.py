@@ -1,5 +1,5 @@
 """
-Boss respawn data: 208 bosses extracted from TGA CEA script
+Boss respawn data: 207 bosses extracted from TGA CEA script
 All boss defeat flags for respawn functionality
 Duplicate bosses have location appended to name
 """
@@ -356,7 +356,7 @@ BOSSES = {
     },
     "Red Bear": {"flags": [2046450800, 530900], "category": "Gravesite Plain"},
     "Rellana, Twin Moon Knight": {
-        "flags": [2048440800, 9190, 510900, 61190, 1190, 76823],
+        "flags": [2048440800, 9190, 510900, 61190, 1190, 76823, 4925],
         "category": "Gravesite Plain",
     },
     # Greyoll's Dragonbarrow (10 bosses)
@@ -616,7 +616,7 @@ BOSSES = {
         "category": "Moonlight Altar",
     },
     "Glintstone Dragon Adula": {
-        "flags": [1034420800, 1034420800, 530260],
+        "flags": [1034420800, 530260],
         "category": "Moonlight Altar",
     },
     # Mountaintops of the Giants (7 bosses)
@@ -676,7 +676,7 @@ BOSSES = {
     },
     # Rauh Base (2 bosses)
     "Death Knight (Rauh Base)": {
-        "flags": [40010800, 9271, 520710, 61271, 1271],
+        "flags": [40010800, 9271, 520710, 61271, 1271, 520711],
         "category": "Rauh Base",
     },
     "Rugalea the Great Red Bear": {
@@ -689,7 +689,7 @@ BOSSES = {
         "category": "Redmane Castle",
     },
     "Putrid Tree Spirit": {
-        "flags": [30160800, 9216, 510260, 61216, 1216],
+        "flags": [30160800, 9216, 520160, 61216, 1216],
         "category": "Redmane Castle",
     },
     "Starscourge Radahn": {
@@ -710,6 +710,7 @@ BOSSES = {
             9415,
             9416,
             9417,
+            9412,
         ],
         "category": "Redmane Castle",
     },
@@ -799,11 +800,22 @@ BOSSES = {
     },
     # Stormveil Castle (2 bosses)
     "Godrick the Grafted": {
-        "flags": [10000800, 10000801, 9101, 510010, 61101, 3269, 10008540, 71000, 1101],
+        "flags": [
+            10000800,
+            10000801,
+            9101,
+            510010,
+            61101,
+            3269,
+            10008540,
+            71000,
+            1101,
+            10000802,
+        ],
         "category": "Stormveil Castle",
     },
     "Grafted Scion": {
-        "flags": [10010800, 10010801, 101, 9103, 510030, 61103, 1103],
+        "flags": [10010800, 10010801, 9103, 510030, 61103, 1103],
         "category": "Stormveil Castle",
     },
     # Underground (12 bosses)
@@ -876,7 +888,6 @@ BOSSES = {
             4131,
             4132,
             4066,
-            4120,
             4123,
         ],
         "category": "Underground",
@@ -912,7 +923,7 @@ BOSSES = {
     },
     # Volcano Manor (3 bosses)
     "Abductor Virgins": {
-        "flags": [16000860, 9129, 510290, 61129, 1219],
+        "flags": [16000860, 9129, 510290, 61129, 1129, 71606],
         "category": "Volcano Manor",
     },
     "Godskin Noble": {
