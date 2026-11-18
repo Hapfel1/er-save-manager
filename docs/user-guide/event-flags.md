@@ -1,6 +1,6 @@
 # Event Flags & Boss Respawner
 
-View, edit, and toggle event flags - including boss respawning functionality with 1,295 documented flags.
+View, edit, and toggle event flags - including boss respawning functionality with 1,712 documented flags.
 
 ## Overview
 
@@ -169,7 +169,7 @@ The **Character** bar under the file row picks the character; its flags load as 
 
 **Interface:**
 
-- **Boss Location dropdown** - Select boss location
+- **Boss Location dropdown** - Select boss location (on a Convergence save, the mod's bosses and regions)
 - **Boss list** - All bosses in category
 - **Checkboxes** - Select bosses to respawn
 - **Respawn Selected button**

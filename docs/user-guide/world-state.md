@@ -213,6 +213,14 @@ regions. Revealing pieces also clears the fog of war over them (all fog of the m
 is picked), extends the part of the map the map menu shows, and makes the Underground or Realm of
 Shadow map available in game. A backup is made before saving.
 
+On a vanilla save with Maliketh alive, unlocking graces asks before including the Leyndell, Ashen
+Capital graces, since that world state can get the account banned online.
+
+**Reset Fog** covers the picked maps in fog again, as on a new character. The Lands Between and the
+Underground share one fog grid, so they are one choice; the Realm of Shadow is the other. With
+**Hide the map fragments of these maps too**, their map pieces are hidden again as well. The map
+items stay in the inventory and their pickups are not respawned. A backup is made before saving.
+
 ### Map Markers
 
 The side panel lists the character's map markers and beacons (up to 100 markers and 10 beacons).

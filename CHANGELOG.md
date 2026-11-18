@@ -3,6 +3,44 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.7.0
+**Released:** November 18, 2026
+
+
+### ✨ New Features
+
+- ER: Reset Fog on the world map covers maps in fog again, optionally hiding their map fragments (#494) ([e26063d](https://github.com/Hapfel1/er-save-manager/commit/e26063d0036c3542e8eace4c73ba502bb04ed703))
+
+- ER: Event Flags tab gets Map Place Names (288 map location names) and Tutorials categories, plus Great Rune, Torrent regalia and Blue Cipher Ring flags (#500) ([e324343](https://github.com/Hapfel1/er-save-manager/commit/e324343932747c52fa1e58fcb710ff590652a017))
+
+- ER: Boss Respawn and Boss Status list the Convergence bosses on Convergence saves (#499) ([5e85acb](https://github.com/Hapfel1/er-save-manager/commit/5e85acbd59566e046b5643743d893b854fa8b3ca))
+
+
+### 🔧 Bug Fixes
+
+- ER: Event flag names: Margit and Godrick were swapped, Mimic Tear and Loretta mislabelled, Cold to Occult affinity unlocks shifted by one; unused flags no longer listed (#500) ([e324343](https://github.com/Hapfel1/er-save-manager/commit/e324343932747c52fa1e58fcb710ff590652a017))
+
+- ER: Convergence boss flags for Dakk, Scion of the Sealed God and the added mod bosses; vanilla boss flag fixes for Abductor Virgins, Putrid Tree Spirit and others (#499) ([5e85acb](https://github.com/Hapfel1/er-save-manager/commit/5e85acbd59566e046b5643743d893b854fa8b3ca))
+
+- ER: Furlcalling Finger Remedy spawns as the item the game uses; warning before a second copy of a one-copy item; unlocking graces asks before including the Ashen Capital (#497) ([741124b](https://github.com/Hapfel1/er-save-manager/commit/741124be640c0aee06f4d6e78c99ba3203e386e4))
+
+- ER: Deep scan repairs event flag splices in saves with a non-zero BaseVersion field (#491) ([453b74b](https://github.com/Hapfel1/er-save-manager/commit/453b74b7242288fff77e420a8ee05a439be51815))
+
+- General: Clearing the item browser quantity or a game settings field no longer raises an error (#498) ([fd9a7ec](https://github.com/Hapfel1/er-save-manager/commit/fd9a7eca3d6055e18a22aa4d8bed61c2789501a9))
+
+
+### 📖 Documentation
+
+- General: User guide covers Reset Fog, the Ashen Capital grace prompt, the one-copy item warning and the new event flag categories
+
+
+### 📦 Dependencies
+
+- General: Bump taiki-e/install-action (#493) ([3ac58fb](https://github.com/Hapfel1/er-save-manager/commit/3ac58fb4efeaaabb77c246ff8e2e6b61aa75c84c))
+
+
+---
+
 ## 📦 Release 2.6.0
 **Released:** November 13, 2026
 
