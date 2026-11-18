@@ -33,7 +33,7 @@ def closed_gate(
 ) -> BossGate | None:
     """Gate of a location whose flag is not set on the character."""
     if loc.tile_type in ("pin", "bloodstain"):
-        gate = arena_gate(loc.arena_flag)
+        gate = arena_gate(loc.arena_flag, convergence)
     else:
         gate = location_gate(loc.tile_type, loc.map_id_str, loc.flag_id, convergence)
     if gate is None or flag_state(gate.flag_id) is not False:

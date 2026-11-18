@@ -15,11 +15,18 @@ maps each boss_data.BOSSES name to [map, x, y, z, face]:
                   near it; a Remembrance or Great Rune first, items with an
                   icon before items without; empty when it has none
 
-The Convergence file also holds the mod's own bosses as
+The Convergence file also holds rows of the form
 [map, x, y, z, face, flags, region]: bosses only the mod's events defeat,
-named by their health bar, and vanilla boss flags the mod gives another
-boss (the vanilla flags kept, the mod's name shown). region is empty when
-the map has no named location.
+named by their health bar; vanilla boss flags the mod gives another boss
+(the vanilla flags kept, the mod's name shown); and vanilla bosses whose
+defeat writes more flags in the mod. region is empty when the map has no
+named location.
+
+flags[0] is the defeat flag. The other flags of a mod boss, and the ones
+the mod adds to a vanilla boss, are what its defeat leaves set: the
+defeat event's flags, the reward lots' item flags and the graces the
+defeat registers. Flags that more than one boss sets (shared reward
+lots, Keystones of the Forge, boss-dropped maps) are left out.
 
 A boss counts as defeated when its first flag is set; killing and
 respawning write all of its flags.
@@ -62,3 +69,11 @@ def boss_spots(is_convergence: bool = False) -> tuple[BossSpot, ...]:
             continue
         spots.append(BossSpot(boss, region, flags, map_id, (x, y, z), face))
     return tuple(spots)
+
+
+OTHER_REGION = "Other"
+
+
+def boss_regions(is_convergence: bool = False) -> list[str]:
+    """Sorted regions of boss_spots; a boss without one is under OTHER_REGION."""
+    return sorted({b.region or OTHER_REGION for b in boss_spots(is_convergence)})

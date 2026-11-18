@@ -189,15 +189,17 @@ def _gate_tables() -> dict[str, dict]:
 
 
 @cache
-def _boss_names() -> dict[int, str]:
+def _boss_names(convergence: bool) -> dict[int, str]:
     """Boss name per flag: defeat flags (flags[0]) first, then any other flag
-    of the boss (Morgott's throne event, Radahn's meteor)."""
-    from er_save_manager.data.boss_data import BOSSES
+    of the boss (Morgott's throne event, Radahn's meteor). Convergence uses
+    the mod's boss list, where some vanilla flags belong to another boss."""
+    from er_save_manager.data.boss_locations import boss_spots
 
-    names = {data["flags"][0]: name for name, data in BOSSES.items()}
-    for name, data in BOSSES.items():
-        for flag in data["flags"][1:]:
-            names.setdefault(flag, name)
+    spots = boss_spots(convergence)
+    names = {b.flags[0]: b.name for b in spots}
+    for b in spots:
+        for flag in b.flags[1:]:
+            names.setdefault(flag, b.name)
     return names
 
 
@@ -207,12 +209,14 @@ def grace_gate(flag_id: int, convergence: bool) -> BossGate | None:
     gate_flag = _gate_tables()[flavor]["graces"].get(flag_id)
     if gate_flag is None:
         return None
-    return BossGate(gate_flag, _boss_names().get(gate_flag))
+    return BossGate(gate_flag, _boss_names(convergence).get(gate_flag))
 
 
-def arena_gate(boss_flag: int) -> BossGate | None:
+def arena_gate(boss_flag: int, convergence: bool = False) -> BossGate | None:
     """Gate of a fog-walled boss arena: its boss defeat flag."""
-    return BossGate(boss_flag, _boss_names().get(boss_flag)) if boss_flag else None
+    if not boss_flag:
+        return None
+    return BossGate(boss_flag, _boss_names(convergence).get(boss_flag))
 
 
 def location_gate(
