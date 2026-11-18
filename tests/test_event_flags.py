@@ -115,3 +115,17 @@ def test_fix_wrappers_persist_to_raw_data(sanitized_save):
         start = slot.event_flags_offset
         raw = sanitized_save._raw_data[start : start + EventFlags.EVENT_FLAGS_SIZE]
         assert _get(raw, RANNI) is False
+
+
+def test_listed_flags_have_storage():
+    from er_save_manager.data.event_flags_db import (
+        CATEGORIES,
+        EVENT_FLAGS,
+        get_category_flags,
+    )
+
+    rows = [f for c in CATEGORIES for f in get_category_flags(c)]
+    listed = set(rows)
+    assert len(listed) == len(rows)
+    assert listed <= EVENT_FLAGS.keys()
+    assert all(EventFlags.has_flag(f) for f in listed)
