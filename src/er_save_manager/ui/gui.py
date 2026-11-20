@@ -366,6 +366,7 @@ class SaveManagerGUI:
         self._last_height = None
         # Window edge drag: see _on_window_resize
         self._last_resize_at = 0.0
+        self._resize_done_pending = False
         self._hidden_tab_frame = None
         self._show_tab_job = None
 
@@ -505,10 +506,15 @@ class SaveManagerGUI:
         # Windows takes a few hundred ms. From the second change of a burst
         # the tab's content is hidden until the drag pauses; a single change
         # (maximize, restore, snap) redraws as before.
+        # The gap is counted from the end of the previous step's layout:
+        # a slow step would otherwise space the events past the burst limit.
         now = time.monotonic()
         if now - self._last_resize_at < _DRAG_BURST_S and self.root.winfo_ismapped():
             self._hide_tab_content()
         self._last_resize_at = now
+        if not self._resize_done_pending:
+            self._resize_done_pending = True
+            self.root.after_idle(self._mark_resize_done)
         if self._hidden_tab_frame is not None:
             if self._show_tab_job is not None:
                 self.root.after_cancel(self._show_tab_job)
@@ -521,6 +527,10 @@ class SaveManagerGUI:
 
         # Delay actual processing to batch multiple resize events
         self._resize_timer = self.root.after(200, self._process_resize)
+
+    def _mark_resize_done(self) -> None:
+        self._resize_done_pending = False
+        self._last_resize_at = time.monotonic()
 
     def _hide_tab_content(self) -> None:
         if self._hidden_tab_frame is not None:
