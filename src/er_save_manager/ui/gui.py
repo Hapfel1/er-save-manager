@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import threading
+import time
 import tkinter as tk
 from collections import deque
 from collections.abc import Callable, Iterator
@@ -88,6 +89,10 @@ _TAB_BUILD_DELAY_MS = 15
 
 # Main window height (logical px) below which the header is compacted
 _COMPACT_HEIGHT = 900
+# Size changes closer together than this are a window edge drag
+_DRAG_BURST_S = 0.25
+# The hidden tab content returns once the drag pauses this long
+_DRAG_SETTLE_MS = 120
 
 # Tab labels used when the full names do not fit the window width
 _SHORT_TAB_NAMES = {
@@ -359,6 +364,10 @@ class SaveManagerGUI:
         self._resize_timer = None
         self._last_width = None
         self._last_height = None
+        # Window edge drag: see _on_window_resize
+        self._last_resize_at = 0.0
+        self._hidden_tab_frame = None
+        self._show_tab_job = None
 
         self.process_monitor = None
 
@@ -491,11 +500,49 @@ class SaveManagerGUI:
         self._last_width = width
         self._last_height = height
 
+        # A drag of the window edge sends a burst of size changes. Each one
+        # lays out and repaints every widget of the shown tab, which on
+        # Windows takes a few hundred ms. From the second change of a burst
+        # the tab's content is hidden until the drag pauses; a single change
+        # (maximize, restore, snap) redraws as before.
+        now = time.monotonic()
+        if now - self._last_resize_at < _DRAG_BURST_S and self.root.winfo_ismapped():
+            self._hide_tab_content()
+        self._last_resize_at = now
+        if self._hidden_tab_frame is not None:
+            if self._show_tab_job is not None:
+                self.root.after_cancel(self._show_tab_job)
+            self._show_tab_job = self.root.after(
+                _DRAG_SETTLE_MS, self._show_tab_content
+            )
+
         if self._resize_timer:
             self.root.after_cancel(self._resize_timer)
 
         # Delay actual processing to batch multiple resize events
         self._resize_timer = self.root.after(200, self._process_resize)
+
+    def _hide_tab_content(self) -> None:
+        if self._hidden_tab_frame is not None:
+            return
+        try:
+            frame = self.notebook.tab(self.notebook.get())
+        except (ValueError, KeyError, tk.TclError):
+            return
+        if frame.winfo_manager() != "grid":
+            return
+        frame.grid_remove()
+        self._hidden_tab_frame = frame
+
+    def _show_tab_content(self) -> None:
+        self._show_tab_job = None
+        frame, self._hidden_tab_frame = self._hidden_tab_frame, None
+        if frame is None:
+            return
+        # The notebook may have been rebuilt or switched tabs meanwhile
+        with contextlib.suppress(ValueError, KeyError, tk.TclError):
+            if frame is self.notebook.tab(self.notebook.get()):
+                frame.grid()
 
     def _process_resize(self):
         """Process pending resize - CTk handles its own layout."""
