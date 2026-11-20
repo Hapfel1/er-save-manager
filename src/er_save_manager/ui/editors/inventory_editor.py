@@ -279,10 +279,20 @@ def _equipped_handles(slot) -> set[int]:
     return handles
 
 
-_EQUIPPED_WARNING = (
-    "Its equipment slot keeps pointing at the removed item. Unequip it in "
-    "game first to be safe."
+_UNEQUIP_NOTE = (
+    "Removing an equipped item without unequipping it leaves its equipment "
+    "slot pointing at nothing, which the game shows as a broken look."
 )
+_NO_PLACEHOLDER = (
+    "has no Unarmed or bare armor entry left to fall back to; unequip it in game first"
+)
+
+
+def _unequip_blocked(slot, handles: set[int]) -> set[int]:
+    """Handles among handles that equip_ops.unequip() would leave equipped."""
+    from er_save_manager.parser.equip_ops import blocked
+
+    return blocked(slot, handles)
 
 
 def _inventory_columns(text: str, location: str) -> tuple[str, str, str]:
@@ -3516,20 +3526,24 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
+        # Equipment slots refer to the held inventory; a stored copy of a
+        # good shares the handle of the held one but is never equipped
         equipped = False
-        with contextlib.suppress(Exception):
-            equipped = gaitem_handle in _equipped_handles(
-                save_file.characters[slot_idx]
-            )
+        if location == "held":
+            with contextlib.suppress(Exception):
+                equipped = gaitem_handle in _equipped_handles(
+                    save_file.characters[slot_idx]
+                )
 
         if equipped:
             confirmed = CTkMessageBox._create_dialog(
                 self.parent,
                 "Remove Equipped Item",
-                f"{item_label} is equipped. Remove it from {location}?\n\n"
-                + _EQUIPPED_WARNING,
+                f"{item_label} is equipped. Unequip it and remove it from "
+                f"{location}?\n\n" + _UNEQUIP_NOTE,
                 icon_type="warning",
-                buttons=[("Remove", True), ("Cancel", False)],
+                buttons=[("Unequip and Remove", True), ("Cancel", False)],
+                cancel_value=False,
             )
         else:
             confirmed = CTkMessageBox.askyesno(
@@ -3542,7 +3556,22 @@ class InventoryEditor:
 
         try:
             self.ensure_mutable()
+            if equipped:
+                from er_save_manager.parser.equip_ops import unequip
+
+                # Checked before the backup: nothing is written when the slot
+                # cannot be emptied
+                slot = save_file.characters[slot_idx]
+                if _unequip_blocked(slot, {gaitem_handle}):
+                    CTkMessageBox.showerror(
+                        "Remove Equipped Item",
+                        f"{item_label} {_NO_PLACEHOLDER}.",
+                        parent=self.parent,
+                    )
+                    return
             self._create_backup(save_file, slot_idx, "remove_item")
+            if equipped:
+                unequip(save_file, slot_idx, {gaitem_handle})
 
             from er_save_manager.parser.inventory_ops import remove_item
 
@@ -3632,14 +3661,41 @@ class InventoryEditor:
                 f"Batch remove all {len(matches)} items from '{cat}' in {location}?"
             )
 
-        equipped = _equipped_handles(slot)
-        n_equipped = sum(1 for row in matches if len(row) > 3 and row[3] in equipped)
-        if n_equipped:
-            confirm_msg += (
-                f"\n\n{n_equipped} of them are equipped. " + _EQUIPPED_WARNING
+        # Equipment slots refer to the held inventory only
+        equipped = _equipped_handles(slot) if location == "held" else set()
+        worn = {row[3] for row in matches if len(row) > 3 and row[3] in equipped}
+        unequip_handles: set[int] = set()
+        stuck = 0
+        if worn:
+            choice = CTkMessageBox._create_dialog(
+                parent_window,
+                "Batch Remove",
+                f"{confirm_msg}\n\n{len(worn)} of them are equipped. Unequip "
+                "them and remove them too, or keep them?\n\n" + _UNEQUIP_NOTE,
+                icon_type="warning",
+                buttons=[
+                    ("Unequip and Remove", "unequip"),
+                    ("Keep Equipped", "keep"),
+                    ("Cancel", None),
+                ],
+                cancel_value=None,
             )
-
-        if not CTkMessageBox.askyesno(
+            if choice is None:
+                return
+            if choice == "unequip":
+                blocked = _unequip_blocked(slot, worn)
+                unequip_handles = worn - blocked
+                stuck = len(blocked)
+            # Equipped items that stay equipped are not removed
+            matches = [
+                row
+                for row in matches
+                if len(row) <= 3 or row[3] not in worn or row[3] in unequip_handles
+            ]
+            if not matches:
+                notify(parent_window, "Nothing left to remove.", "info")
+                return
+        elif not CTkMessageBox.askyesno(
             "Batch Remove", confirm_msg, parent=parent_window
         ):
             return
@@ -3647,6 +3703,10 @@ class InventoryEditor:
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "batch_remove_category")
+            if unequip_handles:
+                from er_save_manager.parser.equip_ops import unequip
+
+                unequip(save_file, slot_idx, unequip_handles)
 
             from er_save_manager.parser.inventory_ops import remove_item
 
@@ -3675,10 +3735,16 @@ class InventoryEditor:
             if self._on_inventory_changed:
                 self._on_inventory_changed()
 
+            kept_note = (
+                f" {stuck} equipped item(s) stayed: no Unarmed or bare armor "
+                "entry to fall back to."
+                if stuck
+                else ""
+            )
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Batch removed {success} items from {cat} ({location}).",
-                type="success",
+                f"Batch removed {success} items from {cat} ({location}).{kept_note}",
+                type="warning" if stuck else "success",
             )
             if errors:
                 CTkMessageBox.showwarning(

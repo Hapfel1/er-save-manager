@@ -78,6 +78,16 @@ def transient_to(dialog, parent) -> None:
         dialog.transient(top)
 
 
+def keep_above_main(window, parent) -> None:
+    """Keep a non-modal tool window (Visual Inventory, Add Item) above the
+    main window on Linux, where window managers can refuse to raise a new
+    window that is not transient to the one in use (KDE's focus stealing
+    prevention). Windows keeps raise_after_ctk_refocus: a transient window
+    there loses its taskbar button."""
+    if sys.platform.startswith("linux"):
+        transient_to(window, parent)
+
+
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
     """Call callback() once writes to var pause for delay_ms.
 

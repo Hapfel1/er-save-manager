@@ -326,3 +326,40 @@ def test_remove_and_set_quantity(sanitized_save):
     assert (
         sanitized_save.character_slots[0].inventory_held.common_item_count == count - 1
     )
+
+
+def test_unequip_writes_the_game_empty_forms(sanitized_save_path, tmp_path):
+    from er_save_manager.parser import equip_ops
+
+    save = load_save(sanitized_save_path)
+    slot = save.character_slots[0]
+    worn = {
+        h
+        for h in vars(slot.equipped_items_gaitem_handle).values()
+        if h not in (0, 0xFFFFFFFF)
+    }
+    assert worn
+    done, kept = equip_ops.unequip(save, 0, worn)
+    assert not kept
+    out = tmp_path / "unequipped.sl2"
+    save.recalculate_checksums()
+    save.to_file(out)
+    slot = load_save(out).character_slots[0]
+    ids, handles = slot.equipped_items_item_id, slot.equipped_items_gaitem_handle
+    mirror, index = slot.equipped_armaments_and_items, slot.equipped_items_equip_index
+    held = {
+        it.gaitem_handle: n
+        for n, it in enumerate(slot.inventory_held.common_items)
+        if it.gaitem_handle
+    }
+    key_cap = len(slot.inventory_held.key_items)
+    for key in equip_ops.WEAPON_SLOTS:
+        assert (getattr(ids, key), getattr(mirror, key)) == (110000, 110000)
+        assert getattr(index, key) == key_cap + held[getattr(handles, key)]
+    for key, bare in equip_ops.ARMOR_PLACEHOLDERS.items():
+        assert (getattr(ids, key), getattr(mirror, key)) == (bare, 0x10000000 | bare)
+        assert getattr(index, key) == key_cap + held[getattr(handles, key)]
+    for key in ("talisman1", "talisman2", "arrows1", "bolts1"):
+        assert getattr(handles, key) == 0
+        assert getattr(ids, key) == getattr(index, key) == 0xFFFFFFFF
+    assert not any(h in worn for h in vars(handles).values())
