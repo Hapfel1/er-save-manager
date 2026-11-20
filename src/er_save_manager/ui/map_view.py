@@ -2000,6 +2000,7 @@ class MapWindow:
         list. Bosses group by region, NPCs and items by their nearest grace's
         region, merchants are ungrouped."""
         if kind == _FILTER_BOSSES:
+            major_only = self._major_only.get()
             # Remembrance and Great Rune bosses also get a group of their own
             rows = [
                 (
@@ -2008,7 +2009,7 @@ class MapWindow:
                     p,
                 )
                 for p in self._boss_pins
-                if not self._major_only.get() or _major_boss(p.boss)
+                if not major_only or _major_boss(p.boss)
             ]
             rows += [
                 (_MAJOR_GROUP, p.boss.name, p)
@@ -2147,10 +2148,12 @@ class MapWindow:
         return self._icons.glow(_PICKUP_MAX, taken)
 
     def _fill_pin_list(self, kind: str, words: list[str]):
+        # Read once: a Tk variable read per row added up to seconds on Windows
+        this_map = self._this_map_var.get()
         rows = [
             r
             for r in self._unique_labels(self._pin_rows(kind), grouped=True)
-            if (not self._this_map_var.get() or r[2].map_no == self._map_no)
+            if (not this_map or r[2].map_no == self._map_no)
             # A search lists each Remembrance boss once, under its region
             and not (words and r[0] == _MAJOR_GROUP)
             and _matches(
@@ -2196,11 +2199,12 @@ class MapWindow:
             _FILTER_DUNGEONS: ("dungeon",),
             _FILTER_TILES: ("small",),
         }.get(self._filter_var.get())
+        this_map = self._this_map_var.get()
         rows = [
             p
             for p in self._placed
             if (wanted is None or p.loc.tile_type in wanted)
-            and (not self._this_map_var.get() or p.map_no == self._map_no)
+            and (not this_map or p.map_no == self._map_no)
             and _matches(words, _fold(f"{p.loc.name} {p.loc.map_id_str}"))
         ]
         rows.sort(key=lambda p: p.loc.name.lower())
@@ -2236,12 +2240,13 @@ class MapWindow:
         """All also lists bosses, NPCs, merchants and items, each under a
         group row that opens while searching."""
         tree = self._loc_list
+        this_map = self._this_map_var.get()
         for kind in _PIN_FILTERS:
             pin_rows = [r for r in self._pin_rows(kind) if r[0] != _MAJOR_GROUP]
             rows = [
                 r
                 for r in self._unique_labels(pin_rows, grouped=False)
-                if (not self._this_map_var.get() or r[2].map_no == self._map_no)
+                if (not this_map or r[2].map_no == self._map_no)
                 and _matches(words, self._pin_search_text(*r))
             ]
             if not rows:
@@ -2691,11 +2696,12 @@ class MapWindow:
             sx1, sy1 = self._to_screen(sel.rect[2], sel.rect[3])
             c.create_rectangle(sx0, sy0, sx1, sy1, outline=_SELECT_COLOR, width=3)
             self._selected_at = ((sx0 + sx1) / 2, sy0, sy1)
+        show_graces, show_dungeons = self._show_graces.get(), self._show_dungeons.get()
         for p in self._placed:
             if p.map_no != self._map_no or p.point is None:
                 continue
             grace = p.loc.tile_type == "grace"
-            if not (self._show_graces if grace else self._show_dungeons).get():
+            if not (show_graces if grace else show_dungeons):
                 continue
             sx, sy = self._to_screen(*p.point)
             if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
@@ -2818,9 +2824,10 @@ class MapWindow:
                 )
                 self._items[item] = ("pin", sel)
         if self._show_bosses.get():
+            major_only = self._major_only.get()
             for pin in self._boss_pins:
                 major = _major_boss(pin.boss)
-                if self._major_only.get() and not major:
+                if major_only and not major:
                     continue
                 at = visible(pin)
                 if at is None:
@@ -2858,10 +2865,11 @@ class MapWindow:
                     sx, sy, image=self._icons.merchant(_MERCHANT_SIZE)
                 )
                 self._items[item] = ("pin", pin)
-        if self._pools_shown() or self._show_seals.get():
+        pools_shown, seals_shown = self._pools_shown(), self._show_seals.get()
+        if pools_shown or seals_shown:
             for pin in self._object_pins:
                 pool = pin.obj.kind == POOL
-                if not (self._pools_shown() if pool else self._show_seals.get()):
+                if not (pools_shown if pool else seals_shown):
                     continue
                 at = visible(pin)
                 if at is None:
