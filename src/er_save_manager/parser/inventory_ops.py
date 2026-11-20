@@ -15,6 +15,7 @@ save.recalculate_checksums() and save.to_file() after all operations.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -669,11 +670,8 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
         return -1
 
     start = (first_weapon_idx + 1) if first_weapon_idx != -1 else 0
-    result = -1
-    for i in range(start, len(slot.gaitem_map)):
-        if slot.gaitem_map[i].gaitem_handle == 0:
-            result = i
-    return result
+    last = _last_empty_gaitem(slot)
+    return last if last >= start else -1
 
 
 def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
@@ -726,11 +724,17 @@ def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
 
 def _gaitem_last_empty(slot, slot_data_base: int) -> int | None:
     """Return absolute buffer offset of the last empty gaitem entry, or None."""
-    result = None
-    for i, g in enumerate(slot.gaitem_map):
-        if g.gaitem_handle == 0:
-            result = slot_data_base + slot.gaitem_offsets[i]
-    return result
+    i = _last_empty_gaitem(slot)
+    return None if i == -1 else slot_data_base + slot.gaitem_offsets[i]
+
+
+def _last_empty_gaitem(slot) -> int:
+    """Index of the last gaitem entry with handle 0, or -1."""
+    gaitem_map = slot.gaitem_map
+    for i in range(len(gaitem_map) - 1, -1, -1):
+        if gaitem_map[i].gaitem_handle == 0:
+            return i
+    return -1
 
 
 # ---- inventory helpers ------------------------------------------------------
@@ -827,6 +831,34 @@ def _select_inventory(slot, location: str):
 # ---- binary patch helpers ---------------------------------------------------
 
 
+# Slots whose inventory write is held back by deferred_inventory_patch.
+_deferred: dict[tuple[int, int], tuple[Save, int, object]] | None = None
+
+
+@contextmanager
+def deferred_inventory_patch():
+    """
+    Hold back the inventory writes of add/remove/set_quantity calls and write
+    each touched slot once on exit, also when the block raises.
+
+    Re-serializing both inventories after every single item makes a batch of
+    N items cost N full inventory writes. The gaitem map is still patched per
+    item, so its shifts move the stale inventory bytes along with their
+    offsets, and the single write at the end lands on the current offsets.
+    """
+    global _deferred
+    if _deferred is not None:
+        yield
+        return
+    _deferred = {}
+    try:
+        yield
+    finally:
+        pending, _deferred = _deferred, None
+        for save, slot_idx, slot in pending.values():
+            _patch_slot(save, slot_idx, slot)
+
+
 def _patch_slot(save: Save, slot_idx: int, slot) -> None:
     """
     Write modified inventory bytes directly into save._raw_data.
@@ -835,6 +867,10 @@ def _patch_slot(save: Save, slot_idx: int, slot) -> None:
     ranges, leaving all other slot data untouched.
     """
     from io import BytesIO
+
+    if _deferred is not None:
+        _deferred[id(save), slot_idx] = (save, slot_idx, slot)
+        return
 
     slot_data_base = save.slot_data_offset(slot_idx)
 

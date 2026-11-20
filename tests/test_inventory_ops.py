@@ -22,6 +22,7 @@ from er_save_manager.parser.inventory_ops import (
     UPGRADE_CAP_STANDARD,
     _next_gaitem_handle,
     add_item,
+    deferred_inventory_patch,
     remove_item,
     set_quantity,
     validate_upgrade,
@@ -210,6 +211,21 @@ def test_bulk_add_keeps_handle_indices_in_range_and_unique(sanitized_save):
     indices = [g.gaitem_handle & 0xFFFF for g in slot.gaitem_map if g.gaitem_handle]
     assert max(indices) < len(slot.gaitem_map)
     assert len(set(indices)) == len(indices)
+
+
+def test_deferred_patch_writes_the_same_bytes(sanitized_save_path):
+    def edit(save):
+        for k in range(40):
+            add_item(save, 0, (ARMOR if k % 2 else WEAPON) + k * 10000, 1, "held")
+        add_item(save, 0, GOODS, quantity=5, location="storage")
+        set_quantity(save, 0, GOODS, 9, location="storage")
+        remove_item(save, 0, WEAPON + 20000, location="held")
+
+    plain, deferred = load_save(sanitized_save_path), load_save(sanitized_save_path)
+    edit(plain)
+    with deferred_inventory_patch():
+        edit(deferred)
+    assert deferred._raw_data == plain._raw_data
 
 
 def test_add_to_full_inventory_changes_nothing(sanitized_save):
