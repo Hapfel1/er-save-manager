@@ -960,9 +960,17 @@ class DS3Slot:
         return not entry.is_empty and entry.handle != _PLACEHOLDER_HANDLE
 
     def entry_at(self, offset: int) -> DS3InventoryEntry | None:
-        for entry in self.iter_inventory() + self.iter_storage():
-            if entry.offset == offset:
-                return entry
+        """The entry at offset in the held common, held key or storage list.
+        Computed from the offset: batch removals call this once per row."""
+        layout = self._get_layout()
+        for count_off, cap, is_key in (
+            (layout.inv, _COMMON_CAP, False),
+            (layout.inv + _COMMON_BYTES, _KEY_CAP, True),
+            (layout.storage, _COMMON_CAP, False),
+        ):
+            pos, rest = divmod(offset - (count_off + 4), _ENTRY_SIZE)
+            if rest == 0 and 0 <= pos < cap:
+                return self._iter_entry(count_off, pos, is_key)
         return None
 
     def bad_storage_indices(self) -> int:
