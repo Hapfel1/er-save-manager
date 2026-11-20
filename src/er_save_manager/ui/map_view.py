@@ -1621,6 +1621,9 @@ class MapWindow:
         self._build_side_panel(side)
 
         left = ctk.CTkFrame(body, width=330, corner_radius=0)
+        # Covered during a window edge drag, see _pause_view
+        self._drag_panels = (bar, side, left)
+        self._drag_covers: list[tk.Frame] = []
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
         self._build_location_list(left)
@@ -2370,13 +2373,26 @@ class MapWindow:
             self._schedule_render()
 
     def _pause_view(self):
-        """Window edge drag: the map shows no items until it ends; drawing
-        them again at every step was most of the cost."""
+        """Window edge drag: the map shows no items and plain frames cover
+        the top bar and both side panels until it ends. Redrawing the map
+        items and repainting every panel widget at each step was most of the
+        cost (on Windows a few hundred ms per step)."""
         self._canvas.itemconfigure("all", state="hidden")
+        for panel in self._drag_panels:
+            color = panel.cget("fg_color")
+            if color == "transparent":
+                color = panel.cget("bg_color")
+            cover = tk.Frame(panel, bg=panel._apply_appearance_mode(color))
+            cover.place(x=0, y=0, relwidth=1, relheight=1)
+            cover.lift()
+            self._drag_covers.append(cover)
 
     def _resume_view(self):
         if not self._win.winfo_exists():
             return
+        for cover in self._drag_covers:
+            cover.destroy()
+        self._drag_covers = []
         self._zoom = max(self._zoom, self._fit_zoom())
         self._clamp_view()
         # Full redraw: the hidden items stay hidden otherwise
