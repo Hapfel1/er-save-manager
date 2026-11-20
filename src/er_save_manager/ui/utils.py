@@ -530,11 +530,12 @@ class ResizeBurst:
     change that comes within BURST_S of the previous one's layout, on_start
     runs once; on_end runs once the changes stop for SETTLE_MS. A single
     change (maximize, restore, snap) runs neither. The gap is counted from
-    the end of the previous layout: slow steps (a few hundred ms on Windows)
-    would otherwise space the events past the limit.
+    the end of the previous step: slow steps (a few hundred ms on Windows)
+    would otherwise space the events past the limit. Tk redraws widgets in
+    idle callbacks, so the end is marked one idle pass after the change.
     """
 
-    BURST_S = 0.25
+    BURST_S = 0.5
     SETTLE_MS = 120
 
     def __init__(self, widget, on_start, on_end):
@@ -558,7 +559,7 @@ class ResizeBurst:
         self._last = now
         if not self._mark_pending:
             self._mark_pending = True
-            self._widget.after_idle(self._mark_done)
+            self._widget.after_idle(lambda: self._widget.after_idle(self._mark_done))
         if self.active:
             if self._end_job is not None:
                 self._widget.after_cancel(self._end_job)
