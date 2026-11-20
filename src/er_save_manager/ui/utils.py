@@ -533,10 +533,18 @@ class ResizeBurst:
     the end of the previous step: slow steps (a few hundred ms on Windows)
     would otherwise space the events past the limit. Tk redraws widgets in
     idle callbacks, so the end is marked one idle pass after the change.
+    Changes in the first SETTLE_IN_S after the first one (a window being
+    sized and placed when it opens) never start a burst.
+
+    Windows only: there a drag step repaints every moved widget and takes a
+    few hundred ms; elsewhere the content stays visible while dragging.
     """
+
+    ENABLED = sys.platform == "win32"
 
     BURST_S = 0.5
     SETTLE_MS = 120
+    SETTLE_IN_S = 1.0
 
     def __init__(self, widget, on_start, on_end):
         self._widget = widget
@@ -546,11 +554,17 @@ class ResizeBurst:
         self._last = 0.0
         self._mark_pending = False
         self._end_job = None
+        self._armed_at: float | None = None
 
     def size_changed(self) -> None:
+        if not self.ENABLED:
+            return
         now = time.monotonic()
+        if self._armed_at is None:
+            self._armed_at = now + self.SETTLE_IN_S
         if (
             not self.active
+            and now >= self._armed_at
             and now - self._last < self.BURST_S
             and self._widget.winfo_ismapped()
         ):
