@@ -1364,8 +1364,12 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     old = slot.gaitem_map[gaitem_idx]
     index = _kept_state("match", slot)
     if index is not None and old.gaitem_handle != 0:
-        for key in _match_keys(old.gaitem_handle, old.item_id):
-            index[key].remove(gaitem_idx)
+        try:
+            for key in _match_keys(old.gaitem_handle, old.item_id):
+                index[key].remove(gaitem_idx)
+        except (KeyError, ValueError):
+            # Out of step: built again from the map on the next lookup
+            _drop_batch_state("match", slot)
     slot.gaitem_map[gaitem_idx] = empty_gaitem
     # Built again on the next use; a removal can lower a generation's top
     _drop_batch_state("gaitem", slot)

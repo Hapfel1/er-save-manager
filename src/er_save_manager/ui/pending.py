@@ -285,7 +285,8 @@ class CharacterBar(ctk.CTkFrame):
     def _on_configure(self, event) -> None:
         # A window drag sends one event per step; only a new width can change
         # how many links fit, and the sizes measured before still hold.
-        if event.widget is self and event.width != self._fit_width:
+        # CTkFrame.bind binds the inner canvas, which has the frame's size.
+        if event.width != self._fit_width:
             self._fit_width = event.width
             self._fit_links(measure=False)
 

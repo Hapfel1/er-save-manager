@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import tkinter
 import webbrowser
 from pathlib import Path
@@ -520,6 +521,79 @@ def _frame_wheel(self, event):
 # Patched on the class so frames created anywhere in the application get it.
 # Depends on CTkScrollableFrame internals (customtkinter 5.2.x).
 ctk.CTkScrollableFrame._mouse_wheel_all = _frame_wheel
+
+
+class ResizeBurst:
+    """Tells a drag of a window edge apart from a single size change.
+
+    Call size_changed() for every size change of the widget. From the second
+    change that comes within BURST_S of the previous one's layout, on_start
+    runs once; on_end runs once the changes stop for SETTLE_MS. A single
+    change (maximize, restore, snap) runs neither. The gap is counted from
+    the end of the previous layout: slow steps (a few hundred ms on Windows)
+    would otherwise space the events past the limit.
+    """
+
+    BURST_S = 0.25
+    SETTLE_MS = 120
+
+    def __init__(self, widget, on_start, on_end):
+        self._widget = widget
+        self._on_start = on_start
+        self._on_end = on_end
+        self.active = False
+        self._last = 0.0
+        self._mark_pending = False
+        self._end_job = None
+
+    def size_changed(self) -> None:
+        now = time.monotonic()
+        if (
+            not self.active
+            and now - self._last < self.BURST_S
+            and self._widget.winfo_ismapped()
+        ):
+            self.active = True
+            self._on_start()
+        self._last = now
+        if not self._mark_pending:
+            self._mark_pending = True
+            self._widget.after_idle(self._mark_done)
+        if self.active:
+            if self._end_job is not None:
+                self._widget.after_cancel(self._end_job)
+            self._end_job = self._widget.after(self.SETTLE_MS, self._end)
+
+    def _mark_done(self) -> None:
+        self._mark_pending = False
+        self._last = time.monotonic()
+
+    def _end(self) -> None:
+        self._end_job = None
+        self.active = False
+        with contextlib.suppress(tkinter.TclError):
+            self._on_end()
+
+
+_long_operations = 0
+
+
+@contextlib.contextmanager
+def long_operation():
+    """Mark a loop that processes window events itself while it changes the
+    loaded save (inventory batches), see in_long_operation."""
+    global _long_operations
+    _long_operations += 1
+    try:
+        yield
+    finally:
+        _long_operations -= 1
+
+
+def in_long_operation() -> bool:
+    """True while a long_operation runs: handlers that reload or replace the
+    save wait until it is done."""
+    return _long_operations > 0
 
 
 _ctk_frame_draw = ctk.CTkFrame._draw

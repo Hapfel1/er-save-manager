@@ -741,17 +741,20 @@ class _BatchProgress:
         self.total = total
         self.done = 0
         self.dialog = None
-        self._root_close = None
+        self._closers: list[tuple[tk.Misc, str]] = []
         self._start = self._last = time.monotonic()
 
     def __enter__(self):
-        self._defer = deferred_inventory_patch()
-        self._defer.__enter__()
+        from er_save_manager.ui.utils import long_operation
+
+        self._stack = contextlib.ExitStack()
+        self._stack.enter_context(long_operation())
+        self._stack.enter_context(deferred_inventory_patch())
         return self
 
     def __exit__(self, *exc):
         try:
-            return self._defer.__exit__(*exc)
+            return self._stack.__exit__(*exc)
         finally:
             self._close()
 
@@ -821,15 +824,18 @@ class _BatchProgress:
         ).pack(fill=tk.X, pady=(14, 0))
         ds.finish(dialog, self.parent, min_width=460)
         self.dialog = dialog
-        root = self.parent.winfo_toplevel()
-        self._root_close = (root, root.protocol("WM_DELETE_WINDOW"))
-        root.protocol("WM_DELETE_WINDOW", lambda: None)
+        # The grab keeps clicks away, not the title bar close buttons: the
+        # main window's and the one of a popup the batch was started from
+        for window in dict.fromkeys(
+            (self.parent.winfo_toplevel(), self.parent._root())
+        ):
+            self._closers.append((window, window.protocol("WM_DELETE_WINDOW")))
+            window.protocol("WM_DELETE_WINDOW", lambda: None)
 
     def _close(self) -> None:
-        if self._root_close is not None:
-            root, command = self._root_close
+        for window, command in self._closers:
             with contextlib.suppress(tk.TclError):
-                root.protocol("WM_DELETE_WINDOW", command)
+                window.protocol("WM_DELETE_WINDOW", command)
         if self.dialog is not None:
             with contextlib.suppress(tk.TclError):
                 self.dialog.destroy()

@@ -79,6 +79,7 @@ from er_save_manager.ui.quest_progress_dialog import steps_up_to
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import Tooltip
 from er_save_manager.ui.utils import (
+    ResizeBurst,
     bind_mousewheel,
     center_window,
     patch_combo_scroll,
@@ -1232,6 +1233,7 @@ class MapWindow:
         self._levels_job = None
 
         self._win = ctk.CTkToplevel(parent)
+        self._resize_burst = ResizeBurst(self._win, self._pause_view, self._resume_view)
         self._win.title("World Map")
         self._win.protocol("WM_DELETE_WINDOW", self._close)
         self._size_to_main_window()
@@ -2358,6 +2360,22 @@ class MapWindow:
     def _on_resize(self):
         self._zoom = max(self._zoom, self._fit_zoom())
         self._clamp_view()
+        self._resize_burst.size_changed()
+        if not self._resize_burst.active:
+            self._schedule_render()
+
+    def _pause_view(self):
+        """Window edge drag: the map shows no items until it ends; drawing
+        them again at every step was most of the cost."""
+        self._canvas.itemconfigure("all", state="hidden")
+
+    def _resume_view(self):
+        if not self._win.winfo_exists():
+            return
+        self._zoom = max(self._zoom, self._fit_zoom())
+        self._clamp_view()
+        # Full redraw: the hidden items stay hidden otherwise
+        self._tile_key = None
         self._schedule_render()
 
     def _clamp_view(self):
@@ -2423,7 +2441,7 @@ class MapWindow:
     def _update_view(self):
         """Redraw icons; rebuild map tiles only when zoom or map changed."""
         self._render_pending = False
-        if not self._win.winfo_exists():
+        if not self._win.winfo_exists() or self._resize_burst.active:
             return
         if self._tile_key != (
             self._map_no,
