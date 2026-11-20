@@ -9,6 +9,7 @@ base_id // 10000 * 10000.
 
 from __future__ import annotations
 
+import random
 from types import SimpleNamespace
 
 import pytest
@@ -213,18 +214,36 @@ def test_bulk_add_keeps_handle_indices_in_range_and_unique(sanitized_save):
     assert len(set(indices)) == len(indices)
 
 
-def test_deferred_patch_writes_the_same_bytes(sanitized_save_path):
+def test_deferred_batch_matches_plain(sanitized_save_path):
+    """A batch (deferred writes, kept scan results) gives the same bytes and
+    results as single calls, also with removals between the adds."""
+
     def edit(save):
-        for k in range(40):
-            add_item(save, 0, (ARMOR if k % 2 else WEAPON) + k * 10000, 1, "held")
-        add_item(save, 0, GOODS, quantity=5, location="storage")
-        set_quantity(save, 0, GOODS, 9, location="storage")
-        remove_item(save, 0, WEAPON + 20000, location="held")
+        rnd = random.Random(7)
+        added, log = [], []
+        for _ in range(300):
+            if added and rnd.random() < 0.35:
+                item, location = added.pop(rnd.randrange(len(added)))
+                log.append(remove_item(save, 0, item, location))
+                continue
+            kind = rnd.choice((WEAPON, ARMOR, TALISMAN, GOODS))
+            item = kind + rnd.randrange(30) * 10000
+            try:
+                result = add_item(save, 0, item, 1, rnd.choice(("held", "storage")))
+            except ValueError as e:
+                log.append(str(e))
+                continue
+            added.append((item, result["location"]))
+            log.append(result)
+        stack = GOODS + 99 * 10000
+        log.append(add_item(save, 0, stack, 5, "held"))
+        log.append(set_quantity(save, 0, stack, 9, log[-1]["location"]))
+        return log
 
     plain, deferred = load_save(sanitized_save_path), load_save(sanitized_save_path)
-    edit(plain)
+    expected = edit(plain)
     with deferred_inventory_patch():
-        edit(deferred)
+        assert edit(deferred) == expected
     assert deferred._raw_data == plain._raw_data
 
 

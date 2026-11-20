@@ -17,7 +17,10 @@ import customtkinter as ctk
 
 from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
-from er_save_manager.parser.inventory_ops import deferred_inventory_patch
+from er_save_manager.parser.inventory_ops import (
+    _first_empty_inv_slot,
+    deferred_inventory_patch,
+)
 from er_save_manager.ui import palette
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -2554,9 +2557,7 @@ class InventoryEditor:
             return location
         try:
             slot = save_file.characters[slot_idx]
-            held_full = all(
-                it.gaitem_handle != 0 for it in slot.inventory_held.common_items
-            )
+            held_full = _first_empty_inv_slot(slot.inventory_held) == -1
             return "storage" if held_full else "held"
         except Exception:
             return location
