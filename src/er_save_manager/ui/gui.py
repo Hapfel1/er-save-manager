@@ -69,6 +69,7 @@ from er_save_manager.ui.utils import (
     in_long_operation,
     open_url,
     pick_file,
+    skeleton_canvas,
     style_window_frame,
     title_bar_height,
     trace_variable,
@@ -363,6 +364,7 @@ class SaveManagerGUI:
         self._last_height = None
         # Window edge drag: see _on_window_resize
         self._hidden_tab_frame = None
+        self._tab_skeleton: tk.Canvas | None = None
         self._resize_burst = ResizeBurst(
             self.root, self._hide_tab_content, self._show_tab_content
         )
@@ -519,10 +521,22 @@ class SaveManagerGUI:
             return
         if frame.winfo_manager() != "grid":
             return
+        # Gray shapes where the tab's widgets are, in the tab's grid cell
+        info = {
+            ("in_" if key == "in" else key): value
+            for key, value in frame.grid_info().items()
+        }
+        skeleton = skeleton_canvas(frame, frame.master)
         frame.grid_remove()
+        skeleton.grid(**info)
+        self._tab_skeleton = skeleton
         self._hidden_tab_frame = frame
 
     def _show_tab_content(self) -> None:
+        if self._tab_skeleton is not None:
+            with contextlib.suppress(tk.TclError):
+                self._tab_skeleton.destroy()
+            self._tab_skeleton = None
         frame, self._hidden_tab_frame = self._hidden_tab_frame, None
         if frame is None:
             return

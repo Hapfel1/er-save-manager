@@ -590,6 +590,113 @@ class ResizeBurst:
             self._on_end()
 
 
+# Gray shapes of skeleton_canvas (light, dark)
+_SKELETON_BOX = ("gray86", "#2f2f33")
+_SKELETON_CONTROL = ("gray76", "#3d3d42")
+_SKELETON_TEXT = ("gray80", "#38383c")
+
+
+def _skeleton_controls() -> tuple:
+    from tkinter import ttk
+
+    return (
+        ctk.CTkButton,
+        ctk.CTkEntry,
+        ctk.CTkComboBox,
+        ctk.CTkOptionMenu,
+        ctk.CTkSegmentedButton,
+        ctk.CTkCheckBox,
+        ctk.CTkSwitch,
+        ctk.CTkRadioButton,
+        ctk.CTkSlider,
+        ctk.CTkProgressBar,
+        ctk.CTkTextbox,
+        ttk.Treeview,
+        tkinter.Listbox,
+        tkinter.Canvas,
+    )
+
+
+def widget_color(widget) -> str:
+    """The color a CTk widget paints its area with, for the current theme."""
+    color = widget.cget("fg_color")
+    if color == "transparent":
+        color = widget.cget("bg_color")
+    return widget._apply_appearance_mode(color)
+
+
+def skeleton_canvas(content, master) -> tkinter.Canvas:
+    """A canvas in master, the size of content, with gray rounded shapes
+    where content's visible widgets are: boxes for filled frames, blocks for
+    controls and lists, bars for text. It stands in for content during a
+    window edge drag: one canvas repaints far faster than the widgets."""
+    # Content that was hidden a moment ago is laid out before it is traced
+    content.update_idletasks()
+    dark = 1 if ctk.get_appearance_mode() == "Dark" else 0
+    controls = _skeleton_controls()
+    ox, oy = content.winfo_rootx(), content.winfo_rooty()
+    width, height = content.winfo_width(), content.winfo_height()
+    boxes, blocks, bars = [], [], []
+
+    def walk(parent) -> None:
+        for child in parent.winfo_children():
+            try:
+                if not child.winfo_ismapped():
+                    continue
+                x, y = child.winfo_rootx() - ox, child.winfo_rooty() - oy
+                w, h = child.winfo_width(), child.winfo_height()
+            except tkinter.TclError:
+                continue
+            if w < 4 or h < 4 or x > width or y > height or x + w < 0 or y + h < 0:
+                continue
+            # Scrollable frames are canvases holding the widgets
+            if isinstance(child, tkinter.Canvas) and child.winfo_children():
+                walk(child)
+            elif isinstance(child, controls):
+                blocks.append((x, y, x + w, y + h))
+            elif isinstance(child, ctk.CTkLabel):
+                if child.cget("text"):
+                    text_w = min(w, child._label.winfo_reqwidth())
+                    bar_h = max(6, int(h * 0.45))
+                    top = y + (h - bar_h) // 2
+                    bars.append((x, top, x + text_w, top + bar_h))
+            else:
+                if isinstance(child, ctk.CTkFrame) and child.cget("fg_color") not in (
+                    "transparent",
+                    content.cget("fg_color"),
+                ):
+                    boxes.append((x, y, x + w, y + h))
+                walk(child)
+
+    walk(content)
+    canvas = tkinter.Canvas(
+        master,
+        width=width,
+        height=height,
+        bg=widget_color(content),
+        highlightthickness=0,
+        bd=0,
+    )
+    for shapes, color, radius in (
+        (boxes, _SKELETON_BOX, 10),
+        (blocks, _SKELETON_CONTROL, 6),
+        (bars, _SKELETON_TEXT, 4),
+    ):
+        for x0, y0, x1, y1 in shapes:
+            _rounded_shape(canvas, x0, y0, x1, y1, radius, color[dark])
+    return canvas
+
+
+def _rounded_shape(canvas, x0, y0, x1, y1, radius, fill) -> None:
+    r = max(0, min(radius, (x1 - x0) / 2, (y1 - y0) / 2))
+    points = (
+        x0 + r, y0, x1 - r, y0, x1, y0, x1, y0 + r,
+        x1, y1 - r, x1, y1, x1 - r, y1, x0 + r, y1,
+        x0, y1, x0, y1 - r, x0, y0 + r, x0, y0,
+    )  # fmt: skip
+    canvas.create_polygon(points, smooth=True, fill=fill, outline="")
+
+
 _long_operations = 0
 
 

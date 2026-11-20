@@ -85,6 +85,7 @@ from er_save_manager.ui.utils import (
     patch_combo_scroll,
     pick_file,
     raise_after_ctk_refocus,
+    skeleton_canvas,
     style_window_frame,
 )
 
@@ -1623,7 +1624,7 @@ class MapWindow:
         left = ctk.CTkFrame(body, width=330, corner_radius=0)
         # Swapped for placeholders during a window edge drag, see _pause_view
         self._drag_panels = (bar, side, left)
-        self._drag_swaps: list[tuple[ctk.CTkFrame, dict, tk.Frame]] = []
+        self._drag_swaps: list[tuple[ctk.CTkFrame, dict, tk.Canvas]] = []
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
         self._build_location_list(left)
@@ -2374,25 +2375,18 @@ class MapWindow:
 
     def _pause_view(self):
         """Window edge drag: the map shows no items, and the top bar and both
-        side panels give their place to empty frames of their size and color
-        until it ends. Redrawing the map items and laying out and repainting
-        every panel widget at each step was most of the cost (on Windows a
-        few hundred ms per step); a frame placed on top does not stop that."""
+        side panels give their place to canvases of their size with gray
+        shapes where their widgets are (skeleton_canvas) until it ends.
+        Redrawing the map items and laying out and repainting every panel
+        widget at each step was most of the cost (on Windows a few hundred ms
+        per step); a frame placed on top does not stop that."""
         self._canvas.itemconfigure("all", state="hidden")
         for panel in self._drag_panels:
             info = {
                 ("in_" if key == "in" else key): value
                 for key, value in panel.pack_info().items()
             }
-            color = panel.cget("fg_color")
-            if color == "transparent":
-                color = panel.cget("bg_color")
-            placeholder = tk.Frame(
-                panel.master,
-                bg=panel._apply_appearance_mode(color),
-                width=panel.winfo_width(),
-                height=panel.winfo_height(),
-            )
+            placeholder = skeleton_canvas(panel, panel.master)
             placeholder.pack(**info, before=panel)
             panel.pack_forget()
             self._drag_swaps.append((panel, info, placeholder))
