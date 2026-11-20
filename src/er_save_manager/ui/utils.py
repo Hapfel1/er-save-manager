@@ -366,6 +366,11 @@ def center_window(
         window.geometry(f"{width}x{height}+{x}+{y}")
     else:
         window.geometry(f"+{x}+{y}")
+    # Tk applies the new geometry in its next layout pass. Until then the
+    # window keeps its initial size, and CTk takes the size it reads in
+    # between as the wanted one and later restores it (a CTkToplevel then
+    # snaps back to 200 x 200).
+    window.update_idletasks()
 
 
 def _colorref(window, color) -> int:
