@@ -522,6 +522,54 @@ def _frame_wheel(self, event):
 ctk.CTkScrollableFrame._mouse_wheel_all = _frame_wheel
 
 
+_ctk_frame_draw = ctk.CTkFrame._draw
+
+
+def _frame_draw(self, no_color_updates=False):
+    """CTkFrame._draw without the shape redraw of a transparent frame with no
+    border on a size change.
+
+    Such a frame fills its shape with its canvas background color, so the
+    shape is invisible at any size; redrawing it on every <Configure> made
+    window resizing slow. Color updates (appearance mode, configure) still
+    take the full path.
+    """
+    if (
+        no_color_updates
+        and self._fg_color == "transparent"
+        and not self._border_width
+        and self._background_corner_colors is None
+    ):
+        return
+    _ctk_frame_draw(self, no_color_updates)
+
+
+# Depends on CTkFrame internals (customtkinter 5.2.x).
+ctk.CTkFrame._draw = _frame_draw
+
+
+_ctk_scrollbar_init = ctk.CTkScrollbar.__init__
+
+
+def _scrollbar_init(self, *args, **kwargs):
+    """CTkScrollbar whose redraw waits for the next idle pass.
+
+    CTkScrollbar._draw ends with update_idletasks() on its canvas, which runs
+    the layout of the whole application on every set() call: once per scroll
+    step and per resize step for every scrollable list.
+    """
+    _ctk_scrollbar_init(self, *args, **kwargs)
+    self._canvas.update_idletasks = _no_idle_flush
+
+
+def _no_idle_flush() -> None:
+    pass
+
+
+# Depends on CTkScrollbar internals (customtkinter 5.2.x).
+ctk.CTkScrollbar.__init__ = _scrollbar_init
+
+
 def bind_mousewheel(widget, target_widget=None):
     """
     Enable wheel scrolling of CTkScrollableFrames on Linux.

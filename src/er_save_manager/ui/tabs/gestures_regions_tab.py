@@ -223,7 +223,9 @@ class GesturesRegionsTab:
             if not checkbox.winfo_manager():
                 checkbox.pack(anchor="w", pady=4, padx=8)
         for gesture_id, var in self.gesture_states.items():
-            var.set(gesture_id in unlocked_gesture_ids)
+            # Every set() redraws its checkbox, also with an unchanged value
+            if var.get() != (gesture_id in unlocked_gesture_ids):
+                var.set(gesture_id in unlocked_gesture_ids)
 
         # Remember initial unlocked set for delta calculation on apply
         self._initial_unlocked = unlocked_gesture_ids & set(all_gestures)
