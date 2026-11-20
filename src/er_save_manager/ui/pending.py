@@ -234,7 +234,8 @@ class CharacterBar(ctk.CTkFrame):
         self._links = ctk.CTkFrame(self, fg_color="transparent", width=1, height=1)
         self._links.pack(side=tk.RIGHT)
         self._link_buttons: list[ctk.CTkButton] = []
-        self.bind("<Configure>", lambda _e: self._fit_links(), add="+")
+        self._fit_width = 0
+        self.bind("<Configure>", self._on_configure, add="+")
 
     @property
     def index(self) -> int:
@@ -281,24 +282,39 @@ class CharacterBar(ctk.CTkFrame):
         ]
         self._fit_links()
 
-    def _fit_links(self) -> None:
+    def _on_configure(self, event) -> None:
+        # A window drag sends one event per step; only a new width can change
+        # how many links fit, and the sizes measured before still hold.
+        if event.widget is self and event.width != self._fit_width:
+            self._fit_width = event.width
+            self._fit_links(measure=False)
+
+    def _fit_links(self, measure: bool = True) -> None:
         """Show the links in order while they fit; the rest stay hidden
-        instead of being clipped."""
-        for button in self._link_buttons:
-            button.pack_forget()
-        self.update_idletasks()
+        instead of being clipped. measure=False skips the layout pass that
+        brings requested sizes up to date after a content change."""
+        if measure:
+            self.update_idletasks()
         used = sum(
             w.winfo_reqwidth() + 28
             for w in (self.winfo_children())
             if w is not self._links and w.winfo_manager()
         )
         free = self.winfo_width() - used
+        fit = 0
         for button in self._link_buttons:
             need = button.winfo_reqwidth() + 4
             if need > free:
                 break
-            button.pack(side=tk.LEFT, padx=(0, 4))
             free -= need
+            fit += 1
+        shown = [b for b in self._link_buttons if b.winfo_manager()]
+        if shown == self._link_buttons[:fit]:
+            return
+        for button in self._link_buttons:
+            button.pack_forget()
+        for button in self._link_buttons[:fit]:
+            button.pack(side=tk.LEFT, padx=(0, 4))
 
     def set_active(self, active: bool) -> None:
         """Dimmed on tabs that do not use a character."""
