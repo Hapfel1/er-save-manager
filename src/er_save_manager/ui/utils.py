@@ -548,18 +548,19 @@ def _frame_draw(self, no_color_updates=False):
 ctk.CTkFrame._draw = _frame_draw
 
 
-_ctk_scrollbar_init = ctk.CTkScrollbar.__init__
+_ctk_scrollbar_draw = ctk.CTkScrollbar._draw
 
 
-def _scrollbar_init(self, *args, **kwargs):
-    """CTkScrollbar whose redraw waits for the next idle pass.
+def _scrollbar_draw(self, no_color_updates=False):
+    """CTkScrollbar._draw whose redraw waits for the next idle pass.
 
-    CTkScrollbar._draw ends with update_idletasks() on its canvas, which runs
-    the layout of the whole application on every set() call: once per scroll
-    step and per resize step for every scrollable list.
+    The original ends with update_idletasks() on its canvas, which runs the
+    layout of the whole application on every set() call: once per scroll
+    step and per resize step for every scrollable list, and once when a
+    scrollbar is created.
     """
-    _ctk_scrollbar_init(self, *args, **kwargs)
     self._canvas.update_idletasks = _no_idle_flush
+    _ctk_scrollbar_draw(self, no_color_updates)
 
 
 def _no_idle_flush() -> None:
@@ -567,7 +568,7 @@ def _no_idle_flush() -> None:
 
 
 # Depends on CTkScrollbar internals (customtkinter 5.2.x).
-ctk.CTkScrollbar.__init__ = _scrollbar_init
+ctk.CTkScrollbar._draw = _scrollbar_draw
 
 
 def bind_mousewheel(widget, target_widget=None):

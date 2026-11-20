@@ -663,13 +663,14 @@ class _MapImages:
     ) -> list[Image.Image]:
         """The map image and its halved copies, with the fragments in locked
         shaded. wait=False returns the map's levels with an older shading
-        while the new one is built on a worker thread, when there are any."""
+        while the new one is built on a worker thread, or no levels while the
+        map's first build runs."""
         cached = self._levels.get(map_no)
         if cached is None or cached[0] != locked:
-            if not wait and cached is not None:
+            if not wait:
                 self.preload(map_no, locked)
                 if not self._pending[map_no][2].done():
-                    return cached[1]
+                    return cached[1] if cached is not None else []
             pending = self._pending.pop(map_no, None)
             if pending is not None and pending[:2] == (locked, self.convergence):
                 levels = pending[2].result()
@@ -1195,6 +1196,8 @@ class MapWindow:
         self._item_photos: dict[tuple[str, int], ImageTk.PhotoImage | None] = {}
         self._hover_tile: _Placed | None = None
         self._list_rows: list[_Placed | _Pin] = []
+        # Rows of closed list groups, given their icon once the group opens
+        self._lazy_icons: dict[str, list[tuple[str, _Pin]]] = {}
         self._player = player
         self._editor = marker_editor
 
@@ -1895,6 +1898,12 @@ class MapWindow:
         self._build_legend(left)
         box.pack(fill=tk.BOTH, expand=True, pady=(0, 10), **pad)
         self._loc_list.bind("<<TreeviewSelect>>", self._on_location_list_select)
+        # The group is set open after the event, so the icons follow at idle
+        self._loc_list.bind(
+            "<<TreeviewOpen>>",
+            lambda _e: self._win.after_idle(self._load_open_icons),
+            add="+",
+        )
         bind_mousewheel(self._loc_list)
         self._search_var.trace_add("write", lambda *_: self._fill_location_list())
         self._queue_list_fill()
@@ -2150,6 +2159,7 @@ class MapWindow:
         self._list_rows = [r[2] for r in rows]
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         groups: dict[str, str] = {}
         for n, (group, label, pin) in enumerate(rows):
             parent = ""
@@ -2158,13 +2168,7 @@ class MapWindow:
                 if parent is None:
                     parent = groups[group] = f"r:{group}"
                     tree.insert("", "end", iid=parent, text=group, open=bool(words))
-            tree.insert(
-                parent,
-                "end",
-                iid=str(n),
-                text=f" {label}",
-                image=self._pin_list_icon(pin),
-            )
+            self._insert_pin_row(parent, str(n), f" {label}", pin, bool(words))
 
     def _queue_list_fill(self):
         """Fill the location list once the current event is handled, so
@@ -2201,6 +2205,7 @@ class MapWindow:
         self._list_rows = rows
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         # "Region - Name" rows go under a region row so the list shows the
         # name itself; names without a region stay top level.
         regions = {p.loc.name.partition(" - ")[0] for p in rows if " - " in p.loc.name}
@@ -2245,14 +2250,31 @@ class MapWindow:
                 "", "end", iid=group, text=f"{kind} ({len(rows)})", open=bool(words)
             )
             for _region, label, pin in rows:
-                tree.insert(
-                    group,
-                    "end",
-                    iid=str(len(self._list_rows)),
-                    text=f" {label}",
-                    image=self._pin_list_icon(pin),
+                self._insert_pin_row(
+                    group, str(len(self._list_rows)), f" {label}", pin, bool(words)
                 )
                 self._list_rows.append(pin)
+
+    def _insert_pin_row(
+        self, parent: str, iid: str, text: str, pin: _Pin, opened: bool
+    ) -> None:
+        """List row of a pin. Under a closed group the icon waits for
+        _load_open_icons: building every boss, NPC and item icon of the All
+        list up front froze the map window for about a second on opening."""
+        if not parent or opened:
+            self._loc_list.insert(
+                parent, "end", iid=iid, text=text, image=self._pin_list_icon(pin)
+            )
+            return
+        self._loc_list.insert(parent, "end", iid=iid, text=text)
+        self._lazy_icons.setdefault(parent, []).append((iid, pin))
+
+    def _load_open_icons(self) -> None:
+        tree = self._loc_list
+        for group in [g for g in self._lazy_icons if tree.exists(g)]:
+            if tree.item(group, "open"):
+                for iid, pin in self._lazy_icons.pop(group):
+                    tree.item(iid, image=self._pin_list_icon(pin))
 
     def _on_location_list_select(self, _event=None):
         sel = self._loc_list.selection()
@@ -2260,6 +2282,7 @@ class MapWindow:
             return
         if sel[0].startswith("r:"):
             self._loc_list.item(sel[0], open=not self._loc_list.item(sel[0], "open"))
+            self._load_open_icons()
             return
         placed = self._list_rows[int(sel[0])]
         if isinstance(placed, str):
@@ -2546,6 +2569,10 @@ class MapWindow:
         levels = self._images.levels(
             self._map_no, self._tile_key[2] if locked is None else locked, wait=False
         )
+        if not levels:
+            # First build still running: the background now, the map art
+            # once _watch_levels sees it done
+            return Image.new("RGB", (w, h), _BACKGROUND)
         # Image pixels per screen pixel at full resolution; use the smallest
         # copy that still has at least one pixel per screen pixel.
         density = self._images.scale / zoom
@@ -3375,6 +3402,7 @@ class MapWindow:
     def _fill_done_list(self, words: list[str]):
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         comp = self._completion()
         if not comp:
             self._list_rows = []
