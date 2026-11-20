@@ -363,3 +363,6 @@ def test_unequip_writes_the_game_empty_forms(sanitized_save_path, tmp_path):
         assert getattr(handles, key) == 0
         assert getattr(ids, key) == getattr(index, key) == 0xFFFFFFFF
     assert not any(h in worn for h in vars(handles).values())
+    for key in equip_ops.WEAPON_SLOTS + tuple(equip_ops.ARMOR_PLACEHOLDERS):
+        form = (getattr(ids, key), getattr(mirror, key), getattr(handles, key))
+        assert equip_ops.empty_form(slot, key, getattr(handles, key)) == form

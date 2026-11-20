@@ -76,6 +76,32 @@ def _held_placeholder(slot, item_id: int, prefix: int | None, avoid: set[int]):
     return None
 
 
+def empty_form(slot, key: str, current: int = 0) -> tuple[int, int, int]:
+    """(item id, armaments mirror value, handle) the game writes for an empty
+    weapon, ammo, armor or talisman slot. current is kept when it already is
+    a held placeholder entry for the slot. Weapon and armor slots fall back to
+    the EMPTY form when the character holds no placeholder."""
+    if key in WEAPON_SLOTS:
+        item_id = mirror_id = gaitem_id = UNARMED_ID
+        prefix = _PREFIX_WEAPON
+    elif key in ARMOR_PLACEHOLDERS:
+        item_id = ARMOR_PLACEHOLDERS[key]
+        mirror_id = gaitem_id = _ARMOR_CATEGORY | item_id
+        prefix = None
+    else:
+        return EMPTY, EMPTY, 0
+    if current and _held_index(slot, current) != EMPTY:
+        for g in slot.gaitem_map:
+            if g.gaitem_handle == current:
+                if g.item_id == gaitem_id:
+                    return item_id, mirror_id, current
+                break
+    handle = _held_placeholder(slot, gaitem_id, prefix, set())
+    if handle is None:
+        return EMPTY, EMPTY, 0
+    return item_id, mirror_id, handle
+
+
 def blocked(slot, handles: set[int]) -> set[int]:
     """Handles among handles that unequip() would leave equipped: a weapon
     when the character holds no Unarmed entry, armor when it holds no bare
