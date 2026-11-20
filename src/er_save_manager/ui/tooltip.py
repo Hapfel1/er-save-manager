@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import tkinter as tk
 
 import customtkinter as ctk
@@ -10,6 +11,8 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.utils import get_monitor_area
 
 _DELAY_MS = 500
+# How often a shown tip checks that the pointer is still on its widget
+_WATCH_MS = 250
 _BG = ("gray90", "gray22")
 _BORDER = ("gray70", "gray35")
 
@@ -36,6 +39,7 @@ class Tooltip:
         self.footer = footer
         self._job: str | None = None
         self._tip: tk.Toplevel | None = None
+        self._watch_job: str | None = None
         for target in self._targets(widget):
             target.bind("<Enter>", self._schedule, add="+")
             target.bind("<Leave>", self._on_leave, add="+")
@@ -136,6 +140,27 @@ class Tooltip:
         tip.deiconify()
         tip.lift()
         self._tip = tip
+        self._watch_job = self.widget.after(_WATCH_MS, self._watch)
+
+    def _watch(self) -> None:
+        """Hide once the pointer is off the widget. <Leave> is not enough: a
+        window manager grab (resizing from the window corner next to the
+        widget) or a window move can leave the tip floating where it was."""
+        self._watch_job = None
+        if self._tip is None:
+            return
+        try:
+            x, y = self.widget.winfo_pointerxy()
+            under = self.widget.winfo_containing(x, y)
+            visible = self.widget.winfo_viewable()
+        except (tk.TclError, KeyError):
+            under, visible = None, False
+        while visible and under is not None:
+            if under is self.widget:
+                self._watch_job = self.widget.after(_WATCH_MS, self._watch)
+                return
+            under = under.master
+        self._hide()
 
     def _position(self, x: int, y: int, w: int, h: int) -> tuple[int, int]:
         """Top-left of a w x h tip, inside the usable screen area.
@@ -178,6 +203,10 @@ class Tooltip:
 
     def _hide(self, _event=None) -> None:
         self._cancel()
+        if self._watch_job is not None:
+            with contextlib.suppress(tk.TclError):
+                self.widget.after_cancel(self._watch_job)
+            self._watch_job = None
         if self._tip is not None:
             self._tip.destroy()
             self._tip = None

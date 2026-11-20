@@ -9,6 +9,7 @@ base_id // 10000 * 10000.
 
 from __future__ import annotations
 
+import random
 from types import SimpleNamespace
 
 import pytest
@@ -22,6 +23,7 @@ from er_save_manager.parser.inventory_ops import (
     UPGRADE_CAP_STANDARD,
     _next_gaitem_handle,
     add_item,
+    deferred_inventory_patch,
     remove_item,
     set_quantity,
     validate_upgrade,
@@ -212,6 +214,39 @@ def test_bulk_add_keeps_handle_indices_in_range_and_unique(sanitized_save):
     assert len(set(indices)) == len(indices)
 
 
+def test_deferred_batch_matches_plain(sanitized_save_path):
+    """A batch (deferred writes, kept scan results) gives the same bytes and
+    results as single calls, also with removals between the adds."""
+
+    def edit(save):
+        rnd = random.Random(7)
+        added, log = [], []
+        for _ in range(300):
+            if added and rnd.random() < 0.35:
+                item, location = added.pop(rnd.randrange(len(added)))
+                log.append(remove_item(save, 0, item, location))
+                continue
+            kind = rnd.choice((WEAPON, ARMOR, TALISMAN, GOODS))
+            item = kind + rnd.randrange(30) * 10000
+            try:
+                result = add_item(save, 0, item, 1, rnd.choice(("held", "storage")))
+            except ValueError as e:
+                log.append(str(e))
+                continue
+            added.append((item, result["location"]))
+            log.append(result)
+        stack = GOODS + 99 * 10000
+        log.append(add_item(save, 0, stack, 5, "held"))
+        log.append(set_quantity(save, 0, stack, 9, log[-1]["location"]))
+        return log
+
+    plain, deferred = load_save(sanitized_save_path), load_save(sanitized_save_path)
+    expected = edit(plain)
+    with deferred_inventory_patch():
+        assert edit(deferred) == expected
+    assert deferred._raw_data == plain._raw_data
+
+
 def test_add_to_full_inventory_changes_nothing(sanitized_save):
     slot = sanitized_save.character_slots[0]
     for inv in (slot.inventory_held, slot.inventory_storage_box):
@@ -291,3 +326,45 @@ def test_remove_and_set_quantity(sanitized_save):
     assert (
         sanitized_save.character_slots[0].inventory_held.common_item_count == count - 1
     )
+
+
+def test_unequip_writes_the_game_empty_forms(sanitized_save_path, tmp_path):
+    from er_save_manager.parser import equip_ops
+
+    save = load_save(sanitized_save_path)
+    # Without a held bare Head entry, unequip adds one as the game does
+    remove_item(save, 0, 0x10000000 | equip_ops.ARMOR_PLACEHOLDERS["head"], "held")
+    slot = save.character_slots[0]
+    worn = {
+        h
+        for h in vars(slot.equipped_items_gaitem_handle).values()
+        if h not in (0, 0xFFFFFFFF)
+    }
+    assert worn
+    done, kept = equip_ops.unequip(save, 0, worn)
+    assert not kept
+    out = tmp_path / "unequipped.sl2"
+    save.recalculate_checksums()
+    save.to_file(out)
+    slot = load_save(out).character_slots[0]
+    ids, handles = slot.equipped_items_item_id, slot.equipped_items_gaitem_handle
+    mirror, index = slot.equipped_armaments_and_items, slot.equipped_items_equip_index
+    held = {
+        it.gaitem_handle: n
+        for n, it in enumerate(slot.inventory_held.common_items)
+        if it.gaitem_handle
+    }
+    key_cap = len(slot.inventory_held.key_items)
+    for key in equip_ops.WEAPON_SLOTS:
+        assert (getattr(ids, key), getattr(mirror, key)) == (110000, 110000)
+        assert getattr(index, key) == key_cap + held[getattr(handles, key)]
+    for key, bare in equip_ops.ARMOR_PLACEHOLDERS.items():
+        assert (getattr(ids, key), getattr(mirror, key)) == (bare, 0x10000000 | bare)
+        assert getattr(index, key) == key_cap + held[getattr(handles, key)]
+    for key in ("talisman1", "talisman2", "arrows1", "bolts1"):
+        assert getattr(handles, key) == 0
+        assert getattr(ids, key) == getattr(index, key) == 0xFFFFFFFF
+    assert not any(h in worn for h in vars(handles).values())
+    for key in equip_ops.WEAPON_SLOTS + tuple(equip_ops.ARMOR_PLACEHOLDERS):
+        form = (getattr(ids, key), getattr(mirror, key), getattr(handles, key))
+        assert equip_ops.empty_form(slot, key, getattr(handles, key)) == form

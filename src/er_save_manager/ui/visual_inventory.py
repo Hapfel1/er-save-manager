@@ -16,6 +16,7 @@ from er_save_manager.ui.editors.inventory_editor import (
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
+    keep_above_main,
     patch_combo_scroll,
 )
 from er_save_manager.ui.virtual_grid import GridEntry, VirtualIconGrid
@@ -120,6 +121,7 @@ class VisualInventoryBrowser(ctk.CTkToplevel):
         self._sel_idx: int | None = None
 
         self.title("Visual Inventory")
+        keep_above_main(self, parent)
         self.geometry("760x680")
         self.minsize(500, 400)
         self.resizable(True, True)

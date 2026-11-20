@@ -11,6 +11,7 @@ import re
 import shutil
 import threading
 import zipfile
+import zlib
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from pathlib import Path
@@ -163,6 +164,23 @@ def _log_problem(exc: BaseException, where: str) -> None:
         log_exception(type(exc), exc, exc.__traceback__, where)
     except Exception:
         pass
+
+
+# Encrypted saves (DS3, DS2, DSR, Nightreign) do not compress: deflating
+# them only costs time on every backup.
+_SAMPLE_BYTES = 1 << 20
+_MIN_SAVING = 0.03
+
+
+def _zip_method(path: Path) -> int:
+    """ZIP_STORED for a file whose first MB deflates by less than
+    _MIN_SAVING, else ZIP_DEFLATED."""
+    with open(path, "rb") as f:
+        sample = f.read(_SAMPLE_BYTES)
+    if not sample:
+        return zipfile.ZIP_DEFLATED
+    saved = 1 - len(zlib.compress(sample, 1)) / len(sample)
+    return zipfile.ZIP_DEFLATED if saved >= _MIN_SAVING else zipfile.ZIP_STORED
 
 
 class BackupManager:
@@ -453,7 +471,9 @@ class BackupManager:
                     tmp_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
                 ) as zipf:
                     for file in sources:
-                        zipf.write(file, arcname=file.name)
+                        zipf.write(
+                            file, arcname=file.name, compress_type=_zip_method(file)
+                        )
             else:
                 shutil.copy2(self.save_path, tmp_path)
             os.replace(tmp_path, backup_path)

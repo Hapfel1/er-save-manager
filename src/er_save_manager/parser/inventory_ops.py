@@ -15,6 +15,10 @@ save.recalculate_checksums() and save.to_file() after all operations.
 
 from __future__ import annotations
 
+import bisect
+import ctypes
+from collections import Counter
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -593,22 +597,8 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
         ValueError: Every index is in use.
     """
     limit = len(slot.gaitem_map)
-    used: set[int] = set()
-    by_gen: dict[int, int] = {}
-    for g in slot.gaitem_map:
-        if g.gaitem_handle == 0:
-            continue
-        index = g.gaitem_handle & 0xFFFF
-        used.add(index)
-        if (g.gaitem_handle & 0xF0000000) not in (
-            _PREFIX_WEAPON,
-            _PREFIX_ARMOR,
-            _PREFIX_GEM,
-        ) or index >= limit:
-            continue
-        gen = (g.gaitem_handle >> 16) & 0xFF
-        if gen & 0x80:
-            by_gen[gen] = max(by_gen.get(gen, -1), index)
+    state = _batch_state("gaitem", slot, _gaitem_index_state)
+    used, by_gen = state if state is not None else _gaitem_index_state(slot)
 
     if by_gen:
         # Generations live on a 0x80-0xFF ring. The newest one is the last
@@ -640,6 +630,29 @@ def _next_gaitem_handle(slot, prefix: int) -> int:
     return (category_high << 24) | (gen << 16) | index
 
 
+def _gaitem_index_state(slot) -> tuple[set[int], dict[int, int]]:
+    """(indices of all live handles, highest index per generation of the
+    weapon, armor and gem handles) for _next_gaitem_handle."""
+    limit = len(slot.gaitem_map)
+    used: set[int] = set()
+    by_gen: dict[int, int] = {}
+    for g in slot.gaitem_map:
+        if g.gaitem_handle == 0:
+            continue
+        index = g.gaitem_handle & 0xFFFF
+        used.add(index)
+        if (g.gaitem_handle & 0xF0000000) not in (
+            _PREFIX_WEAPON,
+            _PREFIX_ARMOR,
+            _PREFIX_GEM,
+        ) or index >= limit:
+            continue
+        gen = (g.gaitem_handle >> 16) & 0xFF
+        if gen & 0x80:
+            by_gen[gen] = max(by_gen.get(gen, -1), index)
+    return used, by_gen
+
+
 def _find_empty_gaitem_slot(slot, prefix: int) -> int:
     """
     Return index of the best empty gaitem slot for the given prefix.
@@ -669,11 +682,8 @@ def _find_empty_gaitem_slot(slot, prefix: int) -> int:
         return -1
 
     start = (first_weapon_idx + 1) if first_weapon_idx != -1 else 0
-    result = -1
-    for i in range(start, len(slot.gaitem_map)):
-        if slot.gaitem_map[i].gaitem_handle == 0:
-            result = i
-    return result
+    last = _last_empty_gaitem(slot)
+    return last if last >= start else -1
 
 
 def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
@@ -688,49 +698,100 @@ def _find_gaitem_by_item(slot, full_item_id: int, inventory=None):
 
     Returns (gaitem_index, gaitem_entry) or (-1, None).
     """
-    cat_bits = _category(full_item_id)
-    base_id = full_item_id & 0x0FFFFFFF
-    for i, g in enumerate(slot.gaitem_map):
-        if g.gaitem_handle == 0:
+    index = _batch_state("match", slot, _match_index)
+    if index is not None:
+        candidates = sorted(
+            {i for key in _wanted_keys(full_item_id) for i in index.get(key, ())}
+        )
+    else:
+        candidates = range(len(slot.gaitem_map))
+    for i in candidates:
+        g = slot.gaitem_map[i]
+        if g.gaitem_handle == 0 or not _gaitem_matches(g, full_item_id):
             continue
-        g_prefix = g.gaitem_handle & 0xF0000000
-
-        match = False
-        if cat_bits == _CAT_WEAPON:
-            if g_prefix == _PREFIX_WEAPON:
-                stored_base = (g.item_id & 0x0FFFFFFF) // 10000 * 10000
-                want_base = base_id // 10000 * 10000
-                if stored_base == want_base:
-                    match = True
-        elif cat_bits == _CAT_GEM:
-            if g_prefix == _PREFIX_GEM and (
-                g.item_id == base_id or g.item_id == full_item_id
-            ):
-                match = True
-        else:
-            if _category(g.item_id) == cat_bits and g.item_id == full_item_id:
-                match = True
-
-        if match:
-            if inventory is None:
-                return i, g
-            else:
-                if (
-                    _find_handle_slot(inventory.common_items, g.gaitem_handle) != -1
-                    or _find_handle_slot(inventory.key_items, g.gaitem_handle) != -1
-                ):
-                    return i, g
+        if inventory is None or _holds_handle(inventory, g.gaitem_handle):
+            return i, g
 
     return -1, None
 
 
+def _gaitem_matches(g, full_item_id: int) -> bool:
+    cat_bits = _category(full_item_id)
+    base_id = full_item_id & 0x0FFFFFFF
+    g_prefix = g.gaitem_handle & 0xF0000000
+    if cat_bits == _CAT_WEAPON:
+        return (
+            g_prefix == _PREFIX_WEAPON
+            and (g.item_id & 0x0FFFFFFF) // 10000 == base_id // 10000
+        )
+    if cat_bits == _CAT_GEM:
+        return g_prefix == _PREFIX_GEM and g.item_id in (base_id, full_item_id)
+    return _category(g.item_id) == cat_bits and g.item_id == full_item_id
+
+
+def _match_keys(handle: int, item_id: int) -> list[tuple[str, int]]:
+    """Keys under which _match_index lists a live gaitem entry."""
+    keys = [("id", item_id)]
+    prefix = handle & 0xF0000000
+    if prefix == _PREFIX_WEAPON:
+        keys.append(("w", (item_id & 0x0FFFFFFF) // 10000))
+    elif prefix == _PREFIX_GEM:
+        keys.append(("g", item_id))
+    return keys
+
+
+def _wanted_keys(full_item_id: int) -> list[tuple[str, int]]:
+    """Keys of the entries _gaitem_matches can accept for full_item_id."""
+    cat_bits = _category(full_item_id)
+    base_id = full_item_id & 0x0FFFFFFF
+    if cat_bits == _CAT_WEAPON:
+        return [("w", base_id // 10000)]
+    if cat_bits == _CAT_GEM:
+        return [("g", base_id), ("g", full_item_id)]
+    return [("id", full_item_id)]
+
+
+def _match_index(slot) -> dict[tuple[str, int], list[int]]:
+    """Gaitem positions by _match_keys, ascending."""
+    index: dict[tuple[str, int], list[int]] = {}
+    for i, g in enumerate(slot.gaitem_map):
+        if g.gaitem_handle != 0:
+            for key in _match_keys(g.gaitem_handle, g.item_id):
+                index.setdefault(key, []).append(i)
+    return index
+
+
+def _holds_handle(inventory, handle: int) -> bool:
+    held = _batch_state("held", inventory, _held_handles)
+    if held is not None:
+        return held[handle] > 0
+    return (
+        _find_handle_slot(inventory.common_items, handle) != -1
+        or _find_handle_slot(inventory.key_items, handle) != -1
+    )
+
+
+def _held_handles(inventory) -> Counter:
+    return Counter(
+        it.gaitem_handle
+        for it in (*inventory.common_items, *inventory.key_items)
+        if it.gaitem_handle != 0
+    )
+
+
 def _gaitem_last_empty(slot, slot_data_base: int) -> int | None:
     """Return absolute buffer offset of the last empty gaitem entry, or None."""
-    result = None
-    for i, g in enumerate(slot.gaitem_map):
-        if g.gaitem_handle == 0:
-            result = slot_data_base + slot.gaitem_offsets[i]
-    return result
+    i = _last_empty_gaitem(slot)
+    return None if i == -1 else slot_data_base + slot.gaitem_offsets[i]
+
+
+def _last_empty_gaitem(slot) -> int:
+    """Index of the last gaitem entry with handle 0, or -1."""
+    gaitem_map = slot.gaitem_map
+    for i in range(len(gaitem_map) - 1, -1, -1):
+        if gaitem_map[i].gaitem_handle == 0:
+            return i
+    return -1
 
 
 # ---- inventory helpers ------------------------------------------------------
@@ -754,11 +815,21 @@ def _acq_indices(inventory) -> list[int]:
     ]
 
 
+def _acq_state(inventory) -> list[int]:
+    """[highest index below ACQ_INDEX_LIMIT or 0, indices at or past it]."""
+    indices = _acq_indices(inventory)
+    valid = [i for i in indices if i < ACQ_INDEX_LIMIT]
+    return [max(valid, default=0), len(indices) - len(valid)]
+
+
 def acq_indices_overflowed(inventory) -> bool:
     """True when an index or the counter is past the range the game can continue."""
-    return inventory.acquisition_index_counter >= ACQ_COUNTER_LIMIT or any(
-        i >= ACQ_INDEX_LIMIT for i in _acq_indices(inventory)
-    )
+    if inventory.acquisition_index_counter >= ACQ_COUNTER_LIMIT:
+        return True
+    state = _batch_state("acq", inventory, _acq_state)
+    if state is not None:
+        return state[1] > 0
+    return any(i >= ACQ_INDEX_LIMIT for i in _acq_indices(inventory))
 
 
 def renumber_acq_indices(inventory) -> None:
@@ -777,12 +848,13 @@ def renumber_acq_indices(inventory) -> None:
     for n, it in enumerate(items, 1):
         it.acquisition_index = 2 * n
     inventory.acquisition_index_counter = len(items) + 1
+    _drop_batch_state("acq", inventory)
 
 
 def _next_acq_index(inventory) -> tuple[int, int]:
     """Return (index for a new item, counter after adding it) for one inventory."""
-    valid = [i for i in _acq_indices(inventory) if i < ACQ_INDEX_LIMIT]
-    top = max(valid, default=0)
+    state = _batch_state("acq", inventory, _acq_state)
+    top = (state if state is not None else _acq_state(inventory))[0]
     counter = inventory.acquisition_index_counter
     if counter >= ACQ_COUNTER_LIMIT:
         counter = (top + 1) // 2
@@ -794,18 +866,36 @@ def _next_acq_index(inventory) -> tuple[int, int]:
 
 def _first_empty_inv_slot(inventory) -> int:
     """Return index of first common_items slot with gaitem_handle == 0, or -1."""
-    for i, it in enumerate(inventory.common_items):
-        if it.gaitem_handle == 0:
-            return i
-    return -1
+    return _first_empty(inventory.common_items)
 
 
 def _first_empty_key_slot(inventory) -> int:
     """Return index of first key_items slot with gaitem_handle == 0, or -1."""
-    for i, it in enumerate(inventory.key_items):
+    return _first_empty(inventory.key_items)
+
+
+def _first_empty(items) -> int:
+    state = _batch_state("list", items, _list_state)
+    if state is not None:
+        return state[0]
+    for i, it in enumerate(items):
         if it.gaitem_handle == 0:
             return i
     return -1
+
+
+def _occupied(items) -> int:
+    state = _batch_state("list", items, _list_state)
+    if state is not None:
+        return state[1]
+    return sum(1 for it in items if it.gaitem_handle != 0)
+
+
+def _list_state(items) -> list[int]:
+    """[first empty index or -1, occupied entries] of an item list."""
+    handles = [it.gaitem_handle for it in items]
+    first = handles.index(0) if 0 in handles else -1
+    return [first, len(handles) - handles.count(0)]
 
 
 def _find_handle_slot(item_list, handle: int) -> int:
@@ -827,6 +917,117 @@ def _select_inventory(slot, location: str):
 # ---- binary patch helpers ---------------------------------------------------
 
 
+# Slots whose inventory write is held back by deferred_inventory_patch.
+_deferred: dict[tuple[int, int], tuple[Save, int, object]] | None = None
+
+# Scan results kept for the length of a deferred batch, keyed by
+# (kind, id(obj)) with obj itself to rule out a reused id:
+#   "list"    item list -> [first empty index, occupied entries]
+#   "acq"     inventory -> [highest valid acquisition index, overflowed ones]
+#   "gaitem"  slot -> (live handle indices, highest index per generation)
+#   "match"   slot -> gaitem positions by item id, see _match_keys
+#   "held"    inventory -> Counter of the handles in its entries
+# add_item, remove_item, insert_gaitem, _remove_gaitem and
+# renumber_acq_indices keep them in step with every change, so each item of
+# a batch costs a few lookups instead of scans over the 5120 gaitem entries
+# and 2688 + 1920 inventory entries.
+_batch: dict[tuple[str, int], tuple[object, object]] = {}
+
+
+def _batch_state(kind: str, obj, build):
+    """The kept state of obj, built by build(obj) on first use; None outside
+    a deferred batch."""
+    if _deferred is None:
+        return None
+    key = (kind, id(obj))
+    hit = _batch.get(key)
+    if hit is None or hit[0] is not obj:
+        hit = (obj, build(obj))
+        _batch[key] = hit
+    return hit[1]
+
+
+def _kept_state(kind: str, obj):
+    """The kept state of obj if there is one, without building it."""
+    hit = _batch.get((kind, id(obj)))
+    return hit[1] if hit is not None and hit[0] is obj else None
+
+
+def _drop_batch_state(kind: str, obj) -> None:
+    _batch.pop((kind, id(obj)), None)
+
+
+def _note_entry(inventory, items, index: int, entry) -> None:
+    """Update the kept state after items[index] was filled with entry (an
+    empty entry when it was cleared)."""
+    if _deferred is None:
+        return
+    state = _kept_state("list", items)
+    filled = entry.gaitem_handle != 0
+    if state is not None:
+        if filled:
+            state[1] += 1
+            if state[0] == index:
+                state[0] = -1
+                for i in range(index + 1, len(items)):
+                    if items[i].gaitem_handle == 0:
+                        state[0] = i
+                        break
+        else:
+            state[1] -= 1
+            if state[0] == -1 or index < state[0]:
+                state[0] = index
+    held = _kept_state("held", inventory)
+    if held is not None and filled:
+        held[entry.gaitem_handle] += 1
+    acq = _kept_state("acq", inventory)
+    if acq is not None and filled:
+        if entry.acquisition_index >= ACQ_INDEX_LIMIT:
+            acq[1] += 1
+        else:
+            acq[0] = max(acq[0], entry.acquisition_index)
+
+
+def _note_cleared(inventory, old_entry) -> None:
+    """Update the held handles and acquisition state after old_entry left
+    inventory."""
+    held = _kept_state("held", inventory)
+    if held is not None:
+        held[old_entry.gaitem_handle] -= 1
+    acq = _kept_state("acq", inventory)
+    if acq is None:
+        return
+    if old_entry.acquisition_index >= ACQ_INDEX_LIMIT:
+        acq[1] -= 1
+    elif old_entry.acquisition_index == acq[0]:
+        _drop_batch_state("acq", inventory)
+
+
+@contextmanager
+def deferred_inventory_patch():
+    """
+    Hold back the inventory writes of add/remove/set_quantity calls and write
+    each touched slot once on exit, also when the block raises.
+
+    Re-serializing both inventories after every single item makes a batch of
+    N items cost N full inventory writes. The gaitem map is still patched per
+    item, so its shifts move the stale inventory bytes along with their
+    offsets, and the single write at the end lands on the current offsets.
+    """
+    global _deferred
+    if _deferred is not None:
+        yield
+        return
+    _deferred = {}
+    try:
+        yield
+    finally:
+        pending, _deferred = _deferred, None
+        _batch.clear()
+        for save, slot_idx, slot in pending.values():
+            _patch_slot(save, slot_idx, slot)
+
+
 def _patch_slot(save: Save, slot_idx: int, slot) -> None:
     """
     Write modified inventory bytes directly into save._raw_data.
@@ -835,6 +1036,10 @@ def _patch_slot(save: Save, slot_idx: int, slot) -> None:
     ranges, leaving all other slot data untouched.
     """
     from io import BytesIO
+
+    if _deferred is not None:
+        _deferred[id(save), slot_idx] = (save, slot_idx, slot)
+        return
 
     slot_data_base = save.slot_data_offset(slot_idx)
 
@@ -851,6 +1056,21 @@ def _patch_slot(save: Save, slot_idx: int, slot) -> None:
         data = buf.getvalue()
         abs_off = slot_data_base + slot.inventory_storage_offset
         save._raw_data[abs_off : abs_off + len(data)] = data
+
+
+def _move_within(buf: bytearray, src: int, dst: int, size: int) -> None:
+    """Copy buf[src:src + size] to dst, the ranges may overlap: one memmove
+    instead of a temporary copy of a region up to the slot size."""
+    if size <= 0:
+        return
+    if min(src, dst) < 0 or max(src, dst) + size > len(buf):
+        raise ValueError("move outside the buffer")
+    view = (ctypes.c_char * len(buf)).from_buffer(buf)
+    try:
+        ctypes.memmove(ctypes.addressof(view) + dst, ctypes.addressof(view) + src, size)
+    finally:
+        # The export blocks resizing buf until it is gone
+        del view
 
 
 def _patch_slot_with_gaitem_insert(
@@ -907,6 +1127,20 @@ def _patch_slot_with_gaitem_insert(
             raise ValueError(f"slot {slot_idx} has no room left for this item")
 
         last_empty_abs = _gaitem_last_empty(slot, slot_data_base)
+
+        if last_empty_abs == entry_abs_off:
+            # Insert before the last empty entry, delete that entry, trim the
+            # slot end: the entry's 8 bytes become the new entry and the rest
+            # of the slot moves back by trim, in one move inside the buffer.
+            slot_end = slot_data_base + SLOT_DATA_SIZE
+            _move_within(
+                save._raw_data,
+                entry_abs_off + 8,
+                entry_abs_off + new_size,
+                slot_end - trim - (entry_abs_off + 8),
+            )
+            save._raw_data[entry_abs_off : entry_abs_off + new_size] = new_gaitem_bytes
+            return new_size - 8
 
         # Operate on a slot-local copy: the net size change within the slot
         # is zero, so writing it back as a same-length slice avoids shifting
@@ -1085,10 +1319,23 @@ def insert_gaitem(
     )
     slot.gaitem_map[empty_g] = new_gaitem
 
-    entry_rel = slot.gaitem_offsets[empty_g]
-    for i, off in enumerate(slot.gaitem_offsets):
-        if off > entry_rel:
-            slot.gaitem_offsets[i] += size_delta
+    # Offsets grow with the index: the entries after empty_g are the ones
+    # behind the inserted bytes
+    offsets = slot.gaitem_offsets
+    for i in range(empty_g + 1, len(offsets)):
+        offsets[i] += size_delta
+
+    index = _kept_state("match", slot)
+    if index is not None:
+        for key in _match_keys(handle, new_gaitem.item_id):
+            bisect.insort(index.setdefault(key, []), empty_g)
+
+    state = _kept_state("gaitem", slot)
+    if state is not None:
+        used, by_gen = state
+        index, gen = handle & 0xFFFF, (handle >> 16) & 0xFF
+        used.add(index)
+        by_gen[gen] = max(by_gen.get(gen, -1), index)
 
     _shift_slot_offsets(slot, net_shift)
 
@@ -1114,7 +1361,18 @@ def _remove_gaitem(save: Save, slot_idx: int, slot, gaitem_idx: int) -> int:
     empty_gaitem.write(buf)
     empty_bytes = buf.getvalue()
 
+    old = slot.gaitem_map[gaitem_idx]
+    index = _kept_state("match", slot)
+    if index is not None and old.gaitem_handle != 0:
+        try:
+            for key in _match_keys(old.gaitem_handle, old.item_id):
+                index[key].remove(gaitem_idx)
+        except (KeyError, ValueError):
+            # Out of step: built again from the map on the next lookup
+            _drop_batch_state("match", slot)
     slot.gaitem_map[gaitem_idx] = empty_gaitem
+    # Built again on the next use; a removal can lower a generation's top
+    _drop_batch_state("gaitem", slot)
 
     net_shift = _patch_slot_with_gaitem_insert(
         save,
@@ -1147,12 +1405,8 @@ def _update_inv_counters(
     Game-written saves never exceed len(key_items) + len(common_items) - 1
     (held 3071, storage 2047); a counter past that crashes the game on load.
     """
-    inventory.common_item_count = sum(
-        1 for it in inventory.common_items if it.gaitem_handle != 0
-    )
-    inventory.key_item_count = sum(
-        1 for it in inventory.key_items if it.gaitem_handle != 0
-    )
+    inventory.common_item_count = _occupied(inventory.common_items)
+    inventory.key_item_count = _occupied(inventory.key_items)
     index = inv_slot if is_key else len(inventory.key_items) + inv_slot
     top = len(inventory.key_items) + len(inventory.common_items) - 1
     inventory.equip_index_counter = min(max(inventory.equip_index_counter, index), top)
@@ -1315,10 +1569,9 @@ def add_item(
     entry.quantity = quantity
     entry.acquisition_index = acq_idx
 
-    if is_key:
-        inventory.key_items[inv_slot] = entry
-    else:
-        inventory.common_items[inv_slot] = entry
+    items = inventory.key_items if is_key else inventory.common_items
+    items[inv_slot] = entry
+    _note_entry(inventory, items, inv_slot, entry)
     _update_inv_counters(inventory, acq_counter, inv_slot, is_key)
 
     _patch_slot(save, slot_idx, slot)
@@ -1397,7 +1650,10 @@ def remove_item(
         )
     old_qty = item_list[inv_slot].quantity
 
+    if _deferred is not None:
+        _note_cleared(inventory, item_list[inv_slot])
     item_list[inv_slot] = InventoryItem()
+    _note_entry(inventory, item_list, inv_slot, item_list[inv_slot])
     if is_key:
         inventory.key_item_count = max(0, inventory.key_item_count - 1)
     else:

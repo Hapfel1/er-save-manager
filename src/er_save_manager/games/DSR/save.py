@@ -1200,9 +1200,16 @@ class DSRCharacter:
         slot_start = 0 if key_item else KEY_ITEM_SLOTS
         slot_end = KEY_ITEM_SLOTS if key_item else MAX_INVENTORY_SLOTS
         free = -1
+        # Raw fields instead of read_item(): batch spawns scan the list once
+        # per item. Same tests as DSRItem.is_empty, item_id and category.
+        data = self._data
         for slot_idx in range(slot_start, slot_end):
-            existing = self.read_item(slot_idx)
-            if existing.is_empty:
+            off = OFF_INVENTORY + slot_idx * ITEM_SIZE
+            category = int.from_bytes(data[off : off + 4], "big") // 16
+            exists = int.from_bytes(data[off + 16 : off + 20], "little")
+            if exists == 0 or not (
+                (category * 16).to_bytes(4, "big") + data[off + 4 : off + ITEM_SIZE]
+            ).translate(None, b"\x00\xff"):
                 if free < 0:
                     free = slot_idx
                     if max_quantity <= 1:
@@ -1210,9 +1217,10 @@ class DSRCharacter:
                 continue
             if (
                 max_quantity > 1
-                and existing.item_id == item_id
-                and existing.category == item_type
+                and int.from_bytes(data[off + 4 : off + 8], "little") == item_id
+                and category == item_type
             ):
+                existing = self.read_item(slot_idx)
                 existing.quantity = min(existing.quantity + quantity, max_quantity)
                 self.write_item(slot_idx, existing)
                 return slot_idx

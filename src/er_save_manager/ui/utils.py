@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 import tkinter
 import webbrowser
 from pathlib import Path
@@ -75,6 +76,16 @@ def transient_to(dialog, parent) -> None:
     top = parent.winfo_toplevel()
     if top.winfo_viewable():
         dialog.transient(top)
+
+
+def keep_above_main(window, parent) -> None:
+    """Keep a non-modal tool window (Visual Inventory, Add Item) above the
+    main window on Linux, where window managers can refuse to raise a new
+    window that is not transient to the one in use (KDE's focus stealing
+    prevention). Windows keeps raise_after_ctk_refocus: a transient window
+    there loses its taskbar button."""
+    if sys.platform.startswith("linux"):
+        transient_to(window, parent)
 
 
 def debounced_trace(widget, var, callback, delay_ms: int = 150) -> None:
@@ -365,6 +376,11 @@ def center_window(
         window.geometry(f"{width}x{height}+{x}+{y}")
     else:
         window.geometry(f"+{x}+{y}")
+    # Tk applies the new geometry in its next layout pass. Until then the
+    # window keeps its initial size, and CTk takes the size it reads in
+    # between as the wanted one and later restores it (a CTkToplevel then
+    # snaps back to 200 x 200).
+    window.update_idletasks()
 
 
 def _colorref(window, color) -> int:
@@ -520,6 +536,250 @@ def _frame_wheel(self, event):
 # Patched on the class so frames created anywhere in the application get it.
 # Depends on CTkScrollableFrame internals (customtkinter 5.2.x).
 ctk.CTkScrollableFrame._mouse_wheel_all = _frame_wheel
+
+
+class ResizeBurst:
+    """Tells a drag of a window edge apart from a single size change.
+
+    Call size_changed() for every size change of the widget. From the second
+    change that comes within BURST_S of the previous one's layout, on_start
+    runs once; on_end runs once the changes stop for SETTLE_MS. A single
+    change (maximize, restore, snap) runs neither. The gap is counted from
+    the end of the previous step: slow steps (a few hundred ms on Windows)
+    would otherwise space the events past the limit. Tk redraws widgets in
+    idle callbacks, so the end is marked one idle pass after the change.
+    Changes in the first SETTLE_IN_S after the first one (a window being
+    sized and placed when it opens) never start a burst.
+
+    Windows only: there a drag step repaints every moved widget and takes a
+    few hundred ms; elsewhere the content stays visible while dragging.
+    """
+
+    ENABLED = sys.platform == "win32"
+
+    BURST_S = 0.5
+    SETTLE_MS = 120
+    SETTLE_IN_S = 1.0
+
+    def __init__(self, widget, on_start, on_end):
+        self._widget = widget
+        self._on_start = on_start
+        self._on_end = on_end
+        self.active = False
+        self._last = 0.0
+        self._mark_pending = False
+        self._end_job = None
+        self._armed_at: float | None = None
+
+    def size_changed(self) -> None:
+        if not self.ENABLED:
+            return
+        now = time.monotonic()
+        if self._armed_at is None:
+            self._armed_at = now + self.SETTLE_IN_S
+        if (
+            not self.active
+            and now >= self._armed_at
+            and now - self._last < self.BURST_S
+            and self._widget.winfo_ismapped()
+        ):
+            self.active = True
+            self._on_start()
+        self._last = now
+        if not self._mark_pending:
+            self._mark_pending = True
+            self._widget.after_idle(lambda: self._widget.after_idle(self._mark_done))
+        if self.active:
+            if self._end_job is not None:
+                self._widget.after_cancel(self._end_job)
+            self._end_job = self._widget.after(self.SETTLE_MS, self._end)
+
+    def _mark_done(self) -> None:
+        self._mark_pending = False
+        self._last = time.monotonic()
+
+    def _end(self) -> None:
+        self._end_job = None
+        self.active = False
+        with contextlib.suppress(tkinter.TclError):
+            self._on_end()
+
+
+# Gray shapes of skeleton_canvas (light, dark)
+_SKELETON_BOX = ("gray86", "#2f2f33")
+_SKELETON_CONTROL = ("gray76", "#3d3d42")
+_SKELETON_TEXT = ("gray80", "#38383c")
+
+
+def _skeleton_controls() -> tuple:
+    from tkinter import ttk
+
+    return (
+        ctk.CTkButton,
+        ctk.CTkEntry,
+        ctk.CTkComboBox,
+        ctk.CTkOptionMenu,
+        ctk.CTkSegmentedButton,
+        ctk.CTkCheckBox,
+        ctk.CTkSwitch,
+        ctk.CTkRadioButton,
+        ctk.CTkSlider,
+        ctk.CTkProgressBar,
+        ctk.CTkTextbox,
+        ttk.Treeview,
+        tkinter.Listbox,
+        tkinter.Canvas,
+    )
+
+
+def widget_color(widget) -> str:
+    """The color a CTk widget paints its area with, for the current theme."""
+    color = widget.cget("fg_color")
+    if color == "transparent":
+        color = widget.cget("bg_color")
+    return widget._apply_appearance_mode(color)
+
+
+def skeleton_canvas(content, master) -> tkinter.Canvas:
+    """A canvas in master, the size of content, with gray rounded shapes
+    where content's visible widgets are: boxes for filled frames, blocks for
+    controls and lists, bars for text. It stands in for content during a
+    window edge drag: one canvas repaints far faster than the widgets."""
+    # Content that was hidden a moment ago is laid out before it is traced
+    content.update_idletasks()
+    dark = 1 if ctk.get_appearance_mode() == "Dark" else 0
+    controls = _skeleton_controls()
+    ox, oy = content.winfo_rootx(), content.winfo_rooty()
+    width, height = content.winfo_width(), content.winfo_height()
+    boxes, blocks, bars = [], [], []
+
+    def walk(parent) -> None:
+        for child in parent.winfo_children():
+            try:
+                if not child.winfo_ismapped():
+                    continue
+                x, y = child.winfo_rootx() - ox, child.winfo_rooty() - oy
+                w, h = child.winfo_width(), child.winfo_height()
+            except tkinter.TclError:
+                continue
+            if w < 4 or h < 4 or x > width or y > height or x + w < 0 or y + h < 0:
+                continue
+            # Scrollable frames are canvases holding the widgets
+            if isinstance(child, tkinter.Canvas) and child.winfo_children():
+                walk(child)
+            elif isinstance(child, controls):
+                blocks.append((x, y, x + w, y + h))
+            elif isinstance(child, ctk.CTkLabel):
+                if child.cget("text"):
+                    text_w = min(w, child._label.winfo_reqwidth())
+                    bar_h = max(6, int(h * 0.45))
+                    top = y + (h - bar_h) // 2
+                    bars.append((x, top, x + text_w, top + bar_h))
+            else:
+                if isinstance(child, ctk.CTkFrame) and child.cget("fg_color") not in (
+                    "transparent",
+                    content.cget("fg_color"),
+                ):
+                    boxes.append((x, y, x + w, y + h))
+                walk(child)
+
+    walk(content)
+    canvas = tkinter.Canvas(
+        master,
+        width=width,
+        height=height,
+        bg=widget_color(content),
+        highlightthickness=0,
+        bd=0,
+    )
+    for shapes, color, radius in (
+        (boxes, _SKELETON_BOX, 10),
+        (blocks, _SKELETON_CONTROL, 6),
+        (bars, _SKELETON_TEXT, 4),
+    ):
+        for x0, y0, x1, y1 in shapes:
+            _rounded_shape(canvas, x0, y0, x1, y1, radius, color[dark])
+    return canvas
+
+
+def _rounded_shape(canvas, x0, y0, x1, y1, radius, fill) -> None:
+    r = max(0, min(radius, (x1 - x0) / 2, (y1 - y0) / 2))
+    points = (
+        x0 + r, y0, x1 - r, y0, x1, y0, x1, y0 + r,
+        x1, y1 - r, x1, y1, x1 - r, y1, x0 + r, y1,
+        x0, y1, x0, y1 - r, x0, y0 + r, x0, y0,
+    )  # fmt: skip
+    canvas.create_polygon(points, smooth=True, fill=fill, outline="")
+
+
+_long_operations = 0
+
+
+@contextlib.contextmanager
+def long_operation():
+    """Mark a loop that processes window events itself while it changes the
+    loaded save (inventory batches), see in_long_operation."""
+    global _long_operations
+    _long_operations += 1
+    try:
+        yield
+    finally:
+        _long_operations -= 1
+
+
+def in_long_operation() -> bool:
+    """True while a long_operation runs: handlers that reload or replace the
+    save wait until it is done."""
+    return _long_operations > 0
+
+
+_ctk_frame_draw = ctk.CTkFrame._draw
+
+
+def _frame_draw(self, no_color_updates=False):
+    """CTkFrame._draw without the shape redraw of a transparent frame with no
+    border on a size change.
+
+    Such a frame fills its shape with its canvas background color, so the
+    shape is invisible at any size; redrawing it on every <Configure> made
+    window resizing slow. Color updates (appearance mode, configure) still
+    take the full path.
+    """
+    if (
+        no_color_updates
+        and self._fg_color == "transparent"
+        and not self._border_width
+        and self._background_corner_colors is None
+    ):
+        return
+    _ctk_frame_draw(self, no_color_updates)
+
+
+# Depends on CTkFrame internals (customtkinter 5.2.x).
+ctk.CTkFrame._draw = _frame_draw
+
+
+_ctk_scrollbar_draw = ctk.CTkScrollbar._draw
+
+
+def _scrollbar_draw(self, no_color_updates=False):
+    """CTkScrollbar._draw whose redraw waits for the next idle pass.
+
+    The original ends with update_idletasks() on its canvas, which runs the
+    layout of the whole application on every set() call: once per scroll
+    step and per resize step for every scrollable list, and once when a
+    scrollbar is created.
+    """
+    self._canvas.update_idletasks = _no_idle_flush
+    _ctk_scrollbar_draw(self, no_color_updates)
+
+
+def _no_idle_flush() -> None:
+    pass
+
+
+# Depends on CTkScrollbar internals (customtkinter 5.2.x).
+ctk.CTkScrollbar._draw = _scrollbar_draw
 
 
 def bind_mousewheel(widget, target_widget=None):

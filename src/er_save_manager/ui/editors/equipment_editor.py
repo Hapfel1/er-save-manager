@@ -14,6 +14,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
+from er_save_manager.parser import equip_ops
 from er_save_manager.ui import palette
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.pending import FieldTracker, StageError
@@ -154,6 +155,12 @@ _PHYSICK_KEYS = {"physick1", "physick2"}
 _QUICKITEM_KEYS = {f"quickitem{i}" for i in range(1, 11)}
 _POUCH_KEYS = {f"pouch{i}" for i in range(1, 7)}
 _GOODS_KEYS = _SPELL_KEYS | _PHYSICK_KEYS | _QUICKITEM_KEYS | _POUCH_KEYS
+
+# Category bit the armaments mirror adds to the item id of a filled slot.
+_MIRROR_CATEGORY = {
+    **dict.fromkeys(_ARMOR_KEYS, 0x10000000),
+    **dict.fromkeys(_TALISMAN_KEYS, 0x20000000),
+}
 
 
 def _slot_extra_ids(key: str) -> frozenset[int]:
@@ -555,16 +562,25 @@ def _patch_equipment(save_file, slot_idx: int, slot) -> None:
     patch(slot.equipped_physics, slot.equipped_physics_offset)
 
 
-def _find_equip_index(slot, handle: int) -> int:
+def _find_equip_index(slot, handle: int, current: int = 0xFFFFFFFF) -> int:
     """Compute the equip_index value the game's menu expects for a handle.
 
      position in key_items as-is, or held key
     capacity (0x180) plus position in common_items. 0xFFFFFFFF if empty or
-    not found.
+    not found. current is kept when it already names a held entry with the
+    handle: copies of a talisman or goods item share one handle, and the
+    index picks the copy.
     """
     if handle in (0, 0xFFFFFFFF):
         return 0xFFFFFFFF
     held_key_capacity = 0x180
+    held = slot.inventory_held
+    if current < len(held.key_items):
+        if held.key_items[current].gaitem_handle == handle:
+            return current
+    elif held_key_capacity <= current < held_key_capacity + len(held.common_items):
+        if held.common_items[current - held_key_capacity].gaitem_handle == handle:
+            return current
     for i, entry in enumerate(slot.inventory_held.key_items):
         if entry.gaitem_handle == handle:
             return i
@@ -1602,14 +1618,38 @@ class EquipmentEditor:
             equip_armaments = getattr(slot, "equipped_armaments_and_items", None)
             equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
 
-            for key in (_WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS) - skip:
-                item_id = _encode_slot_value(raw.get(key, 0))
+            # Menu order: cleared armor gets its bare entries head to legs,
+            # as in game.
+            gear = _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS
+            for key in [k for k in _SLOT_CATS if k in gear and k not in skip]:
+                value = raw.get(key, 0)
                 handle = handles.get(key, 0)
+                if value == 0 or value == equip_ops.ARMOR_PLACEHOLDERS.get(key):
+                    item_id, mirror_id, handle = equip_ops.empty_form(slot, key, handle)
+                    if not handle and key in equip_ops.ARMOR_PLACEHOLDERS:
+                        # The game always fills an empty armor slot with a
+                        # held bare placeholder entry.
+                        bare = equip_ops.add_bare(save_file, slot_idx, key)
+                        if bare is None:
+                            skip.add(key)
+                            notes.append(
+                                f"{self._slot_labels.get(key, key)}: no room "
+                                "in the held inventory for the bare "
+                                "placeholder, still equipped."
+                            )
+                            continue
+                        item_id, mirror_id, handle = equip_ops.empty_form(
+                            slot, key, bare
+                        )
+                    handles[key] = handle
+                else:
+                    item_id = value
+                    mirror_id = value | _MIRROR_CATEGORY.get(key, 0)
 
                 if hasattr(equip_ids, key):
                     setattr(equip_ids, key, item_id)
                 if equip_armaments and hasattr(equip_armaments, key):
-                    setattr(equip_armaments, key, item_id)
+                    setattr(equip_armaments, key, mirror_id)
                 if equip_handles and hasattr(equip_handles, key):
                     setattr(equip_handles, key, handle)
 
@@ -1622,7 +1662,9 @@ class EquipmentEditor:
                     setattr(
                         equip_index,
                         key,
-                        _find_equip_index(slot, handles.get(key, 0)),
+                        _find_equip_index(
+                            slot, handles.get(key, 0), getattr(equip_index, key)
+                        ),
                     )
 
             # Spells: raw id only, no handle concept for this struct.
@@ -1661,9 +1703,10 @@ class EquipmentEditor:
                 if equip_armaments and hasattr(equip_armaments, key):
                     setattr(equip_armaments, key, _encode_slot_value(value, 0x40000000))
                 if equipped_items and equipped_items.quick_items:
-                    equipped_items.quick_items[i - 1].gaitem_handle = handle
-                    equipped_items.quick_items[i - 1].equip_index = _find_equip_index(
-                        slot, handle
+                    entry = equipped_items.quick_items[i - 1]
+                    entry.gaitem_handle = handle
+                    entry.equip_index = _find_equip_index(
+                        slot, handle, entry.equip_index
                     )
             for i in range(1, 7):
                 key = f"pouch{i}"
@@ -1674,9 +1717,10 @@ class EquipmentEditor:
                 if equip_armaments and hasattr(equip_armaments, key):
                     setattr(equip_armaments, key, _encode_slot_value(value, 0x40000000))
                 if equipped_items and equipped_items.pouch_items:
-                    equipped_items.pouch_items[i - 1].gaitem_handle = handle
-                    equipped_items.pouch_items[i - 1].equip_index = _find_equip_index(
-                        slot, handle
+                    entry = equipped_items.pouch_items[i - 1]
+                    entry.gaitem_handle = handle
+                    entry.equip_index = _find_equip_index(
+                        slot, handle, entry.equip_index
                     )
 
             _patch_equipment(save_file, slot_idx, slot)

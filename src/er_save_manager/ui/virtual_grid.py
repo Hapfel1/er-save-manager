@@ -19,8 +19,11 @@ from PIL import Image, ImageTk
 
 from er_save_manager.ui import palette
 from er_save_manager.ui.dialog_style import _round_rect
+from er_save_manager.ui.utils import ResizeBurst
 
 CELL_COLOR = ("gray82", "gray18")
+# Cell stand-in during a window edge drag (light, dark)
+_SKELETON_CELL = ("gray76", "#3d3d42")
 CELL_SELECTED = palette.PURPLE_SELECT
 _HOVER = ("gray70", "gray28")
 _TEXT = ("gray10", "gray90")
@@ -148,7 +151,8 @@ class VirtualIconGrid(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self._update_canvas_bg()
 
-        self._canvas.bind("<Configure>", lambda _e: self._relayout())
+        self._resize_burst = ResizeBurst(self, self._pause_cells, self._resume_cells)
+        self._canvas.bind("<Configure>", lambda _e: self._on_canvas_resize())
         self._bind_wheel(self._canvas)
         self._tooltip_text = tooltip
         self._tip = None
@@ -253,6 +257,35 @@ class VirtualIconGrid(ctk.CTkFrame):
         self._cells.clear()
         self._refresh()
 
+    def _on_canvas_resize(self) -> None:
+        self._resize_burst.size_changed()
+        if not self._resize_burst.active:
+            self._relayout()
+
+    def _pause_cells(self) -> None:
+        """Window edge drag: gray squares in place of the shown cells until it
+        ends; placing and repainting the cells at every step was most of the
+        cost."""
+        fill = _SKELETON_CELL[1 if ctk.get_appearance_mode() == "Dark" else 0]
+        for cell in self._cells.values():
+            x0, y0, x1, y1 = self._canvas.bbox(cell.rect)
+            _round_rect(
+                self._canvas,
+                x0,
+                y0,
+                x1,
+                y1,
+                radius=self._apply_widget_scaling(6),
+                fill=fill,
+                tags=("drag_skeleton",),
+            )
+            self._hide(cell)
+        self._cells.clear()
+
+    def _resume_cells(self) -> None:
+        self._canvas.delete("drag_skeleton")
+        self._relayout()
+
     def _on_yview(self, first, last) -> None:
         self._scrollbar.set(first, last)
         if self._refresh_job is None:
@@ -260,7 +293,7 @@ class VirtualIconGrid(ctk.CTkFrame):
 
     def _refresh(self) -> None:
         self._refresh_job = None
-        if not self.winfo_exists():
+        if not self.winfo_exists() or self._resize_burst.active:
             return
         pitch_w, pitch_h = self._pitch()
         top = self._canvas.canvasy(0)

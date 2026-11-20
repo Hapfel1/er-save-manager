@@ -11,6 +11,7 @@ from er_save_manager.ui import palette
 from er_save_manager.ui.utils import (
     center_window,
     debounced_trace,
+    keep_above_main,
     patch_combo_scroll,
     pick_file,
     raise_after_ctk_refocus,
@@ -56,6 +57,7 @@ class IconBrowser(ctk.CTkToplevel):
 
         w = _DEFAULT_COLS * (_CELL_W + _CELL_PAD * 2) + 12 + _SCROLLBAR_W + 30
         self.title("Add Item")
+        keep_above_main(self, parent)
         self.geometry(f"{w}x800")
         self.minsize(w, 520)
         self.resizable(True, True)
