@@ -12,7 +12,9 @@ Empty slot as the game writes it, per slot kind:
                          share one
   head/chest/arms/legs   the character's bare placeholder (armor 10000,
                          10100, 10200, 10300) from the held inventory; the
-                         armaments mirror stores it with the armor category
+                         armaments mirror stores it with the armor category.
+                         With none held, the game adds a new bare entry to
+                         the held inventory first
   talismans, ammo        item id 0xFFFFFFFF, handle 0, equip index 0xFFFFFFFF
   quick items, pouch     handle 0, equip index 0xFFFFFFFF, mirror 0xFFFFFFFF
   Great Rune             handle 0, equip index 0xFFFFFFFF
@@ -102,10 +104,32 @@ def empty_form(slot, key: str, current: int = 0) -> tuple[int, int, int]:
     return item_id, mirror_id, handle
 
 
+def add_bare(save: Save, slot_idx: int, key: str) -> int | None:
+    """Add a bare placeholder for armor slot key to the held inventory, as the
+    game does when it empties an armor slot and none is held. Returns its
+    handle, or None when the held inventory or gaitem map is full."""
+    from er_save_manager.parser.inventory_ops import _first_empty_inv_slot, add_item
+
+    if _first_empty_inv_slot(save.character_slots[slot_idx].inventory_held) == -1:
+        return None
+    try:
+        result = add_item(
+            save, slot_idx, _ARMOR_CATEGORY | ARMOR_PLACEHOLDERS[key], 1, "held"
+        )
+    except ValueError:
+        return None
+    return result["gaitem_handle"] if result["location"] == "held" else None
+
+
+def _held_full(slot) -> bool:
+    return all(e.gaitem_handle for e in slot.inventory_held.common_items)
+
+
 def blocked(slot, handles: set[int]) -> set[int]:
     """Handles among handles that unequip() would leave equipped: a weapon
     when the character holds no Unarmed entry, armor when it holds no bare
-    placeholder for that slot. Changes nothing."""
+    placeholder for that slot and the held inventory has no room for one.
+    Changes nothing."""
     equip_handles = slot.equipped_items_gaitem_handle
     out: set[int] = set()
     for key in WEAPON_SLOTS:
@@ -116,8 +140,11 @@ def blocked(slot, handles: set[int]) -> set[int]:
             out.add(handle)
     for key, bare_id in ARMOR_PLACEHOLDERS.items():
         handle = getattr(equip_handles, key)
-        if handle in handles and (
-            _held_placeholder(slot, _ARMOR_CATEGORY | bare_id, None, handles) is None
+        if (
+            handle in handles
+            and _held_placeholder(slot, _ARMOR_CATEGORY | bare_id, None, handles)
+            is None
+            and _held_full(slot)
         ):
             out.add(handle)
     return out
@@ -129,7 +156,7 @@ def unequip(save: Save, slot_idx: int, handles: set[int]) -> tuple[set, set]:
     equipment structs to the save.
 
     Returns (handles no slot holds any more, handles still equipped because
-    the character has no Unarmed or bare placeholder entry to fall back to).
+    the character has no Unarmed entry, or no room for a bare placeholder).
     """
     slot = save.character_slots[slot_idx]
     ids = slot.equipped_items_item_id
@@ -163,6 +190,8 @@ def unequip(save: Save, slot_idx: int, handles: set[int]) -> tuple[set, set]:
         if handle not in handles:
             continue
         bare = _held_placeholder(slot, _ARMOR_CATEGORY | bare_id, None, handles)
+        if bare is None:
+            bare = add_bare(save, slot_idx, key)
         if bare is None:
             kept.add(handle)
             continue

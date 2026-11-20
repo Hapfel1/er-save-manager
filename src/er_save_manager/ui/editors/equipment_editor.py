@@ -1618,7 +1618,10 @@ class EquipmentEditor:
             equip_armaments = getattr(slot, "equipped_armaments_and_items", None)
             equip_handles = getattr(slot, "equipped_items_gaitem_handle", None)
 
-            for key in sorted((_WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS) - skip):
+            # Menu order: cleared armor gets its bare entries head to legs,
+            # as in game.
+            gear = _WEAPON_KEYS | _ARMOR_KEYS | _TALISMAN_KEYS
+            for key in [k for k in _SLOT_CATS if k in gear and k not in skip]:
                 value = raw.get(key, 0)
                 handle = handles.get(key, 0)
                 if value == 0 or value == equip_ops.ARMOR_PLACEHOLDERS.get(key):
@@ -1626,14 +1629,18 @@ class EquipmentEditor:
                     if not handle and key in equip_ops.ARMOR_PLACEHOLDERS:
                         # The game always fills an empty armor slot with a
                         # held bare placeholder entry.
-                        skip.add(key)
-                        if getattr(equip_handles, key, 0):
+                        bare = equip_ops.add_bare(save_file, slot_idx, key)
+                        if bare is None:
+                            skip.add(key)
                             notes.append(
-                                f"{self._slot_labels.get(key, key)}: the "
-                                "character holds no bare placeholder, still "
-                                "equipped."
+                                f"{self._slot_labels.get(key, key)}: no room "
+                                "in the held inventory for the bare "
+                                "placeholder, still equipped."
                             )
-                        continue
+                            continue
+                        item_id, mirror_id, handle = equip_ops.empty_form(
+                            slot, key, bare
+                        )
                     handles[key] = handle
                 else:
                     item_id = value

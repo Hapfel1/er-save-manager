@@ -284,7 +284,8 @@ _UNEQUIP_NOTE = (
     "slot pointing at nothing, which the game shows as a broken look."
 )
 _NO_PLACEHOLDER = (
-    "has no Unarmed or bare armor entry left to fall back to; unequip it in game first"
+    "cannot be unequipped here: no Unarmed entry, or no held inventory room "
+    "for a bare armor entry. Unequip it in game first"
 )
 
 
@@ -3736,8 +3737,8 @@ class InventoryEditor:
                 self._on_inventory_changed()
 
             kept_note = (
-                f" {stuck} equipped item(s) stayed: no Unarmed or bare armor "
-                "entry to fall back to."
+                f" {stuck} equipped item(s) stayed: no Unarmed entry, or no "
+                "held inventory room for a bare armor entry."
                 if stuck
                 else ""
             )

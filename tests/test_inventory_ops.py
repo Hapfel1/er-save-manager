@@ -332,6 +332,8 @@ def test_unequip_writes_the_game_empty_forms(sanitized_save_path, tmp_path):
     from er_save_manager.parser import equip_ops
 
     save = load_save(sanitized_save_path)
+    # Without a held bare Head entry, unequip adds one as the game does
+    remove_item(save, 0, 0x10000000 | equip_ops.ARMOR_PLACEHOLDERS["head"], "held")
     slot = save.character_slots[0]
     worn = {
         h
