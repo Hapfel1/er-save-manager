@@ -7,6 +7,7 @@ from __future__ import annotations
 import contextlib
 import functools
 import json
+import math
 import re
 import time
 import tkinter as tk
@@ -730,11 +731,13 @@ class _BatchProgress:
 
     DELAY = 0.3
     INTERVAL = 0.05
+    # Time left is shown once the rate has settled
+    ETA_AFTER = 1.0
 
-    def __init__(self, parent, title: str, message: str, total: int):
+    def __init__(self, parent, title: str, heading: str, total: int):
         self.parent = parent
         self.title = title
-        self.message = message
+        self.heading = heading
         self.total = total
         self.done = 0
         self.dialog = None
@@ -752,8 +755,9 @@ class _BatchProgress:
         finally:
             self._close()
 
-    def tick(self) -> None:
-        """Count one item; repaint at most every INTERVAL seconds."""
+    def tick(self, item: str = "") -> None:
+        """Count one item (shown by name); repaint at most every INTERVAL
+        seconds."""
         self.done += 1
         now = time.monotonic()
         if now - self._last < self.INTERVAL or now - self._start < self.DELAY:
@@ -762,21 +766,61 @@ class _BatchProgress:
         try:
             if self.dialog is None:
                 self._open()
-            self.dialog.progress.set(self.done / max(self.total, 1))
-            self.dialog.update_status(self.message, f"{self.done} of {self.total}")
+            self._item.configure(text=item)
+            self._bar.set(self.done / max(self.total, 1))
+            self._count.configure(text=f"{self.done} of {self.total} items")
+            self._eta.configure(text=self._time_left(now))
             # Processes input too, but the dialog holds the grab and both
             # close buttons are disabled until the loop ends.
-            self.dialog.dialog.update()
+            self.dialog.update()
         except tk.TclError:
             pass
 
-    def _open(self) -> None:
-        from er_save_manager.ui.progress_dialog import ProgressDialog
+    def _time_left(self, now: float) -> str:
+        elapsed = now - self._start
+        if elapsed < self.ETA_AFTER or not self.done:
+            return ""
+        left = elapsed / self.done * (self.total - self.done)
+        return "Almost done" if left < 1 else f"About {math.ceil(left)} s left"
 
-        self.dialog = ProgressDialog(self.parent, self.title, self.message)
-        self.dialog.progress.stop()
-        self.dialog.progress.configure(mode="determinate")
-        self.dialog.dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+    def _open(self) -> None:
+        from er_save_manager.ui import dialog_style as ds
+
+        dialog = ds.create(self.parent, self.title)
+        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=24, pady=(18, 20))
+        ds.header(main, self.heading, font=ds.TITLE_LARGE)
+        self._item = ctk.CTkLabel(main, text="", font=ds.FONT, anchor="w")
+        self._item.pack(fill=tk.X, pady=(12, 8))
+        self._bar = ctk.CTkProgressBar(
+            main,
+            mode="determinate",
+            height=10,
+            corner_radius=5,
+            progress_color=palette.PURPLE,
+        )
+        self._bar.set(0)
+        self._bar.pack(fill=tk.X)
+        row = ctk.CTkFrame(main, fg_color="transparent")
+        row.pack(fill=tk.X, pady=(6, 0))
+        self._count = ctk.CTkLabel(
+            row, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="w"
+        )
+        self._count.pack(side=tk.LEFT)
+        self._eta = ctk.CTkLabel(
+            row, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="e"
+        )
+        self._eta.pack(side=tk.RIGHT)
+        ctk.CTkLabel(
+            main,
+            text="The save is written once, after the last item.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(14, 0))
+        ds.finish(dialog, self.parent, min_width=460)
+        self.dialog = dialog
         root = self.parent.winfo_toplevel()
         self._root_close = (root, root.protocol("WM_DELETE_WINDOW"))
         root.protocol("WM_DELETE_WINDOW", lambda: None)
@@ -787,7 +831,8 @@ class _BatchProgress:
             with contextlib.suppress(tk.TclError):
                 root.protocol("WM_DELETE_WINDOW", command)
         if self.dialog is not None:
-            self.dialog.close()
+            with contextlib.suppress(tk.TclError):
+                self.dialog.destroy()
 
 
 def _confirm_batch_add(
@@ -3325,7 +3370,7 @@ class InventoryEditor:
                 parent_window, "Batch Add", "Adding items", total
             ) as progress:
                 for item in items:
-                    progress.tick()
+                    progress.tick(item.name)
                     location = self._resolve_add_location(
                         save_file, slot_idx, self.inv_location_var.get()
                     )
@@ -3384,7 +3429,7 @@ class InventoryEditor:
 
                 if with_flasks:
                     for kind, flask_id, qty in _flask_batch_plan(slot):
-                        progress.tick()
+                        progress.tick(kind)
                         if flask_id is None:
                             key = "flask of that kind already owned"
                             skipped[key] = skipped.get(key, 0) + 1
@@ -3605,7 +3650,7 @@ class InventoryEditor:
                 parent_window, "Batch Remove", "Removing items", len(matches)
             ) as progress:
                 for row in matches:
-                    progress.tick()
+                    progress.tick(_inventory_columns(row[0], row[2])[1])
                     full_id = row[1]
                     try:
                         remove_item(save_file, slot_idx, full_id, location)
@@ -5108,7 +5153,7 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
                 self, "Apply Loadout", "Adding items", len(entries)
             ) as progress:
                 for item_info in entries:
-                    progress.tick()
+                    progress.tick(item_info.get("name_label", ""))
                     try:
                         location = editor._resolve_add_location(
                             save_file, slot_idx, item_info.get("location", "held")
