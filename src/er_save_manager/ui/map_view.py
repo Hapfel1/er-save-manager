@@ -4794,7 +4794,7 @@ class MapWindow:
             f"Position {pin.x:.1f}, {pin.y:.1f}, {pin.z:.1f}",
             *extra,
         ]
-        gate = arena_gate(pin.arena_flag, self.convergence)
+        gate = arena_gate(pin.arena_flag, self._images.convergence)
         if gate is not None:
             status = (
                 gate_status(gate, self._grace_state)
