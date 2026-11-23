@@ -121,7 +121,6 @@ class ExtensionCopyDialog:
         self.custom_entry.bind("<KeyRelease>", lambda _e: self._schedule_rebuild())
 
         self.options_host = ctk.CTkFrame(main, fg_color="transparent")
-        self.options_host.pack(fill=tk.X)
         self._build_folder_row()
         self._build_account_row()
 
@@ -234,6 +233,12 @@ class ExtensionCopyDialog:
             self.account_row.pack(fill=tk.X, pady=(8, 0))
         else:
             self.account_row.pack_forget()
+        # An empty frame keeps its last (or default 200 px) height, so the
+        # host is hidden while it holds no row.
+        if self.folder_row.winfo_manager() or self.account_row.winfo_manager():
+            self.options_host.pack(fill=tk.X, before=self.body_host)
+        else:
+            self.options_host.pack_forget()
 
     def _load_accounts(self) -> list[tuple[str, int]]:
         if self._accounts is None:
