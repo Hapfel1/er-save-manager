@@ -1284,6 +1284,7 @@ class MapWindow:
         # Step picked in the quest list, ringed on the map
         self._picked_step: QuestStep | None = None
         self._on_set_pickup: Callable[[int, bool], None] | None = None
+        self._on_set_gather: Callable[[str, str, bool], None] | None = None
         self._item_photos: dict[tuple[str, int], ImageTk.PhotoImage | None] = {}
         self._hover_tile: _Placed | None = None
         self._list_rows: list[_Placed | _Pin] = []
@@ -1668,6 +1669,14 @@ class MapWindow:
         self._on_set_pickup = on_set_pickup
         self._update_location_info()
         self._schedule_render()
+
+    def set_gather_callback(
+        self, on_set_gather: Callable[[str, str, bool], None] | None
+    ):
+        """on_set_gather(map id, part name, collected) writes the collected
+        state of a non-respawning material node."""
+        self._on_set_gather = on_set_gather
+        self._update_location_info()
 
     def set_pools_available(self, available: bool):
         """Show the summoning pool layer; set for vanilla .sl2 saves only."""
@@ -4807,7 +4816,10 @@ class MapWindow:
         self._show_pin_icons([name for _id, _qty, name in self._pin_items(pin)])
         self._info_var.set(f"{self._pin_text(pin)}\n{p.map_id}")
         taken = self._pickup_collected(p)
-        if taken is None or not p.flag_id or self._on_set_pickup is None:
+        if isinstance(p, GatherNode):
+            if taken is None or self._on_set_gather is None:
+                return
+        elif taken is None or not p.flag_id or self._on_set_pickup is None:
             return
         self._pin_btn.configure(text="Respawn" if taken else "Mark Collected")
         self._pin_btn.pack(fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn)
@@ -5109,6 +5121,12 @@ class MapWindow:
             pickup = self._region_pickup
             if pickup is not None and self._region_target() is pickup:
                 self._toggle_pickup(pickup)
+            return
+        if isinstance(pin.pickup, GatherNode):
+            node = pin.pickup
+            taken = self._pickup_collected(node)
+            if taken is not None and self._on_set_gather is not None:
+                self._on_set_gather(node.map_id, node.part, not taken)
             return
         if pin.pickup is not None:
             self._toggle_pickup()
