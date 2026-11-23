@@ -82,6 +82,7 @@ from er_save_manager.ui.boss_gate import gate_status
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
 from er_save_manager.ui.quest_progress_dialog import steps_up_to
+from er_save_manager.ui.settings import get_settings
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import Tooltip
 from er_save_manager.ui.utils import (
@@ -2175,13 +2176,26 @@ class MapWindow:
                 font=ds.SMALL,
             ).pack(fill=tk.X, pady=pady, **pad)
         self._this_map_var = tk.BooleanVar(value=False)
+        checks = ctk.CTkFrame(left, fg_color="transparent")
+        checks.pack(fill=tk.X, pady=(0, 6), **pad)
         ctk.CTkCheckBox(
-            left,
+            checks,
             text="Only this map",
             variable=self._this_map_var,
             command=self._fill_location_list,
             font=ds.SMALL,
-        ).pack(anchor="w", pady=(0, 6), **pad)
+        ).pack(side=tk.LEFT)
+        # Done % only: whether non-respawning materials count
+        self._count_materials = tk.BooleanVar(
+            value=bool(get_settings().get("map_count_materials", False))
+        )
+        self._count_materials_check = ctk.CTkCheckBox(
+            checks,
+            text="Count materials",
+            variable=self._count_materials,
+            command=self._on_count_materials,
+            font=ds.SMALL,
+        )
         box, self._loc_list = ds.themed_tree(left, show="tree", selectmode="browse")
         self._loc_list.column("#0", width=290, stretch=True)
         self._build_legend(left)
@@ -2510,6 +2524,13 @@ class MapWindow:
                 self._insert_pin_row(group, str(len(self._list_rows)), text, pin, False)
                 self._list_rows.append(pin)
 
+    def _on_count_materials(self):
+        get_settings().set("map_count_materials", self._count_materials.get())
+        self._completion_cache = None
+        self._fill_location_list()
+        self._update_location_info()
+        self._schedule_render()
+
     def _queue_list_fill(self):
         """Fill the location list once the current event is handled, so
         several state changes in one event (opening, a character load) fill
@@ -2523,6 +2544,10 @@ class MapWindow:
             self._list_job = None
         words = _fold(self._search_var.get()).split()
         kind = self._filter_var.get()
+        if kind == _FILTER_DONE:
+            self._count_materials_check.pack(side=tk.LEFT, padx=(12, 0))
+        else:
+            self._count_materials_check.pack_forget()
         if kind in _PIN_FILTERS:
             self._fill_pin_list(kind, words)
             return
@@ -3830,7 +3855,7 @@ class MapWindow:
                 pin,
                 self._object_done(pin.obj),
             )
-        if self._gather_picked is not None:
+        if self._gather_picked is not None and self._count_materials.get():
             for pin in self._gather():
                 if pin.pickup.non_respawning:
                     grace = graces.get(pin.pickup.grace_flag)
