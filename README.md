@@ -363,6 +363,7 @@ Source Available License - see [LICENSE](LICENSE)
 - Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri ([TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA))
 - [UXM Selective Unpack](https://github.com/Nordgaren/UXM-Selective-Unpack) archive keys and file name dictionaries, used to read DS3 game data for item, bonfire, boss, NPC and gesture data
 - Smithbox param definitions, icon layouts and community row names, used for DS3 and DS2 item and icon data
+- [cpypwn](https://github.com/cpypwn) for the Elden Ring Switch 2 save export and the details on its file layout, which the Switch 2 save support is based on
 
 
 ### Community
