@@ -3,6 +3,40 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.7.1
+**Released:** November 23, 2026
+
+
+### 🔧 Bug Fixes
+
+- ER: The world map no longer raises an error when a map pin is selected (2.7.0) (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- ER: Removing equipped items asks first; Unequip and Remove empties their slots the way the game does, where before the slot pointed at a missing item (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- ER: Clear in the equipment editor equips Unarmed and the bare armor placeholder, as the game does (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- General: Dialogs open at their full size and centered; the Auto-Find save selector opened small and off center (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- General: Tooltips hide when the pointer leaves their widget during a window resize (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+
+### ⚡ Performance Improvements
+
+- ER: Batch Add, Batch Remove and Apply Loadout no longer freeze the window and show a progress dialog with the item, count and time left; Batch Add All is about 8x faster (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- ER: The world map opens without waiting for the map art and redraws less while the window is resized (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- DS3, DSR: Faster DS3 Remove and inventory/storage moves, and faster DSR Spawn, for many items at once (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+- General: Less redraw when resizing the window or switching characters; backups of DS3, DS2, DSR and Nightreign saves are written faster (#502) ([ab5b1e8](https://github.com/Hapfel1/er-save-manager/commit/ab5b1e8a129cfa2ca2b8fb346a9402dae7907182))
+
+
+### 📦 Dependencies
+
+- General: Bump the github-actions group with 2 updates (#506) ([6eda392](https://github.com/Hapfel1/er-save-manager/commit/6eda392c95790cf8b4606f9a46c39c7038c851fa))
+
+
+---
 ## 📦 Release 2.7.0
 **Released:** November 18, 2026
 
