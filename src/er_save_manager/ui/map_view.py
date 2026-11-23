@@ -1177,6 +1177,8 @@ class MapWindow:
         self._pickup_types: set[str] = set(_PICKUP_TYPES)
         self._completion_cache: dict[str, dict[str, tuple[list, list]]] | None = None
         self._selected_region: str | None = None
+        # Selected left entry of a region that has no map position
+        self._region_pickup: Pickup | None = None
         self._set_pickup_pins(_place_pickups(convergence))
         self._boss_pins = _place_bosses(convergence)
         self._merchant_pins = _place_merchants(convergence)
@@ -2773,7 +2775,11 @@ class MapWindow:
         return pins
 
     def _pickup_collected(self, pickup: Pickup) -> bool | None:
-        return self._pickup_states.get(pickup.key)
+        if pickup.key in self._pickup_states:
+            return self._pickup_states[pickup.key]
+        # Pickups without a map pin are read on demand
+        state = self._grace_state
+        return state(pickup.flag_id) if state and pickup.flag_id else None
 
     def _pickup_at(self, sx: int, sy: int) -> _Pin | None:
         """Pickup whose glow core is under the screen point. Pickups on the
@@ -3472,6 +3478,7 @@ class MapWindow:
     def _select_region(self, region: str):
         """Region panel and a view that fits the region's graces."""
         self._selected_region = region
+        self._region_pickup = None
         self._selected_pin = None
         self._selected_loc = None
         self._pins = []
@@ -3508,12 +3515,24 @@ class MapWindow:
             self._info_var.set(f"{region}\nLoad a character to see what is left.")
             self._detail.pack_forget()
             return
-        categories = comp.get(region, {})
-        self._info_var.set(f"{region}\n{self._percent(categories)}% done")
+        self._info_var.set(f"{region}\n{self._percent(comp.get(region, {}))}% done")
+        self._build_region_detail(region)
+
+    def _build_region_detail(self, region: str, target=None):
+        """Progress bars and left list of a region; target is the selected
+        left entry, which gets a region heading above the bars."""
+        categories = self._completion().get(region, {})
         frame = self._detail
         for child in frame.winfo_children():
             child.destroy()
         self._detail_rows = []
+        if target is not None:
+            ctk.CTkLabel(
+                frame,
+                text=f"{region}  {self._percent(categories)}% done",
+                font=ds.BOLD,
+                anchor="w",
+            ).pack(fill=tk.X, pady=(0, 2))
         for category in _DONE_CATEGORIES:
             if category not in categories:
                 continue
@@ -3556,6 +3575,10 @@ class MapWindow:
         self._detail_rows = rows
         self._detail_tree = tree
         tree.bind("<<TreeviewSelect>>", lambda _e: self._on_left_selected())
+        row = next((n for n, r in enumerate(rows) if r[2] is target), None)
+        if target is not None and row is not None:
+            tree.selection_set(str(row))
+            tree.see(str(row))
         self._row_tips(tree, lambda iid: tree.item(iid, "text"))
         buttons = ctk.CTkFrame(frame, fg_color="transparent")
         buttons.pack(fill=tk.X, pady=(6, 0))
@@ -3571,23 +3594,32 @@ class MapWindow:
         ).pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(3, 0))
         frame.pack(fill=tk.X, padx=12, pady=(0, 6), after=self._unlock_row)
 
+    def _region_target(self):
+        """Selected left entry of the selected region, or None."""
+        if self._selected_region is None:
+            return None
+        return self._selected_pin or self._selected_loc or self._region_pickup
+
     def _on_left_selected(self):
-        """Center the map on the chosen left entry and select it (name tag,
-        others faded), keeping the region panel."""
+        """Select the chosen left entry: its info and buttons as for a map
+        click, the map centered on it, the region panel kept below."""
         sel = self._detail_tree.selection()
         if not sel or sel[0] == "none":
             return
         _category, _label, target = self._detail_rows[int(sel[0])]
-        if not isinstance(target, (_Pin, _Placed)):
+        if target is self._region_target():
             return
-        if isinstance(target, _Pin):
-            self._selected_pin, self._selected_loc = target, None
-        else:
-            self._selected_pin, self._selected_loc = None, target
+        self._selected_pin = target if isinstance(target, _Pin) else None
+        self._selected_loc = target if isinstance(target, _Placed) else None
+        self._region_pickup = target if isinstance(target, Pickup) else None
+        self._pin_focus = None
+        self._pins = []
         self._active_npc = None
-        self._show_map(target.map_no)
-        self._show_layer_of(target)
-        self._center_on(*target.point, max(self._zoom, self._fit_zoom() * 4))
+        if isinstance(target, (_Pin, _Placed)):
+            self._show_map(target.map_no)
+            self._show_layer_of(target)
+            self._center_on(*target.point, max(self._zoom, self._fit_zoom() * 4))
+        self._update_location_info()
         self._schedule_render()
 
     def _show_layer_of(self, target: _Pin | _Placed):
@@ -4626,6 +4658,9 @@ class MapWindow:
         revive, boss kill / respawn. NPC and boss changes ask first."""
         pin = self._selected_pin
         if pin is None:
+            pickup = self._region_pickup
+            if pickup is not None and self._region_target() is pickup:
+                self._toggle_pickup(pickup)
             return
         if pin.pickup is not None:
             self._toggle_pickup()
@@ -4805,10 +4840,47 @@ class MapWindow:
         return "\n".join(lines)
 
     def _update_location_info(self):
-        # A region stays shown while one of its left entries is selected
-        if self._selected_region is not None:
-            self._show_region_info(self._selected_region)
+        region = self._selected_region
+        if region is None:
+            self._show_selection_info()
             return
+        target = self._region_target()
+        if target is None:
+            self._show_region_info(region)
+            return
+        # A left entry of the region: its own info and buttons, the region
+        # panel kept below
+        if target is self._region_pickup:
+            self._show_pickup_info(target)
+        else:
+            self._show_selection_info()
+        self._build_region_detail(region, target)
+        self._detail.pack(fill=tk.X, padx=12, pady=(0, 6), after=self._unlock_row)
+
+    def _show_pickup_info(self, p: Pickup):
+        """Info and collect / respawn button for a pickup without a map
+        position."""
+        self._teleport_btn.configure(state="disabled")
+        self._area_btn.configure(state="disabled")
+        self._grace_row.pack_forget()
+        self._floor_frame.pack_forget()
+        self._pin_btn.pack_forget()
+        self._show_pin_icons([name for _id, _qty, name in p.items])
+        lines = [
+            ", ".join(_item_text(qty, name) for _, qty, name in p.items),
+            SOURCE_LABELS.get(p.source, p.source),
+        ]
+        taken = self._pickup_collected(p)
+        if taken is not None:
+            lines.append("Collected" if taken else "Not collected")
+        lines.append(f"{p.map_id}, no map position")
+        self._info_var.set("\n".join(lines))
+        if taken is None or self._on_set_pickup is None:
+            return
+        self._pin_btn.configure(text="Respawn" if taken else "Mark Collected")
+        self._pin_btn.pack(fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn)
+
+    def _show_selection_info(self):
         if self._selected_pin is not None:
             self._show_pin_info(self._selected_pin)
             return
