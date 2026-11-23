@@ -5,6 +5,7 @@ Handles installation and updates of the standalone troubleshooter
 
 import json
 import os
+import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -44,6 +45,8 @@ class TroubleshooterAddon:
             else "FromSoftware-Troubleshooter"
         )
         self.executable_path = self.addon_dir / self.executable_name
+        # Assets of the release found by check_for_updates, keyed by name
+        self._release_assets: dict[str, str] = {}
 
     def is_installed(self) -> bool:
         """Check if troubleshooter is installed"""
@@ -74,6 +77,10 @@ class TroubleshooterAddon:
 
             data = response.json()
             latest_version = data["tag_name"].lstrip("v")
+            self._release_assets = {
+                asset["name"]: asset["browser_download_url"]
+                for asset in data.get("assets", [])
+            }
 
             installed = self.get_installed_version()
             if not installed:
@@ -91,9 +98,22 @@ class TroubleshooterAddon:
             return False, None
 
     def get_download_url(self, version: str) -> str:
-        """Get download URL for specific version"""
+        """Download URL of this platform's asset for the given release.
+
+        Uses the asset list of the release read by check_for_updates; asset
+        names carry the platform (FromSoftware-Troubleshooter_<ver>_Linux.AppImage,
+        or _Linux_<ver>.zip before 1.9.0). Falls back to the current naming
+        scheme when the release was not read.
+        """
         platform = "Windows" if os.name == "nt" else "Linux"
-        return f"https://github.com/Hapfel1/fromsoftware-troubleshooter/releases/download/{version}/FromSoftware-Troubleshooter_{platform}_{version}.zip"
+        for name, url in self._release_assets.items():
+            if f"_{platform}" in name:
+                return url
+        suffix = "zip" if platform == "Windows" else "AppImage"
+        return (
+            "https://github.com/Hapfel1/fromsoftware-troubleshooter/releases/download/"
+            f"v{version}/FromSoftware-Troubleshooter_{version}_{platform}.{suffix}"
+        )
 
     def download_and_install(self, version: str, progress_callback=None) -> bool:
         """
@@ -117,47 +137,37 @@ class TroubleshooterAddon:
 
             temp_dir = Path.home() / ".cache" / "er-save-manager"
             temp_dir.mkdir(parents=True, exist_ok=True)
-            zip_path = temp_dir / "troubleshooter.zip"
+            download_path = temp_dir / "troubleshooter.download"
 
-            with open(zip_path, "wb") as f:
+            with open(download_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
 
-            if progress_callback:
-                progress_callback("Extracting files...")
-
             self.addon_dir.mkdir(parents=True, exist_ok=True)
 
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                zip_ref.extractall(self.addon_dir)
+            if zipfile.is_zipfile(download_path):
+                if progress_callback:
+                    progress_callback("Extracting files...")
+                extract_dir = temp_dir / "troubleshooter_extract"
+                shutil.rmtree(extract_dir, ignore_errors=True)
+                with zipfile.ZipFile(download_path, "r") as zip_ref:
+                    zip_ref.extractall(extract_dir)
+                download_path.unlink()
+                new_exe = self._find_executable(extract_dir)
+                if new_exe is None:
+                    shutil.rmtree(extract_dir, ignore_errors=True)
+                    raise FileNotFoundError("No executable found in the download")
+                os.replace(new_exe, self.executable_path)
+                shutil.rmtree(extract_dir, ignore_errors=True)
+            else:
+                # Linux releases from 1.9.0 on are a bare AppImage
+                os.replace(download_path, self.executable_path)
 
-            # After extraction, ensure the executable is at the expected location
-            if not self.executable_path.exists():
-                # On Linux, the file may be named *.AppImage, so find and rename it
-                if os.name != "nt":
-                    for root, _dirs, files in os.walk(self.addon_dir):
-                        for fname in files:
-                            if fname.endswith(".AppImage"):
-                                found_path = Path(root) / fname
-                                found_path.rename(self.executable_path)
-                                break
-                        if self.executable_path.exists():
-                            break
-                else:
-                    # On Windows, search for the expected exe name
-                    for root, _dirs, files in os.walk(self.addon_dir):
-                        if self.executable_name in files:
-                            found_path = Path(root) / self.executable_name
-                            found_path.rename(self.executable_path)
-                            break
-
-            if os.name != "nt" and self.executable_path.exists():
+            if os.name != "nt":
                 self.executable_path.chmod(0o755)
 
             with open(self.version_file, "w") as f:
                 json.dump({"version": version}, f)
-
-            zip_path.unlink()
 
             if progress_callback:
                 progress_callback("Installation complete.")
@@ -169,6 +179,16 @@ class TroubleshooterAddon:
             if progress_callback:
                 progress_callback(f"Installation failed: {e}")
             return False
+
+    def _find_executable(self, root_dir: Path) -> Path | None:
+        """The troubleshooter executable inside an extracted release zip."""
+        for root, _dirs, files in os.walk(root_dir):
+            for fname in files:
+                if fname == self.executable_name or (
+                    os.name != "nt" and fname.endswith(".AppImage")
+                ):
+                    return Path(root) / fname
+        return None
 
     def launch(self, show_error=None) -> bool:
         """
