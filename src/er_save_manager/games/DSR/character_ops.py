@@ -13,6 +13,8 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager.own_writes import atomic_write
+
 from .save import (
     CHARACTER_SLOTS,
     SLOT_DATA_SIZE,
@@ -304,17 +306,8 @@ def export_character(save: DSRSave, slot_index: int, output_path: str | Path) ->
 
     data = char.get_raw()
 
-    with open(output_path, "wb") as f:
-        f.write(_ERC_MAGIC)
-        f.write(struct.pack("<I", _ERC_VERSION))
-        f.write(struct.pack("<I", len(data)))
-        f.write(data)
-
-    with open(output_path, "rb") as f:
-        checksum = hashlib.md5(f.read()).digest()
-
-    with open(output_path, "ab") as f:
-        f.write(checksum)
+    body = _ERC_MAGIC + struct.pack("<II", _ERC_VERSION, len(data)) + data
+    atomic_write(output_path, body + hashlib.md5(body).digest())
 
 
 def read_character_file(input_path: str | Path) -> bytes:

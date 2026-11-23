@@ -550,23 +550,16 @@ class CharacterOperations:
 
         import hashlib
 
-        with open(output_path, "wb") as f:
-            f.write(b"ERC\x00")
-            f.write(struct.pack("<I", 1))
-            # Active flag (1 byte)
-            f.write(struct.pack("<B", 1 if is_active else 0))
-            f.write(struct.pack("<I", len(slot_data)))
-            f.write(slot_data)
-            f.write(struct.pack("<I", len(profile_data)))
-            f.write(profile_data)
+        from er_save_manager.own_writes import atomic_write
 
-        with open(output_path, "rb") as f:
-            data = f.read()
-
-        checksum = hashlib.md5(data).digest()
-
-        with open(output_path, "ab") as f:
-            f.write(checksum)
+        body = (
+            b"ERC\x00"
+            + struct.pack("<IBI", 1, 1 if is_active else 0, len(slot_data))
+            + slot_data
+            + struct.pack("<I", len(profile_data))
+            + profile_data
+        )
+        atomic_write(output_path, body + hashlib.md5(body).digest())
 
     @staticmethod
     def read_erc(input_path) -> tuple[bytes, bytes]:
