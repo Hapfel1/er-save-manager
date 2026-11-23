@@ -220,14 +220,14 @@ _PAINTINGS = "Paintings"
 _PICKUP_TYPES = (*ITEM_TYPES, _BELL_BEARINGS, _PAINTINGS)
 _SOURCE_TEXT = {
     **SOURCE_LABELS,
-    GATHER: "Material node, respawns on rest",
-    GATHER_ONCE: "Material node, picked once",
+    GATHER: "Material node, respawns when you rest",
+    GATHER_ONCE: "Material node, does not respawn",
 }
 # Material node glow: halo and core color
 _MATERIAL_GLOW = ((120, 220, 150), (205, 255, 215))
 _MATERIAL_RING = ((60, 120, 80), (150, 230, 170))
 # Material nodes show from this zoom on, or at any zoom while at most
-# _MATERIAL_FEW nodes are picked under Types; more cover the map
+# _MATERIAL_FEW nodes are ticked under Types; more cover the map
 _MATERIAL_ZOOM = 0.4
 _MATERIAL_FEW = 2500
 # From this zoom on material nodes are item icons, nodes of one item closer
@@ -243,7 +243,7 @@ _DONE_GRACES = "Sites of Grace"
 _DONE_POOLS = "Summoning pools"
 _DONE_SEALS = "Imp seals"
 _DONE_PAINTINGS = "Paintings solved"
-_DONE_MATERIALS = "One-time materials"
+_DONE_MATERIALS = "Non-respawning materials"
 _DONE_CATEGORIES = (
     _DONE_PICKUPS,
     _DONE_BOSSES,
@@ -1050,7 +1050,7 @@ class _MapIcons:
         self, name: str, count: int, dim: bool, faded: bool = False
     ) -> Image.Image:
         """Material item icon in a green ring with the node count at the
-        bottom right; gray when dim (all picked)."""
+        bottom right; gray when dim (all collected)."""
         key = ("M", name, count, dim, faded)
         if key not in self._images:
             size = _MATERIAL_ICON
@@ -1249,11 +1249,15 @@ class MapWindow:
         # Material node pins and their hit grid, built when first shown
         self._gather_pins: list[_Pin] | None = None
         self._gather_grid: dict[tuple[int, int, int], list[_Pin]] = {}
-        # (map id, part name) of picked one-time nodes; None without a character
+        # (map id, part name) of collected non-respawning nodes; None without a
+        # character
         self._gather_picked: frozenset[tuple[str, str]] | None = None
         # Material items shown (item name of each node), and node counts;
-        # the one-time materials until changed under Types
+        # the non-respawning materials until changed under Types
         self._material_types: set[str] | None = None
+        # False until Types or a list pick chooses materials: a pick from a
+        # search or Done % then shows only that item
+        self._material_chosen = False
         self._material_counts: dict[str, int] = {}
         # Pickup types shown on the map and in the Items list
         self._pickup_types: set[str] = set(_PICKUP_TYPES)
@@ -1497,8 +1501,8 @@ class MapWindow:
                 self._schedule_render()
 
     def set_gather_picked(self, picked: frozenset[tuple[str, str]] | None):
-        """(map id, part name) of the one-time material nodes the character
-        picked; None without a character."""
+        """(map id, part name) of the non-respawning material nodes the
+        character collected; None without a character."""
         if picked == self._gather_picked:
             return
         self._gather_picked = picked
@@ -1532,7 +1536,7 @@ class MapWindow:
                 self._material_counts[kind] = self._material_counts.get(kind, 0) + 1
             if self._material_types is None:
                 self._material_types = {
-                    _material_kind(p) for p in pins if p.pickup.one_time
+                    _material_kind(p) for p in pins if p.pickup.non_respawning
                 }
         return self._gather_pins
 
@@ -1550,10 +1554,16 @@ class MapWindow:
 
     def _show_material(self, pin: _Pin):
         """Turn on the Materials layer and the pin's item under Types."""
+        self._show_material_kind(_material_kind(pin))
+
+    def _show_material_kind(self, kind: str):
         self._show_gather.set(True)
         self._gather()
-        kind = _material_kind(pin)
-        if kind not in self._material_types:
+        if not self._material_chosen:
+            self._material_chosen = True
+            self._material_types = {kind}
+            self._pickup_version += 1
+        elif kind not in self._material_types:
             self._material_types.add(kind)
             self._pickup_version += 1
 
@@ -1785,8 +1795,6 @@ class MapWindow:
                 variable=var,
                 command=self._on_major_only
                 if var is self._major_only
-                else self._on_gather_toggle
-                if var is self._show_gather
                 else self._schedule_render,
                 font=ds.SMALL,
                 width=20,
@@ -1856,11 +1864,6 @@ class MapWindow:
         c.bind("<Leave>", lambda e: self._clear_hover())
         self._win.bind("<Delete>", lambda e: self._delete_selected_marker())
 
-    def _on_gather_toggle(self):
-        if self._filter_var.get() in (_FILTER_ALL, _FILTER_ITEMS):
-            self._fill_location_list()
-        self._schedule_render()
-
     def _on_major_only(self):
         if self._major_only.get():
             self._show_bosses.set(True)
@@ -1917,7 +1920,7 @@ class MapWindow:
 
     def _open_material_filter(self):
         """Popup under the Materials Types button with a checkbox per
-        material item, one-time materials first."""
+        material item, non-respawning materials first."""
         old = getattr(self, "_mat_popup", None)
         if old is not None and old.winfo_exists():
             old.destroy()
@@ -1933,10 +1936,10 @@ class MapWindow:
         )
         frame = ctk.CTkFrame(pop, fg_color=ds.BOX, corner_radius=8)
         frame.pack(fill=tk.BOTH, expand=True)
-        once = {_material_kind(p) for p in self._gather_pins if p.pickup.one_time}
+        once = {_material_kind(p) for p in self._gather_pins if p.pickup.non_respawning}
         sections = (
-            ("Picked once", sorted(once)),
-            ("Respawn on rest", sorted(set(self._material_counts) - once)),
+            ("Non-respawning", sorted(once)),
+            ("Respawning", sorted(set(self._material_counts) - once)),
         )
         vars_ = {
             k: tk.BooleanVar(value=k in self._material_types)
@@ -1945,10 +1948,9 @@ class MapWindow:
 
         def apply():
             self._material_types = {k for k, v in vars_.items() if v.get()}
+            self._material_chosen = True
             self._show_gather.set(True)
             self._pickup_version += 1
-            if self._filter_var.get() in (_FILTER_ALL, _FILTER_ITEMS):
-                self._fill_location_list()
             self._schedule_render()
 
         def set_kinds(kinds: set[str]):
@@ -1974,7 +1976,7 @@ class MapWindow:
         row.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(6, 10))
         ds.content(frame, build, max_height=420, width=280)
         ds.button(
-            row, "One-Time", lambda: set_kinds(once), primary=False, width=70
+            row, "Non-Respawning", lambda: set_kinds(once), primary=False, width=110
         ).pack(side=tk.LEFT)
         ds.button(
             row, "All", lambda: set_kinds(set(vars_)), primary=False, width=50
@@ -2238,7 +2240,7 @@ class MapWindow:
             (self._legend_glow(False), "Item pickup"),
             (self._legend_glow(True), "Collected"),
             (self._legend_glow(False, material=True), "Material node"),
-            (self._legend_glow(True, material=True), "Picked material"),
+            (self._legend_glow(True, material=True), "Collected material"),
             (self._icons.ctk_sprite("npc", 22), "NPC"),
             (self._icons.ctk_sprite("npc", 22, tint=_HOSTILE_TINT), "Hostile NPC"),
             (self._icons.ctk_sprite("npc", 22, dimmed=True), "Dead NPC"),
@@ -2329,19 +2331,6 @@ class MapWindow:
             for p in self._pickup_pins
             if self._pickup_kinds[p.pickup.key] in self._pickup_types
         ]
-        if self._show_gather.get():
-            # Materials picked under Types, and any whose name the search
-            # names, so a search finds unticked ones too
-            words = _fold(self._search_var.get()).split()
-            pins = self._gather()
-            kinds = self._material_types | {
-                k for k in self._material_counts if words and _matches(words, _fold(k))
-            }
-            rows += [
-                (regions.get(p.pickup.grace_flag, "Other"), p.pickup.item_label, p)
-                for p in pins
-                if _material_kind(p) in kinds
-            ]
         return rows
 
     def _pin_place(self, pin: _Pin) -> tuple[str, str]:
@@ -2476,6 +2465,50 @@ class MapWindow:
                     parent = groups[group] = f"r:{group}"
                     tree.insert("", "end", iid=parent, text=group, open=bool(words))
             self._insert_pin_row(parent, str(n), f" {label}", pin, bool(words))
+        if kind == _FILTER_ITEMS:
+            self._add_material_groups(words)
+
+    def _add_material_groups(self, words: list[str]):
+        """Material nodes of the items whose name the search names, under a
+        Materials row with a closed row per item. Only the item name is
+        searched, and nothing is listed without a search, so the 21k nodes
+        stay out of other results."""
+        if not words:
+            return
+        self._gather()
+        kinds = sorted(k for k in self._material_counts if _matches(words, _fold(k)))
+        this_map = self._this_map_var.get()
+        by_kind: dict[str, list[_Pin]] = {k: [] for k in kinds}
+        for pin in self._gather_pins:
+            found = by_kind.get(_material_kind(pin))
+            if found is not None and (not this_map or pin.map_no == self._map_no):
+                found.append(pin)
+        total = sum(len(pins) for pins in by_kind.values())
+        if not total:
+            return
+        tree = self._loc_list
+        top = "r:materials"
+        tree.insert("", "end", iid=top, text=f"Materials ({total})", open=True)
+        for kind, pins in by_kind.items():
+            if not pins:
+                continue
+            group = f"r:material:{kind}"
+            tree.insert(
+                top,
+                "end",
+                iid=group,
+                text=f" {kind} ({len(pins)})",
+                image=self._pin_list_icon(pins[0]),
+            )
+            rows = sorted(
+                ((self._pin_place(p), p.pickup.item_label, p) for p in pins),
+                key=lambda r: (r[0], r[1]),
+            )
+            for (region, grace), label, pin in rows:
+                where = grace or region
+                text = f" {label} ({where})" if where else f" {label}"
+                self._insert_pin_row(group, str(len(self._list_rows)), text, pin, False)
+                self._list_rows.append(pin)
 
     def _queue_list_fill(self):
         """Fill the location list once the current event is handled, so
@@ -2537,6 +2570,7 @@ class MapWindow:
             tree.insert(parent, "end", iid=str(n), text=f" {name}", image=image)
         if kind == _FILTER_ALL:
             self._add_pin_groups(words)
+            self._add_material_groups(words)
 
     def _add_pin_groups(self, words: list[str]):
         """All also lists bosses, NPCs, merchants and items, each under a
@@ -2592,6 +2626,10 @@ class MapWindow:
         if sel[0].startswith("r:"):
             self._loc_list.item(sel[0], open=not self._loc_list.item(sel[0], "open"))
             self._load_open_icons()
+            if sel[0].startswith("r:material:"):
+                # An item row shows all its nodes on the map
+                self._show_material_kind(sel[0].removeprefix("r:material:"))
+                self._schedule_render()
             return
         placed = self._list_rows[int(sel[0])]
         if isinstance(placed, str):
@@ -3105,7 +3143,7 @@ class MapWindow:
     def _pickup_collected(self, pickup: Pickup) -> bool | None:
         if isinstance(pickup, GatherNode):
             picked = self._gather_picked
-            if not pickup.one_time or picked is None:
+            if not pickup.non_respawning or picked is None:
                 return None
             return pickup.key in picked
         if pickup.key in self._pickup_states:
@@ -3794,7 +3832,7 @@ class MapWindow:
             )
         if self._gather_picked is not None:
             for pin in self._gather():
-                if pin.pickup.one_time:
+                if pin.pickup.non_respawning:
                     grace = graces.get(pin.pickup.grace_flag)
                     add(
                         self._grace_region(grace.loc) if grace else None,

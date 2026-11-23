@@ -5,13 +5,13 @@ A gather node is an MSB asset part (AEGxxx_yyy_iiii) whose
 AssetEnvironmentGeometryParam row has a pickUpItemLotParamId. Nodes without
 isEnableRepick respawn when the character rests; the save keeps them only
 in WorldGeomMan (maps near the player, cleared on rest), so they have no
-lasting state. Nodes with isEnableRepick are picked once: the save lists
+lasting state. Nodes with isEnableRepick do not respawn: the save lists
 them in WorldGeomMan2 for every visited map.
 
 Data lives in gather_nodes.json.gz (vanilla) and
 gather_nodes_convergence.json.gz (The Convergence), both from game files:
 
-    aeg   AEG id -> [one_time (0/1), [[goods id, quantity], ...]]
+    aeg   AEG id -> [non_respawning (0/1), [[goods id, quantity], ...]]
     maps  map id -> [[AEG id, part instance, x, y, z, grace flag], ...]
           with the MSB position in the map's local frame and the event flag
           of the Site of Grace nearest on the world map (0 if none)
@@ -60,7 +60,7 @@ class GatherNode(Pickup):
         return (self.map_id, self.part)
 
     @property
-    def one_time(self) -> bool:
+    def non_respawning(self) -> bool:
         return self.source == GATHER_ONCE
 
 
