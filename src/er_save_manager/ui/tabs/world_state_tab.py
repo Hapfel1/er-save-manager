@@ -612,6 +612,7 @@ class WorldStateTab:
                 self._reset_fog_on_map if loaded else None,
             )
             window.set_pickup_callback(self._set_pickup if loaded else None)
+            window.set_gather_picked(self._gather_picked() if loaded else None)
             window.set_flag_callback(self._set_flags if loaded else None)
             save = self.get_save_file()
             path = (getattr(save, "_original_filepath", "") or "").lower()
@@ -619,6 +620,24 @@ class WorldStateTab:
             window.set_pools_available(
                 save is not None and path.endswith(".sl2") and not save.is_convergence
             )
+
+    def _gather_picked(self) -> frozenset[tuple[str, str]] | None:
+        """(map id, part name) of the permanently picked assets:
+        WorldGeomMan2 entries and WorldGeomMan state 2."""
+        save = self.get_save_file()
+        if save is None:
+            return None
+        slot = save.character_slots[self.slot_var.get() - 1]
+        picked = set()
+        for geom, permanent in ((slot.world_geom_man2, None), (slot.world_geom_man, 2)):
+            data = geom.parse_geom()
+            if data is None:
+                continue
+            for record in data.records:
+                for entry in record.entries:
+                    if permanent is None or entry.state == permanent:
+                        picked.add((record.map_name, entry.part_name))
+        return frozenset(picked)
 
     def _grace_state(self, flag_id: int) -> bool | None:
         save = self.get_save_file()

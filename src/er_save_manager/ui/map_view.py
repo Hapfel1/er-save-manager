@@ -26,6 +26,12 @@ from er_save_manager.data.floor_points import (
     floors_near,
     pin_location,
 )
+from er_save_manager.data.gather_nodes import (
+    GATHER,
+    GATHER_ONCE,
+    GatherNode,
+    get_gather_nodes,
+)
 from er_save_manager.data.grace_data import arena_gate, location_gate
 from er_save_manager.data.icon_manager import get_icon
 from er_save_manager.data.item_pickups import (
@@ -212,6 +218,15 @@ _SEAL_ICON = "Stonesword Key"
 _BELL_BEARINGS = "Bell Bearings"
 _PAINTINGS = "Paintings"
 _PICKUP_TYPES = (*ITEM_TYPES, _BELL_BEARINGS, _PAINTINGS)
+_SOURCE_TEXT = {
+    **SOURCE_LABELS,
+    GATHER: "Material node, respawns on rest",
+    GATHER_ONCE: "Material node, picked once",
+}
+# Material node glow: halo and core color
+_MATERIAL_GLOW = ((120, 220, 150), (205, 255, 215))
+# Material nodes show from this zoom on; below it they cover the map
+_MATERIAL_ZOOM = 0.4
 _FILTER_DONE = "Done %"
 # Completion categories, in panel and export order
 _DONE_PICKUPS = "Item pickups"
@@ -220,6 +235,7 @@ _DONE_GRACES = "Sites of Grace"
 _DONE_POOLS = "Summoning pools"
 _DONE_SEALS = "Imp seals"
 _DONE_PAINTINGS = "Paintings solved"
+_DONE_MATERIALS = "One-time materials"
 _DONE_CATEGORIES = (
     _DONE_PICKUPS,
     _DONE_BOSSES,
@@ -227,6 +243,7 @@ _DONE_CATEGORIES = (
     _DONE_POOLS,
     _DONE_SEALS,
     _DONE_PAINTINGS,
+    _DONE_MATERIALS,
 )
 # What a left entry is called in the region panel and the export
 _LEFT_LABELS = {
@@ -236,6 +253,7 @@ _LEFT_LABELS = {
     _DONE_POOLS: "Pool",
     _DONE_SEALS: "Imp seal",
     _DONE_PAINTINGS: "Painting",
+    _DONE_MATERIALS: "Material",
 }
 _REGION_LEFT_ROWS = 8
 _BAR_SIZE = (56, 8)
@@ -1035,9 +1053,9 @@ class _MapIcons:
         return self._photos[key]
 
     @staticmethod
-    def glow_image(size: int, dim: bool = False) -> Image.Image:
-        """Golden glow like an item on the ground in game: a soft halo
-        around a bright core, gray when dim. Only the alpha is blurred, on a
+    def glow_image(size: int, dim: bool = False, material: bool = False) -> Image.Image:
+        """Golden glow like an item on the ground in game (green for a
+        material node): a soft halo around a bright core, gray when dim. Only the alpha is blurred, on a
         canvas wide enough for the blur's tail: blurring RGBA darkens the
         halo's edge toward the transparent black around it, and a tight
         canvas cuts the tail off into a visible square on bright map art."""
@@ -1051,9 +1069,10 @@ class _MapIcons:
 
         alpha = Image.new("L", (n, n))
         ImageDraw.Draw(alpha).ellipse(box(size * 0.65), fill=180)
-        img = Image.new("RGBA", (n, n), (255, 200, 90, 0))
+        halo, core = _MATERIAL_GLOW if material else ((255, 200, 90), (255, 236, 170))
+        img = Image.new("RGBA", (n, n), (*halo, 0))
         img.putalpha(alpha.filter(ImageFilter.GaussianBlur(size * 0.28)))
-        ImageDraw.Draw(img).ellipse(box(size * 0.32), fill=(255, 236, 170, 255))
+        ImageDraw.Draw(img).ellipse(box(size * 0.32), fill=(*core, 255))
         return _MapIcons._dimmed(img) if dim else img
 
     @staticmethod
@@ -1063,11 +1082,11 @@ class _MapIcons:
         return faded
 
     def glow_cached(
-        self, size: int, dim: bool = False, faded: bool = False
+        self, size: int, dim: bool = False, faded: bool = False, material=False
     ) -> Image.Image:
-        key = ("L", size, dim, faded)
+        key = ("L", size, dim, faded, material)
         if key not in self._images:
-            img = self.glow_image(size, dim)
+            img = self.glow_image(size, dim, material)
             self._images[key] = self._faded(img) if faded else img
         return self._images[key]
 
@@ -1084,10 +1103,12 @@ class _MapIcons:
             self._photos[key] = ImageTk.PhotoImage(self._faded(img))
         return self._photos[key]
 
-    def glow(self, size: int, dim: bool = False) -> ImageTk.PhotoImage:
-        key = ("l", size, dim)
+    def glow(
+        self, size: int, dim: bool = False, material: bool = False
+    ) -> ImageTk.PhotoImage:
+        key = ("l", size, dim, material)
         if key not in self._photos:
-            self._photos[key] = ImageTk.PhotoImage(self.glow_image(size, dim))
+            self._photos[key] = ImageTk.PhotoImage(self.glow_image(size, dim, material))
         return self._photos[key]
 
     def select_ring(self, icon_size: int) -> ImageTk.PhotoImage:
@@ -1173,6 +1194,11 @@ class MapWindow:
         self._place_locations(locations)
         self._pickup_states: dict[int, bool | None] = {}
         self._pickup_version = 0
+        # Material node pins and their hit grid, built when first shown
+        self._gather_pins: list[_Pin] | None = None
+        self._gather_grid: dict[tuple[int, int, int], list[_Pin]] = {}
+        # (map id, part name) of picked one-time nodes; None without a character
+        self._gather_picked: frozenset[tuple[str, str]] | None = None
         # Pickup types shown on the map and in the Items list
         self._pickup_types: set[str] = set(_PICKUP_TYPES)
         self._completion_cache: dict[str, dict[str, tuple[list, list]]] | None = None
@@ -1250,6 +1276,7 @@ class MapWindow:
         self._show_markers = tk.BooleanVar(value=True)
         self._show_progress = tk.BooleanVar(value=True)
         self._show_pickups = tk.BooleanVar(value=False)
+        self._show_gather = tk.BooleanVar(value=False)
         self._show_npcs = tk.BooleanVar(value=True)
         self._show_bosses = tk.BooleanVar(value=True)
         self._show_merchants = tk.BooleanVar(value=True)
@@ -1341,6 +1368,8 @@ class MapWindow:
         self._images.set_convergence(convergence)
         self._place_locations(locations)
         self._set_pickup_pins(_place_pickups(convergence))
+        self._gather_pins = None
+        self._gather_grid = {}
         self._boss_pins = _place_bosses(convergence)
         self._merchant_pins = _place_merchants(convergence)
         self._object_pins = _place_objects(convergence)
@@ -1411,12 +1440,61 @@ class MapWindow:
             if hasattr(self, "_win"):
                 self._schedule_render()
 
+    def set_gather_picked(self, picked: frozenset[tuple[str, str]] | None):
+        """(map id, part name) of the one-time material nodes the character
+        picked; None without a character."""
+        if picked == self._gather_picked:
+            return
+        self._gather_picked = picked
+        self._pickup_version += 1
+        self._completion_cache = None
+        self._update_location_info()
+        self._schedule_render()
+
+    def _gather(self) -> list[_Pin]:
+        """Material node pins, placed on first use."""
+        if self._gather_pins is None:
+            convergence = self._images.convergence
+            pins = []
+            for node in get_gather_nodes(convergence):
+                x, _y, z = node.position
+                point = location_map_point(node.map_id, x, z, convergence)
+                if point is not None:
+                    pins.append(_Pin(point[0], (point[1], point[2]), pickup=node))
+            self._gather_grid = {}
+            for pin in pins:
+                key = (
+                    pin.map_no,
+                    int(pin.point[0] // _PICKUP_CELL),
+                    int(pin.point[1] // _PICKUP_CELL),
+                )
+                self._gather_grid.setdefault(key, []).append(pin)
+            self._gather_pins = pins
+        return self._gather_pins
+
+    def _gather_shown(self) -> bool:
+        return self._show_gather.get() and self._zoom >= _MATERIAL_ZOOM
+
+    def _glows_shown(self) -> bool:
+        return self._show_pickups.get() or self._gather_shown()
+
     def _pins_near(self, map_no: int, x0: float, y0: float, x1: float, y1: float):
-        """Pickup pins of the shown types with a point inside the map
-        rectangle."""
+        """Pickup pins of the shown types, and material nodes while their
+        layer is on, with a point inside the map rectangle."""
         types = self._pickup_types
+        pickups = self._show_pickups.get()
+        gather = {}
+        if self._gather_shown():
+            self._gather()
+            gather = self._gather_grid
         for i in range(int(x0 // _PICKUP_CELL), int(x1 // _PICKUP_CELL) + 1):
             for j in range(int(y0 // _PICKUP_CELL), int(y1 // _PICKUP_CELL) + 1):
+                for pin in gather.get((map_no, i, j), ()):
+                    px, py = pin.point
+                    if x0 <= px <= x1 and y0 <= py <= y1:
+                        yield pin
+                if not pickups:
+                    continue
                 for pin in self._pickup_grid.get((map_no, i, j), ()):
                     px, py = pin.point
                     if (
@@ -1432,10 +1510,11 @@ class MapWindow:
 
     def _tile_layers(self) -> tuple:
         """What the map tiles show besides the map: the pickup glows."""
-        if not self._show_pickups.get():
+        if not self._glows_shown():
             return (False,)
         return (
-            True,
+            self._show_pickups.get(),
+            self._gather_shown(),
             self._pickup_version,
             frozenset(self._pickup_types),
             self._pickup_fade(),
@@ -1577,6 +1656,7 @@ class MapWindow:
                 ("Names", self._show_names),
                 ("Dots", self._plain_dots),
                 ("Pickups", self._show_pickups),
+                ("Materials", self._show_gather),
                 ("NPCs", self._show_npcs),
                 ("Bosses", self._show_bosses),
                 ("Remembrance Only", self._major_only),
@@ -1593,6 +1673,8 @@ class MapWindow:
                 variable=var,
                 command=self._on_major_only
                 if var is self._major_only
+                else self._on_gather_toggle
+                if var is self._show_gather
                 else self._schedule_render,
                 font=ds.SMALL,
                 width=20,
@@ -1652,6 +1734,11 @@ class MapWindow:
         c.bind("<Motion>", self._on_motion)
         c.bind("<Leave>", lambda e: self._clear_hover())
         self._win.bind("<Delete>", lambda e: self._delete_selected_marker())
+
+    def _on_gather_toggle(self):
+        if self._filter_var.get() in (_FILTER_ALL, _FILTER_ITEMS):
+            self._fill_location_list()
+        self._schedule_render()
 
     def _on_major_only(self):
         if self._major_only.get():
@@ -1933,8 +2020,8 @@ class MapWindow:
         img = _MapIcons.disc_image(icon, 44, ring)
         return ctk.CTkImage(img, size=(22, 22))
 
-    def _legend_glow(self, dim: bool) -> ctk.CTkImage:
-        img = self._icons.glow_image(_PICKUP_MAX, dim)
+    def _legend_glow(self, dim: bool, material: bool = False) -> ctk.CTkImage:
+        img = self._icons.glow_image(_PICKUP_MAX, dim, material)
         return ctk.CTkImage(img, size=(22, 22))
 
     def _build_legend(self, parent):
@@ -1958,6 +2045,8 @@ class MapWindow:
             (self._icons.ctk_sprite("beacon", 24), "Beacon"),
             (self._legend_glow(False), "Item pickup"),
             (self._legend_glow(True), "Collected"),
+            (self._legend_glow(False, material=True), "Material node"),
+            (self._legend_glow(True, material=True), "Picked material"),
             (self._icons.ctk_sprite("npc", 22), "NPC"),
             (self._icons.ctk_sprite("npc", 22, tint=_HOSTILE_TINT), "Hostile NPC"),
             (self._icons.ctk_sprite("npc", 22, dimmed=True), "Dead NPC"),
@@ -1986,7 +2075,8 @@ class MapWindow:
                 widget.grid_remove()
         ctk.CTkLabel(
             legend,
-            text="Scroll to zoom, drag to pan (right or middle drag pans too)",
+            text="Scroll to zoom, drag to pan (right or middle drag pans too). "
+            "Material nodes show when zoomed in.",
             font=ds.SMALL,
             text_color=ds.MUTED,
             anchor="w",
@@ -2042,11 +2132,17 @@ class MapWindow:
             for g in self._placed
             if g.loc.tile_type == "grace" and " - " in g.loc.name
         }
-        return [
+        rows = [
             (regions.get(p.pickup.grace_flag, "Other"), p.pickup.item_label, p)
             for p in self._pickup_pins
             if self._pickup_kinds[p.pickup.key] in self._pickup_types
         ]
+        if self._show_gather.get():
+            rows += [
+                (regions.get(p.pickup.grace_flag, "Other"), p.pickup.item_label, p)
+                for p in self._gather()
+            ]
+        return rows
 
     def _pin_place(self, pin: _Pin) -> tuple[str, str]:
         """(region, grace name) of the pin's grace: the stored nearest grace
@@ -2085,7 +2181,7 @@ class MapWindow:
         elif pin.merchant is not None and stock:
             parts.extend(i.name for i in pin.merchant.lineup)
         elif pin.pickup is not None:
-            parts.append(SOURCE_LABELS.get(pin.pickup.source, ""))
+            parts.append(_SOURCE_TEXT.get(pin.pickup.source, ""))
         return _fold(" ".join(parts))
 
     def _unique_labels(
@@ -2151,7 +2247,7 @@ class MapWindow:
                 all(s.dead for s in pin.npcs),
             )
         taken = bool(self._pickup_collected(pin.pickup))
-        return self._icons.glow(_PICKUP_MAX, taken)
+        return self._icons.glow(_PICKUP_MAX, taken, isinstance(pin.pickup, GatherNode))
 
     def _fill_pin_list(self, kind: str, words: list[str]):
         # Read once: a Tk variable read per row added up to seconds on Windows
@@ -2317,6 +2413,8 @@ class MapWindow:
                 if placed.merchant is not None
                 else self._show_npcs
                 if placed.npcs is not None
+                else self._show_gather
+                if isinstance(placed.pickup, GatherNode)
                 else self._show_pickups
             )
             layer.set(True)
@@ -2647,7 +2745,7 @@ class MapWindow:
         )
         part = src.resize((sx1 - sx0, sy1 - sy0), Image.BILINEAR, box=box)
         out.paste(part, (sx0, sy0))
-        if self._show_pickups.get():
+        if self._glows_shown():
             self._paint_pickups(out, vx, vy, zoom)
         return out
 
@@ -2667,8 +2765,9 @@ class MapWindow:
                 continue
             glow = self._icons.glow_cached(
                 size,
-                bool(self._pickup_states.get(pin.pickup.key)),
+                bool(self._pickup_collected(pin.pickup)),
                 fade is not None,
+                isinstance(pin.pickup, GatherNode),
             )
             px = round((pin.point[0] - vx) * zoom - half)
             py = round((pin.point[1] - vy) * zoom - half)
@@ -2775,6 +2874,11 @@ class MapWindow:
         return pins
 
     def _pickup_collected(self, pickup: Pickup) -> bool | None:
+        if isinstance(pickup, GatherNode):
+            picked = self._gather_picked
+            if not pickup.one_time or picked is None:
+                return None
+            return pickup.key in picked
         if pickup.key in self._pickup_states:
             return self._pickup_states[pickup.key]
         # Pickups without a map pin are read on demand
@@ -2785,7 +2889,7 @@ class MapWindow:
         """Pickup whose glow core is under the screen point. Pickups on the
         same point (the Convergence forge's two weapons) take turns: with
         one of them selected, the next one is returned."""
-        if not self._show_pickups.get():
+        if not self._glows_shown():
             return None
         mx, my = self._to_map(sx, sy)
         r = max(4, self._pickup_size() * 0.6) / self._zoom
@@ -2837,7 +2941,7 @@ class MapWindow:
                 item = c.create_image(*at, image=image())
             self._items[item] = ("pin", pin)
 
-        if self._show_pickups.get() and sel is not None and sel.pickup is not None:
+        if sel is not None and sel.pickup is not None and self._pin_shown(sel):
             # The tiles leave the selected pickup out; it is drawn larger here
             at = visible(sel)
             if at is not None:
@@ -2846,7 +2950,9 @@ class MapWindow:
                 item = c.create_image(
                     *at,
                     image=self._icons.glow(
-                        size, bool(self._pickup_collected(sel.pickup))
+                        size,
+                        bool(self._pickup_collected(sel.pickup)),
+                        isinstance(sel.pickup, GatherNode),
                     ),
                 )
                 self._items[item] = ("pin", sel)
@@ -3141,10 +3247,14 @@ class MapWindow:
             return "\n".join(lines)
         if pin.pickup is not None:
             p = pin.pickup
-            label = ", ".join(
-                _item_text(qty, name) for _, qty, name in self._pin_items(pin)
+            label = (
+                p.item_label
+                if isinstance(p, GatherNode)
+                else ", ".join(
+                    _item_text(qty, name) for _, qty, name in self._pin_items(pin)
+                )
             )
-            lines = [label, SOURCE_LABELS.get(p.source, p.source)]
+            lines = [label, _SOURCE_TEXT.get(p.source, p.source)]
             taken = self._pickup_collected(p)
             if taken is not None:
                 lines.append("Collected" if taken else "Not collected")
@@ -3428,6 +3538,19 @@ class MapWindow:
                 pin,
                 self._object_done(pin.obj),
             )
+        if self._gather_picked is not None:
+            for pin in self._gather():
+                if pin.pickup.one_time:
+                    grace = graces.get(pin.pickup.grace_flag)
+                    add(
+                        self._grace_region(grace.loc) if grace else None,
+                        _DONE_MATERIALS,
+                        f"{pin.pickup.item_label} ({self._grace_short(grace.loc)})"
+                        if grace
+                        else pin.pickup.item_label,
+                        pin,
+                        self._pickup_collected(pin.pickup),
+                    )
         for pin in self._painting_pins:
             pt = pin.painting
             add(
@@ -3633,6 +3756,8 @@ class MapWindow:
             self._show_paintings.set(True)
         elif target.boss is not None:
             self._show_bosses.set(True)
+        elif isinstance(target.pickup, GatherNode):
+            self._show_gather.set(True)
         elif target.pickup is not None:
             self._show_pickups.set(True)
 
@@ -3650,6 +3775,7 @@ class MapWindow:
                     _DONE_POOLS: self._show_pools,
                     _DONE_SEALS: self._show_seals,
                     _DONE_PAINTINGS: self._show_paintings,
+                    _DONE_MATERIALS: self._show_gather,
                 }[category].set(True)
         self._select_region(region)
 
@@ -3863,6 +3989,8 @@ class MapWindow:
             return self._show_merchants.get()
         if pin.npcs is not None:
             return self._show_npcs.get()
+        if isinstance(pin.pickup, GatherNode):
+            return self._show_gather.get()
         return self._show_pickups.get()
 
     def _selection_shown(self) -> bool:
@@ -4359,7 +4487,7 @@ class MapWindow:
         self._show_pin_icons([name for _id, _qty, name in self._pin_items(pin)])
         self._info_var.set(f"{self._pin_text(pin)}\n{p.map_id}")
         taken = self._pickup_collected(p)
-        if taken is None or self._on_set_pickup is None:
+        if taken is None or not p.flag_id or self._on_set_pickup is None:
             return
         self._pin_btn.configure(text="Respawn" if taken else "Mark Collected")
         self._pin_btn.pack(fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn)
@@ -4742,7 +4870,7 @@ class MapWindow:
         pin = self._selected_pin
         if pickup is None and pin is not None:
             pickup = pin.pickup
-        if pickup is None or self._on_set_pickup is None:
+        if pickup is None or not pickup.flag_id or self._on_set_pickup is None:
             return
         taken = self._pickup_collected(pickup)
         if taken is None:
@@ -4840,6 +4968,23 @@ class MapWindow:
         return "\n".join(lines)
 
     def _update_location_info(self):
+        self._fill_location_info()
+        area = self._selection_area()
+        self._area_btn.configure(state="normal" if area else "disabled")
+
+    def _selection_area(self) -> MapPiece | None:
+        """Map fragment area of the selected location, pin or floor point."""
+        if self._selected_loc is not None:
+            return self._area_of(self._selected_loc)
+        pin = self._selected_pin
+        if pin is not None:
+            return fragment_at(pin.map_no, *pin.point)
+        if self._pins:
+            point = self._pins[self._pin_var.get()]
+            return fragment_at(point.map_no, point.mx, point.my)
+        return None
+
+    def _fill_location_info(self):
         region = self._selected_region
         if region is None:
             self._show_selection_info()
@@ -4868,7 +5013,7 @@ class MapWindow:
         self._show_pin_icons([name for _id, _qty, name in p.items])
         lines = [
             ", ".join(_item_text(qty, name) for _, qty, name in p.items),
-            SOURCE_LABELS.get(p.source, p.source),
+            _SOURCE_TEXT.get(p.source, p.source),
         ]
         taken = self._pickup_collected(p)
         if taken is not None:
@@ -4981,8 +5126,7 @@ class MapWindow:
         )
 
     def _unlock_area(self):
-        placed = self._selected_loc
-        area = self._area_of(placed) if placed is not None else None
+        area = self._selection_area()
         if area is None:
             return
         self._confirm_unlock(
