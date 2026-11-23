@@ -20,6 +20,8 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager.own_writes import atomic_write
+
 from .save import DS3Save
 from .slot import DS3Slot, LayoutError
 
@@ -348,17 +350,8 @@ def export_character(save: DS3Save, slot_index: int, output_path: str | Path) ->
 
     data = bytes(char.get_raw())
 
-    with open(output_path, "wb") as f:
-        f.write(_ERC_MAGIC)
-        f.write(struct.pack("<I", _ERC_VERSION))
-        f.write(struct.pack("<I", len(data)))
-        f.write(data)
-
-    with open(output_path, "rb") as f:
-        checksum = hashlib.md5(f.read()).digest()
-
-    with open(output_path, "ab") as f:
-        f.write(checksum)
+    body = _ERC_MAGIC + struct.pack("<II", _ERC_VERSION, len(data)) + data
+    atomic_write(output_path, body + hashlib.md5(body).digest())
 
 
 _ERC_HEADER = struct.Struct("<4sII")
