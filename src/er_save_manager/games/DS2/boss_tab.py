@@ -115,7 +115,9 @@ class DS2BossPanel:
             text=(
                 "Repair completes the records of a partly credited kill, for "
                 "example one made in another player's world, so the boss counts "
-                "as defeated and its bonfire accepts Bonfire Ascetics. It also "
+                "as defeated. A bonfire accepts Bonfire Ascetics only once every boss "
+                "listed with it is defeated; the Ascetic Bonfire column names the "
+                "ones still missing. Repair also "
                 "brings back fight enemies that stay missing while their boss is "
                 "alive, which leaves health on the boss bar after everything is "
                 "dead. Respawn "
@@ -146,7 +148,7 @@ class DS2BossPanel:
         self._tree.column("name", width=260)
         self._tree.column("state", width=300)
         self._tree.column("defeats", width=70, anchor="center")
-        self._tree.column("bonfire", width=200)
+        self._tree.column("bonfire", width=300)
         box.pack(fill="both", expand=True, padx=10, pady=(0, 6))
         add_tooltip(self._tree, MULTI_SELECT_TIP)
         self._tree.bind("<<TreeviewSelect>>", lambda _e: self._update_buttons())
@@ -168,7 +170,21 @@ class DS2BossPanel:
             return
 
         self._states = bosses.states()
+        # The Ascetic of a bonfire is refused until every boss sharing its
+        # bonfire id has a defeat count
+        undefeated: dict[int, list[str]] = {}
         for state in self._states:
+            if not state.defeats:
+                undefeated.setdefault(state.fight.bonfire_id, []).append(state.name)
+        for state in self._states:
+            bonfire = BONFIRES.get(state.fight.bonfire_id, "")
+            missing = [
+                name
+                for name in undefeated.get(state.fight.bonfire_id, [])
+                if name != state.name
+            ]
+            if bonfire and missing and state.defeats:
+                bonfire += f" (needs {', '.join(missing)})"
             self._tree.insert(
                 "",
                 "end",
@@ -176,7 +192,7 @@ class DS2BossPanel:
                     state.name,
                     _state_text(state),
                     state.defeats,
-                    BONFIRES.get(state.fight.bonfire_id, ""),
+                    bonfire,
                 ),
             )
         defeated = sum(1 for s in self._states if s.defeats)

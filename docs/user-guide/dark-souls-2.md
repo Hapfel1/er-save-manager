@@ -132,7 +132,7 @@ Lists each NPC with its state (alive, hostile or dead). **Revive** clears the NP
 
 ### Bosses
 
-Lists each boss with its state, defeat count and the Ascetic bonfire of its area. **Respawn Selected** returns defeated bosses to their arenas, **Kill Selected** marks them defeated and **Set Defeats** sets the defeat count. **Repair Selected** and **Repair All Invalid** fix boss records that block Bonfire Ascetic use, such as bosses killed in another player's world.
+Lists each boss with its state, defeat count and the Ascetic bonfire of its area. **Respawn Selected** returns defeated bosses to their arenas, **Kill Selected** marks them defeated and **Set Defeats** sets the defeat count. **Repair Selected** and **Repair All Invalid** fix boss records that block Bonfire Ascetic use, such as bosses killed in another player's world. A bonfire accepts an Ascetic only once every boss listed with it is defeated (the Pursuer and the Last Giant both belong to Cardinal Tower); the Ascetic bonfire column names the bosses still missing.
 
 Some fights include enemies that only spawn a limited number of times (for example in the Prowling Magus and Congregation fight). Respawn also resets their kill counts, so they return with the boss; a boss whose adds are counted as killed while the boss is alive is listed as invalid, and Repair resets them.
 
