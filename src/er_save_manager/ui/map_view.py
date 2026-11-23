@@ -79,11 +79,13 @@ from er_save_manager.ui.quest_progress_dialog import steps_up_to
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.tooltip import Tooltip
 from er_save_manager.ui.utils import (
+    ResizeBurst,
     bind_mousewheel,
     center_window,
     patch_combo_scroll,
     pick_file,
     raise_after_ctk_refocus,
+    skeleton_canvas,
     style_window_frame,
 )
 
@@ -663,13 +665,14 @@ class _MapImages:
     ) -> list[Image.Image]:
         """The map image and its halved copies, with the fragments in locked
         shaded. wait=False returns the map's levels with an older shading
-        while the new one is built on a worker thread, when there are any."""
+        while the new one is built on a worker thread, or no levels while the
+        map's first build runs."""
         cached = self._levels.get(map_no)
         if cached is None or cached[0] != locked:
-            if not wait and cached is not None:
+            if not wait:
                 self.preload(map_no, locked)
                 if not self._pending[map_no][2].done():
-                    return cached[1]
+                    return cached[1] if cached is not None else []
             pending = self._pending.pop(map_no, None)
             if pending is not None and pending[:2] == (locked, self.convergence):
                 levels = pending[2].result()
@@ -1195,6 +1198,8 @@ class MapWindow:
         self._item_photos: dict[tuple[str, int], ImageTk.PhotoImage | None] = {}
         self._hover_tile: _Placed | None = None
         self._list_rows: list[_Placed | _Pin] = []
+        # Rows of closed list groups, given their icon once the group opens
+        self._lazy_icons: dict[str, list[tuple[str, _Pin]]] = {}
         self._player = player
         self._editor = marker_editor
 
@@ -1229,6 +1234,7 @@ class MapWindow:
         self._levels_job = None
 
         self._win = ctk.CTkToplevel(parent)
+        self._resize_burst = ResizeBurst(self._win, self._pause_view, self._resume_view)
         self._win.title("World Map")
         self._win.protocol("WM_DELETE_WINDOW", self._close)
         self._size_to_main_window()
@@ -1616,6 +1622,9 @@ class MapWindow:
         self._build_side_panel(side)
 
         left = ctk.CTkFrame(body, width=330, corner_radius=0)
+        # Swapped for placeholders during a window edge drag, see _pause_view
+        self._drag_panels = (bar, side, left)
+        self._drag_swaps: list[tuple[ctk.CTkFrame, dict, tk.Canvas]] = []
         left.pack(side=tk.LEFT, fill=tk.Y)
         left.pack_propagate(False)
         self._build_location_list(left)
@@ -1895,6 +1904,12 @@ class MapWindow:
         self._build_legend(left)
         box.pack(fill=tk.BOTH, expand=True, pady=(0, 10), **pad)
         self._loc_list.bind("<<TreeviewSelect>>", self._on_location_list_select)
+        # The group is set open after the event, so the icons follow at idle
+        self._loc_list.bind(
+            "<<TreeviewOpen>>",
+            lambda _e: self._win.after_idle(self._load_open_icons),
+            add="+",
+        )
         bind_mousewheel(self._loc_list)
         self._search_var.trace_add("write", lambda *_: self._fill_location_list())
         self._queue_list_fill()
@@ -1989,6 +2004,7 @@ class MapWindow:
         list. Bosses group by region, NPCs and items by their nearest grace's
         region, merchants are ungrouped."""
         if kind == _FILTER_BOSSES:
+            major_only = self._major_only.get()
             # Remembrance and Great Rune bosses also get a group of their own
             rows = [
                 (
@@ -1997,7 +2013,7 @@ class MapWindow:
                     p,
                 )
                 for p in self._boss_pins
-                if not self._major_only.get() or _major_boss(p.boss)
+                if not major_only or _major_boss(p.boss)
             ]
             rows += [
                 (_MAJOR_GROUP, p.boss.name, p)
@@ -2136,10 +2152,12 @@ class MapWindow:
         return self._icons.glow(_PICKUP_MAX, taken)
 
     def _fill_pin_list(self, kind: str, words: list[str]):
+        # Read once: a Tk variable read per row added up to seconds on Windows
+        this_map = self._this_map_var.get()
         rows = [
             r
             for r in self._unique_labels(self._pin_rows(kind), grouped=True)
-            if (not self._this_map_var.get() or r[2].map_no == self._map_no)
+            if (not this_map or r[2].map_no == self._map_no)
             # A search lists each Remembrance boss once, under its region
             and not (words and r[0] == _MAJOR_GROUP)
             and _matches(
@@ -2150,6 +2168,7 @@ class MapWindow:
         self._list_rows = [r[2] for r in rows]
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         groups: dict[str, str] = {}
         for n, (group, label, pin) in enumerate(rows):
             parent = ""
@@ -2158,13 +2177,7 @@ class MapWindow:
                 if parent is None:
                     parent = groups[group] = f"r:{group}"
                     tree.insert("", "end", iid=parent, text=group, open=bool(words))
-            tree.insert(
-                parent,
-                "end",
-                iid=str(n),
-                text=f" {label}",
-                image=self._pin_list_icon(pin),
-            )
+            self._insert_pin_row(parent, str(n), f" {label}", pin, bool(words))
 
     def _queue_list_fill(self):
         """Fill the location list once the current event is handled, so
@@ -2190,17 +2203,19 @@ class MapWindow:
             _FILTER_DUNGEONS: ("dungeon",),
             _FILTER_TILES: ("small",),
         }.get(self._filter_var.get())
+        this_map = self._this_map_var.get()
         rows = [
             p
             for p in self._placed
             if (wanted is None or p.loc.tile_type in wanted)
-            and (not self._this_map_var.get() or p.map_no == self._map_no)
+            and (not this_map or p.map_no == self._map_no)
             and _matches(words, _fold(f"{p.loc.name} {p.loc.map_id_str}"))
         ]
         rows.sort(key=lambda p: p.loc.name.lower())
         self._list_rows = rows
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         # "Region - Name" rows go under a region row so the list shows the
         # name itself; names without a region stay top level.
         regions = {p.loc.name.partition(" - ")[0] for p in rows if " - " in p.loc.name}
@@ -2229,12 +2244,13 @@ class MapWindow:
         """All also lists bosses, NPCs, merchants and items, each under a
         group row that opens while searching."""
         tree = self._loc_list
+        this_map = self._this_map_var.get()
         for kind in _PIN_FILTERS:
             pin_rows = [r for r in self._pin_rows(kind) if r[0] != _MAJOR_GROUP]
             rows = [
                 r
                 for r in self._unique_labels(pin_rows, grouped=False)
-                if (not self._this_map_var.get() or r[2].map_no == self._map_no)
+                if (not this_map or r[2].map_no == self._map_no)
                 and _matches(words, self._pin_search_text(*r))
             ]
             if not rows:
@@ -2245,14 +2261,31 @@ class MapWindow:
                 "", "end", iid=group, text=f"{kind} ({len(rows)})", open=bool(words)
             )
             for _region, label, pin in rows:
-                tree.insert(
-                    group,
-                    "end",
-                    iid=str(len(self._list_rows)),
-                    text=f" {label}",
-                    image=self._pin_list_icon(pin),
+                self._insert_pin_row(
+                    group, str(len(self._list_rows)), f" {label}", pin, bool(words)
                 )
                 self._list_rows.append(pin)
+
+    def _insert_pin_row(
+        self, parent: str, iid: str, text: str, pin: _Pin, opened: bool
+    ) -> None:
+        """List row of a pin. Under a closed group the icon waits for
+        _load_open_icons: building every boss, NPC and item icon of the All
+        list up front froze the map window for about a second on opening."""
+        if not parent or opened:
+            self._loc_list.insert(
+                parent, "end", iid=iid, text=text, image=self._pin_list_icon(pin)
+            )
+            return
+        self._loc_list.insert(parent, "end", iid=iid, text=text)
+        self._lazy_icons.setdefault(parent, []).append((iid, pin))
+
+    def _load_open_icons(self) -> None:
+        tree = self._loc_list
+        for group in [g for g in self._lazy_icons if tree.exists(g)]:
+            if tree.item(group, "open"):
+                for iid, pin in self._lazy_icons.pop(group):
+                    tree.item(iid, image=self._pin_list_icon(pin))
 
     def _on_location_list_select(self, _event=None):
         sel = self._loc_list.selection()
@@ -2260,6 +2293,7 @@ class MapWindow:
             return
         if sel[0].startswith("r:"):
             self._loc_list.item(sel[0], open=not self._loc_list.item(sel[0], "open"))
+            self._load_open_icons()
             return
         placed = self._list_rows[int(sel[0])]
         if isinstance(placed, str):
@@ -2335,6 +2369,39 @@ class MapWindow:
     def _on_resize(self):
         self._zoom = max(self._zoom, self._fit_zoom())
         self._clamp_view()
+        self._resize_burst.size_changed()
+        if not self._resize_burst.active:
+            self._schedule_render()
+
+    def _pause_view(self):
+        """Window edge drag: the map shows no items, and the top bar and both
+        side panels give their place to canvases of their size with gray
+        shapes where their widgets are (skeleton_canvas) until it ends.
+        Redrawing the map items and laying out and repainting every panel
+        widget at each step was most of the cost (on Windows a few hundred ms
+        per step); a frame placed on top does not stop that."""
+        self._canvas.itemconfigure("all", state="hidden")
+        for panel in self._drag_panels:
+            info = {
+                ("in_" if key == "in" else key): value
+                for key, value in panel.pack_info().items()
+            }
+            placeholder = skeleton_canvas(panel, panel.master)
+            placeholder.pack(**info, before=panel)
+            panel.pack_forget()
+            self._drag_swaps.append((panel, info, placeholder))
+
+    def _resume_view(self):
+        if not self._win.winfo_exists():
+            return
+        for panel, info, placeholder in self._drag_swaps:
+            panel.pack(**info, before=placeholder)
+            placeholder.destroy()
+        self._drag_swaps = []
+        self._zoom = max(self._zoom, self._fit_zoom())
+        self._clamp_view()
+        # Full redraw: the hidden items stay hidden otherwise
+        self._tile_key = None
         self._schedule_render()
 
     def _clamp_view(self):
@@ -2400,7 +2467,7 @@ class MapWindow:
     def _update_view(self):
         """Redraw icons; rebuild map tiles only when zoom or map changed."""
         self._render_pending = False
-        if not self._win.winfo_exists():
+        if not self._win.winfo_exists() or self._resize_burst.active:
             return
         if self._tile_key != (
             self._map_no,
@@ -2546,6 +2613,10 @@ class MapWindow:
         levels = self._images.levels(
             self._map_no, self._tile_key[2] if locked is None else locked, wait=False
         )
+        if not levels:
+            # First build still running: the background now, the map art
+            # once _watch_levels sees it done
+            return Image.new("RGB", (w, h), _BACKGROUND)
         # Image pixels per screen pixel at full resolution; use the smallest
         # copy that still has at least one pixel per screen pixel.
         density = self._images.scale / zoom
@@ -2646,11 +2717,12 @@ class MapWindow:
             sx1, sy1 = self._to_screen(sel.rect[2], sel.rect[3])
             c.create_rectangle(sx0, sy0, sx1, sy1, outline=_SELECT_COLOR, width=3)
             self._selected_at = ((sx0 + sx1) / 2, sy0, sy1)
+        show_graces, show_dungeons = self._show_graces.get(), self._show_dungeons.get()
         for p in self._placed:
             if p.map_no != self._map_no or p.point is None:
                 continue
             grace = p.loc.tile_type == "grace"
-            if not (self._show_graces if grace else self._show_dungeons).get():
+            if not (show_graces if grace else show_dungeons):
                 continue
             sx, sy = self._to_screen(*p.point)
             if not (-m - 30 < sx < w + m + 30 and -m - 30 < sy < h + m + 30):
@@ -2773,9 +2845,10 @@ class MapWindow:
                 )
                 self._items[item] = ("pin", sel)
         if self._show_bosses.get():
+            major_only = self._major_only.get()
             for pin in self._boss_pins:
                 major = _major_boss(pin.boss)
-                if self._major_only.get() and not major:
+                if major_only and not major:
                     continue
                 at = visible(pin)
                 if at is None:
@@ -2813,10 +2886,11 @@ class MapWindow:
                     sx, sy, image=self._icons.merchant(_MERCHANT_SIZE)
                 )
                 self._items[item] = ("pin", pin)
-        if self._pools_shown() or self._show_seals.get():
+        pools_shown, seals_shown = self._pools_shown(), self._show_seals.get()
+        if pools_shown or seals_shown:
             for pin in self._object_pins:
                 pool = pin.obj.kind == POOL
-                if not (self._pools_shown() if pool else self._show_seals.get()):
+                if not (pools_shown if pool else seals_shown):
                     continue
                 at = visible(pin)
                 if at is None:
@@ -3375,6 +3449,7 @@ class MapWindow:
     def _fill_done_list(self, words: list[str]):
         tree = self._loc_list
         tree.delete(*tree.get_children())
+        self._lazy_icons = {}
         comp = self._completion()
         if not comp:
             self._list_rows = []
@@ -4719,7 +4794,7 @@ class MapWindow:
             f"Position {pin.x:.1f}, {pin.y:.1f}, {pin.z:.1f}",
             *extra,
         ]
-        gate = arena_gate(pin.arena_flag, self.convergence)
+        gate = arena_gate(pin.arena_flag, self._images.convergence)
         if gate is not None:
             status = (
                 gate_status(gate, self._grace_state)

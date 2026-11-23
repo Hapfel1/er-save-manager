@@ -7,7 +7,9 @@ from __future__ import annotations
 import contextlib
 import functools
 import json
+import math
 import re
+import time
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
@@ -16,6 +18,10 @@ import customtkinter as ctk
 
 from er_save_manager.data.convergence_items import is_seamless_save
 from er_save_manager.data.item_database import common_affinities
+from er_save_manager.parser.inventory_ops import (
+    _first_empty_inv_slot,
+    deferred_inventory_patch,
+)
 from er_save_manager.ui import palette
 from er_save_manager.ui.dialogs.opt_out_warning import confirm_warning
 from er_save_manager.ui.messagebox import CTkMessageBox
@@ -273,10 +279,21 @@ def _equipped_handles(slot) -> set[int]:
     return handles
 
 
-_EQUIPPED_WARNING = (
-    "Its equipment slot keeps pointing at the removed item. Unequip it in "
-    "game first to be safe."
+_UNEQUIP_NOTE = (
+    "Removing an equipped item without unequipping it leaves its equipment "
+    "slot pointing at nothing, which the game shows as a broken look."
 )
+_NO_PLACEHOLDER = (
+    "cannot be unequipped here: no Unarmed entry, or no held inventory room "
+    "for a bare armor entry. Unequip it in game first"
+)
+
+
+def _unequip_blocked(slot, handles: set[int]) -> set[int]:
+    """Handles among handles that equip_ops.unequip() would leave equipped."""
+    from er_save_manager.parser.equip_ops import blocked
+
+    return blocked(slot, handles)
 
 
 def _inventory_columns(text: str, location: str) -> tuple[str, str, str]:
@@ -715,6 +732,124 @@ BAN_NO_GUARANTEE = (
     "There is no guarantee against a ban: FromSoftware checks items on its "
     "own servers, and what it flags can change."
 )
+
+
+class _BatchProgress:
+    """Inventory batch loop: holds the inventory write back to the end and,
+    once the loop runs longer than DELAY seconds, shows a modal progress
+    dialog and processes window events between items, so the window keeps
+    painting instead of freezing."""
+
+    DELAY = 0.3
+    INTERVAL = 0.05
+    # Time left is shown once the rate has settled
+    ETA_AFTER = 1.0
+
+    def __init__(self, parent, title: str, heading: str, total: int):
+        self.parent = parent
+        self.title = title
+        self.heading = heading
+        self.total = total
+        self.done = 0
+        self.dialog = None
+        self._closers: list[tuple[tk.Misc, str]] = []
+        self._start = self._last = time.monotonic()
+
+    def __enter__(self):
+        from er_save_manager.ui.utils import long_operation
+
+        self._stack = contextlib.ExitStack()
+        self._stack.enter_context(long_operation())
+        self._stack.enter_context(deferred_inventory_patch())
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            return self._stack.__exit__(*exc)
+        finally:
+            self._close()
+
+    def tick(self, item: str = "") -> None:
+        """Count one item (shown by name); repaint at most every INTERVAL
+        seconds."""
+        self.done += 1
+        now = time.monotonic()
+        if now - self._last < self.INTERVAL or now - self._start < self.DELAY:
+            return
+        self._last = now
+        try:
+            if self.dialog is None:
+                self._open()
+            self._item.configure(text=item)
+            self._bar.set(self.done / max(self.total, 1))
+            self._count.configure(text=f"{self.done} of {self.total} items")
+            self._eta.configure(text=self._time_left(now))
+            # Processes input too, but the dialog holds the grab and both
+            # close buttons are disabled until the loop ends.
+            self.dialog.update()
+        except tk.TclError:
+            pass
+
+    def _time_left(self, now: float) -> str:
+        elapsed = now - self._start
+        if elapsed < self.ETA_AFTER or not self.done:
+            return ""
+        left = elapsed / self.done * (self.total - self.done)
+        return "Almost done" if left < 1 else f"About {math.ceil(left)} s left"
+
+    def _open(self) -> None:
+        from er_save_manager.ui import dialog_style as ds
+
+        dialog = ds.create(self.parent, self.title)
+        dialog.protocol("WM_DELETE_WINDOW", lambda: None)
+        main = ctk.CTkFrame(dialog, fg_color="transparent")
+        main.pack(fill=tk.BOTH, expand=True, padx=24, pady=(18, 20))
+        ds.header(main, self.heading, font=ds.TITLE_LARGE)
+        self._item = ctk.CTkLabel(main, text="", font=ds.FONT, anchor="w")
+        self._item.pack(fill=tk.X, pady=(12, 8))
+        self._bar = ctk.CTkProgressBar(
+            main,
+            mode="determinate",
+            height=10,
+            corner_radius=5,
+            progress_color=palette.PURPLE,
+        )
+        self._bar.set(0)
+        self._bar.pack(fill=tk.X)
+        row = ctk.CTkFrame(main, fg_color="transparent")
+        row.pack(fill=tk.X, pady=(6, 0))
+        self._count = ctk.CTkLabel(
+            row, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="w"
+        )
+        self._count.pack(side=tk.LEFT)
+        self._eta = ctk.CTkLabel(
+            row, text="", font=ds.SMALL, text_color=ds.MUTED, anchor="e"
+        )
+        self._eta.pack(side=tk.RIGHT)
+        ctk.CTkLabel(
+            main,
+            text="The save is written once, after the last item.",
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(14, 0))
+        ds.finish(dialog, self.parent, min_width=460)
+        self.dialog = dialog
+        # The grab keeps clicks away, not the title bar close buttons: the
+        # main window's and the one of a popup the batch was started from
+        for window in dict.fromkeys(
+            (self.parent.winfo_toplevel(), self.parent._root())
+        ):
+            self._closers.append((window, window.protocol("WM_DELETE_WINDOW")))
+            window.protocol("WM_DELETE_WINDOW", lambda: None)
+
+    def _close(self) -> None:
+        for window, command in self._closers:
+            with contextlib.suppress(tk.TclError):
+                window.protocol("WM_DELETE_WINDOW", command)
+        if self.dialog is not None:
+            with contextlib.suppress(tk.TclError):
+                self.dialog.destroy()
 
 
 def _confirm_batch_add(
@@ -2484,9 +2619,7 @@ class InventoryEditor:
             return location
         try:
             slot = save_file.characters[slot_idx]
-            held_full = all(
-                it.gaitem_handle != 0 for it in slot.inventory_held.common_items
-            )
+            held_full = _first_empty_inv_slot(slot.inventory_held) == -1
             return "storage" if held_full else "held"
         except Exception:
             return location
@@ -2887,7 +3020,8 @@ class InventoryEditor:
 
         if not _needs_gaitem(full_id):
             found_handle = _direct_handle(full_id)
-        else:
+        # The handle only matters for stacking
+        elif max_qty > 1:
             gaitem_idx, g = _find_gaitem_by_item(slot, full_id, inventory=inv)
             if gaitem_idx != -1 and g:
                 found_handle = g.gaitem_handle
@@ -3248,90 +3382,98 @@ class InventoryEditor:
             is_cnv = self._is_cnv_save()
             success = 0
             skipped: dict[str, int] = {}
-            for item in items:
-                location = self._resolve_add_location(
-                    save_file, slot_idx, self.inv_location_var.get()
-                )
-                max_qty = self._max_qty_for_location(item, location)
-                item_qty = min(target_qty, max_qty)
-                if item.category == 0x40000000:
-                    reason, item_qty = _batch_goods_qty(
-                        slot, item, location, item_qty, max_qty, supply_capped
+            total = len(items) + (len(_FLASK_KINDS) if with_flasks else 0)
+            with _BatchProgress(
+                parent_window, "Batch Add", "Adding items", total
+            ) as progress:
+                for item in items:
+                    progress.tick(item.name)
+                    location = self._resolve_add_location(
+                        save_file, slot_idx, self.inv_location_var.get()
                     )
-                    if reason:
-                        skipped[reason] = skipped.get(reason, 0) + 1
-                        continue
-                item_upg = 0
-                if target_upg > 0 and (
-                    item.category == 0x00000000
-                    or "Ashes" in getattr(item, "category_name", "")
-                ):
-                    reinforcement = getattr(item, "reinforcement", "standard")
-                    cap = 25 if reinforcement == "standard" else 10
-                    if is_cnv and reinforcement in ("standard", "somber"):
-                        cap = 15
-                    explicit_cap = getattr(item, "max_upgrade", -1)
-                    if explicit_cap >= 0:
-                        cap = explicit_cap
-                    if reinforcement == "none":
-                        cap = 0
-                    item_upg = min(target_upg, cap)
-
-                item_info = {
-                    "full_id": item.full_id,
-                    "qty": item_qty,
-                    "upg": item_upg,
-                    "location": location,
-                    "aow_id": 0,
-                    "is_ashes": "Ashes" in getattr(item, "category_name", ""),
-                    "reinforcement": getattr(item, "reinforcement", "standard"),
-                    "convergence": is_cnv,
-                    "max_qty": max_qty,
-                    "name_label": f"{item.name} +{item_upg}" if item_upg else item.name,
-                    "base_name": item.name,
-                }
-                try:
-                    self._process_single_add(save_file, slot_idx, slot, item_info)
-                    success += 1
-                except Exception as e:
-                    reason = str(e)
-                    if "already present" in reason:
-                        reason = "already in the inventory"
-                    elif "exceeds the max stack" in reason:
-                        reason = "stack already at its max"
-                    elif "Shadow of the Erdtree" in reason:
-                        reason = "Shadow of the Erdtree spell, DLC not owned"
-                    skipped[reason] = skipped.get(reason, 0) + 1
-
-            if with_flasks:
-                for kind, flask_id, qty in _flask_batch_plan(slot):
-                    if flask_id is None:
-                        key = "flask of that kind already owned"
-                        skipped[key] = skipped.get(key, 0) + 1
-                        continue
-                    flask = db.get_item_by_id(0x40000000 | flask_id)
-                    try:
-                        self._process_single_add(
-                            save_file,
-                            slot_idx,
-                            slot,
-                            {
-                                "full_id": 0x40000000 | flask_id,
-                                "qty": qty,
-                                "upg": 0,
-                                "location": "held",
-                                "aow_id": 0,
-                                "is_ashes": False,
-                                "reinforcement": "standard",
-                                "convergence": is_cnv,
-                                "max_qty": qty,
-                                "name_label": flask.name if flask else kind,
-                                "base_name": flask.name if flask else kind,
-                            },
+                    max_qty = self._max_qty_for_location(item, location)
+                    item_qty = min(target_qty, max_qty)
+                    if item.category == 0x40000000:
+                        reason, item_qty = _batch_goods_qty(
+                            slot, item, location, item_qty, max_qty, supply_capped
                         )
+                        if reason:
+                            skipped[reason] = skipped.get(reason, 0) + 1
+                            continue
+                    item_upg = 0
+                    if target_upg > 0 and (
+                        item.category == 0x00000000
+                        or "Ashes" in getattr(item, "category_name", "")
+                    ):
+                        reinforcement = getattr(item, "reinforcement", "standard")
+                        cap = 25 if reinforcement == "standard" else 10
+                        if is_cnv and reinforcement in ("standard", "somber"):
+                            cap = 15
+                        explicit_cap = getattr(item, "max_upgrade", -1)
+                        if explicit_cap >= 0:
+                            cap = explicit_cap
+                        if reinforcement == "none":
+                            cap = 0
+                        item_upg = min(target_upg, cap)
+
+                    item_info = {
+                        "full_id": item.full_id,
+                        "qty": item_qty,
+                        "upg": item_upg,
+                        "location": location,
+                        "aow_id": 0,
+                        "is_ashes": "Ashes" in getattr(item, "category_name", ""),
+                        "reinforcement": getattr(item, "reinforcement", "standard"),
+                        "convergence": is_cnv,
+                        "max_qty": max_qty,
+                        "name_label": f"{item.name} +{item_upg}"
+                        if item_upg
+                        else item.name,
+                        "base_name": item.name,
+                    }
+                    try:
+                        self._process_single_add(save_file, slot_idx, slot, item_info)
                         success += 1
                     except Exception as e:
-                        skipped[str(e)] = skipped.get(str(e), 0) + 1
+                        reason = str(e)
+                        if "already present" in reason:
+                            reason = "already in the inventory"
+                        elif "exceeds the max stack" in reason:
+                            reason = "stack already at its max"
+                        elif "Shadow of the Erdtree" in reason:
+                            reason = "Shadow of the Erdtree spell, DLC not owned"
+                        skipped[reason] = skipped.get(reason, 0) + 1
+
+                if with_flasks:
+                    for kind, flask_id, qty in _flask_batch_plan(slot):
+                        progress.tick(kind)
+                        if flask_id is None:
+                            key = "flask of that kind already owned"
+                            skipped[key] = skipped.get(key, 0) + 1
+                            continue
+                        flask = db.get_item_by_id(0x40000000 | flask_id)
+                        try:
+                            self._process_single_add(
+                                save_file,
+                                slot_idx,
+                                slot,
+                                {
+                                    "full_id": 0x40000000 | flask_id,
+                                    "qty": qty,
+                                    "upg": 0,
+                                    "location": "held",
+                                    "aow_id": 0,
+                                    "is_ashes": False,
+                                    "reinforcement": "standard",
+                                    "convergence": is_cnv,
+                                    "max_qty": qty,
+                                    "name_label": flask.name if flask else kind,
+                                    "base_name": flask.name if flask else kind,
+                                },
+                            )
+                            success += 1
+                        except Exception as e:
+                            skipped[str(e)] = skipped.get(str(e), 0) + 1
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -3385,20 +3527,24 @@ class InventoryEditor:
 
         save_file = self.get_save_file()
         slot_idx = self.get_char_slot()
+        # Equipment slots refer to the held inventory; a stored copy of a
+        # good shares the handle of the held one but is never equipped
         equipped = False
-        with contextlib.suppress(Exception):
-            equipped = gaitem_handle in _equipped_handles(
-                save_file.characters[slot_idx]
-            )
+        if location == "held":
+            with contextlib.suppress(Exception):
+                equipped = gaitem_handle in _equipped_handles(
+                    save_file.characters[slot_idx]
+                )
 
         if equipped:
             confirmed = CTkMessageBox._create_dialog(
                 self.parent,
                 "Remove Equipped Item",
-                f"{item_label} is equipped. Remove it from {location}?\n\n"
-                + _EQUIPPED_WARNING,
+                f"{item_label} is equipped. Unequip it and remove it from "
+                f"{location}?\n\n" + _UNEQUIP_NOTE,
                 icon_type="warning",
-                buttons=[("Remove", True), ("Cancel", False)],
+                buttons=[("Unequip and Remove", True), ("Cancel", False)],
+                cancel_value=False,
             )
         else:
             confirmed = CTkMessageBox.askyesno(
@@ -3411,7 +3557,22 @@ class InventoryEditor:
 
         try:
             self.ensure_mutable()
+            if equipped:
+                from er_save_manager.parser.equip_ops import unequip
+
+                # Checked before the backup: nothing is written when the slot
+                # cannot be emptied
+                slot = save_file.characters[slot_idx]
+                if _unequip_blocked(slot, {gaitem_handle}):
+                    CTkMessageBox.showerror(
+                        "Remove Equipped Item",
+                        f"{item_label} {_NO_PLACEHOLDER}.",
+                        parent=self.parent,
+                    )
+                    return
             self._create_backup(save_file, slot_idx, "remove_item")
+            if equipped:
+                unequip(save_file, slot_idx, {gaitem_handle})
 
             from er_save_manager.parser.inventory_ops import remove_item
 
@@ -3501,14 +3662,41 @@ class InventoryEditor:
                 f"Batch remove all {len(matches)} items from '{cat}' in {location}?"
             )
 
-        equipped = _equipped_handles(slot)
-        n_equipped = sum(1 for row in matches if len(row) > 3 and row[3] in equipped)
-        if n_equipped:
-            confirm_msg += (
-                f"\n\n{n_equipped} of them are equipped. " + _EQUIPPED_WARNING
+        # Equipment slots refer to the held inventory only
+        equipped = _equipped_handles(slot) if location == "held" else set()
+        worn = {row[3] for row in matches if len(row) > 3 and row[3] in equipped}
+        unequip_handles: set[int] = set()
+        stuck = 0
+        if worn:
+            choice = CTkMessageBox._create_dialog(
+                parent_window,
+                "Batch Remove",
+                f"{confirm_msg}\n\n{len(worn)} of them are equipped. Unequip "
+                "them and remove them too, or keep them?\n\n" + _UNEQUIP_NOTE,
+                icon_type="warning",
+                buttons=[
+                    ("Unequip and Remove", "unequip"),
+                    ("Keep Equipped", "keep"),
+                    ("Cancel", None),
+                ],
+                cancel_value=None,
             )
-
-        if not CTkMessageBox.askyesno(
+            if choice is None:
+                return
+            if choice == "unequip":
+                blocked = _unequip_blocked(slot, worn)
+                unequip_handles = worn - blocked
+                stuck = len(blocked)
+            # Equipped items that stay equipped are not removed
+            matches = [
+                row
+                for row in matches
+                if len(row) <= 3 or row[3] not in worn or row[3] in unequip_handles
+            ]
+            if not matches:
+                notify(parent_window, "Nothing left to remove.", "info")
+                return
+        elif not CTkMessageBox.askyesno(
             "Batch Remove", confirm_msg, parent=parent_window
         ):
             return
@@ -3516,20 +3704,28 @@ class InventoryEditor:
         try:
             self.ensure_mutable()
             self._create_backup(save_file, slot_idx, "batch_remove_category")
+            if unequip_handles:
+                from er_save_manager.parser.equip_ops import unequip
+
+                unequip(save_file, slot_idx, unequip_handles)
 
             from er_save_manager.parser.inventory_ops import remove_item
 
             success = 0
             errors = []
-            for row in matches:
-                full_id = row[1]
-                try:
-                    remove_item(save_file, slot_idx, full_id, location)
-                    _apply_item_event_flags(save_file, slot_idx, full_id, False)
-                    _sync_slot_counters(save_file, slot_idx, full_id)
-                    success += 1
-                except Exception as e:
-                    errors.append(f"0x{full_id:08X}: {e}")
+            with _BatchProgress(
+                parent_window, "Batch Remove", "Removing items", len(matches)
+            ) as progress:
+                for row in matches:
+                    progress.tick(_inventory_columns(row[0], row[2])[1])
+                    full_id = row[1]
+                    try:
+                        remove_item(save_file, slot_idx, full_id, location)
+                        _apply_item_event_flags(save_file, slot_idx, full_id, False)
+                        _sync_slot_counters(save_file, slot_idx, full_id)
+                        success += 1
+                    except Exception as e:
+                        errors.append(f"0x{full_id:08X}: {e}")
 
             save_file.recalculate_checksums()
             save_path = self.get_save_path()
@@ -3540,10 +3736,16 @@ class InventoryEditor:
             if self._on_inventory_changed:
                 self._on_inventory_changed()
 
+            kept_note = (
+                f" {stuck} equipped item(s) stayed: no Unarmed entry, or no "
+                "held inventory room for a bare armor entry."
+                if stuck
+                else ""
+            )
             show_toast(
                 self.parent.winfo_toplevel(),
-                f"Batch removed {success} items from {cat} ({location}).",
-                type="success",
+                f"Batch removed {success} items from {cat} ({location}).{kept_note}",
+                type="warning" if stuck else "success",
             )
             if errors:
                 CTkMessageBox.showwarning(
@@ -5020,19 +5222,23 @@ class LoadoutManagerWindow(ctk.CTkToplevel):
             success_count = 0
             errors = []
 
-            for item_info in entries:
-                try:
-                    location = editor._resolve_add_location(
-                        save_file, slot_idx, item_info.get("location", "held")
-                    )
-                    to_add = item_info
-                    if location != item_info.get("location"):
-                        to_add = dict(item_info)
-                        to_add["location"] = location
-                    editor._process_single_add(save_file, slot_idx, slot, to_add)
-                    success_count += 1
-                except Exception as ex:
-                    errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
+            with _BatchProgress(
+                self, "Apply Loadout", "Adding items", len(entries)
+            ) as progress:
+                for item_info in entries:
+                    progress.tick(item_info.get("name_label", ""))
+                    try:
+                        location = editor._resolve_add_location(
+                            save_file, slot_idx, item_info.get("location", "held")
+                        )
+                        to_add = item_info
+                        if location != item_info.get("location"):
+                            to_add = dict(item_info)
+                            to_add["location"] = location
+                        editor._process_single_add(save_file, slot_idx, slot, to_add)
+                        success_count += 1
+                    except Exception as ex:
+                        errors.append(f"{item_info.get('name_label', 'item')}: {ex}")
 
             save_file.recalculate_checksums()
             save_path = editor.get_save_path()

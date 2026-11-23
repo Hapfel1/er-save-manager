@@ -62,11 +62,14 @@ from er_save_manager.ui.tabs import (
 from er_save_manager.ui.theme import ThemeManager
 from er_save_manager.ui.toast import notify
 from er_save_manager.ui.utils import (
+    ResizeBurst,
     center_window,
     fit_size_to_work_area,
     get_work_area,
+    in_long_operation,
     open_url,
     pick_file,
+    skeleton_canvas,
     style_window_frame,
     title_bar_height,
     trace_variable,
@@ -359,6 +362,12 @@ class SaveManagerGUI:
         self._resize_timer = None
         self._last_width = None
         self._last_height = None
+        # Window edge drag: see _on_window_resize
+        self._hidden_tab_frame = None
+        self._tab_skeleton: tk.Canvas | None = None
+        self._resize_burst = ResizeBurst(
+            self.root, self._hide_tab_content, self._show_tab_content
+        )
 
         self.process_monitor = None
 
@@ -491,11 +500,50 @@ class SaveManagerGUI:
         self._last_width = width
         self._last_height = height
 
+        # A drag of the window edge sends a burst of size changes. Each one
+        # lays out and repaints every widget of the shown tab, which on
+        # Windows takes a few hundred ms, so the tab's content is hidden
+        # while the drag lasts.
+        self._resize_burst.size_changed()
+
         if self._resize_timer:
             self.root.after_cancel(self._resize_timer)
 
         # Delay actual processing to batch multiple resize events
         self._resize_timer = self.root.after(200, self._process_resize)
+
+    def _hide_tab_content(self) -> None:
+        if self._hidden_tab_frame is not None:
+            return
+        try:
+            frame = self.notebook.tab(self.notebook.get())
+        except (ValueError, KeyError, tk.TclError):
+            return
+        if frame.winfo_manager() != "grid":
+            return
+        # Gray shapes where the tab's widgets are, in the tab's grid cell
+        info = {
+            ("in_" if key == "in" else key): value
+            for key, value in frame.grid_info().items()
+        }
+        skeleton = skeleton_canvas(frame, frame.master)
+        frame.grid_remove()
+        skeleton.grid(**info)
+        self._tab_skeleton = skeleton
+        self._hidden_tab_frame = frame
+
+    def _show_tab_content(self) -> None:
+        if self._tab_skeleton is not None:
+            with contextlib.suppress(tk.TclError):
+                self._tab_skeleton.destroy()
+            self._tab_skeleton = None
+        frame, self._hidden_tab_frame = self._hidden_tab_frame, None
+        if frame is None:
+            return
+        # The notebook may have been rebuilt or switched tabs meanwhile
+        with contextlib.suppress(ValueError, KeyError, tk.TclError):
+            if frame is self.notebook.tab(self.notebook.get()):
+                frame.grid()
 
     def _process_resize(self):
         """Process pending resize - CTk handles its own layout."""
@@ -4185,6 +4233,10 @@ class SaveManagerGUI:
             if isinstance(window, str) or window is not window.winfo_toplevel():
                 return
         if not self._pending_file_change or self._file_change_dialog_open:
+            return
+        # A reload in the middle of an inventory batch would be written over
+        # by the batch; the change stays pending for the next focus.
+        if in_long_operation():
             return
         self._pending_file_change = False
         if self.settings.get("external_file_change_auto_reload", False):

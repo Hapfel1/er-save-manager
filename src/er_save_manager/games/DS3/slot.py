@@ -960,9 +960,17 @@ class DS3Slot:
         return not entry.is_empty and entry.handle != _PLACEHOLDER_HANDLE
 
     def entry_at(self, offset: int) -> DS3InventoryEntry | None:
-        for entry in self.iter_inventory() + self.iter_storage():
-            if entry.offset == offset:
-                return entry
+        """The entry at offset in the held common, held key or storage list.
+        Computed from the offset: batch removals call this once per row."""
+        layout = self._get_layout()
+        for count_off, cap, is_key in (
+            (layout.inv, _COMMON_CAP, False),
+            (layout.inv + _COMMON_BYTES, _KEY_CAP, True),
+            (layout.storage, _COMMON_CAP, False),
+        ):
+            pos, rest = divmod(offset - (count_off + 4), _ENTRY_SIZE)
+            if rest == 0 and 0 <= pos < cap:
+                return self._iter_entry(count_off, pos, is_key)
         return None
 
     def bad_storage_indices(self) -> int:
@@ -1388,18 +1396,33 @@ class DS3Slot:
         layout = self._get_layout()
         to_storage = not self.in_storage(entry)
         dest = layout.storage if to_storage else layout.inv
-        entries = self._iter_list(dest, _COMMON_CAP, False)
+        # One pass over the raw list for the first stack of the same item
+        # (is_real_item) and the first free entry: moving many rows calls
+        # this once per row.
+        target_pos = free_pos = None
+        base = dest + 4
+        raw = memoryview(self._data)[base : base + _COMMON_CAP * _ENTRY_SIZE]
+        for pos, (h, iid, _qty, _idx) in enumerate(struct.iter_unpack("<IIII", raw)):
+            if h == 0:
+                if free_pos is None:
+                    free_pos = pos
+            elif (
+                max_quantity > 1
+                and iid == entry.item_id
+                and iid != _EMPTY_ID
+                and h != _PLACEHOLDER_HANDLE
+            ):
+                target_pos = pos
+                break
+            if free_pos is not None and max_quantity <= 1:
+                break
+        raw.release()
 
-        target = None
-        if max_quantity > 1:
-            target = next(
-                (
-                    e
-                    for e in entries
-                    if self.is_real_item(e) and e.item_id == entry.item_id
-                ),
-                None,
-            )
+        target = (
+            self._iter_entry(dest, target_pos, False)
+            if target_pos is not None
+            else None
+        )
         if target is not None:
             moved = min(entry.quantity, max_quantity - target.quantity)
             if moved <= 0:
@@ -1414,7 +1437,11 @@ class DS3Slot:
                     f"the destination holds at most {max_quantity}; "
                     "lower the quantity first"
                 )
-            free = next((e for e in entries if e.handle == 0), None)
+            free = (
+                self._iter_entry(dest, free_pos, False)
+                if free_pos is not None
+                else None
+            )
             if free is None:
                 raise ValueError("No free slot at the destination")
             last_off = self._last_index_off(dest)

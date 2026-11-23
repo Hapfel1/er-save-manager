@@ -79,3 +79,5 @@ pythonpath = ["src"]
 minversion = "8.0"
 # pytest-xdist; -n0 runs in one process (debugging, -x, -s)
 addopts = "-n auto"
+tmp_path_retention_policy = "failed"
+tmp_path_retention_count = 1
