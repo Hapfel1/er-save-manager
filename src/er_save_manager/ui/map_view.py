@@ -225,8 +225,16 @@ _SOURCE_TEXT = {
 }
 # Material node glow: halo and core color
 _MATERIAL_GLOW = ((120, 220, 150), (205, 255, 215))
-# Material nodes show from this zoom on; below it they cover the map
+_MATERIAL_RING = ((60, 120, 80), (150, 230, 170))
+# Material nodes show from this zoom on, or at any zoom while at most
+# _MATERIAL_FEW nodes are picked under Types; more cover the map
 _MATERIAL_ZOOM = 0.4
+_MATERIAL_FEW = 2500
+# From this zoom on material nodes are item icons, nodes of one item closer
+# than _MATERIAL_GROUP_PX screen pixels merged into one icon with a count
+_MATERIAL_ICON_ZOOM = 0.6
+_MATERIAL_ICON = 30
+_MATERIAL_GROUP_PX = 30
 _FILTER_DONE = "Done %"
 # Completion categories, in panel and export order
 _DONE_PICKUPS = "Item pickups"
@@ -414,6 +422,11 @@ def _safe_reader(
 
 def _major_boss(boss: BossSpot) -> bool:
     return any(word in boss.face for word in _MAJOR_REWARDS)
+
+
+def _material_kind(pin: _Pin) -> str:
+    """Item a material node is grouped and filtered by: its first item."""
+    return pin.pickup.items[0][2]
 
 
 def _short_name(name: str) -> str:
@@ -1033,6 +1046,45 @@ class _MapIcons:
             self._photos[key] = ImageTk.PhotoImage(self._dimmed(img) if dim else img)
         return self._photos[key]
 
+    def material_image(
+        self, name: str, count: int, dim: bool, faded: bool = False
+    ) -> Image.Image:
+        """Material item icon in a green ring with the node count at the
+        bottom right; gray when dim (all picked)."""
+        key = ("M", name, count, dim, faded)
+        if key not in self._images:
+            size = _MATERIAL_ICON
+            icon = get_icon(name) or Image.new("RGBA", (size, size))
+            disc = self.disc_image(icon, size, _MATERIAL_RING)
+            img = Image.new("RGBA", (size + 8, size + 4))
+            img.alpha_composite(disc, (0, 0))
+            if count > 1:
+                draw = ImageDraw.Draw(img)
+                text = str(count)
+                font = ImageFont.load_default(size=9)
+                w = draw.textlength(text, font=font)
+                x0, y0 = size - 6, size - 8
+                draw.rounded_rectangle(
+                    (x0, y0, x0 + w + 6, y0 + 11), 5, fill=(28, 30, 32, 235)
+                )
+                draw.text(
+                    (x0 + 3 + w / 2, y0 + 5.5),
+                    text,
+                    font=font,
+                    fill=_MATERIAL_GLOW[1],
+                    anchor="mm",
+                )
+            if dim:
+                img = self._dimmed(img)
+            self._images[key] = self._faded(img) if faded else img
+        return self._images[key]
+
+    def material(self, name: str, dim: bool) -> ImageTk.PhotoImage:
+        key = ("m", name, dim)
+        if key not in self._photos:
+            self._photos[key] = ImageTk.PhotoImage(self.material_image(name, 1, dim))
+        return self._photos[key]
+
     def pool(self, size: int, active: bool) -> ImageTk.PhotoImage:
         """Summoning pool: the game's effigy icon on a dark disc (the bare
         sprite is too thin to see on the map); gray until activated."""
@@ -1199,6 +1251,10 @@ class MapWindow:
         self._gather_grid: dict[tuple[int, int, int], list[_Pin]] = {}
         # (map id, part name) of picked one-time nodes; None without a character
         self._gather_picked: frozenset[tuple[str, str]] | None = None
+        # Material items shown (item name of each node), and node counts;
+        # the one-time materials until changed under Types
+        self._material_types: set[str] | None = None
+        self._material_counts: dict[str, int] = {}
         # Pickup types shown on the map and in the Items list
         self._pickup_types: set[str] = set(_PICKUP_TYPES)
         self._completion_cache: dict[str, dict[str, tuple[list, list]]] | None = None
@@ -1470,10 +1526,61 @@ class MapWindow:
                 )
                 self._gather_grid.setdefault(key, []).append(pin)
             self._gather_pins = pins
+            self._material_counts = {}
+            for pin in pins:
+                kind = _material_kind(pin)
+                self._material_counts[kind] = self._material_counts.get(kind, 0) + 1
+            if self._material_types is None:
+                self._material_types = {
+                    _material_kind(p) for p in pins if p.pickup.one_time
+                }
         return self._gather_pins
 
     def _gather_shown(self) -> bool:
-        return self._show_gather.get() and self._zoom >= _MATERIAL_ZOOM
+        if not self._show_gather.get():
+            return False
+        if self._zoom >= _MATERIAL_ZOOM:
+            return True
+        self._gather()
+        shown = sum(self._material_counts.get(k, 0) for k in self._material_types)
+        return shown <= _MATERIAL_FEW
+
+    def _material_icons(self) -> bool:
+        return self._zoom >= _MATERIAL_ICON_ZOOM
+
+    def _show_material(self, pin: _Pin):
+        """Turn on the Materials layer and the pin's item under Types."""
+        self._show_gather.set(True)
+        self._gather()
+        kind = _material_kind(pin)
+        if kind not in self._material_types:
+            self._material_types.add(kind)
+            self._pickup_version += 1
+
+    def _material_groups(
+        self, map_no: int, x0: float, y0: float, x1: float, y1: float
+    ) -> list[tuple[float, float, list[_Pin]]]:
+        """Shown material nodes inside the map rectangle, merged per item in
+        cells of _MATERIAL_GROUP_PX screen pixels: (center x, center y,
+        nodes) in map units."""
+        cell = _MATERIAL_GROUP_PX / self._zoom
+        groups: dict[tuple, list[_Pin]] = {}
+        for pin in self._pins_near(map_no, x0, y0, x1, y1):
+            if isinstance(pin.pickup, GatherNode):
+                key = (
+                    _material_kind(pin),
+                    int(pin.point[0] // cell),
+                    int(pin.point[1] // cell),
+                )
+                groups.setdefault(key, []).append(pin)
+        return [
+            (
+                sum(p.point[0] for p in members) / len(members),
+                sum(p.point[1] for p in members) / len(members),
+                members,
+            )
+            for members in groups.values()
+        ]
 
     def _glows_shown(self) -> bool:
         return self._show_pickups.get() or self._gather_shown()
@@ -1491,7 +1598,11 @@ class MapWindow:
             for j in range(int(y0 // _PICKUP_CELL), int(y1 // _PICKUP_CELL) + 1):
                 for pin in gather.get((map_no, i, j), ()):
                     px, py = pin.point
-                    if x0 <= px <= x1 and y0 <= py <= y1:
+                    if (
+                        x0 <= px <= x1
+                        and y0 <= py <= y1
+                        and _material_kind(pin) in self._material_types
+                    ):
                         yield pin
                 if not pickups:
                     continue
@@ -1517,6 +1628,7 @@ class MapWindow:
             self._gather_shown(),
             self._pickup_version,
             frozenset(self._pickup_types),
+            self._material_icons(),
             self._pickup_fade(),
         )
 
@@ -1693,6 +1805,15 @@ class MapWindow:
                     width=56,
                 )
                 self._types_btn.pack(side=tk.LEFT, padx=(0, 4))
+            if var is self._show_gather:
+                self._mat_types_btn = ds.button(
+                    layers,
+                    "Types",
+                    self._open_material_filter,
+                    primary=False,
+                    width=56,
+                )
+                self._mat_types_btn.pack(side=tk.LEFT, padx=(0, 4))
         flow.add(pick, toggles, layers)
         if not self._pools_available:
             self._pool_check.pack_forget()
@@ -1791,6 +1912,77 @@ class MapWindow:
             side=tk.LEFT, padx=6
         )
         ds.button(row, "Done", pop.destroy, width=60).pack(side=tk.LEFT)
+        pop.bind("<Escape>", lambda _e: pop.destroy())
+        pop.focus_set()
+
+    def _open_material_filter(self):
+        """Popup under the Materials Types button with a checkbox per
+        material item, one-time materials first."""
+        old = getattr(self, "_mat_popup", None)
+        if old is not None and old.winfo_exists():
+            old.destroy()
+            return
+        self._gather()
+        pop = ctk.CTkToplevel(self._win)
+        self._mat_popup = pop
+        pop.overrideredirect(True)
+        pop.transient(self._win)
+        btn = self._mat_types_btn
+        pop.geometry(
+            f"+{btn.winfo_rootx()}+{btn.winfo_rooty() + btn.winfo_height() + 2}"
+        )
+        frame = ctk.CTkFrame(pop, fg_color=ds.BOX, corner_radius=8)
+        frame.pack(fill=tk.BOTH, expand=True)
+        once = {_material_kind(p) for p in self._gather_pins if p.pickup.one_time}
+        sections = (
+            ("Picked once", sorted(once)),
+            ("Respawn on rest", sorted(set(self._material_counts) - once)),
+        )
+        vars_ = {
+            k: tk.BooleanVar(value=k in self._material_types)
+            for k in self._material_counts
+        }
+
+        def apply():
+            self._material_types = {k for k, v in vars_.items() if v.get()}
+            self._show_gather.set(True)
+            self._pickup_version += 1
+            if self._filter_var.get() in (_FILTER_ALL, _FILTER_ITEMS):
+                self._fill_location_list()
+            self._schedule_render()
+
+        def set_kinds(kinds: set[str]):
+            for k, v in vars_.items():
+                v.set(k in kinds)
+            apply()
+
+        def build(body):
+            for title, kinds in sections:
+                ctk.CTkLabel(body, text=title, font=ds.BOLD, anchor="w").pack(
+                    fill=tk.X, padx=10, pady=(6, 2)
+                )
+                for k in kinds:
+                    ctk.CTkCheckBox(
+                        body,
+                        text=f"{k} ({self._material_counts[k]})",
+                        variable=vars_[k],
+                        command=apply,
+                        font=ds.SMALL,
+                    ).pack(anchor="w", padx=10, pady=2)
+
+        row = ctk.CTkFrame(frame, fg_color="transparent")
+        row.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(6, 10))
+        ds.content(frame, build, max_height=420, width=280)
+        ds.button(
+            row, "One-Time", lambda: set_kinds(once), primary=False, width=70
+        ).pack(side=tk.LEFT)
+        ds.button(
+            row, "All", lambda: set_kinds(set(vars_)), primary=False, width=50
+        ).pack(side=tk.LEFT, padx=6)
+        ds.button(row, "None", lambda: set_kinds(set()), primary=False, width=50).pack(
+            side=tk.LEFT
+        )
+        ds.button(row, "Done", pop.destroy, width=60).pack(side=tk.LEFT, padx=(6, 0))
         pop.bind("<Escape>", lambda _e: pop.destroy())
         pop.focus_set()
 
@@ -2076,7 +2268,7 @@ class MapWindow:
         ctk.CTkLabel(
             legend,
             text="Scroll to zoom, drag to pan (right or middle drag pans too). "
-            "Material nodes show when zoomed in.",
+            "Many material nodes at once show only when zoomed in.",
             font=ds.SMALL,
             text_color=ds.MUTED,
             anchor="w",
@@ -2138,9 +2330,17 @@ class MapWindow:
             if self._pickup_kinds[p.pickup.key] in self._pickup_types
         ]
         if self._show_gather.get():
+            # Materials picked under Types, and any whose name the search
+            # names, so a search finds unticked ones too
+            words = _fold(self._search_var.get()).split()
+            pins = self._gather()
+            kinds = self._material_types | {
+                k for k in self._material_counts if words and _matches(words, _fold(k))
+            }
             rows += [
                 (regions.get(p.pickup.grace_flag, "Other"), p.pickup.item_label, p)
-                for p in self._gather()
+                for p in pins
+                if _material_kind(p) in kinds
             ]
         return rows
 
@@ -2418,6 +2618,8 @@ class MapWindow:
                 else self._show_pickups
             )
             layer.set(True)
+            if isinstance(placed.pickup, GatherNode):
+                self._show_material(placed)
             self._center_on(*placed.point, max(self._zoom, self._fit_zoom() * 4))
             self._select_pin(placed)
             return
@@ -2758,10 +2960,13 @@ class MapWindow:
         w, h = out.size
         x1, y1 = vx + w / zoom, vy + h / zoom
         fade = self._pickup_fade()
+        icons = self._material_icons()
         for pin in self._pins_near(
             self._map_no, vx - pad, vy - pad, x1 + pad, y1 + pad
         ):
             if fade and fade == (pin.map_no, pin.point, pin.pickup.key):
+                continue
+            if icons and isinstance(pin.pickup, GatherNode):
                 continue
             glow = self._icons.glow_cached(
                 size,
@@ -2772,6 +2977,30 @@ class MapWindow:
             px = round((pin.point[0] - vx) * zoom - half)
             py = round((pin.point[1] - vy) * zoom - half)
             out.paste(glow, (px, py), glow)
+        if not icons or not self._gather_shown():
+            return
+        pad = _MATERIAL_GROUP_PX * 2 / self._zoom
+        for gx, gy, members in self._material_groups(
+            self._map_no, vx - pad, vy - pad, x1 + pad, y1 + pad
+        ):
+            if fade:
+                members = [
+                    p for p in members if fade != (p.map_no, p.point, p.pickup.key)
+                ]
+                if not members:
+                    continue
+            img = self._icons.material_image(
+                _material_kind(members[0]),
+                len(members),
+                all(self._pickup_collected(p.pickup) for p in members),
+                fade is not None,
+            )
+            if zoom != self._zoom:
+                k = zoom / self._zoom
+                img = img.resize((max(1, round(img.width * k)),) * 2)
+            px = round((gx - vx) * zoom - _MATERIAL_ICON * zoom / self._zoom / 2)
+            py = round((gy - vy) * zoom - _MATERIAL_ICON * zoom / self._zoom / 2)
+            out.paste(img, (px, py), img)
 
     def _pan_to(self, vx: float, vy: float):
         """Pan by moving what is drawn, adding map tiles that come into view;
@@ -2892,8 +3121,32 @@ class MapWindow:
         if not self._glows_shown():
             return None
         mx, my = self._to_map(sx, sy)
+        if self._material_icons() and self._gather_shown():
+            # A material icon: the group under the point, its node nearest
+            # to the click
+            r = _MATERIAL_ICON / 2 / self._zoom
+            pad = _MATERIAL_GROUP_PX * 2 / self._zoom
+            hits = [
+                g
+                for g in self._material_groups(
+                    self._map_no, mx - pad, my - pad, mx + pad, my + pad
+                )
+                if (g[0] - mx) ** 2 + (g[1] - my) ** 2 <= r * r
+            ]
+            if hits:
+                _gx, _gy, members = min(
+                    hits, key=lambda g: (g[0] - mx) ** 2 + (g[1] - my) ** 2
+                )
+                return min(
+                    members,
+                    key=lambda p: (p.point[0] - mx) ** 2 + (p.point[1] - my) ** 2,
+                )
         r = max(4, self._pickup_size() * 0.6) / self._zoom
-        near = list(self._pins_near(self._map_no, mx - r, my - r, mx + r, my + r))
+        near = [
+            p
+            for p in self._pins_near(self._map_no, mx - r, my - r, mx + r, my + r)
+            if not (self._material_icons() and isinstance(p.pickup, GatherNode))
+        ]
         best = min(
             near,
             key=lambda p: (p.point[0] - mx) ** 2 + (p.point[1] - my) ** 2,
@@ -2945,16 +3198,17 @@ class MapWindow:
             # The tiles leave the selected pickup out; it is drawn larger here
             at = visible(sel)
             if at is not None:
-                size = self._pickup_size() + _SELECTED_GLOW_GROW
+                taken = bool(self._pickup_collected(sel.pickup))
+                if isinstance(sel.pickup, GatherNode) and self._material_icons():
+                    size = _MATERIAL_ICON
+                    image = self._icons.material(_material_kind(sel), taken)
+                else:
+                    size = self._pickup_size() + _SELECTED_GLOW_GROW
+                    image = self._icons.glow(
+                        size, taken, isinstance(sel.pickup, GatherNode)
+                    )
                 ring(sel, *at, size)
-                item = c.create_image(
-                    *at,
-                    image=self._icons.glow(
-                        size,
-                        bool(self._pickup_collected(sel.pickup)),
-                        isinstance(sel.pickup, GatherNode),
-                    ),
-                )
+                item = c.create_image(*at, image=image)
                 self._items[item] = ("pin", sel)
         if self._show_bosses.get():
             major_only = self._major_only.get()
@@ -3757,7 +4011,7 @@ class MapWindow:
         elif target.boss is not None:
             self._show_bosses.set(True)
         elif isinstance(target.pickup, GatherNode):
-            self._show_gather.set(True)
+            self._show_material(target)
         elif target.pickup is not None:
             self._show_pickups.set(True)
 
@@ -4045,6 +4299,9 @@ class MapWindow:
         for a pickup (every other marker already shows its own icon)."""
         pin = self._selected_pin
         if pin is not None:
+            if isinstance(pin.pickup, GatherNode):
+                name = _material_kind(pin)
+                return pin.pickup.item_label, self._item_photo(name, _LIST_ICON)
             if pin.pickup is not None:
                 items = self._pin_items(pin)
                 text = _item_text(items[0][1], items[0][2])
