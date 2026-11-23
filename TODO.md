@@ -92,6 +92,40 @@ same font on Windows and Linux (bundled Inter) done
 
 DS2 appearance in-game checks (future work): face shape sliders, physique option count, new DS2 appearance selectors
 
+Backlog from the 2026-11-23 review, fixes first, then features:
+
+character exports (ER, DS3, DSR, NR) written atomically done
+
+DS2 boss tab: Ascetic Bonfire column names the bosses still needed for an Ascetic done
+
+ER character copy/swap/export/import test done
+
+old careless-user review findings: all fixed except DS3 K17 (active byte array) and NR N17 (delete prefix), both need a game-written pair
+
+DS3 boss Kill/Respawn: bosses.json bonfire_flag never written; in game: von-claude/bossrespawn/DS30000_vordt_respawn.co2 (HOWTO.txt)
+
+DSR boss Respawn clears only the defeat flag, bosses may need spawn-dead bits like NPC revive; killing several bosses at once left Solaire dead; in game: von-claude/bossrespawn/DRAKS0005_taurus_gargoyles_respawn.co2
+
+Sekiro save editing: commit er-wt/sekiro on the PC, in game S0000_chartest.sl2 + S0000_spawntest.sl2, then ship character ops + inventory as experimental
+
+AC6: drop editing (backups + SteamID only), check the Nexus description
+
+translations: decide keep (branch locale, German 657/1308, 2 compile errors) or drop from On the horizon
+
+ER: duplicate item remover (questions open), flask split crimson/cerulean (pair), preset to/from the character's own face (pair + in game), multiplayer/group passwords + cipher ring toggles, restore one slot from a backup, compare two saves/backups, read-only online stats, event flag range browser
+
+DS3: event flag lookup tab, item pickups, warning when stored HP/FP does not match stats, show soul memory
+
+DSR: bonfire kindle level, item pickups, show the starting gift
+
+DS2: Inspector warnings for invalid boss arena state and wrong soul memory, write HP after a vigor edit (test first)
+
+NR: detect wiped entries in the Save Fixer, Murk and Sovereign Sigil caps in game, spawn when item numbering wraps, edited records, .nrc import
+
+DS3/DSR/NR character management tabs share about 1500 duplicated lines
+
+save format docs revision (notes/docs.md)
+
 update all docs with newly added stuff (last task) done
 
 DSR covenant rank and appearance done

@@ -16,6 +16,8 @@ import hashlib
 import struct
 from pathlib import Path
 
+from er_save_manager.own_writes import atomic_write
+
 from .parser import NightreignSave, _parse_slot
 
 _ERC_MAGIC = b"NRC\x00"
@@ -184,17 +186,8 @@ def export_character(
 
     data = bytes(save.entries[slot_index].decrypted)
 
-    with open(output_path, "wb") as f:
-        f.write(_ERC_MAGIC)
-        f.write(struct.pack("<I", _ERC_VERSION))
-        f.write(struct.pack("<I", len(data)))
-        f.write(data)
-
-    with open(output_path, "rb") as f:
-        checksum = hashlib.md5(f.read()).digest()
-
-    with open(output_path, "ab") as f:
-        f.write(checksum)
+    body = _ERC_MAGIC + struct.pack("<II", _ERC_VERSION, len(data)) + data
+    atomic_write(output_path, body + hashlib.md5(body).digest())
 
 
 def read_character_file(input_path: str | Path, slot_size: int) -> bytes:
