@@ -151,6 +151,10 @@ def test_world_map_geometry():
     assert point is not None and point[0] == MAP_UNDERGROUND
     # Leyndell converts to m60 through its conversion rows.
     assert location_map_point("m11_00_00_00", 0.0, 0.0)[0] == MAP_LANDS_BETWEEN
+    # Farum Azula is drawn in the eastern sea, not at its world frame
+    # (Forge of the Giants, map point (6784, 2944)).
+    _, fx, fy = location_map_point("m13_00_00_00", 0.0, 0.0)
+    assert 8000 < fx < 9000 and 4000 < fy < 5200
 
     # Maps only Convergence has conversion rows for.
     assert location_map_point("m17_00_00_00", 0.0, 0.0) is None
