@@ -91,12 +91,12 @@ def _convert_once(
 ) -> tuple[int, int, int, float, float] | None:
     """Convert through the nearest row of the map, preferring rows that
     land on m60 / m61 over rows into another legacy map, then rows with a
-    source or destination point over rows that only pair the two map
-    origins. An origin row gives a map's world frame, which is not its
-    world map placement when the map is drawn apart from it (m13_00
-    Crumbling Farum Azula sits in the Forge of the Giants frame but is drawn
-    in the eastern sea). Rows into a map in visited are skipped (m30_20 and
-    m30_21 convert into each other)."""
+    source point over rows from the map origin. Origin rows give a map's
+    world frame, which is not its world map placement when the map is drawn
+    apart from it (m13_00 Crumbling Farum Azula sits in the Forge of the
+    Giants frame but is drawn in the eastern sea; m25_00 Finger Birthing
+    Grounds is drawn at its grace's row). Rows into a map in visited are
+    skipped (m30_20 and m30_21 convert into each other)."""
     best = None
     best_key = (True, True, math.inf)
     for row in table:
@@ -105,8 +105,8 @@ def _convert_once(
             continue
         if (dst_area, dst_x, dst_z) in visited:
             continue
-        origin_only = spx == spz == dpx == dpz == 0
-        key = (dst_area not in (60, 61), origin_only, math.hypot(px - spx, pz - spz))
+        from_origin = spx == spz == 0
+        key = (dst_area not in (60, 61), from_origin, math.hypot(px - spx, pz - spz))
         if key < best_key:
             best_key = key
             best = (dst_area, dst_x, dst_z, px - spx + dpx, pz - spz + dpz)
