@@ -13,6 +13,7 @@ from typing import Any
 
 import customtkinter as ctk
 
+from er_save_manager import community_fetch
 from er_save_manager.character_manager import CharacterManager
 from er_save_manager.character_metrics import CharacterMetrics
 from er_save_manager.ui import dialog_style as ds
@@ -1297,7 +1298,7 @@ class CharacterBrowser:
                 temp_dir = Path(tempfile.gettempdir()) / "er_character_downloads"
                 temp_dir.mkdir(exist_ok=True)
 
-                temp_erc = temp_dir / f"{char_id}.erc"
+                temp_erc = temp_dir / f"{community_fetch.safe_id(char_id)}.erc"
 
                 success = self.manager.stream_character_download(
                     char_id, erc_url, temp_erc
