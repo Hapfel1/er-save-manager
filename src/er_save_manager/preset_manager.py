@@ -8,8 +8,9 @@ import platform
 import ssl
 import tempfile
 import time
-import urllib.request
 from pathlib import Path
+
+from er_save_manager import community_fetch as cf
 
 logger = logging.getLogger(__name__)
 
@@ -63,20 +64,8 @@ class PresetManager:
 
         self._cleanup_cache()
 
-    def _create_ssl_context(self):
-        """Create SSL context for HTTPS requests with proper certificate verification."""
-        try:
-            # Try to use certifi if available (recommended for cross-platform)
-            import certifi
-
-            return ssl.create_default_context(cafile=certifi.where())
-        except ImportError:
-            try:
-                return ssl.create_default_context()
-            except Exception:
-                # Last resort: disable verification (not ideal but allows functionality)
-                context = ssl._create_unverified_context()
-                return context
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        return cf.ssl_context()
 
     def fetch_index(self, force_refresh: bool = False) -> dict:
         """
@@ -104,11 +93,10 @@ class PresetManager:
                 pass
 
         try:
-            with urllib.request.urlopen(
-                self.index_url, timeout=10, context=self.ssl_context
-            ) as response:
-                raw_data = response.read().decode("utf-8")
-                data = json.loads(raw_data)
+            raw_data = cf.fetch_bytes(
+                self.index_url, self.ssl_context, cf.INDEX_MAX_BYTES, timeout=10
+            )
+            data = json.loads(raw_data.decode("utf-8"))
 
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(data, f)
@@ -137,15 +125,21 @@ class PresetManager:
         """
         try:
             logger.debug(f"[Preset Download] Starting download for preset {preset_id}")
-            data_url = self.base_url + preset_info["data_url"]
+            preset_id = cf.safe_id(preset_id)
+            data_url = cf.resolve_url(self.base_url, preset_info["data_url"])
             logger.debug(f"[Preset Download] Data URL: {data_url}")
-            with urllib.request.urlopen(
-                data_url, timeout=10, context=self.ssl_context
-            ) as response:
-                preset_data = json.loads(response.read().decode("utf-8"))
+            preset_data = json.loads(
+                cf.fetch_bytes(
+                    data_url, self.ssl_context, cf.JSON_MAX_BYTES, timeout=10
+                ).decode("utf-8")
+            )
+            if not isinstance(preset_data, dict):
+                raise cf.CommunityFetchError("Preset data is not an object")
             logger.debug(f"[Preset Download] Downloaded preset data for {preset_id}")
 
-            screenshot_url = self.base_url + preset_info["screenshot_url"]
+            screenshot_url = cf.resolve_url(
+                self.base_url, preset_info["screenshot_url"]
+            )
             logger.debug(f"[Preset Download] Screenshot URL: {screenshot_url}")
             thumbnail_path = self._download_and_create_thumbnail(
                 preset_id, screenshot_url
@@ -182,6 +176,10 @@ class PresetManager:
         Returns:
             Preset data or None if not cached or invalid
         """
+        try:
+            preset_id = cf.safe_id(preset_id)
+        except cf.CommunityFetchError:
+            return None
         preset_path = self.cache_dir / f"{preset_id}.json"
         thumbnail_path = self.thumbnails_dir / f"{preset_id}.png"
 
@@ -226,23 +224,26 @@ class PresetManager:
         Full images are stored with access time tracking for LRU cleanup.
         """
         try:
-            import urllib.request
-            from pathlib import Path
+            preset_id = cf.safe_id(preset_id)
+            if suffix:
+                cf.safe_id(suffix)
+            full_url = cf.resolve_url(self.base_url, url)
 
             cache_dir = self.full_images_dir / preset_id
             cache_dir.mkdir(parents=True, exist_ok=True)
 
-            full_url = self.base_url + url if not url.startswith("http") else url
-
-            ext = Path(url).suffix or ".png"
+            ext = Path(url).suffix.lower()
+            if ext not in (".png", ".jpg", ".jpeg", ".webp"):
+                ext = ".png"
             filename = f"{preset_id}{suffix}{ext}"
             filepath = cache_dir / filename
 
             if not filepath.exists():
-                with urllib.request.urlopen(
-                    full_url, timeout=10, context=self.ssl_context
-                ) as response:
-                    filepath.write_bytes(response.read())
+                filepath.write_bytes(
+                    cf.fetch_bytes(
+                        full_url, self.ssl_context, cf.IMAGE_MAX_BYTES, timeout=10
+                    )
+                )
 
             # Update access time for LRU tracking
             filepath.touch()
@@ -281,10 +282,9 @@ class PresetManager:
             if thumbnail_path.exists():
                 return thumbnail_path
 
-            with urllib.request.urlopen(
-                image_url, timeout=10, context=self.ssl_context
-            ) as response:
-                image_data = response.read()
+            image_data = cf.fetch_bytes(
+                image_url, self.ssl_context, cf.IMAGE_MAX_BYTES, timeout=10
+            )
 
             try:
                 import io

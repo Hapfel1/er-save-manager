@@ -6,9 +6,10 @@ import os
 import platform
 import ssl
 import tempfile
-import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
+
+from er_save_manager import community_fetch as cf
 
 logger = logging.getLogger(__name__)
 
@@ -66,19 +67,8 @@ class CharacterManager:
 
         self._cleanup_cache()
 
-    def _create_ssl_context(self):
-        """Create SSL context for HTTPS requests with proper certificate verification."""
-        try:
-            # Try to use certifi if available (recommended for cross-platform)
-            import certifi
-
-            return ssl.create_default_context(cafile=certifi.where())
-        except ImportError:
-            try:
-                return ssl.create_default_context()
-            except Exception:
-                # Last resort: no verification (not recommended but better than crashing)
-                return ssl._create_unverified_context()
+    def _create_ssl_context(self) -> ssl.SSLContext:
+        return cf.ssl_context()
 
     def fetch_index(self, force_refresh: bool = False) -> dict:
         """
@@ -113,10 +103,11 @@ class CharacterManager:
 
             cache_bust_url = f"{self.index_url}?ts={int(time.time())}"
 
-            with urllib.request.urlopen(
-                cache_bust_url, timeout=10, context=self.ssl_context
-            ) as response:
-                data = json.loads(response.read().decode())
+            data = json.loads(
+                cf.fetch_bytes(
+                    cache_bust_url, self.ssl_context, cf.INDEX_MAX_BYTES, timeout=10
+                ).decode()
+            )
 
             cache_data = {"cached_at": datetime.now().isoformat(), "data": data}
             with open(self.cache_file, "w", encoding="utf-8") as f:
@@ -135,10 +126,7 @@ class CharacterManager:
             return {"version": "0.0.0", "characters": []}
 
     def _resolve_url(self, url: str) -> str:
-        """Resolve relative URLs against base_url; leave absolute URLs unchanged."""
-        if url.startswith(("http://", "https://")):
-            return url
-        return self.base_url + url
+        return cf.resolve_url(self.base_url, url)
 
     def download_metadata(self, character_id: str, metadata_url: str) -> dict | None:
         """
@@ -154,11 +142,15 @@ class CharacterManager:
         try:
             logger.debug(f"[Character Manager] Downloading metadata for {character_id}")
 
+            character_id = cf.safe_id(character_id)
             full_url = self._resolve_url(metadata_url)
-            with urllib.request.urlopen(
-                full_url, timeout=10, context=self.ssl_context
-            ) as response:
-                metadata = json.loads(response.read().decode())
+            metadata = json.loads(
+                cf.fetch_bytes(
+                    full_url, self.ssl_context, cf.JSON_MAX_BYTES, timeout=10
+                ).decode()
+            )
+            if not isinstance(metadata, dict):
+                raise cf.CommunityFetchError("Metadata is not an object")
 
             metadata_path = self.metadata_dir / f"{character_id}.json"
             with open(metadata_path, "w", encoding="utf-8") as f:
@@ -181,6 +173,10 @@ class CharacterManager:
         Returns:
             Metadata dict or None if not cached
         """
+        try:
+            character_id = cf.safe_id(character_id)
+        except cf.CommunityFetchError:
+            return None
         metadata_path = self.metadata_dir / f"{character_id}.json"
 
         if metadata_path.exists():
@@ -212,19 +208,11 @@ class CharacterManager:
             logger.debug(f"[Character Manager] Streaming download for {character_id}")
 
             full_url = self._resolve_url(erc_url)
-
-            with (
-                urllib.request.urlopen(
-                    full_url, timeout=30, context=self.ssl_context
-                ) as response,
-                open(output_path, "wb") as f,
-            ):
-                chunk_size = 8192
-                while True:
-                    chunk = response.read(chunk_size)
-                    if not chunk:
-                        break
-                    f.write(chunk)
+            data = cf.fetch_bytes(
+                full_url, self.ssl_context, cf.CHARACTER_MAX_BYTES, timeout=30
+            )
+            with open(output_path, "wb") as f:
+                f.write(data)
 
             logger.debug(
                 f"[Character Manager] Downloaded {character_id} to {output_path}"
@@ -251,6 +239,10 @@ class CharacterManager:
         Returns:
             Path to cached thumbnail or None if failed
         """
+        try:
+            character_id = cf.safe_id(character_id)
+        except cf.CommunityFetchError:
+            return None
         for ext in (".jpg", ".png"):
             candidate = self.thumbnails_dir / f"{character_id}{ext}"
             if candidate.exists():
@@ -265,15 +257,12 @@ class CharacterManager:
 
         def _try_download(url: str, ext: str) -> Path | None:
             thumbnail_path = self.thumbnails_dir / f"{character_id}{ext}"
-            full_url = self._resolve_url(url)
             try:
-                with (
-                    urllib.request.urlopen(
-                        full_url, timeout=10, context=self.ssl_context
-                    ) as response,
-                    open(thumbnail_path, "wb") as f,
-                ):
-                    f.write(response.read())
+                full_url = self._resolve_url(url)
+                data = cf.fetch_bytes(
+                    full_url, self.ssl_context, cf.IMAGE_MAX_BYTES, timeout=10
+                )
+                thumbnail_path.write_bytes(data)
                 logger.debug(f"[Character Manager] Cached thumbnail for {character_id}")
                 return thumbnail_path
             except Exception:
@@ -311,20 +300,25 @@ class CharacterManager:
         Returns:
             Path to downloaded screenshot or None if failed
         """
-        url_ext = Path(screenshot_url).suffix.lower() or ".jpg"
+        try:
+            character_id = cf.safe_id(character_id)
+            if suffix:
+                cf.safe_id(suffix)
+        except cf.CommunityFetchError:
+            return None
+        url_ext = Path(screenshot_url).suffix.lower()
+        if url_ext not in (".jpg", ".jpeg", ".png", ".webp"):
+            url_ext = ".jpg"
         alt_ext = ".png" if url_ext in (".jpg", ".jpeg") else ".jpg"
 
         def _try_download(url: str, ext: str) -> Path | None:
             screenshot_path = self.cache_dir / f"{character_id}{suffix}{ext}"
-            full_url = self._resolve_url(url)
             try:
-                with (
-                    urllib.request.urlopen(
-                        full_url, timeout=15, context=self.ssl_context
-                    ) as response,
-                    open(screenshot_path, "wb") as f,
-                ):
-                    f.write(response.read())
+                full_url = self._resolve_url(url)
+                data = cf.fetch_bytes(
+                    full_url, self.ssl_context, cf.IMAGE_MAX_BYTES, timeout=15
+                )
+                screenshot_path.write_bytes(data)
                 screenshot_path.touch()
                 logger.debug(
                     f"[Character Manager] Downloaded screenshot to {screenshot_path}"
