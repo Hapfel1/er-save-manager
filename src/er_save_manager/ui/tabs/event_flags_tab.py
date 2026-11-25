@@ -1709,6 +1709,12 @@ class EventFlagsTab:
             notify(self.parent, "Load event flags for a character first.", "warning")
             return
 
+        from er_save_manager.data.invader_data import (
+            get_invaders,
+            invader_by_key,
+            invader_defeated,
+            reset_invader,
+        )
         from er_save_manager.data.npc_data import (
             get_all_npcs,
             get_npc_location,
@@ -1727,10 +1733,39 @@ class EventFlagsTab:
         ds.header(main, "NPC Revival", font=ds.TITLE_LARGE)
         ctk.CTkLabel(
             main,
-            text="Revive dead NPCs. Quest progress is not restored.",
+            text=(
+                "Revive dead NPCs, or bring back an invasion or red summon sign "
+                "after the NPC was defeated. Quest progress is not restored."
+            ),
             font=ds.SMALL,
             text_color=ds.MUTED,
+            wraplength=700,
+            justify="left",
         ).pack(anchor="w", pady=(2, 10))
+
+        filter_frame = ctk.CTkFrame(main, fg_color="transparent")
+        filter_frame.pack(fill=tk.X, pady=(0, 8))
+        type_var = tk.StringVar(value="All")
+        ctk.CTkSegmentedButton(
+            filter_frame,
+            values=["All", "Quest NPCs", "Invaders"],
+            variable=type_var,
+            command=lambda _v: populate(),
+            font=ds.FONT,
+        ).pack(side=tk.LEFT)
+        reward_var = tk.BooleanVar(value=False)
+        reward_box = ctk.CTkCheckBox(
+            filter_frame,
+            text="Also reset invader rewards",
+            variable=reward_var,
+            font=ds.FONT,
+        )
+        reward_box.pack(side=tk.LEFT, padx=(16, 0))
+        add_tooltip(
+            reward_box,
+            "Lets the item an invader or red sign NPC drops be awarded again "
+            "on the next defeat.",
+        )
 
         tree_frame, tree = ds.themed_tree(
             main,
@@ -1741,9 +1776,9 @@ class EventFlagsTab:
         tree.heading("npc", text="NPC")
         tree.heading("location", text="Location")
         tree.heading("status", text="Status")
-        tree.column("npc", width=260, anchor="w")
-        tree.column("location", width=300, anchor="w")
-        tree.column("status", width=90, anchor="w", stretch=False)
+        tree.column("npc", width=330, anchor="w")
+        tree.column("location", width=330, anchor="w")
+        tree.column("status", width=110, anchor="w", stretch=False)
         for status, color in (
             ("Dead", palette.RED_TEXT),
             ("Hostile", palette.WARNING_TEXT),
@@ -1752,31 +1787,45 @@ class EventFlagsTab:
             tree.tag_configure(status, foreground=palette.pick(color))
         tree_frame.pack(fill=tk.BOTH, expand=True)
         add_tooltip(tree, MULTI_SELECT_TIP)
-        for npc_name in get_all_npcs():
-            location = get_npc_location(npc_name)
-            state = get_npc_state(self.current_event_flags, npc_name)
-            if not state:
-                continue
+        tree.tag_configure("Defeated", foreground=palette.pick(palette.RED_TEXT))
+        invaders = get_invaders(self._is_cnv_save())
 
-            is_dead = state["dead"]
-            is_aggro = state["aggro_absolvable"] or state["aggro_permanent"]
+        def populate():
+            tree.delete(*tree.get_children())
+            kind = type_var.get()
+            if kind != "Invaders":
+                for npc_name in get_all_npcs():
+                    state = get_npc_state(self.current_event_flags, npc_name)
+                    if not state:
+                        continue
+                    if state["dead"]:
+                        status = "Dead"
+                    elif state["aggro_absolvable"] or state["aggro_permanent"]:
+                        status = "Hostile"
+                    elif state["vanished"]:
+                        status = "Vanished"
+                    else:
+                        status = "Alive"
+                    tree.insert(
+                        "",
+                        "end",
+                        iid=npc_name,
+                        values=(npc_name, get_npc_location(npc_name), status),
+                        tags=(status,),
+                    )
+            if kind != "Quest NPCs":
+                for invader in invaders:
+                    defeated = invader_defeated(self.current_event_flags, invader)
+                    status = "Defeated" if defeated else "Not defeated"
+                    tree.insert(
+                        "",
+                        "end",
+                        iid=invader.key,
+                        values=(invader.label, invader.location, status),
+                        tags=(status,),
+                    )
 
-            if is_dead:
-                status = "Dead"
-            elif is_aggro:
-                status = "Hostile"
-            elif state["vanished"]:
-                status = "Vanished"
-            else:
-                status = "Alive"
-
-            tree.insert(
-                "",
-                "end",
-                iid=npc_name,
-                values=(npc_name, location, status),
-                tags=(status,),
-            )
+        populate()
 
         def revive_selected():
             """Revive selected NPCs"""
@@ -1790,8 +1839,12 @@ class EventFlagsTab:
                 return
 
             count = 0
-            for npc_name in tree.selection():
-                if revive_npc(self.current_event_flags, npc_name):
+            for key in tree.selection():
+                invader = invader_by_key(key)
+                if invader is not None:
+                    reset_invader(self.current_event_flags, invader, reward_var.get())
+                    count += 1
+                elif revive_npc(self.current_event_flags, key):
                     count += 1
 
             if count == 0:
@@ -1834,7 +1887,7 @@ class EventFlagsTab:
         ds.button(btn_frame, "Revive Selected", revive_selected, width=130).pack(
             side=tk.RIGHT, padx=(0, 8)
         )
-        ds.finish(dialog, self.parent, width=760, height=600)
+        ds.finish(dialog, self.parent, width=900, height=600)
 
     @reopenable
     def open_quest_progress(self):

@@ -28,6 +28,11 @@ from er_save_manager.data.floor_points import (
 )
 from er_save_manager.data.grace_data import arena_gate, location_gate
 from er_save_manager.data.icon_manager import get_icon
+from er_save_manager.data.invader_data import (
+    KIND_RED_SIGN,
+    invader_by_key,
+    reset_invader,
+)
 from er_save_manager.data.item_pickups import (
     ITEM_TYPES,
     SOURCE_LABELS,
@@ -2030,7 +2035,11 @@ class MapWindow:
             for p in self._npc_pins(all_maps=True):
                 place = self._pin_place(p)
                 for spot in p.npcs:
-                    label = spot.name + (" (dead)" if spot.dead else "")
+                    label = spot.name + (
+                        (" (defeated)" if spot.invader_key else " (dead)")
+                        if spot.dead
+                        else ""
+                    )
                     if (label, place) not in seen:
                         seen.add((label, place))
                         rows.append((place[0] or "Other", label, p))
@@ -3165,7 +3174,10 @@ class MapWindow:
         lines = []
         for spot in pin.npcs:
             line = spot.name if spot.name == spot.npc else f"{spot.name} ({spot.npc})"
-            state = ", dead" if spot.dead else ", hostile" if spot.hostile else ""
+            if spot.invader_key:
+                state = ", defeated" if spot.dead else ""
+            else:
+                state = ", dead" if spot.dead else ", hostile" if spot.hostile else ""
             lines.append(line + state)
         return "\n".join(lines)
 
@@ -4315,11 +4327,18 @@ class MapWindow:
             return
         if p is None:
             self._show_pin_icons([])
-            self._info_var.set(self._pin_text(pin) + "\nNPC")
             spot = self._npc_spot(pin)
+            kind = "Invader" if spot.invader_key else "NPC"
+            self._info_var.set(f"{self._pin_text(pin)}\n{kind}")
             if self._on_set_flags is None or not (spot.dead or spot.hostile):
                 return
-            self._pin_btn.configure(text="Revive" if spot.dead else "Calm")
+            if spot.invader_key and not spot.dead:
+                return
+            if spot.invader_key:
+                text = "Respawn"
+            else:
+                text = "Revive" if spot.dead else "Calm"
+            self._pin_btn.configure(text=text)
             self._pin_btn.pack(
                 fill=tk.X, pady=(0, 6), padx=12, after=self._teleport_btn
             )
@@ -4362,12 +4381,24 @@ class MapWindow:
                 frame.winfo_children()[-1].set(self._npc_spot(pin).npc)
             base = self._npc_base(pin)
             steps = quest_steps(base, self._images.convergence) if base else ()
+            invader = invader_by_key(self._npc_spot(pin).invader_key)
             if steps:
                 self._build_quest(frame, pin, steps)
             else:
+                if invader is None:
+                    text = f"No quest steps known for {self._npc_spot(pin).npc}."
+                elif invader.kind == KIND_RED_SIGN:
+                    text = (
+                        f"Red summon sign near {invader.location}: the player "
+                        "invades this NPC's world."
+                    )
+                else:
+                    text = f"Invades the player near {invader.location}."
                 ctk.CTkLabel(
                     frame,
-                    text=f"No quest steps known for {self._npc_spot(pin).npc}.",
+                    text=text,
+                    wraplength=280,
+                    justify="left",
                     font=ds.SMALL,
                     text_color=ds.MUTED,
                     anchor="w",
@@ -4685,8 +4716,23 @@ class MapWindow:
             )
             return
         spot = self._npc_spot(pin)
-        npc = spot.npc.split(" / ")[0]
         acc = _FlagChanges(self._grace_state)
+        invader = invader_by_key(spot.invader_key)
+        if invader is not None:
+            what = "red summon sign" if invader.kind == KIND_RED_SIGN else "invasion"
+            if not CTkMessageBox.askyesno(
+                "Respawn Invader",
+                f"Bring back the {what} of {invader.name}?\n\n"
+                "A backup is made before saving.",
+                parent=self._win,
+            ):
+                return
+            reset_invader(acc, invader)
+            self._on_set_flags(
+                acc.changes, "respawn_invader", f"{invader.label} respawned.", False
+            )
+            return
+        npc = spot.npc.split(" / ")[0]
         if spot.dead:
             title, done = "Revive NPC", "revived"
             revive_npc(acc, npc)

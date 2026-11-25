@@ -10,6 +10,9 @@ name from NpcParam and its MSB position in that map. An NPC can stand in
 several places at once (Sellen's waypoint ruins and Academy parts share
 flags). npc_locations_convergence.json is the same for The Convergence's
 event and map files.
+
+Invaders and red summon sign NPCs (invader_data) are listed as spots too:
+hostile until defeated, dead once defeated.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
+from er_save_manager.data.invader_data import get_invaders
 from er_save_manager.data.npc_data import NPC_FLAGS
 
 # Life block offsets: hostile (absolvable, permanent) and dead
@@ -36,6 +40,7 @@ class NpcSpot:
     flag_id: int  # location flag that places the part
     hostile: bool
     dead: bool  # placed where the flags left the NPC when it died
+    invader_key: str = ""  # invader_data key for invader spots
 
 
 @cache
@@ -72,4 +77,18 @@ def npc_spots(
                 spots.append(
                     NpcSpot(npc, name, map_id, (x, y, z), flag_id, hostile, dead)
                 )
+    for invader in get_invaders(is_convergence):
+        dead = bool(flag_state(invader.defeat_flag))
+        spots.append(
+            NpcSpot(
+                invader.label,
+                invader.label,
+                invader.map_id,
+                invader.position,
+                invader.defeat_flag,
+                not dead,
+                dead,
+                invader.key,
+            )
+        )
     return spots
