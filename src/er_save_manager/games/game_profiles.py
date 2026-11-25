@@ -77,6 +77,7 @@ GAME_PROFILES: list[GameProfile] = [
         save_glob="AC6*.*",
         appdata_subdir="ArmoredCore6",
         process_name="armoredcore6.exe",
+        extensions=[".sl2", ".co2"],
     ),
     GameProfile(
         name="Dark Souls III",
