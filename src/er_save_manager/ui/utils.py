@@ -216,12 +216,12 @@ def get_work_area(window, point: tuple[int, int] | None = None):
     return area
 
 
-_x11_monitors: list[tuple[int, int, int, int]] | None = None
+_x11_monitors: list[tuple[int, int, int, int, bool]] | None = None
 
 
-def _x11_monitor_at(point: tuple[int, int]):
-    """(x, y, w, h) of the monitor holding point, from xrandr, read once per
-    process. None when xrandr is missing or no monitor holds the point."""
+def _x11_monitor_list() -> list[tuple[int, int, int, int, bool]]:
+    """(x, y, w, h, primary) of each monitor from xrandr, read once per
+    process. Empty when xrandr is missing."""
     global _x11_monitors
     if _x11_monitors is None:
         _x11_monitors = []
@@ -232,23 +232,41 @@ def _x11_monitor_at(point: tuple[int, int]):
                 text=True,
                 timeout=2,
             ).stdout
-            # " 0: +*DP-3 2560/697x1440/392+0+720  DP-3"
-            for m in re.finditer(r"(\d+)/-?\d+x(\d+)/-?\d+\+(\d+)\+(\d+)", out):
-                w, h, x, y = (int(v) for v in m.groups())
-                _x11_monitors.append((x, y, w, h))
+            # " 0: +*DP-3 2560/697x1440/392+0+720  DP-3", "*" marks the primary
+            for m in re.finditer(
+                r"^\s*\d+:\s+(\S+)\s+(\d+)/-?\d+x(\d+)/-?\d+\+(\d+)\+(\d+)",
+                out,
+                re.MULTILINE,
+            ):
+                w, h, x, y = (int(v) for v in m.groups()[1:])
+                _x11_monitors.append((x, y, w, h, "*" in m.group(1)))
         except Exception:
             pass
+    return _x11_monitors
+
+
+def _x11_monitor_at(point: tuple[int, int] | None):
+    """(x, y, w, h) of the monitor holding point, or of the primary monitor
+    (else the first one) when point is None. None when xrandr is missing or
+    no monitor holds the point."""
+    monitors = _x11_monitor_list()
+    if point is None:
+        for x, y, w, h, primary in monitors:
+            if primary:
+                return x, y, w, h
+        return monitors[0][:4] if monitors else None
     px, py = point
-    for x, y, w, h in _x11_monitors:
+    for x, y, w, h, _ in monitors:
         if x <= px < x + w and y <= py < y + h:
             return x, y, w, h
     return None
 
 
-def get_monitor_area(window, point: tuple[int, int]):
-    """Usable area (x, y, width, height) of the one monitor holding point.
+def get_monitor_area(window, point: tuple[int, int] | None = None):
+    """Usable area (x, y, width, height) of the one monitor holding point,
+    or of the primary monitor when point is None.
 
-    get_work_area spans all monitors on Linux; a popup placed by it can
+    get_work_area spans all monitors on Linux; a window placed by it can
     straddle two of them.
     """
     area = get_work_area(window, point)
@@ -288,10 +306,11 @@ def title_bar_height(window) -> int:
 
 
 def fit_size_to_work_area(window, width: int, height: int, point=None):
-    """Logical (width, height) shrunk so the framed window fits the work area."""
+    """Logical (width, height) shrunk so the framed window fits the work area
+    of one monitor."""
     get_scale = getattr(window, "_get_window_scaling", None)
     scale = get_scale() if get_scale else 1.0
-    _, _, work_w, work_h = get_work_area(window, point)
+    _, _, work_w, work_h = get_monitor_area(window, point)
     gap = 2 * _WORK_AREA_GAP_PX
     max_w = int((work_w - gap) / scale)
     max_h = int((work_h - title_bar_height(window) - gap) / scale)
@@ -306,7 +325,7 @@ def center_window(
     *,
     align_top: bool = False,
 ) -> None:
-    """Size a window and center it on the work area or over a parent widget.
+    """Size a window and center it on a monitor's work area or over a parent.
 
     CTk scales the width and height passed to geometry() by the window scaling
     factor but leaves the x/y offset untouched. The offset must therefore be
@@ -325,7 +344,7 @@ def center_window(
         window: Tk or CTk toplevel to position
         width: Logical width, before UI scaling
         height: Logical height, before UI scaling
-        parent: Widget to center over; centers on the work area when None
+        parent: Widget to center over; centers on the primary monitor when None
         align_top: Align to the top of the parent's toplevel instead of
             centering vertically
     """
@@ -341,7 +360,7 @@ def center_window(
         point = (ref_x + ref_w // 2, ref_y + ref_h // 2)
     else:
         point = None
-    work_x, work_y, work_w, work_h = get_work_area(window, point)
+    work_x, work_y, work_w, work_h = get_monitor_area(window, point)
     if parent is None:
         ref_x, ref_y, ref_w, ref_h = work_x, work_y, work_w, work_h
     title_h = title_bar_height(window)
