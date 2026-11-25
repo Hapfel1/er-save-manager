@@ -34,6 +34,7 @@ from er_save_manager.editors.map_markers import (
     copy_markers,
 )
 from er_save_manager.editors.map_unlock import reset_fog, unlock
+from er_save_manager.editors.world_geom import set_node_collected
 from er_save_manager.editors.world_state import WorldStateEditor, _map_id_to_str
 from er_save_manager.parser.er_types import FloatVector3, MapId
 from er_save_manager.parser.event_flags import EventFlags, FixFlags
@@ -612,6 +613,8 @@ class WorldStateTab:
                 self._reset_fog_on_map if loaded else None,
             )
             window.set_pickup_callback(self._set_pickup if loaded else None)
+            window.set_gather_picked(self._gather_picked() if loaded else None)
+            window.set_gather_callback(self._set_gather if loaded else None)
             window.set_flag_callback(self._set_flags if loaded else None)
             save = self.get_save_file()
             path = (getattr(save, "_original_filepath", "") or "").lower()
@@ -619,6 +622,50 @@ class WorldStateTab:
             window.set_pools_available(
                 save is not None and path.endswith(".sl2") and not save.is_convergence
             )
+
+    def _set_gather(self, map_id: str, part: str, collected: bool):
+        """Mark a non-respawning material node collected, or remove it from
+        the collected lists so it appears again, and save the file."""
+        save = self.get_save_file()
+        if save is None or self.editor is None or not save_writable():
+            return
+        try:
+            set_node_collected(save, self.slot_var.get() - 1, map_id, part, collected)
+        except ValueError as e:
+            CTkMessageBox.showerror(
+                "Material Node",
+                f"Could not change the node:\n{e}",
+                parent=self._dialog_parent(),
+            )
+            self.reload_save()
+            return
+        # The slot is re-parsed (the lists change size), so the tabs reload
+        if self._persist("before_material_edit", "material_edit"):
+            self._update_map_window()
+            self.show_toast(
+                "Material marked collected."
+                if collected
+                else "Material respawns after the area reloads.",
+                duration=2500,
+            )
+
+    def _gather_picked(self) -> frozenset[tuple[str, str]] | None:
+        """(map id, part name) of the permanently picked assets:
+        WorldGeomMan2 entries and WorldGeomMan state 2."""
+        save = self.get_save_file()
+        if save is None:
+            return None
+        slot = save.character_slots[self.slot_var.get() - 1]
+        picked = set()
+        for geom, permanent in ((slot.world_geom_man2, None), (slot.world_geom_man, 2)):
+            data = geom.parse_geom()
+            if data is None:
+                continue
+            for record in data.records:
+                for entry in record.entries:
+                    if permanent is None or entry.state == permanent:
+                        picked.add((record.map_name, entry.part_name))
+        return frozenset(picked)
 
     def _grace_state(self, flag_id: int) -> bool | None:
         save = self.get_save_file()

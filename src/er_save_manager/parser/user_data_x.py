@@ -64,6 +64,8 @@ class UserDataX:
     data_start: int = 0
     horse_offset: int = 0
     coordinates_offset: int = 0
+    world_geom_man_offset: int = 0
+    world_geom_man2_offset: int = 0
     event_flags_offset: int = 0
     player_game_data_offset: int = 0
     net_man_offset: int = 0
@@ -339,7 +341,9 @@ class UserDataX:
 
         obj.field_area = FieldArea.read(f)
         obj.world_area = WorldArea.read(f)
+        obj.world_geom_man_offset = f.tell()
         obj.world_geom_man = WorldGeomMan.read(f)
+        obj.world_geom_man2_offset = f.tell()
         obj.world_geom_man2 = WorldGeomMan.read(f)
         obj.rend_man = RendMan.read(f)
         obj.coordinates_offset = f.tell()
