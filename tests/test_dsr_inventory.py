@@ -394,3 +394,38 @@ def test_endurance_moves_stamina_max_and_current():
         154 + delta,
         END_TO_STAMINA[31],
     )
+
+
+def test_world_flags_doors_and_pickups():
+    """The New Londo door is open once its state flag 61600120 is set; its
+    ObjAct flag 11600120 alone (prompt gone, door shut) reads Partly open and
+    Open sets both. Respawning a chest pickup clears its chest flag too."""
+    from er_save_manager.games.DSR.world_flags import (
+        DOORS,
+        EVENTS,
+        PICKUPS,
+        SHORTCUTS,
+        FlagState,
+        flag_state,
+        set_flags,
+    )
+
+    char, _ = _flag_character()
+    door = next(d for d in DOORS if d.flags == (61600120, 11600120))
+    assert door.keys == ("Key to New Londo Ruins", "Master Key")
+    char.set_flag(11600120, True)
+    assert flag_state(char, door.flags) is FlagState.PARTLY
+    assert set_flags(char, [door], True) == 1
+    assert char.get_flag(61600120) and flag_state(char, door.flags) is FlagState.SET
+    assert set_flags(char, [door], True) == 0
+    chest = next(p for p in PICKUPS if p.chest_flag)
+    for flag in chest.flags:
+        char.set_flag(flag, True)
+    set_flags(char, [chest], False)
+    assert not any(char.get_flag(f) for f in chest.flags)
+    groups = DOORS + SHORTCUTS + EVENTS
+    assert len({g.flags[0] for g in groups}) == len(groups)
+    assert len({p.flag for p in PICKUPS}) == len(PICKUPS)
+    for g in (*groups, *PICKUPS):
+        for flag in g.flags:
+            char.get_flag(flag)  # every id fits the flag layout

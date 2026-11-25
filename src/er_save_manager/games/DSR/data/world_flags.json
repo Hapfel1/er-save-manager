@@ -1,0 +1,2938 @@
+{
+ "areas": {
+  "m10_00": "Depths",
+  "m10_01": "Undead Burg / Undead Parish",
+  "m10_02": "Firelink Shrine",
+  "m11_00": "Painted World of Ariamis",
+  "m12_00": "Darkroot Garden / Darkroot Basin",
+  "m12_01": "Sanctuary Garden / Oolacile",
+  "m13_00": "The Catacombs",
+  "m13_01": "Tomb of the Giants",
+  "m13_02": "The Great Hollow / Ash Lake",
+  "m14_00": "Blighttown / Quelaag's Domain",
+  "m14_01": "Demon Ruins / Lost Izalith",
+  "m15_00": "Sen's Fortress",
+  "m15_01": "Anor Londo",
+  "m16_00": "New Londo Ruins / Valley of the Drakes",
+  "m17_00": "The Duke's Archives / Crystal Cave",
+  "m18_00": "Kiln of the First Flame / Firelink Altar",
+  "m18_01": "Northern Undead Asylum"
+ },
+ "doors": [
+  {
+   "map": "m10_00",
+   "label": "Blighttown door",
+   "keys": [
+    "Blighttown Key"
+   ],
+   "flags": [
+    11000110,
+    590,
+    11000111
+   ]
+  },
+  {
+   "map": "m10_00",
+   "label": "Door",
+   "keys": [],
+   "flags": [
+    61000501
+   ]
+  },
+  {
+   "map": "m10_00",
+   "label": "Sewer chamber door",
+   "keys": [
+    "Sewer Chamber Key",
+    "Master Key"
+   ],
+   "flags": [
+    61000500,
+    11000120
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Basement door",
+   "keys": [
+    "Basement Key"
+   ],
+   "flags": [
+    61010511,
+    11010172
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door",
+   "keys": [],
+   "flags": [
+    61010512
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door",
+   "keys": [],
+   "flags": [
+    61010513
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door between upper and lower Burg",
+   "keys": [],
+   "flags": [
+    61010514,
+    11010160
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door that is kicked open",
+   "keys": [],
+   "flags": [
+    61010518,
+    11010111
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door that opens from one side",
+   "keys": [],
+   "flags": [
+    11010101
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Door to Lower Undead Burg",
+   "keys": [
+    "Key to Depths"
+   ],
+   "flags": [
+    61010506,
+    11010171
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Locked house door",
+   "keys": [
+    "Residence Key",
+    "Master Key"
+   ],
+   "flags": [
+    61010510,
+    11010140
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Lower Undead Burg cell door",
+   "keys": [
+    "Residence Key"
+   ],
+   "flags": [
+    61010517,
+    11010181
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Undead Parish cell door",
+   "keys": [
+    "Mystery Key",
+    "Master Key"
+   ],
+   "flags": [
+    61010508,
+    11010190
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Watchtower door (lower)",
+   "keys": [
+    "Watchtower Basement Key",
+    "Master Key"
+   ],
+   "flags": [
+    61010505,
+    11010192
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Watchtower door (upper)",
+   "keys": [
+    "Watchtower Basement Key",
+    "Master Key"
+   ],
+   "flags": [
+    61010504,
+    11010191
+   ]
+  },
+  {
+   "map": "m10_02",
+   "label": "Lift chamber door",
+   "keys": [
+    "Lift Chamber Key",
+    "Master Key"
+   ],
+   "flags": [
+    61020120,
+    11020120
+   ]
+  },
+  {
+   "map": "m11_00",
+   "label": "Annex door",
+   "keys": [
+    "Annex Key"
+   ],
+   "flags": [
+    61100120,
+    11100120
+   ]
+  },
+  {
+   "map": "m11_00",
+   "label": "Door that opens from one side",
+   "keys": [],
+   "flags": [
+    11100030
+   ]
+  },
+  {
+   "map": "m12_00",
+   "label": "Door 1",
+   "keys": [],
+   "flags": [
+    11200100,
+    11200110,
+    61200500
+   ]
+  },
+  {
+   "map": "m12_00",
+   "label": "Door 2",
+   "keys": [],
+   "flags": [
+    11200101,
+    11200111,
+    61200501
+   ]
+  },
+  {
+   "map": "m12_01",
+   "label": "Gough's door",
+   "keys": [
+    "Crest Key"
+   ],
+   "flags": [
+    61210650,
+    11210650
+   ]
+  },
+  {
+   "map": "m14_01",
+   "label": "Door opened by touch",
+   "keys": [],
+   "flags": [
+    11410340
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 1",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500110
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 2",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500111
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 3",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500112
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 4",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500113
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 5",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500114
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 6",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500115
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Cage cell 7",
+   "keys": [
+    "Cage Key",
+    "Master Key"
+   ],
+   "flags": [
+    11500116
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Door 1",
+   "keys": [],
+   "flags": [
+    11500102
+   ]
+  },
+  {
+   "map": "m15_00",
+   "label": "Door 2",
+   "keys": [],
+   "flags": [
+    11500107,
+    11500105
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Door 1",
+   "keys": [],
+   "flags": [
+    11510110
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Door 2",
+   "keys": [],
+   "flags": [
+    11510210
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 1",
+   "keys": [],
+   "flags": [
+    61510270,
+    11510250
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 10",
+   "keys": [],
+   "flags": [
+    61510279,
+    11510259
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 2",
+   "keys": [],
+   "flags": [
+    61510271,
+    11510251
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 3",
+   "keys": [],
+   "flags": [
+    61510272,
+    11510252
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 4",
+   "keys": [],
+   "flags": [
+    61510273,
+    11510253
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 5",
+   "keys": [],
+   "flags": [
+    61510274,
+    11510254
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 7",
+   "keys": [],
+   "flags": [
+    61510276,
+    11510256
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 8",
+   "keys": [],
+   "flags": [
+    61510277,
+    11510257
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Room door 9",
+   "keys": [],
+   "flags": [
+    61510278,
+    11510258
+   ]
+  },
+  {
+   "map": "m16_00",
+   "label": "New Londo Ruins door (Valley of the Drakes)",
+   "keys": [
+    "Key to New Londo Ruins",
+    "Master Key"
+   ],
+   "flags": [
+    61600120,
+    11600120
+   ]
+  },
+  {
+   "map": "m16_00",
+   "label": "Seal door",
+   "keys": [
+    "Key to the Seal"
+   ],
+   "flags": [
+    61600110,
+    11600110
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 1",
+   "keys": [
+    "Archive Tower Cell Key"
+   ],
+   "flags": [
+    61700300,
+    11700300
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 2",
+   "keys": [
+    "Archive Prison Extra Key"
+   ],
+   "flags": [
+    61700311,
+    11700311
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 3",
+   "keys": [
+    "Archive Tower Cell Key"
+   ],
+   "flags": [
+    61700302,
+    11700302
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 4",
+   "keys": [
+    "Archive Prison Extra Key"
+   ],
+   "flags": [
+    61700313,
+    11700313
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 5",
+   "keys": [
+    "Archive Tower Cell Key"
+   ],
+   "flags": [
+    61700304,
+    11700304
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Cell door 6",
+   "keys": [
+    "Archive Tower Cell Key"
+   ],
+   "flags": [
+    61700305,
+    11700305
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Door",
+   "keys": [],
+   "flags": [
+    11700140
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Large cell door",
+   "keys": [
+    "Archive Tower Giant Cell Key"
+   ],
+   "flags": [
+    61700320,
+    11700320
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 1",
+   "keys": [
+    "Dungeon Cell Key"
+   ],
+   "flags": [
+    61810100,
+    11810100
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 2",
+   "keys": [
+    "Dungeon Cell Key"
+   ],
+   "flags": [
+    61810101,
+    11810101
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 3",
+   "keys": [
+    "Dungeon Cell Key"
+   ],
+   "flags": [
+    61810102,
+    11810102
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 4",
+   "keys": [
+    "Dungeon Cell Key"
+   ],
+   "flags": [
+    61810103,
+    11810103
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 5",
+   "keys": [
+    "Undead Asylum F2 West Key"
+   ],
+   "flags": [
+    61810104,
+    11810104
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 6",
+   "keys": [],
+   "flags": [
+    61810105,
+    11810105
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Cell door 7",
+   "keys": [
+    "Undead Asylum F2 East Key"
+   ],
+   "flags": [
+    61810106,
+    11810106
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Church door (inner)",
+   "keys": [
+    "Big Pilgrim's Key"
+   ],
+   "flags": [
+    11810110
+   ]
+  },
+  {
+   "map": "m18_01",
+   "label": "Church door (outer)",
+   "keys": [],
+   "flags": [
+    11810111
+   ]
+  }
+ ],
+ "shortcuts": [
+  {
+   "map": "m10_01",
+   "label": "Hellkite gate lever",
+   "flags": [
+    11010620
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Ladder (kicked down)",
+   "flags": [
+    11010100
+   ]
+  },
+  {
+   "map": "m10_01",
+   "label": "Parish gate lever",
+   "flags": [
+    11010600
+   ]
+  },
+  {
+   "map": "m11_00",
+   "label": "Handle",
+   "flags": [
+    11100135
+   ]
+  },
+  {
+   "map": "m13_00",
+   "label": "Entrance gate lever",
+   "flags": [
+    11300900
+   ]
+  },
+  {
+   "map": "m13_00",
+   "label": "Midway gate lever",
+   "flags": [
+    11300901
+   ]
+  },
+  {
+   "map": "m15_01",
+   "label": "Lever",
+   "flags": [
+    11510200
+   ]
+  },
+  {
+   "map": "m16_00",
+   "label": "Ladder (kicked down)",
+   "flags": [
+    11600160
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Alarm lever",
+   "flags": [
+    11705105
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Moving bookshelf lever 1",
+   "flags": [
+    11700120
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Moving bookshelf lever 2",
+   "flags": [
+    11700125
+   ]
+  },
+  {
+   "map": "m17_00",
+   "label": "Moving staircase lever",
+   "flags": [
+    11700110
+   ]
+  }
+ ],
+ "pickups": [
+  {
+   "map": "m10_00",
+   "items": "Humanity",
+   "flag": 51000000
+  },
+  {
+   "map": "m10_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51000010
+  },
+  {
+   "map": "m10_00",
+   "items": "Greataxe",
+   "flag": 51000020
+  },
+  {
+   "map": "m10_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51000030
+  },
+  {
+   "map": "m10_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51000040
+  },
+  {
+   "map": "m10_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51000050
+  },
+  {
+   "map": "m10_00",
+   "items": "Spider Shield",
+   "flag": 51000090
+  },
+  {
+   "map": "m10_00",
+   "items": "Large Titanite Shard",
+   "flag": 51000100
+  },
+  {
+   "map": "m10_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51000120
+  },
+  {
+   "map": "m10_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51000140
+  },
+  {
+   "map": "m10_00",
+   "items": "Ring of the Evil Eye",
+   "flag": 51000170
+  },
+  {
+   "map": "m10_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51000180
+  },
+  {
+   "map": "m10_00",
+   "items": "Heavy Crossbow",
+   "flag": 51000190
+  },
+  {
+   "map": "m10_00",
+   "items": "Standard Helm",
+   "flag": 51000210
+  },
+  {
+   "map": "m10_00",
+   "items": "Sewer Chamber Key",
+   "flag": 51000240
+  },
+  {
+   "map": "m10_00",
+   "items": "Large Ember",
+   "flag": 51000500,
+   "chest_flag": 11000600
+  },
+  {
+   "map": "m10_01",
+   "items": "Mystery Key",
+   "flag": 51010000
+  },
+  {
+   "map": "m10_01",
+   "items": "Mail Breaker",
+   "flag": 51010020
+  },
+  {
+   "map": "m10_01",
+   "items": "Humanity",
+   "flag": 51010040
+  },
+  {
+   "map": "m10_01",
+   "items": "Fire Keeper Soul",
+   "flag": 51010050
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51010070
+  },
+  {
+   "map": "m10_01",
+   "items": "Rubbish",
+   "flag": 51010080
+  },
+  {
+   "map": "m10_01",
+   "items": "Light Crossbow",
+   "flag": 51010090
+  },
+  {
+   "map": "m10_01",
+   "items": "Humanity",
+   "flag": 51010100
+  },
+  {
+   "map": "m10_01",
+   "items": "Throwing Knife x10",
+   "flag": 51010120
+  },
+  {
+   "map": "m10_01",
+   "items": "Wooden Shield",
+   "flag": 51010130
+  },
+  {
+   "map": "m10_01",
+   "items": "Basement Key",
+   "flag": 51010140
+  },
+  {
+   "map": "m10_01",
+   "items": "Blue Tearstone Ring",
+   "flag": 51010160
+  },
+  {
+   "map": "m10_01",
+   "items": "Claymore",
+   "flag": 51010210
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51010220
+  },
+  {
+   "map": "m10_01",
+   "items": "Alluring Skull x4",
+   "flag": 51010260
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51010280
+  },
+  {
+   "map": "m10_01",
+   "items": "Knight Shield",
+   "flag": 51010300
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51010370
+  },
+  {
+   "map": "m10_01",
+   "items": "Thief Mask",
+   "flag": 51010380
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51010400
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51010410
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51010420
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51010430
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51010440
+  },
+  {
+   "map": "m10_01",
+   "items": "Black Firebomb x5",
+   "flag": 51010450,
+   "chest_flag": 11010650
+  },
+  {
+   "map": "m10_01",
+   "items": "Gold Pine Resin x3",
+   "flag": 51010460,
+   "chest_flag": 11010651
+  },
+  {
+   "map": "m10_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51010470
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51010480
+  },
+  {
+   "map": "m10_01",
+   "items": "Twin Humanities",
+   "flag": 51010490
+  },
+  {
+   "map": "m10_01",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51010500
+  },
+  {
+   "map": "m10_01",
+   "items": "Sorcerer Hat",
+   "flag": 51010510
+  },
+  {
+   "map": "m10_01",
+   "items": "Halberd",
+   "flag": 51010520
+  },
+  {
+   "map": "m10_02",
+   "items": "Dingy Hood",
+   "flag": 50001030
+  },
+  {
+   "map": "m10_02",
+   "items": "Basement Key",
+   "flag": 50004000
+  },
+  {
+   "map": "m10_02",
+   "items": "Dungeon Cell Key",
+   "flag": 50004009
+  },
+  {
+   "map": "m10_02",
+   "items": "Watchtower Basement Key",
+   "flag": 50004018
+  },
+  {
+   "map": "m10_02",
+   "items": "Orange Charred Ring",
+   "flag": 50004027
+  },
+  {
+   "map": "m10_02",
+   "items": "Dragon Eye",
+   "flag": 50004036
+  },
+  {
+   "map": "m10_02",
+   "items": "Estus Flask+7",
+   "flag": 50004045
+  },
+  {
+   "map": "m10_02",
+   "items": "Dragon Head Stone",
+   "flag": 50004054
+  },
+  {
+   "map": "m10_02",
+   "items": "Dark Ember",
+   "flag": 50004063
+  },
+  {
+   "map": "m10_02",
+   "items": "Humanity x3",
+   "flag": 51020000
+  },
+  {
+   "map": "m10_02",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51020010
+  },
+  {
+   "map": "m10_02",
+   "items": "Caduceus Round Shield",
+   "flag": 51020020
+  },
+  {
+   "map": "m10_02",
+   "items": "Large Soul of a Lost Undead",
+   "flag": 51020030
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020040
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020050
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020060
+  },
+  {
+   "map": "m10_02",
+   "items": "Lloyd's Talisman x4",
+   "flag": 51020070,
+   "chest_flag": 11020700
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020090
+  },
+  {
+   "map": "m10_02",
+   "items": "Firebomb x6",
+   "flag": 51020110
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020120
+  },
+  {
+   "map": "m10_02",
+   "items": "Ring of Sacrifice",
+   "flag": 51020130
+  },
+  {
+   "map": "m10_02",
+   "items": "Soul of a Lost Undead",
+   "flag": 51020140
+  },
+  {
+   "map": "m10_02",
+   "items": "Zweihander",
+   "flag": 51020150
+  },
+  {
+   "map": "m10_02",
+   "items": "Winged Spear",
+   "flag": 51020160
+  },
+  {
+   "map": "m10_02",
+   "items": "Binoculars",
+   "flag": 51020170
+  },
+  {
+   "map": "m10_02",
+   "items": "Morning Star",
+   "flag": 51020180,
+   "chest_flag": 11020701
+  },
+  {
+   "map": "m10_02",
+   "items": "Homeward Bone x6",
+   "flag": 51020190,
+   "chest_flag": 11020702
+  },
+  {
+   "map": "m10_02",
+   "items": "Cracked Red Eye Orb x4",
+   "flag": 51020200,
+   "chest_flag": 11020703
+  },
+  {
+   "map": "m10_02",
+   "items": "Undead Asylum F2 West Key",
+   "flag": 51020210
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100010
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100030
+  },
+  {
+   "map": "m11_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51100040
+  },
+  {
+   "map": "m11_00",
+   "items": "Twin Humanities",
+   "flag": 51100050
+  },
+  {
+   "map": "m11_00",
+   "items": "Mask of Velka",
+   "flag": 51100060
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100070
+  },
+  {
+   "map": "m11_00",
+   "items": "Miracle: Vow of Silence",
+   "flag": 51100090
+  },
+  {
+   "map": "m11_00",
+   "items": "Gold Coin",
+   "flag": 51100100
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100120
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100130
+  },
+  {
+   "map": "m11_00",
+   "items": "Annex Key",
+   "flag": 51100140
+  },
+  {
+   "map": "m11_00",
+   "items": "Xanthous Crown",
+   "flag": 51100150
+  },
+  {
+   "map": "m11_00",
+   "items": "Ring of Sacrifice",
+   "flag": 51100160
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100170
+  },
+  {
+   "map": "m11_00",
+   "items": "Pyromancy: Acid Surge",
+   "flag": 51100190
+  },
+  {
+   "map": "m11_00",
+   "items": "Bloodshield",
+   "flag": 51100200
+  },
+  {
+   "map": "m11_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51100210
+  },
+  {
+   "map": "m11_00",
+   "items": "Humanity",
+   "flag": 51100230
+  },
+  {
+   "map": "m11_00",
+   "items": "Humanity",
+   "flag": 51100240
+  },
+  {
+   "map": "m11_00",
+   "items": "Egg Vermifuge",
+   "flag": 51100250
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100260
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100280
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100290
+  },
+  {
+   "map": "m11_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51100300
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51100310
+  },
+  {
+   "map": "m11_00",
+   "items": "Velka's Rapier",
+   "flag": 51100320
+  },
+  {
+   "map": "m11_00",
+   "items": "Red Sign Soapstone",
+   "flag": 51100330
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100340
+  },
+  {
+   "map": "m11_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51100350
+  },
+  {
+   "map": "m11_00",
+   "items": "Dark Ember",
+   "flag": 51100370
+  },
+  {
+   "map": "m11_00",
+   "items": "Painting Guardian Hood",
+   "flag": 51100500,
+   "chest_flag": 11100650
+  },
+  {
+   "map": "m12_00",
+   "items": "Partizan",
+   "flag": 51200010
+  },
+  {
+   "map": "m12_00",
+   "items": "Leather Armor",
+   "flag": 51200020
+  },
+  {
+   "map": "m12_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51200030
+  },
+  {
+   "map": "m12_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51200040
+  },
+  {
+   "map": "m12_00",
+   "items": "Wolf Ring",
+   "flag": 51200060
+  },
+  {
+   "map": "m12_00",
+   "items": "Elite Knight Helm",
+   "flag": 51200070
+  },
+  {
+   "map": "m12_00",
+   "items": "Eastern Helm",
+   "flag": 51200080
+  },
+  {
+   "map": "m12_00",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51200120
+  },
+  {
+   "map": "m12_00",
+   "items": "Watchtower Basement Key",
+   "flag": 51200140
+  },
+  {
+   "map": "m12_00",
+   "items": "Crown of Dusk",
+   "flag": 51200150
+  },
+  {
+   "map": "m12_00",
+   "items": "Hornet Ring",
+   "flag": 51200160
+  },
+  {
+   "map": "m12_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51200170
+  },
+  {
+   "map": "m12_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51200180
+  },
+  {
+   "map": "m12_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51200190
+  },
+  {
+   "map": "m12_00",
+   "items": "Grass Crest Shield",
+   "flag": 51200200
+  },
+  {
+   "map": "m12_00",
+   "items": "Knight Helm",
+   "flag": 51200210
+  },
+  {
+   "map": "m12_00",
+   "items": "Enchanted Ember",
+   "flag": 51200500,
+   "chest_flag": 11200600
+  },
+  {
+   "map": "m12_00",
+   "items": "Stone Helm",
+   "flag": 51200510,
+   "chest_flag": 11200601
+  },
+  {
+   "map": "m12_01",
+   "items": "Humanity",
+   "flag": 51210010
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Proud Knight",
+   "flag": 51210020
+  },
+  {
+   "map": "m12_01",
+   "items": "Gold Coin",
+   "flag": 51210030
+  },
+  {
+   "map": "m12_01",
+   "items": "Guardian Leggings",
+   "flag": 51210040
+  },
+  {
+   "map": "m12_01",
+   "items": "Guardian Armor",
+   "flag": 51210050
+  },
+  {
+   "map": "m12_01",
+   "items": "Elizabeth's Mushroom",
+   "flag": 51210060
+  },
+  {
+   "map": "m12_01",
+   "items": "Guardian Helm",
+   "flag": 51210070
+  },
+  {
+   "map": "m12_01",
+   "items": "Gough's Great Arrow x8",
+   "flag": 51210080
+  },
+  {
+   "map": "m12_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51210090
+  },
+  {
+   "map": "m12_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51210110
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210160
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Hero",
+   "flag": 51210190
+  },
+  {
+   "map": "m12_01",
+   "items": "Rubbish",
+   "flag": 51210210
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Hero",
+   "flag": 51210220
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210230
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210240
+  },
+  {
+   "map": "m12_01",
+   "items": "Gough's Great Arrow x3",
+   "flag": 51210250
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210260
+  },
+  {
+   "map": "m12_01",
+   "items": "Dark Bead",
+   "flag": 51210270
+  },
+  {
+   "map": "m12_01",
+   "items": "Black Flame",
+   "flag": 51210280
+  },
+  {
+   "map": "m12_01",
+   "items": "White Titanite Slab",
+   "flag": 51210290
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Hero",
+   "flag": 51210300
+  },
+  {
+   "map": "m12_01",
+   "items": "Humanity",
+   "flag": 51210330
+  },
+  {
+   "map": "m12_01",
+   "items": "Help me! Carving",
+   "flag": 51210340
+  },
+  {
+   "map": "m12_01",
+   "items": "Guardian Gauntlets",
+   "flag": 51210350
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210390
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210400
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51210430
+  },
+  {
+   "map": "m12_01",
+   "items": "Twin Humanities",
+   "flag": 51210440
+  },
+  {
+   "map": "m12_01",
+   "items": "Soul of a Hero",
+   "flag": 51210450
+  },
+  {
+   "map": "m12_01",
+   "items": "Twin Humanities",
+   "flag": 51210460
+  },
+  {
+   "map": "m12_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51210470
+  },
+  {
+   "map": "m12_01",
+   "items": "Blue Titanite Slab",
+   "flag": 51210500,
+   "chest_flag": 11210600
+  },
+  {
+   "map": "m12_01",
+   "items": "Red Titanite Chunk",
+   "flag": 51210510,
+   "chest_flag": 11210601
+  },
+  {
+   "map": "m12_01",
+   "items": "Silver Pendant",
+   "flag": 51210520,
+   "chest_flag": 11210602
+  },
+  {
+   "map": "m12_01",
+   "items": "Dark Orb",
+   "flag": 51210540,
+   "chest_flag": 11210604
+  },
+  {
+   "map": "m12_01",
+   "items": "Titanite Slab",
+   "flag": 51210550,
+   "chest_flag": 11210605
+  },
+  {
+   "map": "m12_01",
+   "items": "Dark Fog",
+   "flag": 51211000
+  },
+  {
+   "map": "m13_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51300000
+  },
+  {
+   "map": "m13_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51300010
+  },
+  {
+   "map": "m13_00",
+   "items": "Darkmoon Seance Ring",
+   "flag": 51300020
+  },
+  {
+   "map": "m13_00",
+   "items": "Eye of Death x3",
+   "flag": 51300030
+  },
+  {
+   "map": "m13_00",
+   "items": "Lucerne ",
+   "flag": 51300070
+  },
+  {
+   "map": "m13_00",
+   "items": "Green Titanite Shard",
+   "flag": 51300100
+  },
+  {
+   "map": "m13_00",
+   "items": "Great Scythe",
+   "flag": 51300110
+  },
+  {
+   "map": "m13_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51300140
+  },
+  {
+   "map": "m13_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51300150
+  },
+  {
+   "map": "m13_00",
+   "items": "Priest's Hat",
+   "flag": 51300190
+  },
+  {
+   "map": "m13_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51300210
+  },
+  {
+   "map": "m13_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51300220
+  },
+  {
+   "map": "m13_00",
+   "items": "Miracle: Tranquil Walk of Peace",
+   "flag": 51300230
+  },
+  {
+   "map": "m13_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51300240
+  },
+  {
+   "map": "m13_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51300250
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310000
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310010
+  },
+  {
+   "map": "m13_01",
+   "items": "Humanity",
+   "flag": 51310020
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310030
+  },
+  {
+   "map": "m13_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51310040
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310050
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310070
+  },
+  {
+   "map": "m13_01",
+   "items": "Eye of Death x3",
+   "flag": 51310080
+  },
+  {
+   "map": "m13_01",
+   "items": "Skull Lantern",
+   "flag": 51310090
+  },
+  {
+   "map": "m13_01",
+   "items": "White Titanite Chunk",
+   "flag": 51310100
+  },
+  {
+   "map": "m13_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51310110
+  },
+  {
+   "map": "m13_01",
+   "items": "Effigy Shield",
+   "flag": 51310120
+  },
+  {
+   "map": "m13_01",
+   "items": "Covetous Silver Serpent Ring",
+   "flag": 51310140
+  },
+  {
+   "map": "m13_01",
+   "items": "White Titanite Chunk",
+   "flag": 51310160
+  },
+  {
+   "map": "m13_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51310180
+  },
+  {
+   "map": "m13_01",
+   "items": "Soul of a Hero",
+   "flag": 51310200
+  },
+  {
+   "map": "m13_01",
+   "items": "White Titanite Slab",
+   "flag": 51310220
+  },
+  {
+   "map": "m13_01",
+   "items": "Soul of a Hero",
+   "flag": 51310230
+  },
+  {
+   "map": "m13_01",
+   "items": "Paladin Helm",
+   "flag": 51310240
+  },
+  {
+   "map": "m13_01",
+   "items": "White Titanite Chunk",
+   "flag": 51310290
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51310300
+  },
+  {
+   "map": "m13_01",
+   "items": "Large Divine Ember",
+   "flag": 51310500
+  },
+  {
+   "map": "m13_02",
+   "items": "Plank Shield",
+   "flag": 51320000
+  },
+  {
+   "map": "m13_02",
+   "items": "Cloranthy Ring",
+   "flag": 51320020
+  },
+  {
+   "map": "m13_02",
+   "items": "Titanite Chunk",
+   "flag": 51320040
+  },
+  {
+   "map": "m13_02",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51320050
+  },
+  {
+   "map": "m13_02",
+   "items": "Blue Titanite Chunk",
+   "flag": 51320060
+  },
+  {
+   "map": "m13_02",
+   "items": "White Titanite Chunk",
+   "flag": 51320070
+  },
+  {
+   "map": "m13_02",
+   "items": "Red Titanite Chunk",
+   "flag": 51320080
+  },
+  {
+   "map": "m13_02",
+   "items": "Blue Titanite Chunk",
+   "flag": 51320090
+  },
+  {
+   "map": "m13_02",
+   "items": "White Titanite Chunk",
+   "flag": 51320100
+  },
+  {
+   "map": "m13_02",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51320110
+  },
+  {
+   "map": "m13_02",
+   "items": "Titanite Chunk",
+   "flag": 51320120
+  },
+  {
+   "map": "m13_02",
+   "items": "Dragon Scale",
+   "flag": 51320140
+  },
+  {
+   "map": "m13_02",
+   "items": "Dragon Scale",
+   "flag": 51320150
+  },
+  {
+   "map": "m13_02",
+   "items": "Dragon Scale",
+   "flag": 51320160
+  },
+  {
+   "map": "m13_02",
+   "items": "Miracle: Great Magic Barrier",
+   "flag": 51320170
+  },
+  {
+   "map": "m13_02",
+   "items": "Twin Humanities",
+   "flag": 51320180,
+   "chest_flag": 11320600
+  },
+  {
+   "map": "m13_02",
+   "items": "Red Titanite Chunk",
+   "flag": 51320190
+  },
+  {
+   "map": "m14_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51400020
+  },
+  {
+   "map": "m14_00",
+   "items": "Shadow Mask",
+   "flag": 51400040
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51400050
+  },
+  {
+   "map": "m14_00",
+   "items": "Humanity",
+   "flag": 51400060
+  },
+  {
+   "map": "m14_00",
+   "items": "Blooming Purple Moss Clump x3",
+   "flag": 51400080
+  },
+  {
+   "map": "m14_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51400090
+  },
+  {
+   "map": "m14_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51400100
+  },
+  {
+   "map": "m14_00",
+   "items": "Pyromancy: Power Within",
+   "flag": 51400130
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51400140
+  },
+  {
+   "map": "m14_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51400150
+  },
+  {
+   "map": "m14_00",
+   "items": "Eagle Shield",
+   "flag": 51400160
+  },
+  {
+   "map": "m14_00",
+   "items": "Whip",
+   "flag": 51400180
+  },
+  {
+   "map": "m14_00",
+   "items": "Mask of the Sealer",
+   "flag": 51400190
+  },
+  {
+   "map": "m14_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51400210
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Titanite Shard",
+   "flag": 51400230
+  },
+  {
+   "map": "m14_00",
+   "items": "Great Club",
+   "flag": 51400250
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51400260
+  },
+  {
+   "map": "m14_00",
+   "items": "Tattered Cloth Hood",
+   "flag": 51400270
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51400280
+  },
+  {
+   "map": "m14_00",
+   "items": "Green Titanite Shard",
+   "flag": 51400290
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Titanite Shard",
+   "flag": 51400300
+  },
+  {
+   "map": "m14_00",
+   "items": "Wanderer Hood",
+   "flag": 51400310
+  },
+  {
+   "map": "m14_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51400320
+  },
+  {
+   "map": "m14_00",
+   "items": "Iaito",
+   "flag": 51400340
+  },
+  {
+   "map": "m14_00",
+   "items": "Fire Keeper Soul",
+   "flag": 51400350
+  },
+  {
+   "map": "m14_00",
+   "items": "Server",
+   "flag": 51400360
+  },
+  {
+   "map": "m14_00",
+   "items": "Helm of Thorns",
+   "flag": 51400370
+  },
+  {
+   "map": "m14_00",
+   "items": "Key to New Londo Ruins",
+   "flag": 51400500,
+   "chest_flag": 11400600
+  },
+  {
+   "map": "m14_00",
+   "items": "Dragon Scale",
+   "flag": 51400510,
+   "chest_flag": 11400601
+  },
+  {
+   "map": "m14_00",
+   "items": "Sorcery: Remedy",
+   "flag": 51400520,
+   "chest_flag": 11400602
+  },
+  {
+   "map": "m14_01",
+   "items": "Red Titanite Chunk",
+   "flag": 51410000
+  },
+  {
+   "map": "m14_01",
+   "items": "Red Titanite Chunk",
+   "flag": 51410010
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410020
+  },
+  {
+   "map": "m14_01",
+   "items": "Green Titanite Shard x2",
+   "flag": 51410030
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Proud Knight",
+   "flag": 51410050
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51410060
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Proud Knight",
+   "flag": 51410080
+  },
+  {
+   "map": "m14_01",
+   "items": "Green Titanite Shard x2",
+   "flag": 51410090
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Flame Ember",
+   "flag": 51410100,
+   "chest_flag": 11410601
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410140
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410160
+  },
+  {
+   "map": "m14_01",
+   "items": "Gold-Hemmed Black Hood",
+   "flag": 51410180
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410190
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410200
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410210
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410220
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410230
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410240
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410250
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410260
+  },
+  {
+   "map": "m14_01",
+   "items": "Green Titanite Shard x2",
+   "flag": 51410270
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410280
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410290
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410300
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410310
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51410320
+  },
+  {
+   "map": "m14_01",
+   "items": "Divine Blessing",
+   "flag": 51410330
+  },
+  {
+   "map": "m14_01",
+   "items": "Divine Blessing",
+   "flag": 51410340
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410350
+  },
+  {
+   "map": "m14_01",
+   "items": "Twin Humanities",
+   "flag": 51410360
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410370
+  },
+  {
+   "map": "m14_01",
+   "items": "Rare Ring of Sacrifice",
+   "flag": 51410380
+  },
+  {
+   "map": "m14_01",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51410390
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Hero",
+   "flag": 51410400
+  },
+  {
+   "map": "m14_01",
+   "items": "Red Titanite Slab",
+   "flag": 51410410,
+   "chest_flag": 11410602
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Great Hero",
+   "flag": 51410500,
+   "chest_flag": 11410600
+  },
+  {
+   "map": "m14_01",
+   "items": "Soul of a Proud Knight",
+   "flag": 51410510
+  },
+  {
+   "map": "m14_01",
+   "items": "Pyromancy: Chaos Fire Whip",
+   "flag": 51410520,
+   "chest_flag": 11410603
+  },
+  {
+   "map": "m14_01",
+   "items": "Chaos Flame Ember",
+   "flag": 51410530
+  },
+  {
+   "map": "m15_00",
+   "items": "Ring of Steel Protection",
+   "flag": 51500000,
+   "chest_flag": 11500600
+  },
+  {
+   "map": "m15_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51500010
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Titanite Shard x2",
+   "flag": 51500020,
+   "chest_flag": 11500602
+  },
+  {
+   "map": "m15_00",
+   "items": "Divine Blessing",
+   "flag": 51500040,
+   "chest_flag": 11500604
+  },
+  {
+   "map": "m15_00",
+   "items": "Black Sorcerer Hat",
+   "flag": 51500060
+  },
+  {
+   "map": "m15_00",
+   "items": "Covetous Gold Serpent Ring",
+   "flag": 51500070
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Titanite Shard x2",
+   "flag": 51500080
+  },
+  {
+   "map": "m15_00",
+   "items": "Flame Stoneplate Ring",
+   "flag": 51500090,
+   "chest_flag": 11500609
+  },
+  {
+   "map": "m15_00",
+   "items": "Rare Ring of Sacrifice",
+   "flag": 51500100,
+   "chest_flag": 11500610
+  },
+  {
+   "map": "m15_00",
+   "items": "Cage Key",
+   "flag": 51500150
+  },
+  {
+   "map": "m15_00",
+   "items": "Shotel",
+   "flag": 51500300
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51500310
+  },
+  {
+   "map": "m15_00",
+   "items": "Slumbering Dragoncrest Ring",
+   "flag": 51500320
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51500330
+  },
+  {
+   "map": "m15_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51500350
+  },
+  {
+   "map": "m15_00",
+   "items": "Scythe",
+   "flag": 51500360
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51500400
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Titanite Shard x2",
+   "flag": 51500410
+  },
+  {
+   "map": "m15_00",
+   "items": "Soul of a Hero",
+   "flag": 51500420
+  },
+  {
+   "map": "m15_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51500430
+  },
+  {
+   "map": "m15_00",
+   "items": "Sniper Crossbow",
+   "flag": 51500440
+  },
+  {
+   "map": "m15_01",
+   "items": "Sorcery: Great Magic Weapon",
+   "flag": 51510000
+  },
+  {
+   "map": "m15_01",
+   "items": "Ring of the Sun's Firstborn",
+   "flag": 51510030
+  },
+  {
+   "map": "m15_01",
+   "items": "Titanite Chunk",
+   "flag": 51510040
+  },
+  {
+   "map": "m15_01",
+   "items": "Soul of a Hero",
+   "flag": 51510050
+  },
+  {
+   "map": "m15_01",
+   "items": "Dragonslayer Greatbow",
+   "flag": 51510060
+  },
+  {
+   "map": "m15_01",
+   "items": "Black Iron Helm",
+   "flag": 51510070
+  },
+  {
+   "map": "m15_01",
+   "items": "Helm of Favor",
+   "flag": 51510080
+  },
+  {
+   "map": "m15_01",
+   "items": "Demon Titanite",
+   "flag": 51510510,
+   "chest_flag": 11510601
+  },
+  {
+   "map": "m15_01",
+   "items": "Divine Blessing",
+   "flag": 51510520,
+   "chest_flag": 11510602
+  },
+  {
+   "map": "m15_01",
+   "items": "Havel's Helm",
+   "flag": 51510530,
+   "chest_flag": 11510603
+  },
+  {
+   "map": "m15_01",
+   "items": "Havel's Gauntlets",
+   "flag": 51510540,
+   "chest_flag": 11510604
+  },
+  {
+   "map": "m15_01",
+   "items": "Dragon Tooth",
+   "flag": 51510560,
+   "chest_flag": 11510607
+  },
+  {
+   "map": "m15_01",
+   "items": "Havel's Greatshield",
+   "flag": 51510570,
+   "chest_flag": 11510606
+  },
+  {
+   "map": "m15_01",
+   "items": "Silver Knight Helm",
+   "flag": 51510580,
+   "chest_flag": 11510608
+  },
+  {
+   "map": "m15_01",
+   "items": "Silver Knight Gauntlets",
+   "flag": 51510590,
+   "chest_flag": 11510609
+  },
+  {
+   "map": "m15_01",
+   "items": "Demon Titanite x2",
+   "flag": 51510600,
+   "chest_flag": 11510610
+  },
+  {
+   "map": "m15_01",
+   "items": "Hawk Ring",
+   "flag": 51510610,
+   "chest_flag": 11510611
+  },
+  {
+   "map": "m15_01",
+   "items": "Miracle: Sunlight Blade",
+   "flag": 51510620,
+   "chest_flag": 11510612
+  },
+  {
+   "map": "m15_01",
+   "items": "Brass Helm",
+   "flag": 51510660,
+   "chest_flag": 11510616
+  },
+  {
+   "map": "m15_01",
+   "items": "Twinkling Titanite",
+   "flag": 51510670,
+   "chest_flag": 11510617
+  },
+  {
+   "map": "m15_01",
+   "items": "Demon Titanite",
+   "flag": 51510680,
+   "chest_flag": 11510618
+  },
+  {
+   "map": "m15_01",
+   "items": "Sunlight Medal x3",
+   "flag": 51510690,
+   "chest_flag": 11510619
+  },
+  {
+   "map": "m15_01",
+   "items": "Soul of a Hero",
+   "flag": 51510700
+  },
+  {
+   "map": "m16_00",
+   "items": "Soul of a Nameless Soldier",
+   "flag": 51600000
+  },
+  {
+   "map": "m16_00",
+   "items": "Estoc",
+   "flag": 51600020
+  },
+  {
+   "map": "m16_00",
+   "items": "Fire Keeper Soul",
+   "flag": 51600030
+  },
+  {
+   "map": "m16_00",
+   "items": "Transient Curse x2",
+   "flag": 51600040
+  },
+  {
+   "map": "m16_00",
+   "items": "Parrying Dagger",
+   "flag": 51600060
+  },
+  {
+   "map": "m16_00",
+   "items": "Transient Curse x2",
+   "flag": 51600070
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51600090
+  },
+  {
+   "map": "m16_00",
+   "items": "Green Titanite Shard",
+   "flag": 51600100
+  },
+  {
+   "map": "m16_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51600110
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51600120
+  },
+  {
+   "map": "m16_00",
+   "items": "Rare Ring of Sacrifice",
+   "flag": 51600130
+  },
+  {
+   "map": "m16_00",
+   "items": "Cursebite Ring",
+   "flag": 51600140
+  },
+  {
+   "map": "m16_00",
+   "items": "Humanity",
+   "flag": 51600150
+  },
+  {
+   "map": "m16_00",
+   "items": "Composite Bow",
+   "flag": 51600160
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Nameless Soldier",
+   "flag": 51600170
+  },
+  {
+   "map": "m16_00",
+   "items": "Astora's Straight Sword",
+   "flag": 51600180
+  },
+  {
+   "map": "m16_00",
+   "items": "Soul of a Proud Knight",
+   "flag": 51600190
+  },
+  {
+   "map": "m16_00",
+   "items": "Dragon Crest Shield",
+   "flag": 51600200
+  },
+  {
+   "map": "m16_00",
+   "items": "Humanity",
+   "flag": 51600210
+  },
+  {
+   "map": "m16_00",
+   "items": "Brigand Hood",
+   "flag": 51600220
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51600250
+  },
+  {
+   "map": "m16_00",
+   "items": "Humanity",
+   "flag": 51600260
+  },
+  {
+   "map": "m16_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51600270
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51600280
+  },
+  {
+   "map": "m16_00",
+   "items": "Titanite Chunk",
+   "flag": 51600290,
+   "chest_flag": 11600602
+  },
+  {
+   "map": "m16_00",
+   "items": "Cracked Red Eye Orb x6",
+   "flag": 51600310
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51600330
+  },
+  {
+   "map": "m16_00",
+   "items": "Witch Hat",
+   "flag": 51600360
+  },
+  {
+   "map": "m16_00",
+   "items": "Large Soul of a Proud Knight",
+   "flag": 51600370
+  },
+  {
+   "map": "m16_00",
+   "items": "Red Tearstone Ring",
+   "flag": 51600380
+  },
+  {
+   "map": "m16_00",
+   "items": "Very Large Ember",
+   "flag": 51600500,
+   "chest_flag": 11600600
+  },
+  {
+   "map": "m16_00",
+   "items": "Titanite Chunk",
+   "flag": 51600510,
+   "chest_flag": 11600601
+  },
+  {
+   "map": "m16_00",
+   "items": "Transient Curse x2",
+   "flag": 51600520
+  },
+  {
+   "map": "m17_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51700000
+  },
+  {
+   "map": "m17_00",
+   "items": "Twinkling Titanite",
+   "flag": 51700010
+  },
+  {
+   "map": "m17_00",
+   "items": "Avelyn",
+   "flag": 51700020,
+   "chest_flag": 11700615
+  },
+  {
+   "map": "m17_00",
+   "items": "Soul of a Great Hero",
+   "flag": 51700040
+  },
+  {
+   "map": "m17_00",
+   "items": "Prism Stone x20",
+   "flag": 51700050,
+   "chest_flag": 11700616
+  },
+  {
+   "map": "m17_00",
+   "items": "Soul of a Brave Warrior",
+   "flag": 51700060
+  },
+  {
+   "map": "m17_00",
+   "items": "Maiden Hood",
+   "flag": 51700070
+  },
+  {
+   "map": "m17_00",
+   "items": "Large Soul of a Brave Warrior",
+   "flag": 51700080
+  },
+  {
+   "map": "m17_00",
+   "items": "Blue Titanite Chunk",
+   "flag": 51700120
+  },
+  {
+   "map": "m17_00",
+   "items": "Humanity",
+   "flag": 51700150
+  },
+  {
+   "map": "m17_00",
+   "items": "Blue Titanite Slab",
+   "flag": 51700160
+  },
+  {
+   "map": "m17_00",
+   "items": "Blue Titanite Chunk",
+   "flag": 51700170
+  },
+  {
+   "map": "m17_00",
+   "items": "Soul of a Hero",
+   "flag": 51700180
+  },
+  {
+   "map": "m17_00",
+   "items": "Fire Keeper Soul",
+   "flag": 51700200
+  },
+  {
+   "map": "m17_00",
+   "items": "Archive Prison Extra Key",
+   "flag": 51700210
+  },
+  {
+   "map": "m17_00",
+   "items": "Twinkling Titanite",
+   "flag": 51700510,
+   "chest_flag": 11700601
+  },
+  {
+   "map": "m17_00",
+   "items": "Twinkling Titanite",
+   "flag": 51700520,
+   "chest_flag": 11700602
+  },
+  {
+   "map": "m17_00",
+   "items": "Large Magic Ember",
+   "flag": 51700530,
+   "chest_flag": 11700603
+  },
+  {
+   "map": "m17_00",
+   "items": "Sorcery: Strong Magic Shield",
+   "flag": 51700540,
+   "chest_flag": 11700604
+  },
+  {
+   "map": "m17_00",
+   "items": "Blue Titanite Chunk",
+   "flag": 51700560,
+   "chest_flag": 11700606
+  },
+  {
+   "map": "m17_00",
+   "items": "Six-Eyed Helm of the Channelers",
+   "flag": 51700580,
+   "chest_flag": 11700608
+  },
+  {
+   "map": "m17_00",
+   "items": "Archive Tower Giant Cell Key",
+   "flag": 51700590,
+   "chest_flag": 11700609
+  },
+  {
+   "map": "m17_00",
+   "items": "Crystal Ember",
+   "flag": 51700600,
+   "chest_flag": 11700610
+  },
+  {
+   "map": "m17_00",
+   "items": "Archive Tower Giant Door Key",
+   "flag": 51700630,
+   "chest_flag": 11700613
+  },
+  {
+   "map": "m17_00",
+   "items": "Sage Robe",
+   "flag": 51700640,
+   "chest_flag": 11700614
+  },
+  {
+   "map": "m17_00",
+   "items": "Crystalline Helm",
+   "flag": 51700650
+  },
+  {
+   "map": "m18_00",
+   "items": "Black Knight Helm",
+   "flag": 51800050
+  },
+  {
+   "map": "m18_01",
+   "items": "Dungeon Cell Key",
+   "flag": 51810000
+  },
+  {
+   "map": "m18_01",
+   "items": "Rusted Iron Ring",
+   "flag": 51810060
+  },
+  {
+   "map": "m18_01",
+   "items": "Soul of a Lost Undead",
+   "flag": 51810070
+  },
+  {
+   "map": "m18_01",
+   "items": "Peculiar Doll",
+   "flag": 51810080
+  },
+  {
+   "map": "m18_01",
+   "items": "Longsword",
+   "flag": 51810100
+  },
+  {
+   "map": "m18_01",
+   "items": "Heater Shield",
+   "flag": 51810110
+  },
+  {
+   "map": "m18_01",
+   "items": "Broadsword",
+   "flag": 51810120
+  },
+  {
+   "map": "m18_01",
+   "items": "Tower Kite Shield",
+   "flag": 51810130
+  },
+  {
+   "map": "m18_01",
+   "items": "Scimitar",
+   "flag": 51810140
+  },
+  {
+   "map": "m18_01",
+   "items": "Leather Shield",
+   "flag": 51810150
+  },
+  {
+   "map": "m18_01",
+   "items": "Bandit's Knife",
+   "flag": 51810160
+  },
+  {
+   "map": "m18_01",
+   "items": "Target Shield",
+   "flag": 51810170
+  },
+  {
+   "map": "m18_01",
+   "items": "Battle Axe",
+   "flag": 51810180
+  },
+  {
+   "map": "m18_01",
+   "items": "Spider Shield",
+   "flag": 51810190
+  },
+  {
+   "map": "m18_01",
+   "items": "Shortsword",
+   "flag": 51810200
+  },
+  {
+   "map": "m18_01",
+   "items": "Large Leather Shield",
+   "flag": 51810210
+  },
+  {
+   "map": "m18_01",
+   "items": "Short Bow",
+   "flag": 51810220
+  },
+  {
+   "map": "m18_01",
+   "items": "Dagger",
+   "flag": 51810230
+  },
+  {
+   "map": "m18_01",
+   "items": "Small Leather Shield",
+   "flag": 51810240
+  },
+  {
+   "map": "m18_01",
+   "items": "Sorcerer's Catalyst",
+   "flag": 51810250
+  },
+  {
+   "map": "m18_01",
+   "items": "Hand Axe",
+   "flag": 51810260
+  },
+  {
+   "map": "m18_01",
+   "items": "Cracked Round Shield",
+   "flag": 51810270
+  },
+  {
+   "map": "m18_01",
+   "items": "Pyromancy Flame",
+   "flag": 51810280
+  },
+  {
+   "map": "m18_01",
+   "items": "Mace",
+   "flag": 51810290
+  },
+  {
+   "map": "m18_01",
+   "items": "East-West Shield",
+   "flag": 51810300
+  },
+  {
+   "map": "m18_01",
+   "items": "Canvas Talisman",
+   "flag": 51810310
+  },
+  {
+   "map": "m18_01",
+   "items": "Club",
+   "flag": 51810320
+  },
+  {
+   "map": "m18_01",
+   "items": "Plank Shield",
+   "flag": 51810330
+  }
+ ],
+ "events": [
+  {
+   "label": "Bell of Awakening rung (Undead Parish)",
+   "flags": [
+    11010700
+   ]
+  },
+  {
+   "label": "Bell of Awakening rung (Quelaag's Domain)",
+   "flags": [
+    11400200
+   ]
+  },
+  {
+   "label": "New Londo Ruins drained",
+   "flags": [
+    11600101,
+    11600100
+   ]
+  },
+  {
+   "label": "Lordvessel placed at the Firelink Altar",
+   "flags": [
+    11800100
+   ]
+  },
+  {
+   "label": "Soul of Gravelord Nito placed in the Lordvessel",
+   "flags": [
+    11800201
+   ]
+  },
+  {
+   "label": "Soul of Bed of Chaos placed in the Lordvessel",
+   "flags": [
+    11800202
+   ]
+  },
+  {
+   "label": "Soul of the Four Kings placed in the Lordvessel",
+   "flags": [
+    11800203
+   ]
+  },
+  {
+   "label": "Soul of Seath the Scaleless placed in the Lordvessel",
+   "flags": [
+    11800204
+   ]
+  },
+  {
+   "label": "Kiln of the First Flame door opened",
+   "flags": [
+    11800210
+   ]
+  }
+ ]
+}
