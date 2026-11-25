@@ -1711,6 +1711,7 @@ class EventFlagsTab:
 
         from er_save_manager.data.invader_data import (
             get_invaders,
+            invader_blocked,
             invader_by_key,
             invader_defeated,
             reset_invader,
@@ -1735,7 +1736,9 @@ class EventFlagsTab:
             main,
             text=(
                 "Revive dead NPCs, or bring back an invasion or red summon sign "
-                "after the NPC was defeated. Quest progress is not restored."
+                "after the NPC was defeated. Quest progress is not restored. "
+                "Blocked: the NPC's quest has moved on, so the invasion or sign "
+                "does not return after a reset."
             ),
             font=ds.SMALL,
             text_color=ds.MUTED,
@@ -1788,6 +1791,7 @@ class EventFlagsTab:
         tree_frame.pack(fill=tk.BOTH, expand=True)
         add_tooltip(tree, MULTI_SELECT_TIP)
         tree.tag_configure("Defeated", foreground=palette.pick(palette.RED_TEXT))
+        tree.tag_configure("Blocked", foreground=palette.pick(palette.WARNING_TEXT))
         invaders = get_invaders(self._is_cnv_save())
 
         def populate():
@@ -1815,8 +1819,12 @@ class EventFlagsTab:
                     )
             if kind != "Quest NPCs":
                 for invader in invaders:
-                    defeated = invader_defeated(self.current_event_flags, invader)
-                    status = "Defeated" if defeated else "Not defeated"
+                    if not invader_defeated(self.current_event_flags, invader):
+                        status = "Not defeated"
+                    elif invader_blocked(self.current_event_flags, invader):
+                        status = "Blocked"
+                    else:
+                        status = "Defeated"
                     tree.insert(
                         "",
                         "end",
@@ -1836,6 +1844,22 @@ class EventFlagsTab:
                     "Could not locate save file. Load a valid save first.",
                     parent=dialog,
                 )
+                return
+
+            blocked = [
+                invader.label
+                for key in tree.selection()
+                if (invader := invader_by_key(key)) is not None
+                and invader_defeated(self.current_event_flags, invader)
+                and invader_blocked(self.current_event_flags, invader)
+            ]
+            if blocked and not CTkMessageBox.askyesno(
+                "Quest State Blocks Return",
+                "The quest state keeps these from returning after a reset:\n\n"
+                + "\n".join(blocked)
+                + "\n\nReset them anyway?",
+                parent=dialog,
+            ):
                 return
 
             count = 0

@@ -30,6 +30,7 @@ from er_save_manager.data.grace_data import arena_gate, location_gate
 from er_save_manager.data.icon_manager import get_icon
 from er_save_manager.data.invader_data import (
     KIND_RED_SIGN,
+    invader_blocked,
     invader_by_key,
     reset_invader,
 )
@@ -4394,6 +4395,15 @@ class MapWindow:
                     )
                 else:
                     text = f"Invades the player near {invader.location}."
+                if (
+                    invader is not None
+                    and self._grace_state is not None
+                    and invader_blocked(_FlagChanges(self._grace_state), invader)
+                ):
+                    text += (
+                        " The NPC's quest has moved on: it does not return "
+                        "after a respawn."
+                    )
                 ctk.CTkLabel(
                     frame,
                     text=text,

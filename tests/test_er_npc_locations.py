@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from er_save_manager.data.invader_data import get_invaders, reset_invader
+from er_save_manager.data.invader_data import (
+    get_invaders,
+    invader_blocked,
+    reset_invader,
+)
 from er_save_manager.data.npc_data import NPC_FLAGS
 from er_save_manager.data.npc_locations import _placements, npc_spots
 from er_save_manager.data.world_map import location_map_point
@@ -71,3 +75,16 @@ def test_invaders():
     }
     reset_invader(flags, leontiel, reward=True)
     assert flags[1052397500] is False
+    # Gate: Tarnished Pack + Radahn defeated
+    assert invader_blocked(_Flags(), leontiel)
+    assert not invader_blocked(_Flags({1052390910: True}), leontiel)
+    # Defeating a Moore invasion ends his revenge invasions
+    moore = [i for i in get_invaders() if i.name == "Moore"]
+    assert len(moore) == 6
+    assert all(invader_blocked(_Flags({2045429280: True}), i) for i in moore)
+    # Varre's red sign stands elsewhere in The Convergence
+    varre = [
+        next(i for i in get_invaders(cnv) if i.name == "White Mask Varré")
+        for cnv in (False, True)
+    ]
+    assert varre[0].position != varre[1].position
