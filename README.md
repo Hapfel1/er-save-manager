@@ -348,17 +348,20 @@ See [DEVELOPMENT.md](DEVELOPMENT.md)
 
 Source Available License - see [LICENSE](LICENSE)
 
+Release builds include THIRD_PARTY_NOTICES.txt with the licences of the bundled third-party software.
+
 ## Credits
 
 ### Save File Research
 - [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation and reverse engineering research
+- [ER-Save-Editor](https://github.com/ClayAmore/ER-Save-Editor) - Save structure layout and eventflag_bst.txt (MIT)
 - [Sayuri](https://github.com/Umgak) for allowing me to use her contributions to the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA), specifically the Event Flag Manager's tables
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) for the available documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) for offsets and constants for Sekiro steamid patcher
 - DS3 AES encryption key found by Atvaark, published in [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) by tremwil
 - Nightreign AES encryption key: TKGP and EonaCat
 - DS2 Save format research based on the [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC)
-- DS2 AES encryption key and SteamID detection/patching adapted from [souls_givifier](https://github.com/jtesta/souls_givifier)
+- DS2 AES encryption key from [souls_givifier](https://github.com/jtesta/souls_givifier)
 - [Smithbox](https://github.com/vawser/Smithbox) param CSV exports, used to derive the DS2 param field layout
 - Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri ([TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA))
 - [UXM Selective Unpack](https://github.com/Nordgaren/UXM-Selective-Unpack) archive keys and file name dictionaries, used to read DS3 game data for item, bonfire, boss, NPC and gesture data

@@ -89,4 +89,9 @@ echo "Removing bundled OpenSSL..."
 find "dist/linux-$version/er-save-manager" -name "libssl.so*" -delete
 find "dist/linux-$version/er-save-manager" -name "libcrypto.so*" -delete
 
+echo "Writing third-party notices..."
+python scripts/third_party_notices.py \
+    "dist/linux-$version/er-save-manager/THIRD_PARTY_NOTICES.txt" \
+    --bundle "dist/linux-$version/er-save-manager"
+
 echo "Build complete: dist/linux-$version/er-save-manager/"
