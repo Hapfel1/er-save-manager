@@ -3,6 +3,27 @@
 > A comprehensive changelog for the Elden Ring Save Manager application.
 > All notable changes to this project are documented here.
 
+## 📦 Release 2.8.0
+**Released:** November 26, 2026
+
+
+### ✨ New Features
+
+- General: Find .co2 saves (#515) ([c397044](https://github.com/Hapfel1/er-save-manager/commit/c397044ce062bbf55a08fe270fc11922b30ebb72))
+
+
+### 🔧 Bug Fixes
+
+- General: Atomic character exports, DS2 Ascetic hint, ER character ops test (#508) ([ac32c00](https://github.com/Hapfel1/er-save-manager/commit/ac32c00559f5ef58fd5a06866bfd713be939afee))
+
+- General: Drop empty option row gap in Copy to Another Extension (#510) ([4038336](https://github.com/Hapfel1/er-save-manager/commit/4038336333596ba0683966dc4443c57555fce3f1))
+
+- General: Place Farum Azula pins on its map art (#512) ([7ec97af](https://github.com/Hapfel1/er-save-manager/commit/7ec97afa398c65dfa32bb194e37dba717edac84d))
+
+- General: Check ids and URLs from the preset and character indexes (#514) ([3682884](https://github.com/Hapfel1/er-save-manager/commit/3682884f49627e3042e656b210c9bf36273557a4))
+
+
+---
 ## 📦 Release 2.7.1
 **Released:** November 23, 2026
 
