@@ -18,21 +18,6 @@ fi
 # Get version from pyproject.toml
 version=$(grep --max-count=1 '^version\s*=' pyproject.toml | cut -d '"' -f2)
 
-# Locate libreadline.so.8 for bundling - path varies by distro
-# (Arch: /usr/lib, Ubuntu/Debian: /lib/x86_64-linux-gnu, etc.)
-readline_lib=$(ldconfig -p 2>/dev/null | awk '/libreadline\.so\.8/{print $NF; exit}')
-if [ -z "$readline_lib" ]; then
-    readline_lib=$(find /usr/lib /lib -name "libreadline.so.8" 2>/dev/null | head -1)
-fi
-
-readline_flag=""
-if [ -n "$readline_lib" ]; then
-    echo "Bundling readline: $readline_lib"
-    readline_flag="--add-binary ${readline_lib}:."
-else
-    echo "Warning: libreadline.so.8 not found, skipping bundle"
-fi
-
 # Ship every non-Python file inside the package at its package-relative
 # path. Directories cannot be added whole: data/ and fixes/ also hold
 # .py modules, which must not be copied as source.
@@ -51,6 +36,8 @@ done
 
 # The excluded stdlib packages (unittest, pydoc, asyncio, ...) are reachable
 # only through optional imports in dependencies; nothing imports them at runtime.
+# readline (GPL-3.0) is pulled in only by sqlite3.__main__ -> code, the
+# `python -m sqlite3` shell, which the app never runs.
 echo "Building GUI with PyInstaller..."
 # shellcheck disable=SC2086
 pyinstaller --clean --noconfirm \
@@ -77,8 +64,8 @@ pyinstaller --clean --noconfirm \
     --exclude-module multiprocessing \
     --exclude-module asyncio \
     --exclude-module xmlrpc \
+    --exclude-module readline \
     $data_flags \
-    $readline_flag \
     --optimize 2 \
     --strip \
     --distpath "dist/linux-$version" \
