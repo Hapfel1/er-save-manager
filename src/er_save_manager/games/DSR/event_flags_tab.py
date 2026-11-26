@@ -1,8 +1,9 @@
 """
-DSR Event Flags Tab - NPC States and World Flags.
+DSR Event Flags Tab.
 
 Boss kills are edited in the NPCs & Bosses tab.
-Sub-tabs: NPC States | World Flags.
+Sub-tabs: NPC States | World Flags | Doors | Shortcuts | Item Pickups |
+Flag Lookup.
 
 Session/cycle flags in World Flags are marked with * and noted as set by event
 scripts at session start. Their saved value is the between-session state.
@@ -17,6 +18,17 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
+from er_save_manager.games.DSR.world_flags import (
+    EVENTS,
+    FlagState,
+    flag_state,
+    set_flags,
+)
+from er_save_manager.games.DSR.world_flags_pages import (
+    DSRDoorsPage,
+    DSRPickupsPage,
+    DSRShortcutsPage,
+)
 from er_save_manager.ui import dialog_style as ds
 from er_save_manager.ui import palette
 from er_save_manager.ui.pending import save_writable, write_failed
@@ -92,11 +104,25 @@ class DSREventFlagsTab:
 
         self._npc_parent = self._tabs.add("NPC States")
         self._world_parent = self._tabs.add("World Flags")
+        self._pages = {
+            name: page(
+                self._tabs.add(name), self._get_char, _backup_and_save, self._show_toast
+            )
+            for name, page in (
+                ("Doors", DSRDoorsPage),
+                ("Shortcuts", DSRShortcutsPage),
+                ("Item Pickups", DSRPickupsPage),
+            )
+        }
         self._lookup_parent = self._tabs.add("Flag Lookup")
 
         for p, t in [
             (self._npc_parent, "Load a character to view NPC state flags."),
             (self._world_parent, "Load a character to view world flags."),
+            *(
+                (page.parent, f"Load a character to view {name.lower()}.")
+                for name, page in self._pages.items()
+            ),
         ]:
             ctk.CTkLabel(p, text=t, text_color=("gray50", "gray60")).pack(pady=40)
 
@@ -115,6 +141,11 @@ class DSREventFlagsTab:
             if not self._world_built:
                 self._build_world_ui()
             self._refresh_world(char)
+        elif tab in self._pages:
+            page = self._pages[tab]
+            if not page._built:
+                page.build()
+            page.refresh()
 
     # --- NPC States ----------------------------------------------------------- #
 
@@ -260,6 +291,12 @@ class DSREventFlagsTab:
                 self._world_row(char, entry["id"], display, note)
 
         ctk.CTkLabel(
+            self._world_scroll, text="World Events", font=("Inter", 11, "bold")
+        ).pack(anchor="w", padx=12, pady=(10, 2))
+        for entry in EVENTS:
+            self._event_row(char, entry)
+
+        ctk.CTkLabel(
             self._world_scroll,
             text="Gestures (CanLearn flags)",
             font=("Inter", 11, "bold"),
@@ -315,6 +352,57 @@ class DSREventFlagsTab:
                 font=ds.SMALL,
                 text_color=ds.MUTED,
             ).grid(row=1, column=0, columnspan=3, sticky="w", padx=(8, 4), pady=(0, 4))
+
+    def _event_row(self, char, entry) -> None:
+        """A world event row; Toggle sets or clears all of its flags."""
+        value = flag_state(char, entry.flags) is FlagState.SET
+        row = ctk.CTkFrame(self._world_scroll, fg_color=ds.ROW, corner_radius=6)
+        row.pack(fill="x", padx=4, pady=2)
+        row.grid_columnconfigure(2, weight=1)
+        ctk.CTkLabel(
+            row,
+            text=" + ".join(str(f) for f in entry.flags),
+            font=ds.SMALL,
+            text_color=ds.MUTED,
+            width=65,
+        ).grid(row=0, column=0, padx=(8, 4), pady=6)
+        badge = ctk.CTkLabel(
+            row,
+            text="ON" if value else "OFF",
+            text_color=_state_color(value),
+            width=35,
+            font=ds.BOLD,
+        )
+        badge.grid(row=0, column=1, padx=(0, 6), pady=6)
+        ctk.CTkLabel(
+            row, text=entry.label, anchor="w", font=ds.FONT, text_color=ds.ROW_TEXT
+        ).grid(row=0, column=2, sticky="w", padx=4, pady=6)
+        ctk.CTkButton(
+            row,
+            text="Toggle",
+            width=65,
+            command=lambda e=entry, b=badge: self._toggle_event(e, b),
+        ).grid(row=0, column=3, padx=(0, 8), pady=6)
+
+    def _toggle_event(self, entry, badge: ctk.CTkLabel) -> None:
+        if _game_blocks_write(self.parent):
+            return
+        save, save_path, char = self._get_char()
+        if char is None or not save_writable():
+            return
+        new_val = flag_state(char, entry.flags) is not FlagState.SET
+        set_flags(char, [entry], new_val)
+        try:
+            _backup_and_save(
+                save, save_path, f"flag_{entry.flags[0]}_slot_{self._current_slot + 1}"
+            )
+        except Exception as exc:
+            write_failed(exc, self.parent)
+            return
+        badge.configure(
+            text="ON" if new_val else "OFF", text_color=_state_color(new_val)
+        )
+        self._show_toast(f"{entry.label} -> {'ON' if new_val else 'OFF'}.")
 
     def _gesture_row(self, char, entry: dict) -> None:
         fid = entry["id"]

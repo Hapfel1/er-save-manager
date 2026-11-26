@@ -92,6 +92,8 @@ same font on Windows and Linux (bundled Inter) done
 
 DS2 appearance in-game checks (future work): face shape sliders, physique option count, new DS2 appearance selectors
 
+DSR Doors / Shortcuts / Item Pickups tabs in-game checks: Open Selected on a Partly open key door (door stands open, no prompt), Respawn Selected on a taken pickup (item lies there after reload), a World Events toggle (bell / Lordvessel). Wanted save pair: save right before and right after unlocking an ObjAct key door (e.g. Valley of the Drakes door with the Master Key). Close Selected on a door left with no prompt after co-op is confirmed in game
+
 Backlog from the 2026-11-23 review, fixes first, then features:
 
 character exports (ER, DS3, DSR, NR) written atomically done
