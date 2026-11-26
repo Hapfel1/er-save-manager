@@ -141,13 +141,14 @@ The Save File Fixer can detect and repair:
 ### Save File Research
 
 - [ER-Save-Lib](https://github.com/ClayAmore/ER-Save-Lib) - Rust implementation and reverse engineering research
+- [ER-Save-Editor](https://github.com/ClayAmore/ER-Save-Editor) - Save structure layout and eventflag_bst.txt (MIT)
 - [Sayuri](https://github.com/Umgak) - Event Flag Manager tables from the [TGA Cheat Table](https://github.com/The-Grand-Archives/Elden-Ring-CT-TGA)
 - [?WikiName?](https://soulsmodding.com/doku.php?id=er-refmat:main) - Documentation
 - [SimpleSekiroSavegameHelper](https://github.com/uberhalit/SimpleSekiroSavegameHelper) - Sekiro SteamID offsets and constants
 - DS3 AES encryption key found by Atvaark, published in [DS3SaveUnpacker](https://github.com/tremwil/DS3SaveUnpacker) by tremwil
 - Nightreign AES encryption key: TKGP and EonaCat
 - [Dark-Souls-2-Save-Editor-PS4-PC](https://github.com/alfizari/Dark-Souls-2-Save-Editor-PS4-PC) - DS2 save format research and item ID lists
-- [souls_givifier](https://github.com/jtesta/souls_givifier) - DS2 AES encryption key and SteamID detection/patching
+- [souls_givifier](https://github.com/jtesta/souls_givifier) - DS2 AES encryption key
 - [Smithbox](https://github.com/vawser/Smithbox) - Param CSV exports, used to derive the DS2 param field layout
 - Elden Ring event flag, boss, gesture and summoning pool data from the Cheat Engine scripts by Dasaav and Sayuri
 

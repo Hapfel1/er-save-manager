@@ -9,6 +9,7 @@ Usage with pip (activate venv first):
     python build-windows.py build
 """
 
+import subprocess
 import sys
 import sysconfig
 import warnings
@@ -73,8 +74,14 @@ linux_only_resources = {
     Path("resources/icon/icon.png"),
     *Path("resources/fonts").glob("*.ttf"),
 }
+notices = Path("build") / "THIRD_PARTY_NOTICES.txt"
+subprocess.run(
+    [sys.executable, "scripts/third_party_notices.py", str(notices)], check=True
+)
+
 include_files = [
     ("src/resources/", "resources/"),
+    (str(notices), "THIRD_PARTY_NOTICES.txt"),
     *(
         (str(path), str(path))
         for path in sorted(Path("resources").rglob("*"))
